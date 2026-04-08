@@ -1,0 +1,81 @@
+# Forge AI-First Schema
+name: ai-first
+version: "1.0.0"
+description: AI-native features with agent design, voice, GenUI, and non-determinism handling
+extends: default
+
+tdd_enforced: true
+bdd_required: true
+coverage_threshold: 80
+ai_fallback_required: true  # Every AI feature must have a non-AI fallback
+
+phases:
+  - id: ai_brainstorm  # ADDED FIRST: before proposal
+    artifact:
+      - ai-capability-map.md
+      - agent-architecture.md
+      - risk-matrix.md
+    agent: Oracle
+    description: AI-First workshop with Oracle before any specs
+    gate: fallback_strategy_defined  # Cannot proceed without fallback strategy
+    next: proposal
+
+  - id: proposal
+    artifact: proposal.md
+    includes: ai_integration_section
+    gate: constitution_compliance
+
+  - id: specs
+    artifact: specs.md
+    includes_ai_specs: true
+    required_sections:
+      - ai_capabilities  # What AI does
+      - fallback_behaviors  # What happens when AI is unavailable
+      - non_determinism_handling  # How to test non-deterministic outputs
+    agent: Clio
+
+  - id: features
+    artifact: "features/*.feature"
+    required: true
+    includes:
+      - happy_path_with_ai
+      - fallback_scenarios  # Must test fallback behavior
+      - error_scenarios  # AI timeout, rate limit, etc.
+
+  - id: design
+    artifact: design.md
+    agent: [Athena, Prometheus]  # Architecture + AI specialist
+    includes_agent_design: true  # Agent architecture diagram required
+    gate: constitution_compliance
+
+  - id: tasks
+    artifact: tasks.md
+    includes:
+      - ai_integration_tasks
+      - fallback_implementation_tasks  # Must be implemented, not just planned
+      - non_determinism_test_tasks
+
+  - id: implementation
+    protocol: tdd_cycle
+    agent: [Hera, Prometheus]
+
+  - id: review
+    agents: [Nemesis, Aegis, Prometheus]
+    checks:
+      - coverage
+      - fallback_verified  # Fallback tested with AI mocked to fail
+      - pii_audit  # No PII in AI requests/logs
+      - token_budget  # Token costs within budget
+
+  - id: archive
+
+ai_specifics:
+  fallback_mandatory: true
+  pii_handling: explicit_consent_required
+  token_budget_documented: true
+  non_determinism_testing:
+    strategy: snapshot + property_based
+    acceptable_variance: defined_per_feature
+  voice_pipeline:
+    standard: flutter_webrtc + PCM_16kHz
+    observability: OTLP_traces_required

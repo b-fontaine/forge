@@ -1,0 +1,6 @@
+# Forge Root Configuration
+# This file configures the Forge framework for the current project.
+# See .forge/schemas/ for available schema definitions.
+
+schema: default
+# Available schemas: default, tdd-flutter, tdd-rust, rapid, ai-first
