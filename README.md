@@ -133,4 +133,4 @@ then `query-docs` to fetch up-to-date docs rather than relying on training data.
 
 ## License
 
-MIT
+Copyright (c) 2026 The AI-First Company. All rights reserved. See [LICENSE](LICENSE) for details.
