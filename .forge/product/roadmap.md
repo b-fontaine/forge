@@ -34,7 +34,6 @@ roadmap.
 | Complete | Fill `.forge/product/roadmap.md` with public roadmap | E2 | N/A |
 | Complete | Remove `defaultMode: plan` from project `.claude/settings.json` | F7 | N/A |
 | In Progress | Idempotent shell installer (`forge init`) | A3 | N/A |
-| In Progress | First reference project (Flutter example) | C1 | N/A |
 | In Progress | `CODE_OF_CONDUCT.md`, `SECURITY.md`, `CHANGELOG.md`, issue/PR templates | D1-D4 | N/A |
 
 Change IDs remain `N/A` until `.forge/changes/` is populated retroactively
@@ -49,10 +48,16 @@ Change IDs remain `N/A` until `.forge/changes/` is populated retroactively
       contributors.
 - [ ] `forge init` shell installer copies `.forge/`, `.claude/`, `.mcp.json`,
       `CLAUDE.md` into a target project idempotently.
-- [ ] At least one public reference project exists on disk with a populated
-      `.forge/archive/` of 3–5 archived changes.
 - [ ] `CODE_OF_CONDUCT.md`, `SECURITY.md`, `CHANGELOG.md`, GitHub issue and
       PR templates are present in the repository.
+
+Note: the **first public reference project** (audit item C1) is deliberately
+deferred to Phase 2, alongside the `full-stack-monorepo` archetype (B.1). An
+example built before the archetype is defined would either diverge from the
+canonical form or prematurely constrain archetype decisions. Building C1 via
+`/forge:init --archetype full-stack-monorepo` — once that command exists —
+makes the example free to produce and structurally coherent with what Forge
+actually scaffolds.
 
 ## Phase 2 (Next — 2026-Q3)
 
@@ -64,7 +69,9 @@ start of **T3**.
 | Priority | Capability | Rationale |
 |----------|-----------|-----------|
 | High | **Archetype `full-stack-monorepo`** (Flutter + Rust + Infra) with CLAUDE.md scoping, protos as single source of truth via buf, multi-layer change workflow, and the `Janus` cross-layer orchestrator agent | Audit Module B.1 — flagship archetype, highest differentiation vs. alternatives |
+| High | **First public reference project** scaffolded via `/forge:init --archetype full-stack-monorepo`, with 3–5 archived changes in `.forge/archive/` demonstrating the full pipeline | Audit Module C.1 — coherent with the canonical archetype form (moved from T1 to avoid divergence) |
 | High | `/forge:init` wizard with archetype auto-detection (`--archetype` flag + heuristics based on existing `pubspec.yaml` / `Cargo.toml`) | Audit Module B.4.1 — collapses onboarding friction |
+| High | **Installer scaffolds `.forge/product/*` from `.forge/templates/product/*`**, never from the Forge repo's own `.forge/product/` (which is Forge-specific dog-fooding) | Audit Module A.3.0 — prevents target projects from inheriting Forge's own mission and causing silent agent drift |
 | High | Reference GitHub Actions workflow running `verify.sh` + `constitution-linter.sh` on every PR | Audit Module G.1 — extends the blocking gates to CI |
 | High | `forge upgrade` command: non-destructive merge of framework updates into a project | Audit Module A.7 — without it, every constitution bump becomes a manual chore |
 | Medium | Pre-commit hook package (`forge-hooks`) for local constitution linting | Audit Module G.2 |
