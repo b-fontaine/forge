@@ -97,7 +97,7 @@ Initial framework drop. Constitution v1.0.0 ratified, 19 commands, 28
 agents, 39 standards, 5 schemas, 4 templates, 3 skills, 2 deterministic
 scripts. Private license at the time.
 
-[Unreleased]: https://github.com/bfontaine/forge/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/bfontaine/forge/compare/v0.1.0-t0...v0.2.0
-[0.1.0-t0]: https://github.com/bfontaine/forge/releases/tag/v0.1.0-t0
-[0.0.0]: https://github.com/bfontaine/forge/releases/tag/v0.0.0
+[Unreleased]: https://github.com/b-fontaine/forge/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/b-fontaine/forge/compare/v0.1.0-t0...v0.2.0
+[0.1.0-t0]: https://github.com/b-fontaine/forge/releases/tag/v0.1.0-t0
+[0.0.0]: https://github.com/b-fontaine/forge/releases/tag/v0.0.0
