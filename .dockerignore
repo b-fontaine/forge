@@ -1,0 +1,21 @@
+.git/
+.github/
+.omc/
+.idea/
+.vscode/
+cli/node_modules/
+cli/dist/
+cli/coverage/
+**/node_modules/
+**/coverage/
+**/*.log
+.DS_Store
+
+# Everything we don't need to build the linter image.
+docs/
+README.md
+CHANGELOG.md
+CODE_OF_CONDUCT.md
+SECURITY.md
+NOTICE
+LICENSE

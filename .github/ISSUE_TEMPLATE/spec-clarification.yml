@@ -1,0 +1,64 @@
+name: Spec clarification
+description: A Forge spec, standard, constitution article, or template is ambiguous and needs clarification.
+title: "[spec] "
+labels: ["spec-clarification", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this when you hit a `[NEEDS CLARIFICATION]` in your own work **because**
+        a Forge artifact (constitution, standard, schema, template, or shipped spec)
+        is ambiguous.
+
+  - type: input
+    id: artifact
+    attributes:
+      label: Ambiguous artifact
+      description: Path of the file and, if relevant, section / article / line range.
+      placeholder: ".forge/constitution.md — Article IV, clause 3"
+    validations:
+      required: true
+
+  - type: textarea
+    id: ambiguity
+    attributes:
+      label: Ambiguity
+      description: Quote the exact text and explain what is unclear.
+    validations:
+      required: true
+
+  - type: textarea
+    id: interpretations
+    attributes:
+      label: Candidate interpretations
+      description: List the ways this text could reasonably be read, and who/what each interpretation favors.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Concrete impact
+      description: What decision did you need to make today? What blocks you?
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested
+    attributes:
+      label: Suggested clarification
+      description: Optional — proposed wording that would resolve the ambiguity without changing intent.
+
+  - type: checkboxes
+    id: precheck
+    attributes:
+      label: Pre-submission checklist
+      options:
+        - label: I checked the glossary and surrounding standards before filing.
+          required: true
+        - label: I am filing this as a *clarification*, not a *change request* (use the feature template for changes).
+          required: true
