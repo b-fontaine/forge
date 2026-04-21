@@ -12,6 +12,62 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+## [0.2.1] — 2026-04-21
+
+Packaging patch: the CLI is now actually usable when installed from npm.
+The previous publish shipped a three-file tarball that could not scaffold
+anything. Also completes the npm-scope rename started in `8fea01e`.
+
+### Fixed
+
+- **`forge init` from a published tarball now scaffolds the framework.**
+  `@sdd-forge/cli@0.2.0` only embedded `dist/`, `VERSION`, and `README.md`
+  in its npm tarball, so `npx @sdd-forge/cli init` produced an empty-ish
+  project (three files, no `.forge/`, no `.claude/`, no `bin/`). The CLI
+  now bundles all scaffoldable repo assets into `cli/assets/` via a
+  `prepack` hook, and `init` resolves its default `--source` to that
+  directory when it exists (falling back to the repo root for local dev).
+
+### Added
+
+- `cli/src/domain/bundle.ts` — pure `bundlePlan` function with five unit
+  tests covering the exclusion rules (`cli/` itself, dev/build/editor
+  dirs, `.claude/settings.local.json`, `.forge` runtime state
+  `product/`, `_memory/`, `changes/`, `specs/`).
+- `cli/scripts/bundle-assets.mjs` — walker that applies `bundlePlan` and
+  copies the result into `cli/assets/`. Wired as `npm run bundle`,
+  `prepack`, and `prepublishOnly` so published tarballs always contain
+  fresh assets.
+- `cli/src/cli.ts` now exposes an internal `assetsRoot()` resolver:
+  `<pkg>/assets/` when present (published mode), `<pkg>/..` otherwise
+  (repo-local dev mode).
+- New e2e suite `published-tarball layout (bundled assets/)` that runs
+  the bundle script, invokes `forge init` without `--source`, and
+  asserts that `.forge/constitution.md`, `.claude/settings.json`,
+  `bin/forge-install.sh`, `.mcp.json`, `LICENSE`, and `NOTICE` are
+  scaffolded, with `cli/` and `settings.local.json` confirmed absent.
+- `cli/.gitignore` — ignores the generated `assets/` directory.
+
+### Changed
+
+- **npm package renamed from `@forge/cli` to `@sdd-forge/cli`.** The
+  `@forge` scope on npm is already taken. All references updated across
+  `package.json`, lockfile, READMEs, `CHANGELOG`, `SECURITY`,
+  `docs/VERSIONING`, the roadmap, and the bug-report template. Users
+  must `npm uninstall -g @forge/cli` (if installed) and install the new
+  package: `npm i -g @sdd-forge/cli`.
+- `cli/package.json` — `files` now includes `assets/`; added `bundle`,
+  `prepack`, and updated `prepublishOnly` so `npm publish` always
+  rebuilds and re-bundles before shipping.
+- `cli/README.md` — Development section documents the new `bundle`
+  step and the generated `assets/` layout.
+
+### Packaging
+
+- Published tarball grows from 3 files / ~5 kB to 158 files / 290 kB
+  compressed (896 kB unpacked) — the first figure that actually
+  contains a functional Forge install.
+
 ## [0.2.0] — 2026-04-21
 
 T1 milestone: packaging, distribution, and governance. Forge becomes

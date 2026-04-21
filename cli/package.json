@@ -1,6 +1,7 @@
 {
   "name": "@sdd-forge/cli",
-  "version": "0.2.0",
+  "version": "0.2.1",
+  "author": "Benoît FONTAINE",
   "description": "Install, upgrade, and verify the Forge framework in a project.",
   "license": "Apache-2.0",
   "type": "module",
@@ -15,6 +16,7 @@
   },
   "files": [
     "dist/",
+    "assets/",
     "VERSION",
     "README.md"
   ],
@@ -23,10 +25,12 @@
     "sync-version": "node -e \"const v=require('node:fs').readFileSync('VERSION','utf8').trim();const p=require('./package.json');if(p.version!==v){p.version=v;require('node:fs').writeFileSync('package.json',JSON.stringify(p,null,2)+'\\n')}\"",
     "prebuild": "npm run presync-version && npm run sync-version",
     "build": "tsc -p tsconfig.json",
+    "bundle": "npm run build && node scripts/bundle-assets.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit -p tsconfig.json",
-    "prepublishOnly": "npm run lint && npm test && npm run build"
+    "prepack": "npm run lint && npm run bundle",
+    "prepublishOnly": "npm run lint && npm test && npm run bundle"
   },
   "dependencies": {
     "commander": "^12.1.0"

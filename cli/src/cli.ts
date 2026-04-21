@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { existsSync, statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,6 +19,16 @@ function packageRoot(): string {
   const here = dirname(fileURLToPath(import.meta.url));
   // dist/cli.js → package root is one up from dist/
   return resolve(here, "..");
+}
+
+// In a published tarball, scaffold assets live under <pkg>/assets/ (produced by
+// `npm run bundle`). In local dev (built dist/ inside the repo, no bundle run),
+// fall back to the repo root so `forge init` still works without publishing.
+function assetsRoot(): string {
+  const pkg = packageRoot();
+  const bundled = resolve(pkg, "assets");
+  if (existsSync(bundled) && statSync(bundled).isDirectory()) return bundled;
+  return resolve(pkg, "..");
 }
 
 function writeLine(stream: NodeJS.WritableStream): (text: string) => void {
@@ -60,7 +71,7 @@ export async function runCli(io: CliIo): Promise<number> {
     )
     .option("--force", "overwrite existing framework files", false)
     .action(async (opts: { target: string; source?: string; force: boolean }) => {
-      const source = opts.source ?? packageRoot();
+      const source = opts.source ?? assetsRoot();
       const result = await initCommand({
         sourceDir: source,
         targetDir: opts.target,

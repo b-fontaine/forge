@@ -1,11 +1,15 @@
 import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-const CLI_ENTRY = resolve(__dirname, "..", "..", "dist", "index.js");
-const REPO_ROOT = resolve(__dirname, "..", "..", "..");
+const CLI_ROOT = resolve(__dirname, "..", "..");
+const CLI_ENTRY = resolve(CLI_ROOT, "dist", "index.js");
+const REPO_ROOT = resolve(CLI_ROOT, "..");
+const ASSETS_DIR = resolve(CLI_ROOT, "assets");
+const BUNDLE_SCRIPT = resolve(CLI_ROOT, "scripts", "bundle-assets.mjs");
 
 function run(args: string[], cwd?: string): { stdout: string; stderr: string; status: number } {
   const r = spawnSync(process.execPath, [CLI_ENTRY, ...args], {
@@ -58,5 +62,57 @@ describe("@sdd-forge/cli (e2e — requires build)", () => {
     } finally {
       await rm(target, { recursive: true, force: true });
     }
+  });
+
+  describe("published-tarball layout (bundled assets/)", () => {
+    beforeAll(() => {
+      // Simulate `npm publish` preparation: run the same bundle step prepack
+      // would run. Required so `forge init` without --source has something to
+      // copy from. Fails loudly if the bundle script is broken.
+      const r = spawnSync(process.execPath, [BUNDLE_SCRIPT], {
+        cwd: CLI_ROOT,
+        encoding: "utf8",
+      });
+      if (r.status !== 0) {
+        throw new Error(
+          `bundle-assets.mjs failed (status=${r.status}):\n${r.stderr}`,
+        );
+      }
+      if (!existsSync(ASSETS_DIR)) {
+        throw new Error(`expected ${ASSETS_DIR} to exist after bundling`);
+      }
+    });
+
+    it("`forge init --target <tmp>` (no --source) scaffolds from bundled assets", async () => {
+      const target = await mkdtemp(join(tmpdir(), "forge-e2e-bundle-"));
+      try {
+        const r = run(["init", "--target", target]);
+        expect(r.status, `stderr:\n${r.stderr}`).toBe(0);
+
+        // Key artifacts that MUST land in a freshly-init'd project.
+        for (const rel of [
+          ".forge/constitution.md",
+          ".claude/settings.json",
+          "bin/forge-install.sh",
+          ".mcp.json",
+          "LICENSE",
+          "NOTICE",
+        ]) {
+          expect(
+            existsSync(join(target, rel)),
+            `expected ${rel} to be scaffolded`,
+          ).toBe(true);
+        }
+
+        // The CLI package itself must never be scaffolded into targets.
+        expect(existsSync(join(target, "cli"))).toBe(false);
+        // Private Claude Code config must never leak.
+        expect(existsSync(join(target, ".claude/settings.local.json"))).toBe(
+          false,
+        );
+      } finally {
+        await rm(target, { recursive: true, force: true });
+      }
+    });
   });
 });

@@ -49,19 +49,22 @@ forge version
 
 ```bash
 npm install
-npm test        # vitest unit + integration + e2e (requires `npm run build`)
-npm run build
-npm run lint    # tsc --noEmit
+npm run build       # tsc → dist/
+npm run bundle      # dist/ + copies repo assets into assets/ (for `forge init`)
+npm test            # vitest unit + integration + e2e (the e2e suite calls bundle)
+npm run lint        # tsc --noEmit
 ```
 
 The package layout follows Clean Architecture:
 
-- `src/domain/` — pure functions, zero I/O (`parseVersion`, `scaffoldPlan`)
+- `src/domain/` — pure functions, zero I/O (`parseVersion`, `scaffoldPlan`, `bundlePlan`)
 - `src/commands/` — command handlers that take injected dependencies
 - `src/cli.ts`, `src/index.ts` — commander wiring + process entry
+- `scripts/bundle-assets.mjs` — copies `.forge/`, `.claude/`, `bin/`, `docs/`, and root artifacts from the repo into `assets/`, filtered by `bundlePlan`
+- `assets/` — **generated**, not committed. Produced by `npm run bundle`; embedded in the published tarball via `files` and `prepack`. `forge init` reads from it at runtime
 - `test/domain/` — pure-function tests
 - `test/commands/` — unit + integration tests with tmpdir fixtures
-- `test/e2e/` — spawns the built binary
+- `test/e2e/` — spawns the built binary, including a suite that simulates the published layout (`assets/` populated, no `--source`)
 
 Every feature was driven by a failing test first (RED → GREEN → REFACTOR).
 
