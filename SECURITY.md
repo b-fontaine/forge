@@ -19,7 +19,7 @@ lines as supported for security fixes.
 
 In scope:
 
-- The Forge CLI (`@forge/cli`) and installer shell script
+- The Forge CLI (`@sdd-forge/cli`) and installer shell script
   (`bin/forge-install.sh`)
 - The deterministic scripts in `.forge/scripts/` (`verify.sh`,
   `constitution-linter.sh`) and the official Docker image

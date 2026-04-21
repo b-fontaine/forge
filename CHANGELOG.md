@@ -47,7 +47,7 @@ the minimum governance paperwork required for open contribution.
 - `.forge/templates/product/tech-stack.md` — missing template added so the
   installer can scaffold all three product artifacts (gap revealed by the
   A3 smoke test).
-- `cli/` — TypeScript CLI package `@forge/cli` with `init`, `verify`,
+- `cli/` — TypeScript CLI package `@sdd-forge/cli` with `init`, `verify`,
   and `version` commands. Node ≥ 20, strict TypeScript, commander parser,
   24 Vitest tests (domain + integration + e2e). Built via
   `npm run build`; binary installed as `forge` (A4).

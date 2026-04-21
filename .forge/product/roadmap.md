@@ -26,15 +26,15 @@ roadmap.
 
 ### MVP Items
 
-| Status | Item | Audit ID | Change ID |
-|--------|------|----------|-----------|
-| Complete | Open-source license decision (Apache 2.0) | A1 | N/A |
-| Complete | Rewrite `LICENSE`, add `NOTICE` with upstream attribution | A2 | N/A |
-| Complete | Fill `.forge/product/mission.md` with Forge's own mission | E1 | N/A |
-| Complete | Fill `.forge/product/roadmap.md` with public roadmap | E2 | N/A |
-| Complete | Remove `defaultMode: plan` from project `.claude/settings.json` | F7 | N/A |
-| In Progress | Idempotent shell installer (`forge init`) | A3 | N/A |
-| In Progress | `CODE_OF_CONDUCT.md`, `SECURITY.md`, `CHANGELOG.md`, issue/PR templates | D1-D4 | N/A |
+| Status      | Item                                                                    | Audit ID | Change ID |
+|-------------|-------------------------------------------------------------------------|----------|-----------|
+| Complete    | Open-source license decision (Apache 2.0)                               | A1       | N/A       |
+| Complete    | Rewrite `LICENSE`, add `NOTICE` with upstream attribution               | A2       | N/A       |
+| Complete    | Fill `.forge/product/mission.md` with Forge's own mission               | E1       | N/A       |
+| Complete    | Fill `.forge/product/roadmap.md` with public roadmap                    | E2       | N/A       |
+| Complete    | Remove `defaultMode: plan` from project `.claude/settings.json`         | F7       | N/A       |
+| In Progress | Idempotent shell installer (`forge init`)                               | A3       | N/A       |
+| In Progress | `CODE_OF_CONDUCT.md`, `SECURITY.md`, `CHANGELOG.md`, issue/PR templates | D1-D4    | N/A       |
 
 Change IDs remain `N/A` until `.forge/changes/` is populated retroactively
 (audit item E3, scheduled for Phase 3).
@@ -43,13 +43,13 @@ Change IDs remain `N/A` until `.forge/changes/` is populated retroactively
 
 - [x] Apache 2.0 `LICENSE` and `NOTICE` published at repository root.
 - [x] `.forge/product/mission.md` and `.forge/product/roadmap.md` filled
-      with real content (no HTML comment placeholders remaining).
+  with real content (no HTML comment placeholders remaining).
 - [x] `.claude/settings.json` no longer forces `defaultMode: plan` on all
-      contributors.
+  contributors.
 - [ ] `forge init` shell installer copies `.forge/`, `.claude/`, `.mcp.json`,
-      `CLAUDE.md` into a target project idempotently.
+  `CLAUDE.md` into a target project idempotently.
 - [ ] `CODE_OF_CONDUCT.md`, `SECURITY.md`, `CHANGELOG.md`, GitHub issue and
-      PR templates are present in the repository.
+  PR templates are present in the repository.
 
 Note: the **first public reference project** (audit item C1) is deliberately
 deferred to Phase 2, alongside the `full-stack-monorepo` archetype (B.1). An
@@ -66,20 +66,20 @@ start of **T3**.
 
 ### Phase 2 Items
 
-| Priority | Capability | Rationale |
-|----------|-----------|-----------|
-| High | **Archetype `full-stack-monorepo`** (Flutter + Rust + Infra) with CLAUDE.md scoping, protos as single source of truth via buf, multi-layer change workflow, and the `Janus` cross-layer orchestrator agent | Audit Module B.1 — flagship archetype, highest differentiation vs. alternatives |
-| High | **First public reference project** scaffolded via `/forge:init --archetype full-stack-monorepo`, with 3–5 archived changes in `.forge/archive/` demonstrating the full pipeline | Audit Module C.1 — coherent with the canonical archetype form (moved from T1 to avoid divergence) |
-| High | `/forge:init` wizard with archetype auto-detection (`--archetype` flag + heuristics based on existing `pubspec.yaml` / `Cargo.toml`) | Audit Module B.4.1 — collapses onboarding friction |
-| High | **Installer scaffolds `.forge/product/*` from `.forge/templates/product/*`**, never from the Forge repo's own `.forge/product/` (which is Forge-specific dog-fooding) | Audit Module A.3.0 — prevents target projects from inheriting Forge's own mission and causing silent agent drift |
-| High | Reference GitHub Actions workflow running `verify.sh` + `constitution-linter.sh` on every PR | Audit Module G.1 — extends the blocking gates to CI |
-| High | `forge upgrade` command: non-destructive merge of framework updates into a project | Audit Module A.7 — without it, every constitution bump becomes a manual chore |
-| Medium | Pre-commit hook package (`forge-hooks`) for local constitution linting | Audit Module G.2 |
-| Medium | npm and pipx packaging (`@forge/cli`, `forge-cli`) | Audit Modules A.4 — lower installer friction |
-| Medium | Docker image `forge/linter:latest` bundling `verify.sh` + `constitution-linter.sh` for CI | Audit Module A.5 |
-| Medium | Persistent `[NEEDS CLARIFICATION]` tracking per change (`open-questions.md`) | Audit Module F.1 — ambiguity protocol needs durable state for scale |
-| Medium | JSON Schema validating `.forge.yaml` per change, enforced by `verify.sh` | Audit Module F.2 |
-| Medium | `CHANGELOG.md` with Keep a Changelog format, governance model (`GOVERNANCE.md`) | Audit Modules D.3, D.5 |
+| Priority | Capability                                                                                                                                                                                                 | Rationale                                                                                                        |
+|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|
+| High     | **Archetype `full-stack-monorepo`** (Flutter + Rust + Infra) with CLAUDE.md scoping, protos as single source of truth via buf, multi-layer change workflow, and the `Janus` cross-layer orchestrator agent | Audit Module B.1 — flagship archetype, highest differentiation vs. alternatives                                  |
+| High     | **First public reference project** scaffolded via `/forge:init --archetype full-stack-monorepo`, with 3–5 archived changes in `.forge/archive/` demonstrating the full pipeline                            | Audit Module C.1 — coherent with the canonical archetype form (moved from T1 to avoid divergence)                |
+| High     | `/forge:init` wizard with archetype auto-detection (`--archetype` flag + heuristics based on existing `pubspec.yaml` / `Cargo.toml`)                                                                       | Audit Module B.4.1 — collapses onboarding friction                                                               |
+| High     | **Installer scaffolds `.forge/product/*` from `.forge/templates/product/*`**, never from the Forge repo's own `.forge/product/` (which is Forge-specific dog-fooding)                                      | Audit Module A.3.0 — prevents target projects from inheriting Forge's own mission and causing silent agent drift |
+| High     | Reference GitHub Actions workflow running `verify.sh` + `constitution-linter.sh` on every PR                                                                                                               | Audit Module G.1 — extends the blocking gates to CI                                                              |
+| High     | `forge upgrade` command: non-destructive merge of framework updates into a project                                                                                                                         | Audit Module A.7 — without it, every constitution bump becomes a manual chore                                    |
+| Medium   | Pre-commit hook package (`forge-hooks`) for local constitution linting                                                                                                                                     | Audit Module G.2                                                                                                 |
+| Medium   | npm and pipx packaging (`@sdd-forge/cli`, `forge-cli`)                                                                                                                                                         | Audit Modules A.4 — lower installer friction                                                                     |
+| Medium   | Docker image `forge/linter:latest` bundling `verify.sh` + `constitution-linter.sh` for CI                                                                                                                  | Audit Module A.5                                                                                                 |
+| Medium   | Persistent `[NEEDS CLARIFICATION]` tracking per change (`open-questions.md`)                                                                                                                               | Audit Module F.1 — ambiguity protocol needs durable state for scale                                              |
+| Medium   | JSON Schema validating `.forge.yaml` per change, enforced by `verify.sh`                                                                                                                                   | Audit Module F.2                                                                                                 |
+| Medium   | `CHANGELOG.md` with Keep a Changelog format, governance model (`GOVERNANCE.md`)                                                                                                                            | Audit Modules D.3, D.5                                                                                           |
 
 ## Phase 3 (Later — 2026-Q4 and beyond)
 
@@ -88,26 +88,26 @@ ensure MVP architecture does not foreclose on them.
 
 ### Phase 3 Ideas
 
-| Idea | Why It Matters | Why It's Later |
-|------|---------------|----------------|
-| Archetype `flutter-firebase` (frontend + BaaS) with security-rules harness and preview channels CI | Covers the largest segment of consumer-app teams without backend capacity | Audit Module B.2 — depends on B.1 scaffolder infrastructure being proven |
-| Archetype `rust-cli-tui` with `cargo-dist`, signed releases, man pages, completions, multi-channel distribution | Dev-tools audience: outsized influence-per-user | Audit Module B.3 — release-engineering surface is large and distinct |
-| `forge-cli` provider-neutral wrapper usable from Cursor, Aider, Continue | Unlocks audiences locked out of Claude Code | Audit Module G.6 — requires stable internal contracts first |
-| GitHub App "Forge Guardian" that posts constitutional-compliance status on PRs | Automates the gate without requiring contributor installation | Audit Module G.3 — depends on a stable `constitution-linter.sh` coverage (F.4) |
-| VSCode extension with FR-ID autocomplete and spec-delta previews | Reduces friction for contributors who never touch the CLI | Audit Module G.7 |
-| Linear / Jira plugin bidirectional sync | Bridges Forge artifacts to enterprise PM stacks | Audit Module G.4 |
-| Multi-level constitution (org + project + team amendments) | Blocks enterprise adoption until delivered | Audit Module H.1 |
-| Opt-in telemetry to understand which gates block most and which agents fire | Can't improve a framework whose usage is invisible | Audit Module H.3 — requires privacy review and opt-in UX |
-| Compliance reports mapping constitutional articles to OWASP ASVS / ISO 27001 / SOC 2 | Unlocks regulated-industry procurement | Audit Module H.4 |
-| Retroactive `.forge/changes/001-initial-scaffolding/` documenting the framework's own construction | Dog-fooding proof + pedagogy | Audit Module E.3 — low urgency vs. external adoption blockers |
+| Idea                                                                                                            | Why It Matters                                                            | Why It's Later                                                                 |
+|-----------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------|--------------------------------------------------------------------------------|
+| Archetype `flutter-firebase` (frontend + BaaS) with security-rules harness and preview channels CI              | Covers the largest segment of consumer-app teams without backend capacity | Audit Module B.2 — depends on B.1 scaffolder infrastructure being proven       |
+| Archetype `rust-cli-tui` with `cargo-dist`, signed releases, man pages, completions, multi-channel distribution | Dev-tools audience: outsized influence-per-user                           | Audit Module B.3 — release-engineering surface is large and distinct           |
+| `forge-cli` provider-neutral wrapper usable from Cursor, Aider, Continue                                        | Unlocks audiences locked out of Claude Code                               | Audit Module G.6 — requires stable internal contracts first                    |
+| GitHub App "Forge Guardian" that posts constitutional-compliance status on PRs                                  | Automates the gate without requiring contributor installation             | Audit Module G.3 — depends on a stable `constitution-linter.sh` coverage (F.4) |
+| VSCode extension with FR-ID autocomplete and spec-delta previews                                                | Reduces friction for contributors who never touch the CLI                 | Audit Module G.7                                                               |
+| Linear / Jira plugin bidirectional sync                                                                         | Bridges Forge artifacts to enterprise PM stacks                           | Audit Module G.4                                                               |
+| Multi-level constitution (org + project + team amendments)                                                      | Blocks enterprise adoption until delivered                                | Audit Module H.1                                                               |
+| Opt-in telemetry to understand which gates block most and which agents fire                                     | Can't improve a framework whose usage is invisible                        | Audit Module H.3 — requires privacy review and opt-in UX                       |
+| Compliance reports mapping constitutional articles to OWASP ASVS / ISO 27001 / SOC 2                            | Unlocks regulated-industry procurement                                    | Audit Module H.4                                                               |
+| Retroactive `.forge/changes/001-initial-scaffolding/` documenting the framework's own construction              | Dog-fooding proof + pedagogy                                              | Audit Module E.3 — low urgency vs. external adoption blockers                  |
 
 ## Key Milestones
 
-| Milestone | Target Date | Success Criteria | Status |
-|-----------|-------------|-----------------|--------|
-| Alpha: OSS release + Forge dog-foods itself | 2026-06-30 | Apache 2.0 LICENSE + NOTICE published; mission + roadmap filled; settings.json cleaned; installer shell script works on macOS + Linux | In Progress |
-| Beta: flagship archetype shipped | 2026-09-30 | `full-stack-monorepo` archetype scaffoldable via `/forge:init`; first public reference project; GitHub Actions reference workflow live | Not Started |
-| v1.0: Three archetypes + adoption | 2026-12-31 | `flutter-firebase` and `rust-cli-tui` archetypes delivered; 10+ projects using Forge publicly; constitution-linter covers all 11 articles | Not Started |
+| Milestone                                   | Target Date | Success Criteria                                                                                                                          | Status      |
+|---------------------------------------------|-------------|-------------------------------------------------------------------------------------------------------------------------------------------|-------------|
+| Alpha: OSS release + Forge dog-foods itself | 2026-06-30  | Apache 2.0 LICENSE + NOTICE published; mission + roadmap filled; settings.json cleaned; installer shell script works on macOS + Linux     | In Progress |
+| Beta: flagship archetype shipped            | 2026-09-30  | `full-stack-monorepo` archetype scaffoldable via `/forge:init`; first public reference project; GitHub Actions reference workflow live    | Not Started |
+| v1.0: Three archetypes + adoption           | 2026-12-31  | `flutter-firebase` and `rust-cli-tui` archetypes delivered; 10+ projects using Forge publicly; constitution-linter covers all 11 articles | Not Started |
 
 ## Deprioritized / Parked
 

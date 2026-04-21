@@ -20,7 +20,7 @@ function run(args: string[], cwd?: string): { stdout: string; stderr: string; st
   };
 }
 
-describe("@forge/cli (e2e — requires build)", () => {
+describe("@sdd-forge/cli (e2e — requires build)", () => {
   it("prints usage when invoked with --help", () => {
     const r = run(["--help"]);
     expect(r.status).toBe(0);

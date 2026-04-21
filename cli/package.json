@@ -1,5 +1,5 @@
 {
-  "name": "@forge/cli",
+  "name": "@sdd-forge/cli",
   "version": "0.2.0",
   "description": "Install, upgrade, and verify the Forge framework in a project.",
   "license": "Apache-2.0",

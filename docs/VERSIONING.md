@@ -80,7 +80,7 @@ a version `X.Y.Z`:
 1. A git tag `vX.Y.Z` on `main`.
 2. The `VERSION` file at HEAD of `main` contains `X.Y.Z`.
 3. A `## [X.Y.Z] — YYYY-MM-DD` entry in `CHANGELOG.md`.
-4. If the CLI changed: the `@forge/cli` npm tarball is published with the
+4. If the CLI changed: the `@sdd-forge/cli` npm tarball is published with the
    same version.
 5. If deterministic scripts changed: the `forge/linter:X.Y.Z` Docker image
    is pushed with the same tag, and `forge/linter:latest` points to it.

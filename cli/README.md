@@ -1,4 +1,4 @@
-# @forge/cli
+# @sdd-forge/cli
 
 Install, upgrade, and verify the [Forge framework](https://github.com/bfontaine/forge)
 in a project.
@@ -6,9 +6,9 @@ in a project.
 ## Install
 
 ```bash
-npm install -g @forge/cli
+npm install -g @sdd-forge/cli
 # or, project-scoped
-npx @forge/cli --help
+npx @sdd-forge/cli --help
 ```
 
 ## Commands
@@ -67,7 +67,7 @@ Every feature was driven by a failing test first (RED → GREEN → REFACTOR).
 
 ## Versioning
 
-`@forge/cli` tracks the Forge framework version lockstep. The `prebuild`
+`@sdd-forge/cli` tracks the Forge framework version lockstep. The `prebuild`
 script copies `VERSION` from the repo root into the package so that
 `forge version` stays accurate. See [../docs/VERSIONING.md](../docs/VERSIONING.md).
 

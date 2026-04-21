@@ -14,12 +14,12 @@ Pick whichever channel fits your workflow.
 curl -fsSL https://raw.githubusercontent.com/bfontaine/forge/main/bin/forge-install.sh | bash
 ```
 
-**B — `@forge/cli` (npm)**
+**B — `@sdd-forge/cli` (npm)**
 
 ```bash
-npx @forge/cli init
+npx @sdd-forge/cli init
 # or install globally
-npm install -g @forge/cli && forge init
+npm install -g @sdd-forge/cli && forge init
 ```
 
 **C — Docker (CI)**
