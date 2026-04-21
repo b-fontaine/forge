@@ -12,12 +12,118 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+Second delivery of the flagship archetype `full-stack-monorepo` — the
+scaffolder layer. Combined with the foundations delivery (below), a
+user can now run `/forge:init --archetype full-stack-monorepo <name>
+--org <reverse-dns>` and get a contract-conformant Flutter + Rust +
+Infra monorepo in ~3 seconds. The schema is promoted from `draft /
+0.1.0` to `candidate / 1.0.0-rc.1` per the promotion rule from
+`b1-foundations` ADR-004.
+
+### Added — `b1-scaffolder` (2026-04-22)
+
+- `.forge/templates/archetypes/full-stack-monorepo/` — complete
+  archetype template tree : root (CLAUDE.md, Taskfile.yml,
+  docker-compose.dev.yml, .env.example, .gitignore, .forge.yaml,
+  README.md), nested `CLAUDE.md` per layer (Flutter/Rust/infra scope
+  declarations), backend workspace (Cargo.toml + rust-toolchain),
+  proto seed (buf.yaml + buf.gen.yaml + example.proto), infra stubs
+  (kong.yml.example + distroless Dockerfile.backend.example),
+  `.gitkeep` markers — 25 templates, ~1400 lines.
+- `.forge/templates/archetypes/full-stack-monorepo/scaffold-plan.yaml`
+  — single source of truth consumed by the overlay renderer and the
+  init orchestrator. Declares the 7 official scaffolder invocations,
+  the 24 template entries (source → target, substitute yes/no), and
+  2 post-steps (write manifest, run validator).
+- `.forge/scripts/scaffolder/overlay.sh` — template overlay renderer.
+  Python 3 + PyYAML. Regex-validates `<project-name>` and
+  `<reverse-domain>` before any interpolation. Writes
+  `.forge/scaffold-manifest.yaml` with SHA of plan + SHA of template
+  set + scaffold date (honors `SOURCE_DATE_EPOCH` for reproducible
+  builds).
+- `.forge/scripts/scaffolder/init.sh` — end-to-end orchestrator. 7
+  non-negotiable steps : validate args + tool versions (flutter ≥ 3.24,
+  cargo ≥ 1.80, buf ≥ 1.30), copy framework assets, `flutter create
+  frontend`, overlay templates, `cargo new` for 5 crates (auto-joining
+  the pre-written workspace manifest), `buf lint` (WARN), run
+  `validate-foundations.sh`. Exit 7 with tree preserved if the
+  scaffolded target fails the contract.
+- `.forge/scripts/tests/scaffolder.test.sh` — three-level test harness.
+  L1 = plan shape (7 scenarios, hermetic). L2 = overlay rendering with
+  substitution/force/idempotence/manifest/regex checks (7 scenarios,
+  hermetic). L3 = E2E (7 scenarios, requires flutter + cargo + buf on
+  PATH — auto-skipped otherwise unless `--require-external-tools`).
+- `.forge/scripts/tests/_helpers.sh` — shared helpers
+  (`assert_eq`/`assert_contains`/`run_test`/`print_summary`/`mk_tmpdir_with_trap`)
+  sourced by both foundations and scaffolder harnesses. Eliminates
+  duplication.
+- `.forge/changes/b1-scaffolder/features/b1-scaffolder.feature` —
+  9 Gherkin scenarios (7 AC + NFR-005 idempotence + NFR-006 perf).
+
+### Changed
+
+- `.forge/schemas/full-stack-monorepo/schema.yaml` — promoted from
+  `draft / 0.1.0` to **`candidate / 1.0.0-rc.1`**. Promotion trigger
+  per `b1-foundations` ADR-004 : successful end-to-end scaffold via
+  b1-scaffolder (21/21 tests + manual smoke). Further promotion to
+  `stable / 1.0.0` requires 3 external adopters publicly scaffolded
+  (audit C.1).
+- `.claude/commands/forge/init.md` — new `## Archetype Branch`
+  section documenting `--archetype full-stack-monorepo` usage,
+  prerequisites, the 7-step sequence, flags, exit codes, and testing
+  matrix.
+- `.forge/scripts/verify.sh` — new conditional section
+  `## 6. Scaffolder (conditional)` invokes the scaffolder harness at
+  `--level 2` (hermetic) when the archetype template tree exists ;
+  aggregates PASS/FAIL into verify.sh totals.
+- `.forge/scripts/tests/foundations.test.sh` — now sources the shared
+  `_helpers.sh` (Phase 1.1 refactor of b1-scaffolder). Zero regression
+  (21/21 tests still green).
+- `.forge/specs/full-stack-monorepo.md` — 9 new FRs appended
+  (FR-GL-009..014 + FR-BE-001 + FR-FE-001 + FR-IN-001) + 4 new NFRs
+  (NFR-005..008). Archived-changes table and schema-evolution log
+  updated.
+
+### Fixed
+
+- `.forge/scripts/tests/scaffolder.test.sh` L3 revealed that the
+  scaffolded project was missing `docs/VERSIONING.md`, which caused
+  FR-GL-006 to FAIL on the scaffolded-target validator. Fix : `init.sh`
+  now copies the entire `docs/` directory from the source Forge repo
+  into the scaffolded project. Adopters replace the content with
+  project-specific docs over time.
+- Rogue `.omc/state/` artifact cleaned out of the archetype template
+  directory (sub-agent orchestration metadata that had leaked during
+  the Phase 3 parallel write).
+
+### Known carry-overs
+
+- **proto-contracts.md ↔ Buf STANDARD reconciliation** — the Forge
+  standard prescribes version-first directory layout (`v1/<svc>/`) ;
+  Buf STANDARD lint expects service-first (`<svc>/v1/`). `buf.yaml`
+  excludes `PACKAGE_DIRECTORY_MATCH` with documented justification
+  pointing to a future Forge change that reconciles the two.
+- **`_scaffolder_lib.sh` extraction** — deferred. Only 2 scaffolder
+  scripts today with minimal overlap. Re-evaluate when a third script
+  lands (likely in `b1-workflow` or `b1-delivery`).
+
+### Performance baseline
+
+Full scaffold of a demo project on macOS 14.5 / Flutter 3.41.7 /
+Cargo 1.91.0 / Buf 1.68.3 : **~3 seconds** (NFR-006 warm budget : 30s,
+hard ceiling : 60s). Validator performance unchanged : ~360 ms (NFR-002
+budget : 2000 ms).
+
+---
+
+### Added — `b1-foundations` (2026-04-21)
+
 First delivery of the flagship archetype `full-stack-monorepo` — the
 foundation layer (contract + validator + standards). Scaffolder, workflow,
 and delivery layers are tracked separately and will follow in
 `b1-scaffolder`, `b1-workflow`, `b1-delivery` respectively.
 
-### Added
+Template set :
 
 - `.forge/schemas/full-stack-monorepo/schema.yaml` — monorepo schema
   declaring the 3 canonical layers (`backend`/`frontend`/`infra`), their
@@ -50,7 +156,7 @@ and delivery layers are tracked separately and will follow in
   10 Gherkin scenarios materialising the spec acceptance criteria
   (satisfies Article II check in `constitution-linter.sh`).
 
-### Changed
+### Changed — `b1-foundations`
 
 - `.forge/standards/global/git-workflow.md` — new section
   `## Scoped Conventional Commits (monorepo-only)` defining the closed
@@ -71,14 +177,14 @@ and delivery layers are tracked separately and will follow in
   `FORGE_ROOT` is now overridable via environment variable (enables
   fixture-based testing).
 
-### Fixed
+### Fixed — `b1-foundations`
 
 - `.forge/standards/index.yml` line 82 — quoted `@injectable`,
   `@singleton`, `@lazySingleton` triggers. The unquoted `@` was a latent
   YAML invalidity (reserved character in flow context) that blocked any
   strict parser from reading the index.
 
-### Documentation
+### Documentation — `b1-foundations`
 
 - `.forge/product/roadmap.md` — Module B.1 marked **In Progress** with
   `b1-foundations` called out as the first delivery; remaining sub-changes

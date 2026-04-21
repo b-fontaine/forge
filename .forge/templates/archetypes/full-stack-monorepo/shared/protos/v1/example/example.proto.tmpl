@@ -1,0 +1,31 @@
+// <!-- Audit: B.1.4 (part of b1-scaffolder, seed example.proto) -->
+//
+// Seed proto for <project-name>. This file is intentionally minimal —
+// just enough to exercise `buf lint`, `buf breaking`, and both codegen
+// toolchains (tonic for Rust, protoc_plugin for Dart).
+//
+// DELETE or REPLACE this file when you add real services. The namespace
+// `example.v1` is reserved for seeds and kept project-agnostic so
+// regenerating the archetype does not leak project identity here.
+
+syntax = "proto3";
+
+package example.v1;
+
+// ExampleService — a trivial service with one RPC. Replace with a real
+// service when you model the first domain entity.
+service ExampleService {
+  // Ping returns a greeting for the given name. Used to sanity-check
+  // the full end-to-end gRPC stack after scaffold.
+  rpc Ping(PingRequest) returns (PingResponse);
+}
+
+message PingRequest {
+  // payload — a free-form string echoed back by the server.
+  string payload = 1;
+}
+
+message PingResponse {
+  // reply — the server's response, typically "pong: <payload>".
+  string reply = 1;
+}

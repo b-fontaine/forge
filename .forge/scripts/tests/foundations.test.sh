@@ -27,47 +27,12 @@ SCRIPTS_DIR="$(cd "$HARNESS_DIR/.." && pwd)"
 FORGE_ROOT_REAL="$(cd "$SCRIPTS_DIR/../.." && pwd)"
 VALIDATOR="$SCRIPTS_DIR/validate-foundations.sh"
 
-PASS=0
-FAIL=0
-FAIL_NAMES=()
+# ─── Shared helpers (assertions, run_test, counters) ────────────
+# Extracted to _helpers.sh in b1-scaffolder; sourced for reuse.
+# shellcheck source=./_helpers.sh
+source "$HARNESS_DIR/_helpers.sh"
 
-# ─── Assertion helpers ──────────────────────────────────────────
-
-assert_eq() {
-  # assert_eq <expected> <actual> [message]
-  local expected="$1"
-  local actual="$2"
-  local msg="${3:-assert_eq}"
-  if [ "$expected" != "$actual" ]; then
-    echo "    ${msg}: expected='${expected}' actual='${actual}'" >&2
-    return 1
-  fi
-}
-
-assert_contains() {
-  # assert_contains <haystack> <needle> [message]
-  local haystack="$1"
-  local needle="$2"
-  local msg="${3:-assert_contains}"
-  if ! printf '%s' "$haystack" | grep -Fq -- "$needle"; then
-    echo "    ${msg}: needle='${needle}' not in haystack" >&2
-    echo "    haystack preview: $(printf '%s' "$haystack" | head -5)" >&2
-    return 1
-  fi
-}
-
-assert_not_contains() {
-  # assert_not_contains <haystack> <needle> [message]
-  local haystack="$1"
-  local needle="$2"
-  local msg="${3:-assert_not_contains}"
-  if printf '%s' "$haystack" | grep -Fq -- "$needle"; then
-    echo "    ${msg}: needle='${needle}' unexpectedly found" >&2
-    return 1
-  fi
-}
-
-# ─── Fixture helpers ────────────────────────────────────────────
+# ─── Fixture helpers (foundations-specific) ─────────────────────
 
 mk_fixture_root() {
   # mk_fixture_root — creates a tmpdir with a minimal Forge skeleton
@@ -115,20 +80,6 @@ run_validator() {
   # returns the validator's exit code (via $?).
   local root="$1"
   FORGE_ROOT="$root" bash "$VALIDATOR" 2>&1
-}
-
-# ─── Test discovery + runner ────────────────────────────────────
-
-run_test() {
-  local name="$1"
-  if "$name"; then
-    PASS=$((PASS + 1))
-    echo "  ✓ ${name}"
-  else
-    FAIL=$((FAIL + 1))
-    FAIL_NAMES+=("$name")
-    echo "  ✗ ${name}"
-  fi
 }
 
 # ─── Tests: FR-GL-001 (schema full-stack-monorepo) ──────────────
@@ -468,16 +419,7 @@ main() {
   run_test test_idempotence
   run_test test_performance_under_two_seconds
 
-  echo ""
-  echo "── Summary ──"
-  echo "  Passed:  $PASS"
-  echo "  Failed:  $FAIL"
-  if [ "$FAIL" -gt 0 ]; then
-    echo "  Failures:"
-    for n in "${FAIL_NAMES[@]}"; do echo "    - $n"; done
-    return 1
-  fi
-  return 0
+  print_summary
 }
 
 main "$@"

@@ -1,0 +1,36 @@
+# <!-- Audit: B.1.2 (part of b1-scaffolder, backend Dockerfile example) -->
+# <!-- This is an EXAMPLE. Copy to infra/docker/Dockerfile.backend and edit for <project-name>. -->
+#
+# Multi-stage Dockerfile for the <project-name> Rust backend.
+# Article VIII.3 : production image MUST be distroless (or equivalent minimal runtime).
+# Article IX.2   : container MUST run as a non-root user.
+
+# ── Stage 1 : planner (dependency graph) ──
+FROM rust:1.82-slim-bookworm AS chef
+WORKDIR /app
+RUN cargo install cargo-chef --locked
+
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
+
+# ── Stage 2 : builder ──
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
+# Build dependencies — this layer is cached as long as Cargo.toml/Cargo.lock are unchanged.
+RUN cargo chef cook --release --recipe-path recipe.json
+# Build the actual source on top of the pre-built dependency layer.
+COPY . .
+RUN cargo build --release -p bin-server
+
+# ── Stage 3 : runtime (distroless) ──
+FROM gcr.io/distroless/cc-debian12:nonroot AS runtime
+WORKDIR /app
+COPY --from=builder /app/target/release/bin-server /app/bin-server
+
+# Non-root user supplied by the distroless base image (uid 65532).
+# No shell, no package manager, no build toolchain — minimal attack surface.
+USER nonroot:nonroot
+
+EXPOSE 8080
+ENTRYPOINT ["/app/bin-server"]

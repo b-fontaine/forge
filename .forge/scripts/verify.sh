@@ -239,6 +239,36 @@ else
   echo "  (validate-foundations skipped — not a monorepo)"
 fi
 
+# ─── 6. Scaffolder (conditional) ───────────────────────────────
+
+# Activates only when the archetype template tree exists (b1-scaffolder).
+# Always runs L1 (plan-shape) and L2 (overlay-rendering) — both are
+# hermetic and need no external tools. L3 (end-to-end) is NOT invoked
+# from verify.sh because it requires flutter + cargo + buf and takes
+# several seconds; run `bash .forge/scripts/tests/scaffolder.test.sh
+# --require-external-tools` explicitly on a tooled CI runner.
+
+if [ -d "$FORGE_ROOT/.forge/templates/archetypes/full-stack-monorepo" ]; then
+  section "Scaffolder (L1 + L2)"
+  scaffolder_harness="$FORGE_ROOT/.forge/scripts/tests/scaffolder.test.sh"
+  if [ -x "$scaffolder_harness" ] || [ -f "$scaffolder_harness" ]; then
+    while IFS= read -r line; do
+      case "$line" in
+        "  ✓ "*) pass "${line#  ✓ }" ;;
+        "  ✗ "*) fail "${line#  ✗ }" ;;
+        # Swallow everything else (harness banner, summary, etc.) so
+        # verify.sh owns the output format.
+      esac
+    done < <(bash "$scaffolder_harness" --level 2 2>&1 || true)
+  else
+    warn "scaffolder.test.sh missing or not executable — skipping"
+  fi
+else
+  echo ""
+  echo "── Scaffolder ──"
+  echo "  (scaffolder tests skipped — no archetype template tree)"
+fi
+
 # ─── Summary ───────────────────────────────────────────────────
 
 section "Summary"

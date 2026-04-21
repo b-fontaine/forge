@@ -1,0 +1,125 @@
+<!-- Audit: B.1.3 (part of b1-scaffolder, frontend nested CLAUDE.md) -->
+<!-- Scope: frontend/ subtree only — Flutter standards -->
+
+# CLAUDE.md — <project-name>/frontend
+
+## Scope
+
+This nested CLAUDE.md is automatically loaded by Claude Code when navigating any file under
+`frontend/`. It scopes which Forge standards apply and which agent orchestrator owns work in
+this subtree. It exists because the root `CLAUDE.md` carries cross-cutting policies only;
+Flutter-specific standards must be injected at this level, not globally. Standards from OTHER
+scopes — Rust, infra, Kong, Kubernetes — MUST NOT be loaded here. Loading them would pollute
+the context window with irrelevant rules and risk cross-layer enforcement bleeding into
+frontend decisions (e.g., Rust error-handling policy applied to Dart code, or Kong routing
+rules treated as applicable to BLoC state transitions). JIT loading by subdirectory is the
+mechanism by which this isolation is guaranteed; this file is its enforcement point.
+
+## Load These Standards (Flutter scope)
+
+The following standards MUST be injected when Claude Code operates under `frontend/`. Every
+`id` below exists in `.forge/standards/index.yml`.
+
+- **global/tdd-rules** : always active — Article I of the Constitution; RED-GREEN-REFACTOR
+  cycle is non-negotiable for every Dart unit, widget, and integration test.
+- **global/bdd-rules** : always active — Article II; every user-facing feature MUST have
+  Gherkin scenarios in `test/features/*.feature`, driven by `bdd_widget_test`.
+- **global/clean-architecture** : always active — Article VI.2; the three-layer boundary
+  (domain / data / presentation) governs every file placement decision inside `lib/`.
+- **flutter/architecture** : activate for any structural or module work — FSD (feature-sliced)
+  layout; `lib/` is organized as `core/`, `shared/`, `features/<name>/{data,domain,presentation}/`.
+- **flutter/state-management** : activate when adding or modifying state — BLoC/Cubit only;
+  no `setState` in feature code, no provider outside `shared/`.
+- **flutter/widget-patterns** : activate when writing or reviewing widgets — composition over
+  inheritance, `const` constructors, presentational/container split.
+- **flutter/testing** : activate for all test work — `flutter_test`, `bloc_test`, `mocktail`,
+  `bdd_widget_test`, and golden tests for custom widgets.
+- **flutter/dependency-injection** : activate when wiring dependencies — `get_it` + `injectable`;
+  no manual instantiation of repositories or use cases in presentation code.
+- **flutter/networking** : activate when touching API or data-source code — `dio` + `retrofit`;
+  `Either<Failure, T>` return types; no raw HTTP calls from presentation.
+- **flutter/performance** : activate for any list, image, or render-heavy work — jank budget,
+  isolate usage, `CachedNetworkImage`, `ListView.builder`.
+- **flutter/accessibility** : activate for any widget that surfaces to the user — WCAG AA,
+  `Semantics` wrappers, screen-reader labels, contrast ratios.
+- **flutter/internationalization** : activate when adding or modifying user-visible strings —
+  ARB files only; no hardcoded strings in Dart; `flutter_localizations` setup.
+- **flutter/responsive-design** : activate for layout work — `LayoutBuilder`/`MediaQuery`
+  breakpoints; separate mobile, tablet, and desktop layouts where required.
+- **flutter/opentelemetry** : activate when observability instrumentation lands (b1-delivery) —
+  `opentelemetry_dart`, span creation, OTLP export via Argus sub-agent.
+
+## DO NOT Load (explicit exclusions)
+
+The following standards MUST NOT be loaded when working under `frontend/`. If any agent or
+tool attempts to inject them from this subtree, surface it immediately as:
+`[NEEDS CLARIFICATION: why is <standard> being loaded under frontend/?]`
+
+- Any `rust/*` standard — backend concern; route to `backend/CLAUDE.md` and Vulcan.
+- Any `infra/*` standard — infra concern; route to `infra/CLAUDE.md` and Atlas.
+- `global/proto-contracts` — cross-layer contract concern; proto changes go through
+  `shared/protos/` and are owned by Hermes-API; the frontend only consumes generated stubs
+  under `lib/generated/protos/` and MUST NOT drive proto authoring.
+
+Loading any of the above from this file is a scope leak and a constitutional violation
+(Article V.2 — layer isolation is non-negotiable).
+
+## Primary Agent
+
+- **Hera** — Flutter Team Orchestrator. All feature work, architecture decisions, and quality
+  gates under `frontend/` are routed to Hera.
+- Hera dispatches to sub-specialists as needed:
+  - **Athena** — Flutter architecture (FSD layout, Clean Architecture compliance)
+  - **Spartan** — TDD/BDD (RED-GREEN-REFACTOR cycle, Gherkin scenario authoring)
+  - **Apollo** — UX/UI (widget composition, design system alignment)
+  - **Hephaestus** — Widget engineering (custom widgets, golden tests)
+  - **Hermes** — Performance (jank analysis, isolate work, profiler)
+  - **Iris** — Accessibility and i18n (WCAG, ARB files, `Semantics`)
+  - **Argus** — OpenTelemetry instrumentation (`opentelemetry_dart`, spans)
+  - **Prometheus** — AI feature integration (`flutter/ai-integration`)
+- Quality gate : **Nemesis** — Flutter quality guardian. No feature is complete until Nemesis
+  reports green on coverage, linting, and golden baselines.
+- For changes that touch more than one layer (proto contract, backend handler, Flutter screen),
+  defer to **Janus** via the root `CLAUDE.md` (b1-workflow). A `FR-GL-XXX` requirement MUST
+  be raised before work begins.
+
+## Architecture Non-Negotiables
+
+These rules derive from Article VI.2 of the Constitution, `flutter/architecture`, and
+`global/clean-architecture`. Violations block merge.
+
+- **FSD layout** : `lib/` is organized strictly as `core/`, `shared/`, and
+  `features/<feature-name>/{data,domain,presentation}/`. No flat top-level files outside
+  `core/` or `shared/`.
+- **Clean Architecture layers** : `domain/` is pure Dart — zero Flutter imports, zero
+  framework dependencies. `data/` contains repositories and data sources only. `presentation/`
+  contains BLoC/Cubit and widgets only.
+- **No Flutter import in `domain/`** — enforced by `verify.sh` and `constitution-linter.sh`.
+  A Flutter import in `domain/` is a hard RED in CI.
+- **No direct network or DB access from `presentation/`** — every external call MUST travel
+  through a use case → repository → data source chain. Direct `dio` or Firebase calls in a
+  BLoC or widget are prohibited.
+- **Generated proto stubs are read-only** : stubs live at `lib/generated/protos/` and MUST NOT
+  be hand-edited. Regenerate via `task proto`. Edits are silently overwritten on the next
+  generation pass and constitute a contract divergence risk.
+
+## Testing Requirements
+
+- **Overall coverage** : ≥ 80% (NFR from `global/tdd-rules`).
+- **Domain layer** : 100%. **Use cases** : 100%.
+- **Data layer** : ≥ 90%. **Presentation layer** : ≥ 80%.
+- Every user-facing feature MUST have BDD scenarios in `test/features/*.feature` (Gherkin,
+  executed by `bdd_widget_test`).
+- Custom widgets MUST have golden tests. Golden baselines are committed and reviewed on change.
+- Coverage is enforced by Nemesis before any feature branch is considered complete.
+
+## Cross-layer Concerns
+
+- **Proto contract change** : goes through `shared/protos/` under `global/proto-contracts`
+  rules. Raise a `FR-GL-XXX` requirement. Route to Hermes-API. Frontend consumes generated
+  stubs only after `task proto` regeneration.
+- **Backend change** : goes through root routing; Janus coordinates Hera (Flutter) and Vulcan
+  (Rust) under a shared `FR-GL-XXX` requirement. Do not open a frontend-only change for work
+  that also modifies a gRPC handler.
+- **Purely frontend change** : stays here under Hera. No cross-layer routing needed. FR-ID
+  prefix is `FR-FE-XXX`.

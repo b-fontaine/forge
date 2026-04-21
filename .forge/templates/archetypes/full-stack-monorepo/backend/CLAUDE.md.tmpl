@@ -1,0 +1,171 @@
+# CLAUDE.md — <project-name>/backend
+
+<!-- Audit: B.1.3 (part of b1-scaffolder, backend nested CLAUDE.md) -->
+<!-- Scope: backend/ subtree only — Rust standards -->
+
+---
+
+## Scope
+
+This file is loaded automatically by Claude Code when the working directory is
+**anywhere inside `backend/`**. It replaces the root `CLAUDE.md` for the
+purposes of standards injection and agent routing for all Rust work.
+
+Cross-cutting concerns (git workflow, commit conventions, root routing) remain
+governed by the root `CLAUDE.md`. When in doubt, the root CLAUDE.md takes
+precedence on cross-layer decisions; this file takes precedence on
+Rust-specific implementation choices.
+
+---
+
+## Load These Standards
+
+Inject the following standards whenever working inside `backend/`:
+
+### Always (global)
+
+| Standard ID             | Why                                                        |
+|-------------------------|------------------------------------------------------------|
+| `global/tdd-rules`      | RED → GREEN → REFACTOR is non-negotiable, always           |
+| `global/bdd-rules`      | Given/When/Then for every user-facing behavior             |
+| `global/clean-architecture` | Hexagonal layers map directly to clean-arch layers    |
+| `global/ddd-rules`      | Domain model lives in `crates/domain/` — DDD applies       |
+
+### Rust-specific
+
+| Standard ID              | Why                                                       |
+|--------------------------|-----------------------------------------------------------|
+| `rust/architecture`      | Hexagonal workspace, 5-crate layout (Article VII.3)       |
+| `rust/error-handling`    | `thiserror` in domain/application, `anyhow` in bin-server |
+| `rust/async-patterns`    | tokio runtime; `mpsc`, `broadcast`, `oneshot` channels    |
+| `rust/testing`           | cargo test, cucumber-rs BDD, proptest, mockall            |
+| `rust/grpc`              | tonic + prost; stubs consumed from `shared/protos/`       |
+| `rust/opentelemetry`     | tracing + OTLP export (wired at b1-delivery)              |
+
+---
+
+## DO NOT Load
+
+The following standards are **explicitly excluded** when inside `backend/`:
+
+- `flutter/*` — Flutter concerns belong in `frontend/`.
+- `infra/*` — Infrastructure concerns are owned by `infra/` and Atlas.
+- `global/proto-contracts` — Proto contract governance is a Hermes-API /
+  cross-layer concern; changes to `shared/protos/` must be routed through the
+  root CLAUDE.md and Janus.
+
+---
+
+## Primary Agent
+
+**Vulcan** is the Rust Team Orchestrator for this subtree.
+
+Vulcan dispatches to the following sub-specialists as needed:
+
+| Specialist   | Role                                                              |
+|--------------|-------------------------------------------------------------------|
+| **Ferris**   | Rust architecture — enforces hexagonal crate boundaries           |
+| **Centurion**| TDD / BDD — RED→GREEN loop, cucumber-rs step definitions          |
+| **Terminal** | TUI design (N/A for this backend — no terminal UI)                |
+| **Sentinel** | OpenTelemetry — tracing instrumentation, OTLP exporter setup      |
+| **Tribune**  | Quality gate — must pass before any PR is considered complete     |
+
+Quality gate command (run before marking any task done):
+```
+cd backend && bash ../.forge/scripts/verify.sh --scope backend
+```
+
+---
+
+## Architecture Non-Negotiables (Article VII.3)
+
+### 5-Crate Hexagonal Workspace
+
+```
+backend/
+├── Cargo.toml              ← workspace manifest (overlay, see ADR-002)
+├── rust-toolchain.toml     ← stable channel pin
+├── crates/
+│   ├── domain/             ← pure Rust: entities, value objects, domain events
+│   ├── application/        ← use cases, port traits, no infra imports
+│   ├── grpc-api/           ← tonic adapter; consumes shared/protos/ via tonic-build
+│   └── infrastructure/     ← sqlx (postgres), reqwest (HTTP), message broker clients
+└── bin-server/             ← main() wires DI; zero business logic
+```
+
+### Strict Dependency Rules
+
+- `crates/domain/` is **pure Rust** — zero dependency on tonic, sqlx, reqwest,
+  or any I/O crate. Domain errors use `thiserror`. No async in domain structs.
+- `crates/application/` depends on `crates/domain/` only. It defines **port
+  traits** (e.g. `UserRepository`, `EmailSender`) that infrastructure adapters
+  implement. No direct infra imports.
+- `crates/grpc-api/` is an adapter layer. It uses `tonic-build` (in
+  `build.rs`) to compile `.proto` files from `../shared/protos/` and maps
+  gRPC requests/responses to application types.
+- `crates/infrastructure/` provides adapter implementations of the ports
+  declared in `application/`. It may import sqlx, reqwest, lapin/rdkafka, etc.
+- `bin-server/` contains **only** `main()`, DI wiring, and server startup.
+  No business logic allowed here. `anyhow::Result` is acceptable at this layer.
+
+### No Panics in Production Code
+
+`unwrap()` and `panic!()` are **forbidden** in production code paths
+(`src/` files outside `#[cfg(test)]` blocks). This is enforced by
+`.forge/scripts/verify.sh`. Use `?` propagation and typed errors instead.
+
+Acceptable exceptions (must be justified in a code comment):
+- `const` expressions that can only fail at compile time.
+- Test code inside `#[cfg(test)]` or `tests/` directories.
+
+---
+
+## Testing Requirements
+
+| Scope                          | Coverage Target | Tools                           |
+|--------------------------------|-----------------|---------------------------------|
+| `crates/domain/`               | 100%            | cargo test, proptest            |
+| `crates/application/`          | 100%            | cargo test, mockall, proptest   |
+| `crates/grpc-api/`             | ≥ 80%           | cargo test, tonic test helpers  |
+| `crates/infrastructure/`       | ≥ 80%           | cargo test, testcontainers-rs   |
+| `bin-server/`                  | smoke tests only| cargo test (integration)        |
+| **Overall workspace**          | **≥ 80%**       | cargo-tarpaulin or cargo-llvm-cov |
+
+- **BDD scenarios**: Use `cucumber-rs` for user-facing behaviors. Feature
+  files live in `tests/features/`.
+- **Property tests**: Use `proptest` for domain invariants (value object
+  constraints, aggregate business rules).
+- **Port fakes**: Use `mockall` to generate mock implementations of port
+  traits for application-layer unit tests.
+
+---
+
+## Cross-Layer Concerns
+
+| Concern                    | Action required                                               |
+|----------------------------|---------------------------------------------------------------|
+| Proto changes              | Edit `shared/protos/` only — notify Hermes-API; regenerate stubs via `tonic-build` in `crates/grpc-api/build.rs` |
+| Frontend API changes       | Route through root CLAUDE.md + Janus (cross-layer agent)      |
+| Infra changes (DB schema)  | Coordinate with Atlas; migrations live in `infra/`            |
+| Observability config       | Sentinel handles OTLP exporter wiring in `bin-server/main.rs` |
+
+---
+
+## Quick-Reference Commands
+
+```bash
+# Run all backend tests
+cd backend && cargo test --workspace
+
+# Check coverage (requires cargo-tarpaulin)
+cd backend && cargo tarpaulin --workspace --out Lcov
+
+# Lint
+cd backend && cargo clippy --workspace --all-targets -- -D warnings
+
+# Format
+cd backend && cargo fmt --all
+
+# Build (release)
+cd backend && cargo build --release -p bin-server
+```
