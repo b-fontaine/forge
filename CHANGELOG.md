@@ -12,6 +12,78 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+First delivery of the flagship archetype `full-stack-monorepo` — the
+foundation layer (contract + validator + standards). Scaffolder, workflow,
+and delivery layers are tracked separately and will follow in
+`b1-scaffolder`, `b1-workflow`, `b1-delivery` respectively.
+
+### Added
+
+- `.forge/schemas/full-stack-monorepo/schema.yaml` — monorepo schema
+  declaring the 3 canonical layers (`backend`/`frontend`/`infra`), their
+  agent routing (Vulcan/Hera/Atlas), cross-layer orchestration via `Janus`
+  (agent to be delivered by `b1-workflow`), FR-ID prefixes, and the
+  `stage: draft → candidate → stable` bump policy. Stage `draft`,
+  `version: 0.1.0`.
+- `.forge/standards/global/monorepo-layout.md` — canonical directory tree,
+  isolation rules between layers, nested `CLAUDE.md` pattern for JIT
+  context scoping, FR-ID prefix convention (180 lines).
+- `.forge/standards/global/proto-contracts.md` — Protobuf as single
+  source of truth for cross-layer contracts: `shared/protos/` layout,
+  versioning via namespaced `v1/`/`v2/`, blocking `buf lint` +
+  `buf breaking` gates, stub generation via `tonic-build` (Rust) +
+  `protoc_plugin` (Dart) (169 lines).
+- `.forge/standards/infra/docker-compose.md` — local-dev orchestration
+  discipline: `fsm-` service prefix, single named network `fsm-dev`,
+  mandatory healthchecks, `.env.example` hygiene, ban on unsuffixed
+  `docker-compose.yml` (239 lines).
+- `.forge/scripts/validate-foundations.sh` — deterministic structural
+  validator for the archetype contract (Python 3 + PyYAML). Exits 0/1,
+  emits `PASS: FR-GL-XXX — msg` / `FAIL: FR-GL-XXX — msg` lines.
+  Runs in ~360 ms on the real repo (NFR-002 budget: 2000 ms).
+- `.forge/scripts/tests/foundations.test.sh` — shell test harness with
+  21 scenarios (unit checks + RED/GREEN meta-tests + idempotence +
+  performance).
+- `.forge/specs/full-stack-monorepo.md` — archived requirements (8 FRs +
+  4 NFRs) for the archetype, accumulating across future B.1 changes.
+- `.forge/changes/b1-foundations/features/b1-foundations.feature` —
+  10 Gherkin scenarios materialising the spec acceptance criteria
+  (satisfies Article II check in `constitution-linter.sh`).
+
+### Changed
+
+- `.forge/standards/global/git-workflow.md` — new section
+  `## Scoped Conventional Commits (monorepo-only)` defining the closed
+  scope list `{backend, frontend, infra, protos, forge, docs, ci}`,
+  activated only when the root `.forge.yaml` uses
+  `schema: full-stack-monorepo`. Other schemas keep free-form scopes.
+  +89 lines, non-breaking.
+- `docs/VERSIONING.md` — new section `## Monorepo Versioning Models`
+  documenting the two supported models (release-train vs per-package
+  via `release-please`), the decision matrix, and the Forge default
+  recommendation (release-train for teams ≤ 15 contributors). +101 lines.
+- `.forge/standards/index.yml` — three new entries for the monorepo
+  standards with new scopes `monorepo`, `protos`, `infra`.
+- `.forge/scripts/verify.sh` — new conditional section
+  `## 5. Monorepo Foundations` that invokes `validate-foundations.sh`
+  on monorepo projects and aggregates its PASS/FAIL counters; emits
+  `(validate-foundations skipped — not a monorepo)` on other projects.
+  `FORGE_ROOT` is now overridable via environment variable (enables
+  fixture-based testing).
+
+### Fixed
+
+- `.forge/standards/index.yml` line 82 — quoted `@injectable`,
+  `@singleton`, `@lazySingleton` triggers. The unquoted `@` was a latent
+  YAML invalidity (reserved character in flow context) that blocked any
+  strict parser from reading the index.
+
+### Documentation
+
+- `.forge/product/roadmap.md` — Module B.1 marked **In Progress** with
+  `b1-foundations` called out as the first delivery; remaining sub-changes
+  (`b1-scaffolder`, `b1-workflow`, `b1-delivery`) enumerated.
+
 ## [0.2.1] — 2026-04-21
 
 Packaging patch: the CLI is now actually usable when installed from npm.

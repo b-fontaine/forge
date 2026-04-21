@@ -1,0 +1,140 @@
+# Forge Schema — full-stack-monorepo
+# <!-- Audit: B.1.1 (part of b1-foundations) -->
+#
+# The flagship Forge archetype: Flutter frontend + Rust backend + Infra layer,
+# protos as single source of truth. Multi-layer changes are first-class: a
+# change can span backend+frontend+infra via a shared proposal, per-layer
+# specs and designs, and cross-layer orchestration by agent `Janus` (the
+# Janus agent itself is delivered by change `b1-workflow` — this schema
+# references it by name).
+#
+# Stage semantics (ADR-004):
+#   - draft       : schema in free evolution, bump minor for any structural change.
+#   - candidate   : triggered by successful archive of `b1-scaffolder`.
+#                   Bump to version 1.0.0-rc.1.
+#   - stable      : triggered after 3 external adopters publicly scaffolded
+#                   (audit module C.1). Bump to version >= 1.0.0 without prerelease.
+#
+# Any breaking change post-stable requires a major bump AND a Constitution
+# amendment if the invoked articles change.
+
+name: full-stack-monorepo
+version: "0.1.0"
+stage: draft
+description: >
+  Full-stack monorepo archetype: Flutter (frontend) + Rust (backend) +
+  Infrastructure, with protos as single source of truth for cross-layer
+  contracts. TDD + BDD enforced per layer; multi-layer changes routed by
+  the Janus orchestrator (delivered by b1-workflow).
+
+tdd_enforced: true
+bdd_required_for_user_facing: true
+coverage_threshold: 80
+
+# ─── Layers ─────────────────────────────────────────────────────
+#
+# Each layer declares:
+#   - id                : canonical name (backend / frontend / infra).
+#   - path              : repo-relative directory root for the layer.
+#   - fr_id_prefix      : FR-ID namespace used in specs.md for this layer.
+#   - primary_agent     : orchestrator invoked for per-layer work.
+#   - standards_scope   : values of `scope:` in .forge/standards/index.yml
+#                         that MUST be loaded when Claude Code navigates
+#                         this layer's subtree.
+#
+# The minimum set is backend / frontend / infra. Teams can extend (e.g.
+# add `shared` for cross-language libs) but the minimum three are required
+# by the validator (FR-GL-001).
+layers:
+  - id: backend
+    path: backend/
+    fr_id_prefix: FR-BE-
+    primary_agent: Vulcan
+    standards_scope: [rust, all]
+
+  - id: frontend
+    path: frontend/
+    fr_id_prefix: FR-FE-
+    primary_agent: Hera
+    standards_scope: [flutter, all]
+
+  - id: infra
+    path: infra/
+    fr_id_prefix: FR-IN-
+    primary_agent: Atlas
+    standards_scope: [infra, all]
+
+# Cross-layer FR-ID prefix for requirements that span multiple layers
+# (e.g. a user-facing feature whose contract is a proto, backend a gRPC
+# service, frontend a Flutter screen, infra a new Kong route).
+fr_id_prefix_cross_layer: FR-GL-
+
+# ─── Cross-layer orchestration ──────────────────────────────────
+#
+# When a change's .forge.yaml declares `layers: [backend, frontend]` (or
+# any combination of ≥ 2 layers), Forge routes the design and implement
+# phases to Janus instead of directly to Vulcan / Hera / Atlas. Janus
+# dispatches per-layer designs in parallel via TeamCreate and aggregates
+# the deliverables. Single-layer changes go directly to the primary_agent
+# of that layer.
+#
+# NOTE: the Janus agent (.claude/agents/janus.md) is NOT created by this
+# change. It is delivered by `b1-workflow`. This schema only declares
+# the intent so the agent-loader can wire up the routing as soon as
+# the agent file lands.
+cross_layer:
+  agent: Janus
+  triggers:
+    - layers_count_ge: 2
+  delivered_by: b1-workflow  # informational — tracked for audit
+
+# ─── Phases ─────────────────────────────────────────────────────
+#
+# Extends `default/schema.yaml` phases with monorepo-aware gates.
+# The design phase tolerates per-layer designs (design-backend.md,
+# design-frontend.md, design-infra.md) when `cross_layer` is triggered —
+# the exact file expectations are formalized in `b1-workflow`.
+phases:
+  - id: proposal
+    artifact: proposal.md
+    template: templates/proposal.md
+    gate: constitution_compliance
+    next: specs
+
+  - id: specs
+    artifact: specs.md
+    template: templates/spec.md
+    agent: Clio
+    gate: anti_hallucination_check
+    next: design
+
+  - id: design
+    # Single design.md for single-layer changes; per-layer designs
+    # (design-backend.md / design-frontend.md / design-infra.md) for
+    # cross-layer changes. Enforcement rules live in b1-workflow.
+    artifact: design.md
+    template: templates/design.md
+    agent: auto_route  # Janus if cross_layer else primary_agent of the single layer
+    gate: constitution_compliance
+    next: tasks
+
+  - id: tasks
+    artifact: tasks.md
+    template: templates/tasks.md
+    gate: per_task_constitution_check
+    next: implementation
+
+  - id: implementation
+    artifact: source_code
+    protocol: tdd_cycle  # RED → GREEN → REFACTOR
+    agent: auto_route    # Janus dispatches; each layer runs under its primary_agent
+    next: review
+
+  - id: review
+    agent: quality_guardians  # Nemesis + Tribune + Aegis; additional per-layer gates in b1-workflow
+    gate: quality_gate
+    next: archive
+
+  - id: archive
+    merges: specs.md into .forge/specs/
+    updates: .forge.yaml status to archived

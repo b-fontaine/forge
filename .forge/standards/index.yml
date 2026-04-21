@@ -79,7 +79,7 @@ standards:
 
   - id: flutter/dependency-injection
     path: standards/flutter/dependency-injection.md
-    triggers: [get_it, injectable, di, dependency injection, @injectable, @singleton, @lazySingleton, getIt, locator]
+    triggers: [get_it, injectable, di, dependency injection, "@injectable", "@singleton", "@lazySingleton", getIt, locator]
     scope: flutter
     priority: high
 
@@ -242,3 +242,22 @@ standards:
     triggers: [test strategy, test pyramid, mutation testing, flaky test, test data, contract testing, load testing, test environment, coverage analysis]
     scope: all
     priority: high
+
+  # Monorepo Standards (full-stack-monorepo archetype — b1-foundations)
+  - id: global/monorepo-layout
+    path: standards/global/monorepo-layout.md
+    triggers: [monorepo, full-stack, full-stack-monorepo, layers, multi-layer, nested CLAUDE.md, FR-BE-, FR-FE-, FR-IN-, FR-GL-]
+    scope: monorepo
+    priority: high
+
+  - id: global/proto-contracts
+    path: standards/global/proto-contracts.md
+    triggers: [proto, protos, buf, grpc, protobuf, tonic-build, protoc_plugin, buf.yaml, contract, breaking change, shared/protos]
+    scope: protos
+    priority: high
+
+  - id: infra/docker-compose
+    path: standards/infra/docker-compose.md
+    triggers: [docker-compose, docker-compose.dev.yml, local-dev, compose, fsm-, healthcheck, .env.example, fsm-dev]
+    scope: infra
+    priority: medium

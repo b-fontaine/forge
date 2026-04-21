@@ -85,6 +85,107 @@ a version `X.Y.Z`:
 5. If deterministic scripts changed: the `forge/linter:X.Y.Z` Docker image
    is pushed with the same tag, and `forge/linter:latest` points to it.
 
+## Monorepo Versioning Models
+
+This section applies to projects using the `full-stack-monorepo` archetype
+(schema `full-stack-monorepo`). For single-package projects, the root `VERSION`
+/ `CHANGELOG.md` pair from the "Release Artifacts" section above is the
+canonical approach. For multi-package monorepos (Flutter + Rust + Infra, with
+protos as cross-layer contracts), two versioning models compete. This section
+documents both, their trade-offs, and the Forge default.
+
+### Release-train
+
+The release-train model uses a single version number shared across all packages:
+
+- ONE `VERSION` file at the repo root.
+- ONE `CHANGELOG.md` at the repo root, using the Keep a Changelog format
+  already in use by Forge.
+- ALL packages (backend crates, frontend Flutter app, proto namespaces) ship
+  at the same version number — e.g., `v1.4.0` means `backend v1.4.0`,
+  `frontend v1.4.0`, `protos v1.4.0`.
+- Releases are coordinated: a release PR bumps `VERSION`, generates the
+  CHANGELOG entry, and tags `vX.Y.Z` on `main`.
+- Best for: small teams (≤ ~15 contributors), tightly coupled layers,
+  deployment in lockstep (e.g., backend + frontend always deployed together).
+- Tooling: minimal — Taskfile target `task release` + manual CHANGELOG edit,
+  or `release-plz` with root-only config.
+
+Sample root-level `CHANGELOG.md` entry spanning all layers:
+
+```markdown
+## [1.4.0] — 2026-04-21
+
+### Added
+- **backend**: gRPC endpoint for user preferences (crate `svc-preferences`)
+- **frontend**: Preferences screen wired to the new gRPC endpoint
+- **protos**: `UserPreferences` message and `PreferencesService` definition
+
+### Fixed
+- **backend**: Panic on empty JWT claim in auth middleware
+- **frontend**: Bottom nav bar overlap on notched devices
+```
+
+### Per-package via release-please
+
+The per-package model gives each package its own independent version and
+changelog:
+
+- One `VERSION` and one `CHANGELOG.md` per package (e.g., `backend/VERSION`,
+  `frontend/VERSION`, `shared/protos/VERSION`).
+- `release-please` automates version bumping and changelog generation per
+  package, based on Conventional Commit scopes (`feat(backend):`,
+  `fix(frontend):`, `chore(infra):`, `feat(protos):`).
+- release-please opens one "release PR" per package when changes accumulate;
+  merging the PR tags and releases that single package independently.
+- Best for: larger teams (≥ ~15 contributors), loosely coupled layers,
+  independent deployment cadence (e.g., backend shipping weekly, frontend
+  shipping bi-weekly, protos slow-moving).
+- Tooling: release-please GitHub Action + a `release-please-manifest.json` at
+  the repo root mapping each package path to its current version. Refer to the
+  release-please GitHub Action documentation for configuration details.
+
+Sample `release-please-manifest.json` shape:
+
+```json
+{
+  ".": "0.1.0",
+  "backend": "0.3.1",
+  "frontend": "0.2.0",
+  "shared/protos": "0.1.4"
+}
+```
+
+### Decision Matrix
+
+| Criterion | Release-train | Per-package |
+|---|---|---|
+| Team size | ≤ 15 contributors | ≥ 15 |
+| Layer coupling | tight (deploy together) | loose (independent cadence) |
+| Release cadence | lockstep | asynchronous per layer |
+| CHANGELOG authoring | centralized, manual | automated per package |
+| Contract (protos) evolution | folded into release train | separate cadence, safer for API stability |
+| Compliance (audit trail) | single release artifact | per-package artifacts, finer granularity |
+| Initial setup cost | near zero | moderate (release-please + manifest + per-package CHANGELOG bootstrap) |
+
+Teams can start with release-train and migrate to per-package later as the
+team grows or coupling decreases. The reverse migration — from per-package back
+to release-train — is painful (changelog history is fragmented, tags are
+incoherent), so defaulting to release-train for new projects preserves
+optionality without locking you in.
+
+### Forge Default Recommendation
+
+The Forge default is **release-train**. The scaffolder `/forge:init --archetype
+full-stack-monorepo` (delivered in `b1-scaffolder`) initializes a root
+`VERSION` and root `CHANGELOG.md` by default. Teams can opt into per-package
+by passing `--versioning per-package` to `/forge:init`, or by editing
+`.forge.yaml` post-init with `versioning_model: per-package` — either trigger
+causes the scaffolder to emit `release-please-manifest.json` and per-package
+`CHANGELOG.md` files instead. Post-init migration between models is documented
+in `docs/ARCHETYPES.md` and `docs/MIGRATION-PATHS.md` (both forthcoming from
+`b1-scaffolder` and Module B.5 respectively).
+
 ## Who Bumps the Version
 
 - **PATCH**: any maintainer may bump during a routine fix commit.

@@ -5,7 +5,7 @@
 
 set -uo pipefail
 
-FORGE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+FORGE_ROOT="${FORGE_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 CHANGES_DIR="$FORGE_ROOT/.forge/changes"
 PASS=0
 FAIL=0
@@ -207,6 +207,36 @@ if [ -f "$FORGE_ROOT/.forge/standards/index.yml" ]; then
   pass "Standards index exists"
 else
   fail "Standards index missing"
+fi
+
+# ─── 5. Monorepo Foundations (conditional) ─────────────────────
+
+# This section activates only for projects that have adopted the
+# full-stack-monorepo archetype (b1-foundations, audit module B.1).
+# Non-monorepo projects are unaffected: the validator is skipped.
+
+if [ -d "$FORGE_ROOT/.forge/schemas/full-stack-monorepo" ]; then
+  section "Monorepo Foundations"
+  foundations_script="$FORGE_ROOT/.forge/scripts/validate-foundations.sh"
+  if [ -x "$foundations_script" ] || [ -f "$foundations_script" ]; then
+    # Run the validator, capture its PASS/FAIL lines, and aggregate
+    # counters into the enclosing verify.sh totals.
+    while IFS= read -r line; do
+      case "$line" in
+        "PASS: "*) pass "${line#PASS: }" ;;
+        "FAIL: "*) fail "${line#FAIL: }" ;;
+        *) [ -n "$line" ] && echo "  $line" ;;
+      esac
+    done < <(FORGE_ROOT="$FORGE_ROOT" bash "$foundations_script" || true)
+  else
+    warn "validate-foundations.sh missing or not executable — skipping"
+  fi
+else
+  # Intentionally emit an informational message so non-monorepo users
+  # see explicit confirmation that the conditional check was skipped.
+  echo ""
+  echo "── Monorepo Foundations ──"
+  echo "  (validate-foundations skipped — not a monorepo)"
 fi
 
 # ─── Summary ───────────────────────────────────────────────────
