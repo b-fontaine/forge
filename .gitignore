@@ -1,0 +1,8 @@
+# OMC runtime state — per-session journals, never committed
+.omc/sessions/
+
+# Local Claude settings overrides
+.claude/settings.local.json
+
+# OS
+.DS_Store
