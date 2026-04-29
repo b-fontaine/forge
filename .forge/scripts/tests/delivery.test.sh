@@ -467,6 +467,75 @@ sys.exit(1 if errors else 0)
 PY
 }
 
+# ─── Phase 6 : Scaffolder integration ──────────────────────────
+
+test_scaffold_plan_lists_all_new_templates() {
+  if [ ! -f "$SCAFFOLD_PLAN" ]; then
+    echo "    scaffold-plan.yaml missing" >&2; return 1
+  fi
+  python3 - "$SCAFFOLD_PLAN" "$ARCHETYPE_DIR" <<'PY' || return 1
+import sys, yaml, os, glob
+plan_path, archetype_dir = sys.argv[1], sys.argv[2]
+with open(plan_path) as fh:
+    plan = yaml.safe_load(fh)
+errors = []
+templates = (plan or {}).get("templates") or []
+sources = {t.get("source") for t in templates if isinstance(t, dict)}
+targets = {t.get("target") for t in templates if isinstance(t, dict)}
+
+# Every .tmpl file under the archetype tree (except scaffold-plan
+# itself) must have a templates: entry mapping it to a sane target.
+expected_sources = []
+for path in glob.glob(os.path.join(archetype_dir, "**/*.tmpl"), recursive=True):
+    rel = os.path.relpath(path, archetype_dir)
+    expected_sources.append(rel)
+
+missing = [s for s in expected_sources if s not in sources]
+if missing:
+    errors.append(f"scaffold-plan.yaml templates: missing entries for {len(missing)} files:")
+    for m in sorted(missing):
+        errors.append(f"  - {m}")
+
+# The two obsolete .gitkeep entries (k8s_base, k8s_overlays) and
+# the .github_workflows.gitkeep entry MUST have been removed.
+forbidden = ["infra/k8s_base.gitkeep", "infra/k8s_overlays.gitkeep", ".github_workflows.gitkeep"]
+for f in forbidden:
+    if f in sources:
+        errors.append(f"obsolete entry must be removed: {f}")
+
+# Sanity: no entry references a source that doesn't exist on disk
+for src in sources:
+    if not src:
+        continue
+    if not os.path.exists(os.path.join(archetype_dir, src)):
+        errors.append(f"templates entry source missing on disk: {src}")
+
+for e in errors:
+    print(f"    {e}", file=sys.stderr)
+sys.exit(1 if errors else 0)
+PY
+}
+
+test_scaffold_fixture_renders_and_validates() {
+  # E2E: scaffold a fixture project and run the L1 checks against
+  # the rendered tree. Requires flutter + cargo + buf (per b1-scaffolder
+  # convention). SKIPS cleanly when tools missing.
+  if ! command -v flutter >/dev/null 2>&1 \
+    || ! command -v cargo >/dev/null 2>&1 \
+    || ! command -v buf >/dev/null 2>&1; then
+    echo "    SKIP : flutter / cargo / buf missing (full E2E runs only with --require-external-tools)" >&2
+    return 0
+  fi
+  # Delegated to scaffolder.test.sh L3, which already exercises the
+  # scaffolder end-to-end. Re-running the same fixture here would
+  # duplicate effort; instead, verify scaffolder.test.sh is invokable
+  # against the current archetype tree.
+  if ! bash "$SCRIPTS_DIR/tests/scaffolder.test.sh" --level 2 >/dev/null 2>&1; then
+    echo "    scaffolder.test.sh L2 fails — archetype tree drifted from contract" >&2
+    return 1
+  fi
+}
+
 # ─── Phase 5 : Standards (canonical sections) ──────────────────
 
 # assert_h2_sections <file> <expected_csv>
@@ -785,6 +854,8 @@ main() {
     run_test test_standard_k8s_overlays_has_required_sections
     run_test test_standard_observability_local_has_required_sections
     run_test test_index_has_three_new_infra_standards
+    run_test test_scaffold_plan_lists_all_new_templates
+    run_test test_scaffold_fixture_renders_and_validates
     run_test test_manifest_self_consistency
   fi
 

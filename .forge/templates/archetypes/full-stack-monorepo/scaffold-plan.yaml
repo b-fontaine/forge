@@ -90,6 +90,9 @@ templates:
   - source: frontend/lib_generated_protos.gitkeep
     target: frontend/lib/generated/protos/.gitkeep
     substitute: false
+  - source: frontend/.env.dev.tmpl
+    target: frontend/.env.dev
+    substitute: true
 
   # ── Backend (Cargo workspace — Cargo.toml is an explicit overlay, ADR-002) ──
   - source: backend/CLAUDE.md.tmpl
@@ -101,6 +104,9 @@ templates:
   - source: backend/rust-toolchain.toml.tmpl
     target: backend/rust-toolchain.toml
     substitute: false
+  - source: backend/.env.dev.tmpl
+    target: backend/.env.dev
+    substitute: true
 
   # ── Infra ───────────────────────────────────────────────────────
   - source: infra/CLAUDE.md.tmpl
@@ -112,11 +118,45 @@ templates:
   - source: infra/docker/Dockerfile.backend.example.tmpl
     target: infra/docker/Dockerfile.backend.example
     substitute: false
-  - source: infra/k8s_base.gitkeep
-    target: infra/k8s/base/.gitkeep
+
+  # ── Infra k8s base + overlays (b1-delivery, FR-IN-006) ──────────
+  - source: infra/k8s/base/kustomization.yaml.tmpl
+    target: infra/k8s/base/kustomization.yaml
+    substitute: true
+  - source: infra/k8s/base/deployment.yaml.tmpl
+    target: infra/k8s/base/deployment.yaml
+    substitute: true
+  - source: infra/k8s/base/service.yaml.tmpl
+    target: infra/k8s/base/service.yaml
+    substitute: true
+  - source: infra/k8s/base/serviceaccount.yaml.tmpl
+    target: infra/k8s/base/serviceaccount.yaml
+    substitute: true
+  - source: infra/k8s/base/ingress.yaml.tmpl
+    target: infra/k8s/base/ingress.yaml
+    substitute: true
+  - source: infra/k8s/base/README.md.tmpl
+    target: infra/k8s/base/README.md
+    substitute: true
+  - source: infra/k8s/overlays/dev/kustomization.yaml.tmpl
+    target: infra/k8s/overlays/dev/kustomization.yaml
+    substitute: true
+  - source: infra/k8s/overlays/staging/kustomization.yaml.tmpl
+    target: infra/k8s/overlays/staging/kustomization.yaml
+    substitute: true
+  - source: infra/k8s/overlays/prod/kustomization.yaml.tmpl
+    target: infra/k8s/overlays/prod/kustomization.yaml
+    substitute: true
+  - source: infra/k8s/overlays/prod/hpa.yaml.tmpl
+    target: infra/k8s/overlays/prod/hpa.yaml
+    substitute: true
+
+  # ── Infra observability (b1-delivery, FR-IN-007 + FR-IN-008) ────
+  - source: infra/observability/otel-collector-config.yaml.tmpl
+    target: infra/observability/otel-collector-config.yaml
     substitute: false
-  - source: infra/k8s_overlays.gitkeep
-    target: infra/k8s/overlays/.gitkeep
+  - source: infra/observability/signoz-config.yaml.tmpl
+    target: infra/observability/signoz-config.yaml
     substitute: false
 
   # ── shared/protos ───────────────────────────────────────────────
@@ -130,10 +170,19 @@ templates:
     target: shared/protos/v1/example/example.proto
     substitute: false
 
-  # ── .github ─────────────────────────────────────────────────────
-  - source: .github_workflows.gitkeep
-    target: .github/workflows/.gitkeep
-    substitute: false
+  # ── .github reference workflows (b1-delivery, FR-IN-002..005) ───
+  - source: .github/workflows/forge-backend.yml.tmpl
+    target: .github/workflows/forge-backend.yml
+    substitute: true
+  - source: .github/workflows/forge-frontend.yml.tmpl
+    target: .github/workflows/forge-frontend.yml
+    substitute: true
+  - source: .github/workflows/forge-infra.yml.tmpl
+    target: .github/workflows/forge-infra.yml
+    substitute: true
+  - source: .github/workflows/forge-integration.yml.tmpl
+    target: .github/workflows/forge-integration.yml
+    substitute: true
 
 # ─── Post-scaffold steps (non-negotiable final actions) ──────────
 
