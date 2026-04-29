@@ -1,5 +1,5 @@
 name: b1-delivery
-status: planned
+status: implemented
 created: 2026-04-29
 schema: default
 constitution_version: "1.0.0"
@@ -20,5 +20,5 @@ timeline:
   specified: 2026-04-29
   designed: 2026-04-29
   planned: 2026-04-29
-  # implemented: <!-- auto-filled by /forge:implement -->
+  implemented: 2026-04-29
   # archived: <!-- auto-filled by /forge:archive -->
