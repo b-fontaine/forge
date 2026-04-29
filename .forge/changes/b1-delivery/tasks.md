@@ -29,28 +29,29 @@
 ## Phase 2: Reference CI workflows — TDD per FR
 
 ### 2.1 FR-IN-002 — `forge-backend.yml.tmpl`
-- [ ] RED: `test_workflow_backend_paths_filter_and_steps()` — parse YAML via `yq`, assert `dorny/paths-filter@v3` ref, `paths:` includes `backend/**` and `shared/protos/**`, step ordering (fmt → clippy → test → verify.sh → linter.sh), `concurrency.group` placeholder present, no `continue-on-error: true` anywhere [Story: FR-IN-002, ADR-002]
-- [ ] Verify RED — fails because placeholder file has no `jobs:` section [Story: FR-IN-002]
-- [ ] GREEN: write the full workflow template — checkout, paths-filter setup, conditional Rust toolchain via `dtolnay/rust-toolchain@stable`, cache step keyed on `Cargo.lock`, the 5 ordered steps, concurrency block with `<project-name>` placeholder [Story: FR-IN-002, ADR-002, ADR-011]
-- [ ] Verify GREEN — `delivery.test.sh` flips to PASS [Story: FR-IN-002]
+- [x] RED: `test_workflow_backend_paths_filter_and_steps()` — Python+PyYAML parser via `workflow_assertions` helper ; asserts `dorny/paths-filter@v3` ref, paths include `backend/**` and `shared/protos/**`, step ordering with comment-stripping (fmt → clippy → test → verify.sh → linter.sh), `concurrency.group` present, no `continue-on-error: true`, clippy `-D warnings`, cache key on `Cargo.lock` [Story: FR-IN-002, ADR-002]
+- [x] Verify RED — `yaml document empty` against placeholder [Story: FR-IN-002]
+- [x] GREEN: write the full workflow — `filter` job (dorny) + `build` job gated on `needs.filter.outputs.backend == 'true'`, dtolnay/rust-toolchain@stable with rustfmt+clippy components, actions/cache@v4 keyed on Cargo.lock, the 5 ordered steps, two-job split for clean skip semantics on out-of-scope PRs [Story: FR-IN-002, ADR-002, ADR-011]
+- [x] Verify GREEN — `test_workflow_backend_paths_filter_and_steps` flips to PASS [Story: FR-IN-002]
+- [x] FIX (TDD reveal) : ordering check stripped of `#`-comment lines so the header narrative no longer false-matches the step keywords [Story: FR-GL-025 harness robustness]
 
 ### 2.2 FR-IN-003 — `forge-frontend.yml.tmpl`
-- [ ] RED: `test_workflow_frontend_paths_filter_and_steps()` — same shape as 2.1 but for Flutter (paths include `frontend/**` + `shared/protos/**`, steps `pub get → dart format --set-exit-if-changed → flutter analyze --fatal-infos --fatal-warnings → flutter test → verify.sh → linter.sh`), `subosito/flutter-action` with `flutter-version-file: .flutter-version` [Story: FR-IN-003, ADR-002, ADR-011]
-- [ ] Verify RED [Story: FR-IN-003]
-- [ ] GREEN: write the full workflow template — pub cache step keyed on `pubspec.lock`, optional coverage upload guarded on `if: github.event_name == 'push' && github.ref == 'refs/heads/main'` [Story: FR-IN-003]
-- [ ] Verify GREEN [Story: FR-IN-003]
+- [x] RED: `test_workflow_frontend_paths_filter_and_steps()` — paths `frontend/**` + `shared/protos/**`, steps `pub get → dart format --set-exit-if-changed → flutter analyze --fatal-infos --fatal-warnings → flutter test → verify.sh → linter.sh`, `subosito/flutter-action` with `flutter-version-file: .flutter-version`, pub cache keyed on `pubspec.lock` [Story: FR-IN-003, ADR-002, ADR-011]
+- [x] Verify RED — `yaml document empty` [Story: FR-IN-003]
+- [x] GREEN: write workflow — `filter` job + `build` job gated on filter output, `subosito/flutter-action@v2` with `cache: true`, optional coverage artifact upload guarded on `push: main`, the 6 ordered steps [Story: FR-IN-003]
+- [x] Verify GREEN [Story: FR-IN-003]
 
 ### 2.3 FR-IN-004 — `forge-infra.yml.tmpl`
-- [ ] RED: `test_workflow_infra_paths_filter_and_steps()` — paths-filter on `infra/**`, three `kustomize build` steps (dev / staging / prod), `kubeconform --strict` per overlay, then verify.sh + linter.sh, kustomize tool setup pinned [Story: FR-IN-004, ADR-003]
-- [ ] Verify RED [Story: FR-IN-004]
-- [ ] GREEN: write the workflow template — `imranismail/setup-kustomize@v2` with explicit version, `yokawasa/action-setup-kube-tools` for kubeconform, three rendered overlays piped through kubeconform, exit non-zero on any failure [Story: FR-IN-004, ADR-003]
-- [ ] Verify GREEN [Story: FR-IN-004]
+- [x] RED: `test_workflow_infra_paths_filter_and_steps()` — paths-filter on `infra/**`, three `kustomize build` steps, `kubeconform --strict` per overlay, then verify.sh + linter.sh, three explicit `overlays/{dev,staging,prod}` references [Story: FR-IN-004, ADR-003]
+- [x] Verify RED [Story: FR-IN-004]
+- [x] GREEN: write workflow — `imranismail/setup-kustomize@v2` pinned to 5.4.2, kubeconform 0.6.7 installed via curl + tar (yannh upstream release), three `kustomize build → /tmp/<env>.yaml` + three `kubeconform --summary --strict <file>` validation steps, then Forge gates [Story: FR-IN-004, ADR-003, ADR-008]
+- [x] Verify GREEN — required iteration : test originally matched `kubeconform` substring inside `Install kubeconform` setup step (false ordering positive), tightened needle to `kubeconform --strict` (the actual validation invocation), aligned workflow on GNU double-dash convention [Story: FR-IN-004, FR-GL-025 harness robustness]
 
 ### 2.4 FR-IN-005 — `forge-integration.yml.tmpl`
-- [ ] RED: `test_workflow_integration_triggers_and_lifecycle()` — triggers MUST include `push: branches: [main]` AND `schedule: cron`, MUST exclude `pull_request`, MUST include `workflow_dispatch`. Steps assert `docker compose up -d --wait`, `cargo test --features integration`, Patrol step, teardown with `if: always()` [Story: FR-IN-005, ADR-012]
-- [ ] Verify RED [Story: FR-IN-005]
-- [ ] GREEN: write the integration workflow — checkout, docker compose up, wait for backend healthcheck, run cargo integration tests, run Patrol on `reactivecircus/android-emulator-runner@v2`, teardown step `if: always()` with `docker compose down -v`, optional issue-comment step gated on `secrets.FORGE_INTEGRATION_TRACKING_ISSUE` [Story: FR-IN-005, ADR-012]
-- [ ] Verify GREEN [Story: FR-IN-005]
+- [x] RED: `test_workflow_integration_triggers_and_lifecycle()` — triggers MUST include `push.branches: [main]` AND `schedule.cron`, MUST exclude `pull_request`, MUST include `workflow_dispatch`. Body asserts `up -d --wait`, `down -v`, `if: always()`, Patrol/android-emulator-runner step, `cargo test --features integration` [Story: FR-IN-005, ADR-012]
+- [x] Verify RED [Story: FR-IN-005]
+- [x] GREEN: write workflow — push:main + cron `0 3 * * *` + workflow_dispatch triggers, `cancel-in-progress: false` (don't kill nightlies), `timeout-minutes: 35` (NFR-014 envelope), checkout + Rust toolchain + cargo cache + `docker compose up -d --wait` + `cargo test --features integration` + Patrol via `reactivecircus/android-emulator-runner@v2` API 34 + opt-in failure issue comment gated on `secrets.FORGE_INTEGRATION_TRACKING_ISSUE` + always-on `docker compose down -v` teardown [Story: FR-IN-005, ADR-012, NFR-014]
+- [x] Verify GREEN [Story: FR-IN-005]
 
 ## Phase 3: Kustomize overlays — TDD
 

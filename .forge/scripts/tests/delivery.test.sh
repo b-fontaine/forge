@@ -132,7 +132,6 @@ decide_levels() {
 # entry here, and (b) that every entry resolves to a defined bash
 # function. The manifest is the harness's contract with the spec.
 #
-# MANIFEST: test_phase_1_red_baseline                         — bootstrap
 # MANIFEST: test_workflow_backend_paths_filter_and_steps      — FR-IN-002
 # MANIFEST: test_workflow_frontend_paths_filter_and_steps     — FR-IN-003
 # MANIFEST: test_workflow_infra_paths_filter_and_steps        — FR-IN-004
@@ -164,13 +163,181 @@ decide_levels() {
 
 # ─── Tests ──────────────────────────────────────────────────────
 
-test_phase_1_red_baseline() {
-  # Deliberate RED placeholder. Removed in Phase 2 task 2.1 GREEN
-  # (when the first real test_workflow_* lands and the harness has
-  # something genuine to assert). Until then this fail confirms the
-  # skeleton wires up `_helpers.sh` correctly.
-  echo "    Phase 1 RED baseline — replaced by Phase 2.1 implementation" >&2
-  return 1
+# ─── L1 helpers : YAML / workflow shape ────────────────────────
+
+# assert_yaml_loadable <path> — fails if PyYAML cannot parse the file.
+assert_yaml_loadable() {
+  local f="$1"
+  python3 -c "import sys, yaml; yaml.safe_load(open(sys.argv[1]))" "$f" 2>&1
+}
+
+# workflow_assertions <path> <expected_paths_csv> <expected_steps_csv>
+#   <path>                — workflow .tmpl file
+#   <expected_paths_csv>  — comma-separated path-filter entries that MUST appear
+#   <expected_steps_csv>  — comma-separated step needles that MUST appear in order
+# Returns 0 on PASS, 1 on FAIL. Emits one error per failing assertion to stderr.
+workflow_assertions() {
+  local f="$1"
+  local expected_paths="$2"
+  local expected_steps="$3"
+  python3 - "$f" "$expected_paths" "$expected_steps" <<'PY'
+import sys, yaml, re
+
+path, paths_csv, steps_csv = sys.argv[1], sys.argv[2], sys.argv[3]
+raw = open(path).read()
+# Strip leading `#` comment lines so step-ordering checks ignore the
+# header narrative and inspect actual workflow content only.
+non_comment_lines = [
+    ln for ln in raw.splitlines() if not ln.lstrip().startswith("#")
+]
+text = "\n".join(non_comment_lines)
+errors = []
+
+# 1. YAML loads
+try:
+    doc = yaml.safe_load(text)
+except Exception as e:
+    print(f"    yaml.safe_load failed: {e}", file=sys.stderr)
+    sys.exit(1)
+if doc is None:
+    print(f"    yaml document empty: {path}", file=sys.stderr)
+    sys.exit(1)
+
+# 2. on: triggers (YAML 1.1 quirk: bare `on` parses as True in safe_load)
+on = doc.get("on", doc.get(True, None))
+if not isinstance(on, dict):
+    errors.append(f"`on:` not a mapping: {type(on).__name__}")
+
+# 3. concurrency.group present
+conc = doc.get("concurrency")
+if not isinstance(conc, dict) or not conc.get("group"):
+    errors.append("missing `concurrency.group`")
+
+# 4. dorny/paths-filter@v3 referenced
+if not re.search(r"dorny/paths-filter@v3\b", text):
+    errors.append("missing `uses: dorny/paths-filter@v3`")
+
+# 5. Each expected path filter substring appears
+for p in paths_csv.split(","):
+    p = p.strip()
+    if p and p not in text:
+        errors.append(f"paths filter missing: `{p}`")
+
+# 6. Step ordering: each needle present, in the listed order
+positions = []
+for needle in [s.strip() for s in steps_csv.split(",") if s.strip()]:
+    pos = text.find(needle)
+    if pos < 0:
+        errors.append(f"missing step keyword: `{needle}`")
+    positions.append((needle, pos))
+present = [p for n, p in positions if p >= 0]
+if len(present) >= 2 and present != sorted(present):
+    errors.append(f"step ordering wrong: {[n for n,_ in positions]} → {[p for _,p in positions]}")
+
+# 7. No continue-on-error: true anywhere
+if re.search(r"continue-on-error\s*:\s*true\b", text):
+    errors.append("forbidden `continue-on-error: true`")
+
+if errors:
+    for e in errors:
+        print(f"    {e}", file=sys.stderr)
+    sys.exit(1)
+PY
+}
+
+# ─── Phase 2 : reference workflow tests ─────────────────────────
+
+test_workflow_backend_paths_filter_and_steps() {
+  local f="$WORKFLOWS_DIR/forge-backend.yml.tmpl"
+  if [ ! -f "$f" ]; then
+    echo "    file missing: $f" >&2
+    return 1
+  fi
+  workflow_assertions "$f" \
+    "backend/**,shared/protos/**" \
+    "cargo fmt,cargo clippy,cargo test,verify.sh,constitution-linter.sh" \
+    || return 1
+  # FR-IN-002 specific: clippy has -D warnings; cache step keyed on Cargo.lock
+  grep -q -- "-D warnings" "$f" || { echo "    clippy missing \`-D warnings\`" >&2; return 1; }
+  grep -q "Cargo.lock" "$f"     || { echo "    cache key missing \`Cargo.lock\`" >&2; return 1; }
+}
+
+test_workflow_frontend_paths_filter_and_steps() {
+  local f="$WORKFLOWS_DIR/forge-frontend.yml.tmpl"
+  if [ ! -f "$f" ]; then
+    echo "    file missing: $f" >&2
+    return 1
+  fi
+  workflow_assertions "$f" \
+    "frontend/**,shared/protos/**" \
+    "pub get,dart format,flutter analyze,flutter test,verify.sh,constitution-linter.sh" \
+    || return 1
+  # FR-IN-003 specific: subosito/flutter-action with flutter-version-file: .flutter-version
+  grep -q "subosito/flutter-action" "$f"     || { echo "    missing subosito/flutter-action" >&2; return 1; }
+  grep -q ".flutter-version" "$f"            || { echo "    missing .flutter-version reference" >&2; return 1; }
+  # --fatal-infos --fatal-warnings + --set-exit-if-changed
+  grep -q -- "--fatal-infos" "$f"            || { echo "    flutter analyze missing --fatal-infos" >&2; return 1; }
+  grep -q -- "--fatal-warnings" "$f"         || { echo "    flutter analyze missing --fatal-warnings" >&2; return 1; }
+  grep -q -- "--set-exit-if-changed" "$f"    || { echo "    dart format missing --set-exit-if-changed" >&2; return 1; }
+  grep -q "pubspec.lock" "$f"                || { echo "    cache key missing pubspec.lock" >&2; return 1; }
+}
+
+test_workflow_infra_paths_filter_and_steps() {
+  local f="$WORKFLOWS_DIR/forge-infra.yml.tmpl"
+  if [ ! -f "$f" ]; then
+    echo "    file missing: $f" >&2
+    return 1
+  fi
+  workflow_assertions "$f" \
+    "infra/**" \
+    "kustomize build,kubeconform --strict,verify.sh,constitution-linter.sh" \
+    || return 1
+  # FR-IN-004 specific: three overlays referenced explicitly
+  for env in dev staging prod; do
+    grep -q "overlays/$env" "$f" || { echo "    overlay reference missing: overlays/$env" >&2; return 1; }
+  done
+}
+
+test_workflow_integration_triggers_and_lifecycle() {
+  local f="$WORKFLOWS_DIR/forge-integration.yml.tmpl"
+  if [ ! -f "$f" ]; then
+    echo "    file missing: $f" >&2
+    return 1
+  fi
+  # FR-IN-005 specific: triggers MUST include push:main + schedule, MUST exclude pull_request
+  python3 - "$f" <<'PY' || return 1
+import sys, yaml
+text = open(sys.argv[1]).read()
+doc = yaml.safe_load(text)
+if doc is None:
+    print("    yaml empty", file=sys.stderr); sys.exit(1)
+on = doc.get("on", doc.get(True, None))
+if not isinstance(on, dict):
+    print(f"    `on:` not a mapping: {type(on).__name__}", file=sys.stderr); sys.exit(1)
+errors = []
+if "pull_request" in on:
+    errors.append("integration workflow MUST NOT trigger on pull_request")
+if "push" not in on:
+    errors.append("missing `on.push`")
+elif not isinstance(on["push"], dict) or "main" not in (on["push"].get("branches") or []):
+    errors.append("`on.push.branches` must include `main`")
+if "schedule" not in on:
+    errors.append("missing `on.schedule` (nightly cron)")
+if "workflow_dispatch" not in on:
+    errors.append("missing `on.workflow_dispatch`")
+for e in errors:
+    print(f"    {e}", file=sys.stderr)
+sys.exit(1 if errors else 0)
+PY
+  # Compose lifecycle: up --wait, down -v, if: always() teardown
+  grep -q -- "up -d --wait"  "$f" || { echo "    missing \`docker compose up -d --wait\`" >&2; return 1; }
+  grep -q -- "down -v"       "$f" || { echo "    missing \`docker compose down -v\`" >&2; return 1; }
+  grep -q "if: always()"     "$f" || { echo "    missing \`if: always()\` teardown guard" >&2; return 1; }
+  # Patrol step + cargo integration
+  grep -q "patrol\|reactivecircus/android-emulator-runner" "$f" \
+    || { echo "    missing Patrol / android-emulator-runner step" >&2; return 1; }
+  grep -q -- "--features integration" "$f" \
+    || { echo "    missing \`cargo test --features integration\`" >&2; return 1; }
 }
 
 test_manifest_self_consistency() {
@@ -200,7 +367,10 @@ main() {
 
   if [[ "$levels" == *"1"* ]]; then
     echo "── L1 : structural invariants ──"
-    run_test test_phase_1_red_baseline
+    run_test test_workflow_backend_paths_filter_and_steps
+    run_test test_workflow_frontend_paths_filter_and_steps
+    run_test test_workflow_infra_paths_filter_and_steps
+    run_test test_workflow_integration_triggers_and_lifecycle
     run_test test_manifest_self_consistency
   fi
 
