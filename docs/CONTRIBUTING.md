@@ -234,6 +234,42 @@ Avant de soumettre une contribution, exécuter les 5 scénarios de validation su
 
 ---
 
+## Continuous Integration
+
+<!-- Audit: G.1 (g1-forge-ci, FR-CI-011) -->
+
+Forge runs its own gates in CI on every PR and every push to `main`
+via `.github/workflows/forge-ci.yml`. The workflow declares five
+jobs (`harness`, `gates`, `cli`, `lint`, `summary`) and aggregates
+the four worker jobs into a single status check **`forge-ci /
+summary`** that branch protection requires.
+
+### Branch protection (maintainer-only setup)
+
+The `main` branch protection rule MUST require **`forge-ci /
+summary`** to pass before merge. This rule is **configured manually
+by the maintainer** via the GitHub UI — it is **not automated** by
+Forge (principle of least privilege ; the workflow does not have
+write access to repository settings).
+
+Setup steps (one-time, by repo owner) :
+
+1. Repository → **Settings** → **Branches** → **Branch protection
+   rules** → **Add rule** for `main`.
+2. Enable **Require status checks to pass before merging**.
+3. Search for and select **`forge-ci / summary`** as the required
+   check.
+4. Recommended additional protections (NOT mandates — chosen at
+   maintainer discretion) :
+   - **Require linear history** (clean audit trail).
+   - **Require signed commits** (supply-chain hygiene).
+   - **Dismiss stale pull request approvals when new commits are
+     pushed**.
+
+Full standard : `.forge/standards/global/forge-self-ci.md`.
+
+---
+
 ## Roadmap du Framework
 
 ### Court terme — Corrections et complétions
