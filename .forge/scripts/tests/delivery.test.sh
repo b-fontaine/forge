@@ -467,6 +467,164 @@ sys.exit(1 if errors else 0)
 PY
 }
 
+# ─── Phase 4 : Local observability stack ───────────────────────
+
+test_compose_otel_service_shape() {
+  if [ ! -f "$COMPOSE_TMPL" ]; then
+    echo "    docker-compose.dev.yml.tmpl missing" >&2; return 1
+  fi
+  python3 - "$COMPOSE_TMPL" <<'PY' || return 1
+import sys, yaml, re
+with open(sys.argv[1]) as fh:
+    doc = yaml.safe_load(fh)
+errors = []
+services = (doc or {}).get("services") or {}
+svc = services.get("fsm-otel-collector")
+if not svc:
+    errors.append("missing service: fsm-otel-collector")
+else:
+    img = str(svc.get("image", ""))
+    if not re.search(r"otel/opentelemetry-collector-contrib:\d+\.\d+\.\d+", img):
+        errors.append(f"image must be otel/opentelemetry-collector-contrib pinned to a specific version; got {img!r}")
+    if img.endswith(":latest") or "latest" in img.split(":")[-1]:
+        errors.append(f"image MUST NOT use :latest tag; got {img!r}")
+    port_str = " ".join(str(p) for p in (svc.get("ports") or []))
+    for p in ("4317", "4318", "13133"):
+        if p not in port_str:
+            errors.append(f"missing host-exposed port {p}")
+    nets = svc.get("networks") or []
+    if "fsm-dev" not in nets:
+        errors.append(f"must join fsm-dev network; got {nets}")
+    hc = svc.get("healthcheck") or {}
+    hc_test = " ".join(str(t) for t in (hc.get("test") or []))
+    if "13133" not in hc_test:
+        errors.append(f"healthcheck must probe :13133; got {hc_test!r}")
+    vols = svc.get("volumes") or []
+    if not any("otel-collector-config" in str(v) for v in vols):
+        errors.append("missing config mount referencing otel-collector-config.yaml")
+for e in errors:
+    print(f"    {e}", file=sys.stderr)
+sys.exit(1 if errors else 0)
+PY
+  # OTel collector config parses as valid YAML with required pipelines
+  python3 - "$OBS_DIR/otel-collector-config.yaml.tmpl" <<'PY' || return 1
+import sys, yaml
+with open(sys.argv[1]) as fh:
+    doc = yaml.safe_load(fh)
+errors = []
+if not isinstance(doc, dict):
+    errors.append("otel-collector-config.yaml.tmpl: not a YAML mapping")
+else:
+    for k in ("receivers", "processors", "exporters", "service"):
+        if k not in doc:
+            errors.append(f"missing top-level `{k}:`")
+    receivers = (doc.get("receivers") or {})
+    if "otlp" not in receivers:
+        errors.append("missing `receivers.otlp` (gRPC + HTTP)")
+    pipelines = ((doc.get("service") or {}).get("pipelines") or {})
+    for sig in ("traces", "metrics", "logs"):
+        if sig not in pipelines:
+            errors.append(f"missing `service.pipelines.{sig}` (Article IX three signals)")
+for e in errors:
+    print(f"    {e}", file=sys.stderr)
+sys.exit(1 if errors else 0)
+PY
+}
+
+test_compose_signoz_services_shape() {
+  python3 - "$COMPOSE_TMPL" <<'PY' || return 1
+import sys, yaml, re
+with open(sys.argv[1]) as fh:
+    doc = yaml.safe_load(fh)
+errors = []
+services = (doc or {}).get("services") or {}
+expected = ["fsm-signoz-clickhouse", "fsm-signoz-query", "fsm-signoz-frontend"]
+for name in expected:
+    if name not in services:
+        errors.append(f"missing service: {name}")
+        continue
+    svc = services[name]
+    img = str(svc.get("image", ""))
+    if not re.search(r":[\w.-]+$", img) or img.endswith(":latest"):
+        errors.append(f"{name}: image must be pinned, no :latest; got {img!r}")
+    if not svc.get("healthcheck"):
+        errors.append(f"{name}: missing healthcheck")
+    if svc.get("restart") != "unless-stopped":
+        errors.append(f"{name}: restart must be unless-stopped; got {svc.get('restart')!r}")
+# only signoz-frontend exposes 3301
+fe = services.get("fsm-signoz-frontend") or {}
+fe_ports = " ".join(str(p) for p in (fe.get("ports") or []))
+if "3301" not in fe_ports:
+    errors.append("fsm-signoz-frontend must expose :3301 to host")
+# clickhouse + query: no host-exposed ports
+for name in ["fsm-signoz-clickhouse", "fsm-signoz-query"]:
+    s = services.get(name) or {}
+    if s.get("ports"):
+        errors.append(f"{name}: ports must NOT be host-exposed (internal only)")
+# depends_on chain
+def dep_cond(svc, target):
+    deps = svc.get("depends_on")
+    if isinstance(deps, dict):
+        entry = deps.get(target)
+        if isinstance(entry, dict):
+            return entry.get("condition")
+    return None
+qs = services.get("fsm-signoz-query") or {}
+if dep_cond(qs, "fsm-signoz-clickhouse") != "service_healthy":
+    errors.append("fsm-signoz-query must depends_on fsm-signoz-clickhouse: service_healthy")
+if dep_cond(fe, "fsm-signoz-query") != "service_healthy":
+    errors.append("fsm-signoz-frontend must depends_on fsm-signoz-query: service_healthy")
+# named volume
+if "signoz-clickhouse-data" not in (doc.get("volumes") or {}):
+    errors.append("named volume `signoz-clickhouse-data` must be declared")
+for e in errors:
+    print(f"    {e}", file=sys.stderr)
+sys.exit(1 if errors else 0)
+PY
+}
+
+test_taskfile_has_observe_target() {
+  if [ ! -f "$TASKFILE_TMPL" ]; then
+    echo "    Taskfile.yml.tmpl missing" >&2; return 1
+  fi
+  python3 - "$TASKFILE_TMPL" <<'PY' || return 1
+import sys, yaml
+with open(sys.argv[1]) as fh:
+    doc = yaml.safe_load(fh)
+errors = []
+tasks = (doc or {}).get("tasks") or {}
+obs = tasks.get("observe")
+if not isinstance(obs, dict):
+    errors.append("missing task: `observe`")
+else:
+    cmds = obs.get("cmds") or []
+    text = "\n".join(str(c) for c in cmds)
+    if "3301" not in text:
+        errors.append("`observe` cmds must reference :3301")
+    if "open" not in text and "xdg-open" not in text:
+        errors.append("`observe` cmds must use `open` (macOS) or `xdg-open` (Linux)")
+for e in errors:
+    print(f"    {e}", file=sys.stderr)
+sys.exit(1 if errors else 0)
+PY
+}
+
+test_env_dev_files_export_otel_defaults() {
+  local be="$ARCHETYPE_DIR/backend/.env.dev.tmpl"
+  local fe="$ARCHETYPE_DIR/frontend/.env.dev.tmpl"
+  for f in "$be" "$fe"; do
+    if [ ! -f "$f" ]; then echo "    file missing: $f" >&2; return 1; fi
+    grep -qE '^OTEL_EXPORTER_OTLP_ENDPOINT=' "$f" || { echo "    $f: missing OTEL_EXPORTER_OTLP_ENDPOINT" >&2; return 1; }
+    grep -qE '^OTEL_SERVICE_NAME='            "$f" || { echo "    $f: missing OTEL_SERVICE_NAME" >&2; return 1; }
+    grep -qE '^OTEL_TRACES_EXPORTER=otlp'     "$f" || { echo "    $f: missing OTEL_TRACES_EXPORTER=otlp" >&2; return 1; }
+    grep -qE '^OTEL_METRICS_EXPORTER=otlp'    "$f" || { echo "    $f: missing OTEL_METRICS_EXPORTER=otlp" >&2; return 1; }
+    grep -qE '^OTEL_LOGS_EXPORTER=otlp'       "$f" || { echo "    $f: missing OTEL_LOGS_EXPORTER=otlp" >&2; return 1; }
+  done
+  # Per-layer protocol: backend gRPC, frontend HTTP/protobuf (Dart SDK constraint)
+  grep -q '^OTEL_EXPORTER_OTLP_PROTOCOL=grpc'          "$be" || { echo "    backend missing OTEL_EXPORTER_OTLP_PROTOCOL=grpc" >&2; return 1; }
+  grep -q '^OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf' "$fe" || { echo "    frontend missing OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf" >&2; return 1; }
+}
+
 test_overlay_diff_size_under_4kb() {
   # NFR-017 — only meaningful when kustomize is on PATH (L2). At L1
   # the .tmpl files are pre-substitution and a textual diff is not
@@ -565,6 +723,10 @@ main() {
     run_test test_overlay_staging_renders_and_validates
     run_test test_overlay_prod_renders_and_validates
     run_test test_overlay_diff_size_under_4kb
+    run_test test_compose_otel_service_shape
+    run_test test_compose_signoz_services_shape
+    run_test test_taskfile_has_observe_target
+    run_test test_env_dev_files_export_otel_defaults
     run_test test_manifest_self_consistency
   fi
 

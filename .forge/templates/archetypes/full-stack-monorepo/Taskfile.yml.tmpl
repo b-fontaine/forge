@@ -26,6 +26,22 @@ tasks:
     cmds:
       - docker-compose -f {{.COMPOSE_DEV}} down
 
+# ── Observability ────────────────────────────────────────────────────────────
+# <!-- Audit: B.1.14 (b1-delivery, FR-IN-008) -->
+
+  observe:
+    desc: "Open the local SigNoz UI (assumes `task dev` is up)"
+    cmds:
+      - |
+        if command -v open >/dev/null 2>&1; then
+          open http://localhost:3301
+        elif command -v xdg-open >/dev/null 2>&1; then
+          xdg-open http://localhost:3301
+        else
+          echo "Neither 'open' (macOS) nor 'xdg-open' (Linux) found. Browse to http://localhost:3301 manually."
+        fi
+    silent: true
+
 # ── Tests ────────────────────────────────────────────────────────────────────
 
   test:

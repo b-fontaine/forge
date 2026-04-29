@@ -88,28 +88,28 @@
 ## Phase 4: Local observability stack — TDD
 
 ### 4.1 FR-IN-007 — OTel collector service in compose
-- [ ] RED: `test_compose_otel_service_shape()` — `docker compose -f <fixture>/docker-compose.dev.yml config` parses ; `services.fsm-otel-collector` declares image pinned to specific minor (regex `:[0-9]+\.[0-9]+\.[0-9]+`), ports 4317 + 4318 + 13133, healthcheck on :13133, network `fsm-dev`, mounts `infra/observability/otel-collector-config.yaml` [Story: FR-IN-007, ADR-007, ADR-008]
-- [ ] Verify RED [Story: FR-IN-007]
-- [ ] GREEN: extend `docker-compose.dev.yml.tmpl` — add `fsm-otel-collector` service block ; write `infra/observability/otel-collector-config.yaml.tmpl` (OTLP gRPC + HTTP receivers, batch + memory_limiter processors, OTLP exporter to fsm-signoz-query, debug exporter, three pipelines traces/metrics/logs) [Story: FR-IN-007, ADR-005, ADR-006]
-- [ ] Verify GREEN [Story: FR-IN-007]
+- [x] RED: `test_compose_otel_service_shape()` — Python YAML inspector ; `services.fsm-otel-collector` with image pinned to `otel/opentelemetry-collector-contrib:<minor>`, ports 4317 + 4318 + 13133, healthcheck on :13133, network `fsm-dev`, config volume mount ; collector config has receivers/processors/exporters/service.pipelines.{traces,metrics,logs} [Story: FR-IN-007, ADR-007, ADR-008]
+- [x] Verify RED — `missing service: fsm-otel-collector` [Story: FR-IN-007]
+- [x] GREEN: append `fsm-otel-collector` block to compose (image `otel/opentelemetry-collector-contrib:0.96.0`, command/--config flag, 3 ports, config mount, fsm-dev network, healthcheck wget probe, depends_on fsm-signoz-query healthy) ; write `otel-collector-config.yaml.tmpl` (otlp receivers gRPC+HTTP, memory_limiter+batch processors, otlp/signoz exporter to fsm-signoz-query:4317 with insecure TLS, debug exporter, health_check extension on :13133, 3 pipelines traces/metrics/logs each routing through both exporters) [Story: FR-IN-007, ADR-005, ADR-006]
+- [x] Verify GREEN [Story: FR-IN-007]
 
 ### 4.2 FR-IN-008 — SigNoz services in compose
-- [ ] RED: `test_compose_signoz_services_shape()` — three services `fsm-signoz-clickhouse`, `fsm-signoz-query`, `fsm-signoz-frontend` ; only `fsm-signoz-frontend` exposes port 3301 to host ; healthchecks on every service ; `restart: unless-stopped` ; named volume `signoz-clickhouse-data` ; depends_on chain validated [Story: FR-IN-008, ADR-005, ADR-008]
-- [ ] Verify RED [Story: FR-IN-008]
-- [ ] GREEN: extend `docker-compose.dev.yml.tmpl` with the three SigNoz services + named volume ; write `infra/observability/signoz-config.yaml.tmpl` (query service config, auth disabled in dev with TODO marker for staging/prod) [Story: FR-IN-008]
-- [ ] Verify GREEN [Story: FR-IN-008]
+- [x] RED: `test_compose_signoz_services_shape()` — 3 services exist with pinned images (no `:latest`), all have healthcheck + `restart: unless-stopped`, only `fsm-signoz-frontend` host-exposes :3301, clickhouse + query are internal (no ports), depends_on chain `query→clickhouse:healthy` and `frontend→query:healthy`, named volume `signoz-clickhouse-data` [Story: FR-IN-008, ADR-005, ADR-008]
+- [x] Verify RED — 7 distinct errors reported [Story: FR-IN-008]
+- [x] GREEN: append 3 SigNoz services to compose (clickhouse 24.1.2-alpine, query-service 0.55.1, frontend 0.55.1, all internal except frontend on :3301), named volume `signoz-clickhouse-data` for persistence ; write `signoz-config.yaml.tmpl` (clickhouse driver, port 8080, log_level info, **auth disabled in dev** with explicit MUST-flip-on comment for staging/prod, retention 7d traces / 30d metrics / 7d logs) [Story: FR-IN-008]
+- [x] Verify GREEN [Story: FR-IN-008]
 
 ### 4.3 FR-IN-008 SHOULD — `task observe` target
-- [ ] RED: `test_taskfile_has_observe_target()` — Taskfile.yml.tmpl declares an `observe:` task whose command opens `http://localhost:3301` via `open` (macOS) or `xdg-open` (Linux) [Story: FR-IN-008]
-- [ ] Verify RED [Story: FR-IN-008]
-- [ ] GREEN: append the `observe` task to `Taskfile.yml.tmpl` with OS detection [Story: FR-IN-008]
-- [ ] Verify GREEN [Story: FR-IN-008]
+- [x] RED: `test_taskfile_has_observe_target()` — Taskfile parses, `tasks.observe.cmds` references :3301 + uses `open` or `xdg-open` [Story: FR-IN-008]
+- [x] Verify RED [Story: FR-IN-008]
+- [x] GREEN: insert `observe:` task block between `dev:down:` and Tests section. OS detection via `command -v` for `open` (macOS) → fallback `xdg-open` (Linux) → fallback echo with manual URL. `silent: true` to keep output clean [Story: FR-IN-008]
+- [x] Verify GREEN [Story: FR-IN-008]
 
 ### 4.4 FR-IN-009 — `.env.dev` files
-- [ ] RED: `test_env_dev_files_export_otel_defaults()` — both `backend/.env.dev.tmpl` and `frontend/.env.dev.tmpl` declare `OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317`, `OTEL_SERVICE_NAME=<project-name>-<layer>`, `OTEL_TRACES_EXPORTER=otlp`, `OTEL_METRICS_EXPORTER=otlp`, `OTEL_LOGS_EXPORTER=otlp` ; backend declares `OTEL_EXPORTER_OTLP_PROTOCOL=grpc` ; frontend declares `http/protobuf` ; both have header warning comment [Story: FR-IN-009]
-- [ ] Verify RED [Story: FR-IN-009]
-- [ ] GREEN: write both `.env.dev.tmpl` files with the required env vars and the header comment block [Story: FR-IN-009]
-- [ ] Verify GREEN [Story: FR-IN-009]
+- [x] RED: `test_env_dev_files_export_otel_defaults()` — both files declare 5 OTEL_* env vars common, plus per-layer `OTEL_EXPORTER_OTLP_PROTOCOL` (grpc for backend, http/protobuf for frontend) [Story: FR-IN-009]
+- [x] Verify RED — `missing OTEL_EXPORTER_OTLP_ENDPOINT` on backend [Story: FR-IN-009]
+- [x] GREEN: write both `.env.dev.tmpl` files (header comment + 7 OTEL_* exports, including `OTEL_RESOURCE_ATTRIBUTES=service.namespace=<project-name>,deployment.environment=dev`) ; backend uses :4317 gRPC, frontend uses :4318 HTTP/protobuf (Dart SDK constraint documented in header comment) [Story: FR-IN-009]
+- [x] Verify GREEN [Story: FR-IN-009]
 
 ## Phase 5: Standards (parallelizable [P])
 

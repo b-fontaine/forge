@@ -102,6 +102,94 @@ services:
       retries: 5
       start_period: 20s
 
+  # ---------------------------------------------------------------------------
+  # fsm-otel-collector — OpenTelemetry Collector (B.1.14, FR-IN-007)
+  # Standard: .forge/standards/infra/observability-local.md
+  # Receivers: OTLP gRPC :4317 + OTLP HTTP :4318. Health: :13133.
+  # ---------------------------------------------------------------------------
+  fsm-otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.96.0
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "13133:13133"
+    volumes:
+      - ./infra/observability/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
+    networks:
+      - fsm-dev
+    depends_on:
+      fsm-signoz-query:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider --quiet http://localhost:13133/ || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # fsm-signoz-clickhouse — SigNoz storage backend (B.1.14, FR-IN-008)
+  # Internal-only; no host port mapping.
+  # ---------------------------------------------------------------------------
+  fsm-signoz-clickhouse:
+    image: clickhouse/clickhouse-server:24.1.2-alpine
+    volumes:
+      - signoz-clickhouse-data:/var/lib/clickhouse
+    networks:
+      - fsm-dev
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider --quiet http://localhost:8123/ping || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # fsm-signoz-query — SigNoz query API (B.1.14, FR-IN-008)
+  # Internal-only; no host port mapping.
+  # ---------------------------------------------------------------------------
+  fsm-signoz-query:
+    image: signoz/query-service:0.55.1
+    command: ["--config=/etc/signoz/config.yaml"]
+    volumes:
+      - ./infra/observability/signoz-config.yaml:/etc/signoz/config.yaml:ro
+    networks:
+      - fsm-dev
+    depends_on:
+      fsm-signoz-clickhouse:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider --quiet http://localhost:8080/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # fsm-signoz-frontend — SigNoz UI (B.1.14, FR-IN-008)
+  # Only externally-exposed observability service. Browser entrypoint.
+  # ---------------------------------------------------------------------------
+  fsm-signoz-frontend:
+    image: signoz/frontend:0.55.1
+    ports:
+      - "3301:3301"
+    networks:
+      - fsm-dev
+    depends_on:
+      fsm-signoz-query:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider --quiet http://localhost:3301/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
 # =============================================================================
 # Networks — single named network; default bridge is FORBIDDEN per standard
 # =============================================================================
@@ -111,7 +199,8 @@ networks:
     name: fsm-dev
 
 # =============================================================================
-# Volumes — named volume for PostgreSQL data persistence
+# Volumes — named volumes for persistence between `task dev` invocations
 # =============================================================================
 volumes:
   fsm-db-data:
+  signoz-clickhouse-data:
