@@ -78,7 +78,7 @@ fr_id_prefix_cross_layer: FR-GL-
 # the deliverables. Single-layer changes go directly to the primary_agent
 # of that layer.
 #
-# NOTE: the Janus agent (.claude/agents/janus.md) is NOT created by this
+# NOTE: the Janus agent (.claude/agents/cross-layer-orchestrator.md) is NOT created by this
 # change. It is delivered by `b1-workflow`. This schema only declares
 # the intent so the agent-loader can wire up the routing as soon as
 # the agent file lands.

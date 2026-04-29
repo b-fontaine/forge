@@ -10,3 +10,62 @@ timeline:
   # planned: <!-- auto-filled by /forge:plan -->
   # implemented: <!-- auto-filled by /forge:implement -->
   # archived: <!-- auto-filled by /forge:archive -->
+
+# ─── Multi-layer workflow (OPTIONAL — monorepo only) ───────────────────────────
+# The three fields below are OPTIONAL and apply only when the root .forge.yaml
+# declares `schema: full-stack-monorepo`. When `layers:` is absent or contains
+# exactly 1 entry, the single-file `design.md` / `tasks.md` convention applies
+# unchanged (backwards compatible with all pre-b1-workflow changes). When
+# `layers:` has >= 2 entries, the `/forge:design`, `/forge:implement`, and
+# `/forge:review` dispatcher routes to the Janus cross-layer orchestrator (see
+# .claude/agents/cross-layer-orchestrator.md), and `designs_per_layer:` + `tasks_per_layer:` become
+# REQUIRED. See .forge/standards/global/multi-layer-workflow.md for the full
+# routing policy, per-layer deliverable conventions, and cross-layer contract
+# alignment rules.
+#
+# layers:           -- list<string> — layer ids, subset of the archetype
+#                      schema's layers[].id (valid values: backend, frontend,
+#                      infra). Absence or a single entry keeps single-layer
+#                      mode; two or more entries activate Janus orchestration.
+#   # - backend
+#   # - frontend
+#
+# designs_per_layer:  -- map<layer-id, filename> — maps each layer id to its
+#                        design document filename, relative to this change
+#                        directory. REQUIRED when layers has >= 2 entries.
+#                        Keys must be a subset of the ids declared in layers:.
+#   # backend: design-backend.md
+#   # frontend: design-frontend.md
+#
+# tasks_per_layer:    -- map<layer-id, filename> — same shape as
+#                        designs_per_layer. Maps each layer id to its tasks
+#                        file. REQUIRED when layers has >= 2 entries.
+#   # backend: tasks-backend.md
+#   # frontend: tasks-frontend.md
+#
+# ── Full example for a cross-layer change (backend + frontend) ──────────────
+#
+# name: user-auth-v2
+# status: proposed
+# created: 2026-05-01
+# schema: full-stack-monorepo
+# constitution_version: "1.0.0"
+# timeline:
+#   proposed: 2026-05-01
+#   # specified: ...
+#   # designed: ...
+#   # planned: ...
+#   # implemented: ...
+#   # archived: ...
+# layers:
+#   - backend
+#   - frontend
+# designs_per_layer:
+#   backend: design-backend.md
+#   frontend: design-frontend.md
+# tasks_per_layer:
+#   backend: tasks-backend.md
+#   frontend: tasks-frontend.md
+#
+# ── Reference ───────────────────────────────────────────────────────────────
+# Full specification: .forge/standards/global/multi-layer-workflow.md

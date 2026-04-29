@@ -261,3 +261,9 @@ standards:
     triggers: [docker-compose, docker-compose.dev.yml, local-dev, compose, fsm-, healthcheck, .env.example, fsm-dev]
     scope: infra
     priority: medium
+
+  - id: global/multi-layer-workflow
+    path: standards/global/multi-layer-workflow.md
+    triggers: [multi-layer, janus, cross-layer, "layers:", layers count, designs_per_layer, tasks_per_layer, cross-layer contract, multi-root verify]
+    scope: monorepo
+    priority: high

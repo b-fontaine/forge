@@ -18,6 +18,54 @@ fail() { FAIL=$((FAIL + 1)); echo "  ✗ $1"; }
 warn() { WARN=$((WARN + 1)); echo "  ⚠ $1"; }
 section() { echo ""; echo "── $1 ──"; }
 
+# ─── b1-workflow additions (multi-root scoping) ─────────────────
+
+# Layer-scoped pass/fail — prefix every line with [<layer>] so
+# aggregated output is unambiguous (design ADR-006).
+pass_scoped() { PASS=$((PASS + 1)); echo "  ✓ [$1] $2"; }
+fail_scoped() { FAIL=$((FAIL + 1)); echo "  ✗ [$1] $2"; }
+warn_scoped() { WARN=$((WARN + 1)); echo "  ⚠ [$1] $2"; }
+
+# detect_target_schema — reads <FORGE_ROOT>/.forge.yaml and echoes
+# its `schema:` field (empty string on missing/malformed). Used to
+# gate the multi-root sections (ADR-005).
+detect_target_schema() {
+  local yml="$FORGE_ROOT/.forge.yaml"
+  [ -f "$yml" ] || { echo ""; return; }
+  python3 - "$yml" <<'PY' 2>/dev/null || echo ""
+import sys, yaml
+try:
+    with open(sys.argv[1], 'r', encoding='utf-8') as f:
+        d = yaml.safe_load(f) or {}
+except yaml.YAMLError:
+    sys.exit(0)
+print(d.get('schema', ''))
+PY
+}
+
+# resolve_layer_path <layer-id> — echoes the path of a given layer
+# relative to FORGE_ROOT, resolved dynamically from the archetype
+# schema (ADR-004). Empty string if the schema or the layer is
+# absent. Rejects paths containing `..` or starting with `/`.
+resolve_layer_path() {
+  local layer_id="$1"
+  local schema="$FORGE_ROOT/.forge/schemas/full-stack-monorepo/schema.yaml"
+  [ -f "$schema" ] || { echo ""; return; }
+  python3 - "$schema" "$layer_id" <<'PY' 2>/dev/null || echo ""
+import sys, yaml, re
+with open(sys.argv[1], 'r', encoding='utf-8') as f:
+    d = yaml.safe_load(f) or {}
+for layer in d.get('layers', []) or []:
+    if isinstance(layer, dict) and layer.get('id') == sys.argv[2]:
+        p = layer.get('path') or ''
+        # Reject traversal + absolute paths (design Security).
+        if '..' in p or p.startswith('/') or re.search(r'\s', p):
+            sys.exit(0)
+        print(p.rstrip('/'))
+        sys.exit(0)
+PY
+}
+
 # ─── 1. Change Artifact Completeness ───────────────────────────
 
 section "Change Artifact Completeness"
@@ -267,6 +315,168 @@ else
   echo ""
   echo "── Scaffolder ──"
   echo "  (scaffolder tests skipped — no archetype template tree)"
+fi
+
+# ─── 7. Workflow harness dispatch — b1-workflow ────────────────
+
+# Mirror of Section 6's pattern: when the archetype template tree
+# exists, dispatch the workflow harness at --level 2 (hermetic) and
+# aggregate PASS/FAIL. Design ADR-009.
+
+if [ -d "$FORGE_ROOT/.forge/templates/archetypes/full-stack-monorepo" ]; then
+  section "Workflow (L1 + L2)"
+  workflow_harness="$FORGE_ROOT/.forge/scripts/tests/workflow.test.sh"
+  if [ -x "$workflow_harness" ] || [ -f "$workflow_harness" ]; then
+    while IFS= read -r line; do
+      case "$line" in
+        "  ✓ "*) pass "${line#  ✓ }" ;;
+        "  ✗ "*) fail "${line#  ✗ }" ;;
+        # Swallow harness banner/summary for clean output (same
+        # convention as Section 6).
+      esac
+    done < <(bash "$workflow_harness" --level 1,2 2>&1 || true)
+  else
+    warn "workflow.test.sh missing or not executable — skipping"
+  fi
+fi
+
+# ─── 8. Multi-root (scoped) — b1-workflow ──────────────────────
+
+# Activates only on monorepo projects (schema: full-stack-monorepo in
+# target's .forge.yaml). Preserves NFR-010 byte-for-byte backwards
+# compatibility for non-monorepo targets by SKIPPING cleanly — no new
+# output whatsoever.
+
+target_schema="$(detect_target_schema)"
+if [ "$target_schema" = "full-stack-monorepo" ]; then
+  backend_path="$(resolve_layer_path backend)"
+  frontend_path="$(resolve_layer_path frontend)"
+
+  # ── Backend (scoped) — FR-BE-002 ──
+  if [ -n "$backend_path" ] && [ -f "$FORGE_ROOT/$backend_path/Cargo.toml" ]; then
+    section "Backend (scoped)"
+    if command -v cargo &>/dev/null; then
+      if cargo clippy --all-features --manifest-path "$FORGE_ROOT/$backend_path/Cargo.toml" -- -D warnings 2>/dev/null; then
+        pass_scoped backend "cargo clippy: zero warnings"
+      else
+        fail_scoped backend "cargo clippy: warnings found"
+      fi
+      if cargo fmt --all --manifest-path "$FORGE_ROOT/$backend_path/Cargo.toml" --check 2>/dev/null; then
+        pass_scoped backend "cargo fmt: formatted"
+      else
+        fail_scoped backend "cargo fmt: unformatted files"
+      fi
+      if cargo test --all-features --manifest-path "$FORGE_ROOT/$backend_path/Cargo.toml" 2>/dev/null; then
+        pass_scoped backend "cargo test: all pass"
+      else
+        fail_scoped backend "cargo test: failures"
+      fi
+      # Domain purity scoped.
+      domain_src="$FORGE_ROOT/$backend_path/crates/domain/src"
+      if [ -d "$domain_src" ]; then
+        infra_imports=$(grep -rn 'sqlx\|reqwest\|hyper\|tonic' "$domain_src" 2>/dev/null | wc -l | tr -d ' ')
+        if [ "$infra_imports" = "0" ]; then
+          pass_scoped backend "domain purity: no infra imports in crates/domain/src/"
+        else
+          fail_scoped backend "domain purity: $infra_imports infra imports in crates/domain/src/"
+        fi
+      fi
+      # No unwrap / panic in production.
+      unwrap_count=$(grep -rn '\.unwrap()' "$FORGE_ROOT/$backend_path"/*/src/ 2>/dev/null | grep -v '#\[cfg(test)\]' | grep -v '// SAFETY:' | wc -l | tr -d ' ')
+      if [ "$unwrap_count" = "0" ]; then
+        pass_scoped backend "no unwrap() in production code"
+      else
+        fail_scoped backend "$unwrap_count unwrap() calls in production"
+      fi
+    else
+      warn_scoped backend "cargo not found — skipping"
+    fi
+  fi
+
+  # ── Frontend (scoped) — FR-FE-002 ──
+  if [ -n "$frontend_path" ] && [ -f "$FORGE_ROOT/$frontend_path/pubspec.yaml" ]; then
+    section "Frontend (scoped)"
+    if command -v flutter &>/dev/null; then
+      if flutter analyze --fatal-infos "$FORGE_ROOT/$frontend_path" 2>/dev/null; then
+        pass_scoped frontend "flutter analyze: zero issues"
+      else
+        fail_scoped frontend "flutter analyze: issues found"
+      fi
+      if dart format --output=none --set-exit-if-changed "$FORGE_ROOT/$frontend_path/lib" 2>/dev/null; then
+        pass_scoped frontend "dart format: formatted"
+      else
+        fail_scoped frontend "dart format: unformatted files"
+      fi
+      if flutter test --coverage "$FORGE_ROOT/$frontend_path" 2>/dev/null; then
+        pass_scoped frontend "flutter test: all pass"
+      else
+        fail_scoped frontend "flutter test: failures"
+      fi
+      # Layer boundary.
+      domain_flutter=$(grep -rl "import 'package:flutter" "$FORGE_ROOT/$frontend_path/lib/features"/*/domain/ 2>/dev/null | wc -l | tr -d ' ')
+      if [ "$domain_flutter" = "0" ]; then
+        pass_scoped frontend "layer boundary: zero Flutter imports in features/*/domain/"
+      else
+        fail_scoped frontend "layer boundary: $domain_flutter files import Flutter"
+      fi
+    else
+      warn_scoped frontend "flutter not found — skipping"
+    fi
+  fi
+
+  # ── Protos (scoped) — FR-GL-021 ──
+  protos_dir="$FORGE_ROOT/shared/protos"
+  if [ -d "$protos_dir" ]; then
+    section "Protos (scoped)"
+    if command -v buf &>/dev/null; then
+      if (cd "$protos_dir" && buf lint 2>/dev/null); then
+        pass_scoped protos "buf lint: clean"
+      else
+        fail_scoped protos "buf lint: warnings or errors"
+      fi
+      # buf breaking — WARN on seed commit (main may not yet exist
+      # with the scaffolded tree).
+      if (cd "$protos_dir" && buf breaking --against '.git#branch=main' 2>/dev/null); then
+        pass_scoped protos "buf breaking: no breaking changes vs main"
+      else
+        warn_scoped protos "buf breaking: skipped or non-fatal (seed commit?)"
+      fi
+    else
+      warn_scoped protos "buf not found — skipping"
+    fi
+  fi
+
+  # ── Infra (scoped) — FR-GL-021 ──
+  compose_dev="$FORGE_ROOT/docker-compose.dev.yml"
+  if [ -f "$compose_dev" ]; then
+    section "Infra (scoped)"
+    if command -v docker &>/dev/null && docker compose version &>/dev/null; then
+      if docker compose -f "$compose_dev" config &>/dev/null; then
+        pass_scoped infra "docker-compose.dev.yml: syntax OK"
+      else
+        fail_scoped infra "docker-compose.dev.yml: syntax error"
+      fi
+    else
+      warn_scoped infra "docker compose not found — skipping compose validation"
+    fi
+    # Kong + kustomization yaml parse (python3).
+    for kong_yml in "$FORGE_ROOT/infra/kong/"*.yml*; do
+      [ -f "$kong_yml" ] || continue
+      if python3 -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]))" "$kong_yml" 2>/dev/null; then
+        pass_scoped infra "$(basename "$kong_yml"): parses as YAML"
+      else
+        fail_scoped infra "$(basename "$kong_yml"): YAML parse error"
+      fi
+    done
+    for kust_yml in "$FORGE_ROOT/infra/k8s"/**/kustomization.yaml; do
+      [ -f "$kust_yml" ] || continue
+      if python3 -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]))" "$kust_yml" 2>/dev/null; then
+        pass_scoped infra "kustomization.yaml: parses"
+      else
+        fail_scoped infra "kustomization.yaml: parse error"
+      fi
+    done
+  fi
 fi
 
 # ─── Summary ───────────────────────────────────────────────────

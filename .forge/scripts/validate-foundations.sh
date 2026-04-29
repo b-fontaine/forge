@@ -255,6 +255,104 @@ PY
   fi
 }
 
+check_standard_multi_layer_workflow() {
+  check_sections "FR-GL-018" \
+    "$FORGE_ROOT/.forge/standards/global/multi-layer-workflow.md" \
+    "Routing Policy" \
+    ".forge.yaml Multi-Layer Schema" \
+    "Per-Layer Design Convention" \
+    "Per-Layer Tasks Convention" \
+    "Cross-Layer Contract Alignment" \
+    "Interdictions"
+}
+
+check_multi_layer_change_metadata() {
+  # Activates only on monorepo projects. On non-monorepo projects,
+  # `.forge/schemas/full-stack-monorepo/schema.yaml` is absent and this
+  # check skips silently via an N/A PASS (keeps FAIL count at 0).
+  if [ ! -f "$FORGE_ROOT/.forge/schemas/full-stack-monorepo/schema.yaml" ]; then
+    pass_fr "FR-GL-017" "skipped (not a monorepo project)"
+    return
+  fi
+  local result
+  result=$(python3 - "$FORGE_ROOT" <<'PY'
+import os, sys, glob, yaml
+forge_root = sys.argv[1]
+schema_path = os.path.join(forge_root, '.forge/schemas/full-stack-monorepo/schema.yaml')
+try:
+    with open(schema_path, 'r', encoding='utf-8') as f:
+        schema = yaml.safe_load(f)
+except yaml.YAMLError as e:
+    print(f"KO: schema parse error: {e}"); sys.exit(0)
+known_ids = {l.get('id') for l in schema.get('layers', []) if isinstance(l, dict)}
+
+changes_dir = os.path.join(forge_root, '.forge/changes')
+if not os.path.isdir(changes_dir):
+    print("OK: no changes directory (acceptable)"); sys.exit(0)
+
+failures = []
+inspected = 0
+for cdir in sorted(glob.glob(os.path.join(changes_dir, '*/'))):
+    name = os.path.basename(cdir.rstrip('/'))
+    yml = os.path.join(cdir, '.forge.yaml')
+    if not os.path.isfile(yml):
+        continue
+    try:
+        with open(yml, 'r', encoding='utf-8') as f:
+            data = yaml.safe_load(f) or {}
+    except yaml.YAMLError as e:
+        failures.append(f"{name}: parse error: {e}"); continue
+    layers = data.get('layers')
+    if layers is None or (isinstance(layers, list) and len(layers) <= 1):
+        # Single-layer or no layers — acceptable, no per-layer files expected.
+        inspected += 1
+        continue
+    if not isinstance(layers, list):
+        failures.append(f"{name}: layers must be a list"); continue
+    # Validate layer ids against schema enum.
+    unknown = [l for l in layers if l not in known_ids]
+    if unknown:
+        failures.append(f"{name}: unknown layer id {unknown!r} (known: {sorted(known_ids)})")
+        continue
+    # When >= 2 layers, designs_per_layer and tasks_per_layer required.
+    designs = data.get('designs_per_layer')
+    tasks   = data.get('tasks_per_layer')
+    if not isinstance(designs, dict) or not designs:
+        failures.append(f"{name}: designs_per_layer missing or empty for multi-layer change")
+        continue
+    if not isinstance(tasks, dict) or not tasks:
+        failures.append(f"{name}: tasks_per_layer missing or empty for multi-layer change")
+        continue
+    # Each referenced file must exist.
+    for layer, rel in designs.items():
+        if layer not in layers:
+            failures.append(f"{name}: designs_per_layer has unknown layer '{layer}'"); break
+        if not os.path.isfile(os.path.join(cdir, rel)):
+            failures.append(f"{name}: designs_per_layer[{layer}] -> {rel} does not exist"); break
+    else:
+        for layer, rel in tasks.items():
+            if layer not in layers:
+                failures.append(f"{name}: tasks_per_layer has unknown layer '{layer}'"); break
+            if not os.path.isfile(os.path.join(cdir, rel)):
+                failures.append(f"{name}: tasks_per_layer[{layer}] -> {rel} does not exist"); break
+        else:
+            inspected += 1
+            continue
+    continue
+
+if failures:
+    # First failure drives the message (keeps the FAIL line compact).
+    print(f"KO: {failures[0]}"); sys.exit(0)
+print(f"OK: {inspected} change(s) inspected, metadata consistent")
+PY
+)
+  if [[ "$result" == OK:* ]]; then
+    pass_fr "FR-GL-017" "${result#OK: }"
+  else
+    fail_fr "FR-GL-017" "${result#KO: }"
+  fi
+}
+
 check_versioning_monorepo_section() {
   local path="$FORGE_ROOT/docs/VERSIONING.md"
   if [ ! -f "$path" ]; then
@@ -288,6 +386,9 @@ main() {
   check_git_workflow_scoped_commits
   check_versioning_monorepo_section
   check_index_new_entries
+  # b1-workflow additions (FR-GL-017, FR-GL-018).
+  check_standard_multi_layer_workflow
+  check_multi_layer_change_metadata
 
   finalize
 }

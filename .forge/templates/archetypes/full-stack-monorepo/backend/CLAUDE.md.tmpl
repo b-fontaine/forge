@@ -149,6 +149,10 @@ Acceptable exceptions (must be justified in a code comment):
 | Infra changes (DB schema)  | Coordinate with Atlas; migrations live in `infra/`            |
 | Observability config       | Sentinel handles OTLP exporter wiring in `bin-server/main.rs` |
 
+**Full multi-layer routing policy** : see `.forge/standards/global/multi-layer-workflow.md`
+and the Janus agent definition at `.claude/agents/cross-layer-orchestrator.md`. Changes with `layers:` ≥ 2 are
+orchestrated by Janus; backend work stays under Vulcan for any single-layer slice.
+
 ---
 
 ## Quick-Reference Commands

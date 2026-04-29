@@ -123,3 +123,9 @@ These rules derive from Article VI.2 of the Constitution, `flutter/architecture`
   that also modifies a gRPC handler.
 - **Purely frontend change** : stays here under Hera. No cross-layer routing needed. FR-ID
   prefix is `FR-FE-XXX`.
+
+**Full multi-layer routing policy** : see `.forge/standards/global/multi-layer-workflow.md`
+and the Janus agent definition at `.claude/agents/cross-layer-orchestrator.md`. Cross-layer changes with
+`layers:` containing ≥ 2 entries are orchestrated by Janus, which dispatches to per-layer
+specialists (Hera here, Vulcan for backend, Atlas for infra, Hermes-API for contracts) and
+validates cross-layer coherence.

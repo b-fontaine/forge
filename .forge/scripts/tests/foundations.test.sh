@@ -313,6 +313,14 @@ populate_fixture_with_deliverables() {
      "$root/.forge/standards/global/proto-contracts.md"
   cp "$real_root/.forge/standards/infra/docker-compose.md" \
      "$root/.forge/standards/infra/docker-compose.md"
+  # b1-workflow addition: FR-GL-018 (multi-layer-workflow standard)
+  # is checked by validate-foundations.sh. The foundations GREEN
+  # fixture must therefore also carry it, otherwise the validator
+  # exits 1 and `test_green_state_passes_for_all_7` regresses.
+  if [ -f "$real_root/.forge/standards/global/multi-layer-workflow.md" ]; then
+    cp "$real_root/.forge/standards/global/multi-layer-workflow.md" \
+       "$root/.forge/standards/global/multi-layer-workflow.md"
+  fi
 
   # These three are MODIFICATIONS of files that exist in the baseline
   # fixture — overwrite the baseline with the real enriched version.

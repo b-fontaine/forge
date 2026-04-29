@@ -17,6 +17,7 @@ changes land. Order of sections reflects the FR-ID, not chronology.
 |---|---|---|---|
 | [`b1-foundations`](../changes/b1-foundations/) | 2026-04-21 | Foundations (contract layer) | FR-GL-001..008 + NFR-001..004 |
 | [`b1-scaffolder`](../changes/b1-scaffolder/) | 2026-04-22 | Scaffolder (generator layer) | FR-GL-009..014 + FR-BE-001 + FR-FE-001 + FR-IN-001 + NFR-005..008 |
+| [`b1-workflow`](../changes/b1-workflow/) | 2026-04-23 | Workflow (multi-layer orchestration) | FR-GL-015..023 + FR-BE-002 + FR-FE-002 + NFR-009..012 ; MODIFIED FR-GL-008 |
 
 ## Schema evolution
 
@@ -24,6 +25,7 @@ changes land. Order of sections reflects the FR-ID, not chronology.
 |---|---|---|---|
 | 2026-04-21 — b1-foundations archived | `draft` | `0.1.0` | Schema first declared, no consumer yet |
 | 2026-04-22 — b1-scaffolder archived | `candidate` | `1.0.0-rc.1` | Scaffolder successfully consumes the schema end-to-end (21/21 test scenarios + manual smoke) — promotion rule from b1-foundations ADR-004 |
+| 2026-04-23 — b1-workflow archived | `candidate` | `1.0.0-rc.1` | No schema shape change ; multi-layer orchestration layered on top (Janus agent + per-change `layers:` metadata + multi-root scripts). Promotion to `stable / 1.0.0` deferred to `b1-delivery`. |
 
 ---
 
@@ -169,6 +171,10 @@ as security surface). **Testable:** yes — `check_standard_proto_contracts`.
 ### FR-GL-008: Deterministic validator enforces the foundations contract
 
 <!-- From change: b1-foundations (2026-04-21) -->
+<!-- MODIFIED by change: b1-workflow (2026-04-22) — validator now also exposes
+     `check_multi_layer_change_metadata` (FR-GL-017) and
+     `check_standard_multi_layer_workflow` (FR-GL-018 validator side) alongside
+     the original FR-GL-001..007 checks. Conditional dispatch unchanged. -->
 
 - **MUST** — a script `.forge/scripts/validate-foundations.sh` implements
   the structural checks for FR-GL-001..007. Each check emits
@@ -378,6 +384,192 @@ pattern covered by L2 substitution tests.
 **Constitution reference:** Article I (TDD), Article V (gates).
 **Testable:** self-testing — 21/21 scenarios PASS on the full suite.
 
+### FR-GL-015: Janus agent — cross-layer orchestrator
+
+<!-- From change: b1-workflow (2026-04-23) -->
+
+- **MUST** — a file `.claude/agents/cross-layer-orchestrator.md` exists and declares the
+  Janus agent with the standard Forge persona pattern (Roman mythological
+  name, role, style, 12-step workflow, quality gates).
+- **MUST** — Janus is classified as an **orchestrator** : it NEVER writes
+  application code. Its role is to dispatch per-layer specialists (Hera
+  for `frontend/`, Vulcan for `backend/`, Atlas for `infra/`, Hermes-API
+  for `shared/protos/`), aggregate their outputs, and enforce cross-layer
+  contract alignment.
+- **MUST** — Janus is invoked by `/forge:design`, `/forge:implement`,
+  `/forge:review` when the change's `.forge.yaml` declares `layers:` with
+  ≥ 2 entries.
+- **MUST** — Janus's workflow emits `[NEEDS CLARIFICATION: ...]` markers
+  (Article V.3) when per-layer deliverables disagree ; it NEVER silently
+  resolves a conflict.
+- **SHALL** — Janus's routing table references the sub-specialists by name
+  (Hera / Vulcan / Atlas / Hermes-API / Nemesis / Tribune / Aegis) with a
+  one-line rationale per invocation rule.
+
+**Constitution reference:** Article V (gates), Articles VI.2, VII.3, VIII.
+**Testable:** yes — `test_janus_agent_file_has_required_sections` in
+`workflow.test.sh`.
+
+### FR-GL-016: `.forge.yaml` per-change gains optional multi-layer fields
+
+<!-- From change: b1-workflow (2026-04-23) -->
+
+- **MUST** — the `.forge/templates/change.yaml` template exposes three new
+  optional top-level fields : `layers:` (list of layer ids, subset of
+  `backend`/`frontend`/`infra`), `designs_per_layer:` (map of `layer-id →
+  filename`), `tasks_per_layer:` (map of `layer-id → filename`).
+- **MUST** — `designs_per_layer:` and `tasks_per_layer:` are required only
+  when `layers:` has ≥ 2 entries. With exactly 1 layer, the existing
+  `design.md` / `tasks.md` convention applies (backwards compatible). When
+  `layers:` is absent, the change is treated as single-layer.
+- **SHOULD** — the template carries an inline comment block documenting
+  the schema + the one-sentence rule "≥ 2 layers triggers Janus
+  orchestration and per-layer deliverables".
+
+**Constitution reference:** Article III.2, Article IV. **Testable:** yes —
+`test_change_yaml_template_has_optional_layers_fields`.
+
+### FR-GL-017: Validator check for multi-layer change metadata
+
+<!-- From change: b1-workflow (2026-04-23) -->
+
+- **MUST** — `.forge/scripts/validate-foundations.sh` exposes a new check
+  `check_multi_layer_change_metadata` that inspects every
+  `.forge/changes/*/.forge.yaml`.
+- **MUST** — when `layers:` has ≥ 2 entries, the check REQUIRES
+  `designs_per_layer:` and `tasks_per_layer:` present and non-empty, every
+  referenced file exists in the change directory, and every layer id is a
+  subset of the archetype schema's `layers[].id`.
+- **SHALL** — single-layer and no-layer changes PASS with an explicit
+  rationale line. Non-monorepo projects see the check SKIPPED (not N/A).
+
+**Constitution reference:** Article III, Article V. **Testable:** yes — 4
+fixture tests in `workflow.test.sh` (valid single, valid multi, missing
+per-layer, unknown layer).
+
+### FR-GL-018: Standard `global/multi-layer-workflow.md` formalizes the routing policy
+
+<!-- From change: b1-workflow (2026-04-23) -->
+
+- **MUST** — `.forge/standards/global/multi-layer-workflow.md` exists and
+  contains these canonical H2 sections : Routing Policy, `.forge.yaml`
+  Multi-Layer Schema, Per-Layer Design Convention, Per-Layer Tasks
+  Convention, Cross-Layer Contract Alignment, Interdictions.
+- **MUST** — cites Articles V, VI.2, VII.3, VIII, IX.4, and
+  cross-references `global/monorepo-layout.md`.
+- **SHALL** — includes one worked example of a hypothetical cross-layer
+  change (backend + frontend) with its resulting `.forge/changes/<name>/`
+  tree.
+
+**Constitution reference:** Articles V, VI, VII, VIII, X. **Testable:**
+yes — `check_standard_multi_layer_workflow` in validator +
+`test_standard_multi_layer_workflow_sections` in harness.
+
+### FR-GL-019: Index references `global/multi-layer-workflow.md`
+
+<!-- From change: b1-workflow (2026-04-23) -->
+
+- **MUST** — `.forge/standards/index.yml` contains one new entry with
+  `id: global/multi-layer-workflow`, `scope: monorepo`, `priority: high`,
+  triggers including `multi-layer`, `janus`, `cross-layer`, `layers:`,
+  `layers count`.
+- **SHALL** — purely additive ; no pre-existing entry is modified.
+
+**Constitution reference:** Article V (JIT loading). **Testable:** yes —
+`test_index_has_multi_layer_workflow_entry`.
+
+### FR-GL-020: Per-layer design and tasks templates
+
+<!-- From change: b1-workflow (2026-04-23) -->
+
+- **MUST** — two new templates under `.forge/templates/` :
+  `design-per-layer.md` (same sections as `design.md` scoped to ONE layer,
+  header `<!-- Layer: <layer-id> -->`) and `tasks-per-layer.md` (phase
+  numbering uses a layer-prefix convention like "Backend Phase 1").
+- **MUST** — both templates carry `<!-- Audit: B.1.6 -->` header.
+- **SHOULD** — both include a leading `## Cross-Layer References` section
+  for FR-GL-* traceability.
+
+**Constitution reference:** Article III.2, Article X.3. **Testable:** yes
+— section-presence checks in harness.
+
+### FR-BE-002: Layer-scoped Rust checks in `verify.sh`
+
+<!-- From change: b1-workflow (2026-04-23) -->
+
+- **MUST** — `verify.sh` detects the `full-stack-monorepo` schema at the
+  target's `.forge.yaml` and, when matched, runs a Backend section scoped
+  to `<FORGE_ROOT>/$backend_path/` : `cargo clippy --all-features -- -D
+  warnings`, `cargo fmt --check`, `cargo test --all-features`, domain-
+  purity check (no `sqlx`/`reqwest`/`hyper`/`tonic` in `crates/domain/`),
+  no `unwrap()`/`panic!()` in production code.
+- **MUST** — emitted lines prefixed `[backend] ...`.
+- **MUST** — SKIPPED when `backend/` absent OR schema mismatch.
+
+**Constitution reference:** Article VII.3. **Testable:** yes — L3 fixture
+`test_verify_backend_scoped_emits_prefixed_lines`.
+
+### FR-FE-002: Layer-scoped Flutter checks in `verify.sh`
+
+<!-- From change: b1-workflow (2026-04-23) -->
+
+- **MUST** — same shape as FR-BE-002 but for the Flutter layer : `flutter
+  analyze --fatal-infos`, `dart format --set-exit-if-changed`, `flutter
+  test --coverage`, coverage 80 % threshold, layer-boundary check (no
+  `package:flutter` under `frontend/lib/features/*/domain/`).
+- **MUST** — lines prefixed `[frontend] ...` ; SKIPPED when absent.
+
+**Constitution reference:** Article VI.2. **Testable:** yes — L3 fixture
+`test_verify_frontend_scoped_emits_prefixed_lines`.
+
+### FR-GL-021: Layer-scoped protos + infra checks in `verify.sh`
+
+<!-- From change: b1-workflow (2026-04-23) -->
+
+- **MUST** — Protos section (prefix `[protos]`) runs `buf lint` + `buf
+  breaking --against '.git#branch=main'` when `shared/protos/` exists.
+- **MUST** — Infra section (prefix `[infra]`) validates
+  `docker-compose.dev.yml` via `docker compose ... config`, parses every
+  `infra/kong/*.yml` and `infra/k8s/**/kustomization.yaml` with
+  `yaml.safe_load`.
+- **MUST** — both sections SKIP gracefully (WARN, not FAIL) when subtree
+  or tool absent.
+
+**Constitution reference:** Articles IV, VIII, IX.4. **Testable:** yes —
+L3 `test_verify_protos_scoped_buf_lint` + `test_verify_infra_scoped_compose_syntax`.
+
+### FR-GL-022: Layer-scoped `constitution-linter.sh` activation
+
+<!-- From change: b1-workflow (2026-04-23) -->
+
+- **MUST** — `constitution-linter.sh` detects the `full-stack-monorepo`
+  schema at the target root and, when matched, scopes Article VI checks
+  to `$frontend_path/` and Article VII checks to `$backend_path/`.
+- **MUST** — when schema is other, the existing single-root behavior is
+  preserved byte-for-byte (NFR-010).
+- **SHALL** — emits `[scoped: frontend]` / `[scoped: backend]` header
+  suffixes when scoping is active.
+
+**Constitution reference:** Articles VI, VII. **Testable:** yes — L3
+fixture + NFR-010 regression scenario.
+
+### FR-GL-023: Workflow test harness (`workflow.test.sh`)
+
+<!-- From change: b1-workflow (2026-04-23) -->
+
+- **MUST** — `.forge/scripts/tests/workflow.test.sh` exercises L1
+  (structural invariants : Janus file, standard, templates, change.yaml
+  extension), L2 (fixture-based validator for FR-GL-017 + FR-GL-018 +
+  FR-GL-019), and L3 (multi-root `verify.sh` fixtures for FR-BE-002, FR-
+  FE-002, FR-GL-021 + NFR-010 regression).
+- **MUST** — uses `.forge/scripts/tests/_helpers.sh` for shared helpers.
+- **MUST** — invoked by `verify.sh` Section 7 at `--level 2` (hermetic).
+- **MUST** — L3 auto-skips when `flutter`/`cargo`/`buf` are absent unless
+  `--require-external-tools` is set.
+
+**Constitution reference:** Article I (TDD), Article V. **Testable:**
+self-testing — 16/16 scenarios PASS on the full suite at archive time.
+
 ---
 
 ## Non-Functional Requirements
@@ -458,6 +650,42 @@ every artifact back to its audit module.
   `template_set_sha`, `scaffold_date`, `project_name`, `reverse_domain`,
   `root_module` — the complete audit trail for `forge upgrade`
   (delivered by `b1-delivery`).
+
+### NFR-009: Multi-root verify.sh performance
+
+<!-- From change: b1-workflow (2026-04-23) -->
+
+- **SHALL** — on a scaffolded project with no real domain code,
+  `verify.sh` completes in less than **30 seconds** on a standard dev
+  machine (warm caches). Hard ceiling : 60 seconds. The archetype's own
+  invocations must remain fast on an empty scaffold.
+
+### NFR-010: Backwards compatibility of single-root scripts
+
+<!-- From change: b1-workflow (2026-04-23) -->
+
+- **MUST** — when a target's `.forge.yaml` declares a schema OTHER than
+  `full-stack-monorepo`, `verify.sh` + `constitution-linter.sh` produce
+  byte-identical stdout + same exit code as the pre-b1-workflow scripts.
+  Exercised by `test_verify_non_monorepo_no_scoped_output` in
+  `workflow.test.sh` L3.
+
+### NFR-011: Janus agent pattern consistency
+
+<!-- From change: b1-workflow (2026-04-23) -->
+
+- **SHALL** — the Janus agent file follows the same Markdown structure as
+  `forge-master.md`, `flutter/orchestrator.md`, and `rust/orchestrator.md`
+  (identical section headings, 12-step convention, quality-gate invocation
+  pattern). Enforced by the L1 structural check in `workflow.test.sh`.
+
+### NFR-012: Multi-layer metadata documentation
+
+<!-- From change: b1-workflow (2026-04-23) -->
+
+- **MUST** — `global/multi-layer-workflow.md` documents every optional
+  field of the new `.forge.yaml` extension with a realistic example and a
+  one-sentence purpose.
 
 ---
 

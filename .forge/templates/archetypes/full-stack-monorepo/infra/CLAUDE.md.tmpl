@@ -109,3 +109,7 @@ These rules derive from Article VIII of the Constitution, `infra/docker`, `infra
 - **Observability changes crossing layers** : route to Panoptes (collector config) + Argus
   (frontend OTel, `opentelemetry_dart`) + Sentinel (backend OTel, `tracing-opentelemetry`).
   Span naming conventions MUST be agreed across all three layers before any OTel config lands.
+
+**Full multi-layer routing policy** : see `.forge/standards/global/multi-layer-workflow.md`
+and the Janus agent definition at `.claude/agents/cross-layer-orchestrator.md`. When a change declares
+`layers:` with ≥ 2 entries, Janus orchestrates; infra-only work stays under Atlas.

@@ -18,6 +18,42 @@ not_applicable() { NA=$((NA + 1)); echo "  N/A   $1"; }
 has_flutter() { [ -f "$FORGE_ROOT/pubspec.yaml" ]; }
 has_rust()    { [ -f "$FORGE_ROOT/Cargo.toml" ]; }
 
+# ─── b1-workflow : monorepo scoping (ADR-007 additive) ──────────
+# Detects schema at the target root; when full-stack-monorepo, the
+# Article VI/VII checks are RE-RUN a second time against the layer
+# subtrees (frontend/, backend/). The existing single-root checks are
+# preserved byte-for-byte for NFR-010 backwards compatibility.
+detect_schema() {
+  local yml="$FORGE_ROOT/.forge.yaml"
+  [ -f "$yml" ] || { echo ""; return; }
+  python3 - "$yml" <<'PY' 2>/dev/null || echo ""
+import sys, yaml
+try:
+    with open(sys.argv[1], 'r', encoding='utf-8') as f:
+        d = yaml.safe_load(f) or {}
+except yaml.YAMLError:
+    sys.exit(0)
+print(d.get('schema', ''))
+PY
+}
+resolve_monorepo_path() {
+  local lid="$1"
+  local s="$FORGE_ROOT/.forge/schemas/full-stack-monorepo/schema.yaml"
+  [ -f "$s" ] || { echo ""; return; }
+  python3 - "$s" "$lid" <<'PY' 2>/dev/null || echo ""
+import sys, yaml, re
+with open(sys.argv[1], 'r', encoding='utf-8') as f:
+    d = yaml.safe_load(f) or {}
+for l in d.get('layers', []) or []:
+    if isinstance(l, dict) and l.get('id') == sys.argv[2]:
+        p = l.get('path') or ''
+        if '..' in p or p.startswith('/') or re.search(r'\s', p):
+            sys.exit(0)
+        print(p.rstrip('/'))
+        sys.exit(0)
+PY
+}
+
 echo "CONSTITUTION LINT REPORT"
 echo "========================"
 echo ""
@@ -209,6 +245,63 @@ if has_rust; then
   fi
 else
   not_applicable "  No Rust project detected"
+fi
+
+# ─── b1-workflow : Article VI + VII scoped (monorepo only) ─────
+# These sections activate in addition to the root-level checks above
+# when the target declares schema: full-stack-monorepo. On other
+# schemas this block emits zero output (NFR-010).
+
+_target_schema="$(detect_schema)"
+if [ "$_target_schema" = "full-stack-monorepo" ]; then
+
+  _frontend_path="$(resolve_monorepo_path frontend)"
+  if [ -n "$_frontend_path" ] && [ -f "$FORGE_ROOT/$_frontend_path/pubspec.yaml" ]; then
+    echo ""
+    echo "Article VI (Flutter Architecture) [scoped: frontend]:"
+    domain_imports=$(grep -rl "import 'package:flutter" "$FORGE_ROOT/$_frontend_path/lib/features"/*/domain/ 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$domain_imports" = "0" ]; then
+      pass "  Domain layer has zero Flutter imports (scoped)"
+    else
+      fail "  $domain_imports domain files import Flutter (layer violation, scoped)"
+    fi
+    if grep -q 'flutter_bloc' "$FORGE_ROOT/$_frontend_path/pubspec.yaml" 2>/dev/null; then
+      pass "  flutter_bloc declared in frontend/pubspec.yaml (scoped)"
+    else
+      fail "  flutter_bloc not found in frontend/pubspec.yaml (scoped)"
+    fi
+    if grep -q 'get_it\|injectable' "$FORGE_ROOT/$_frontend_path/pubspec.yaml" 2>/dev/null; then
+      pass "  get_it/injectable declared in frontend/pubspec.yaml (scoped)"
+    else
+      fail "  get_it/injectable not found in frontend/pubspec.yaml (scoped)"
+    fi
+  fi
+
+  _backend_path="$(resolve_monorepo_path backend)"
+  if [ -n "$_backend_path" ] && [ -f "$FORGE_ROOT/$_backend_path/Cargo.toml" ]; then
+    echo ""
+    echo "Article VII (Rust Architecture) [scoped: backend]:"
+    unwrap_count=$(grep -rn '\.unwrap()' "$FORGE_ROOT/$_backend_path"/*/src/ 2>/dev/null | grep -v '#\[cfg(test)\]' | grep -v '// SAFETY:' | wc -l | tr -d ' ')
+    if [ "$unwrap_count" = "0" ]; then
+      pass "  Zero unwrap() in production code (scoped)"
+    else
+      fail "  $unwrap_count unwrap() calls in production code (scoped)"
+    fi
+    panic_count=$(grep -rn 'panic!' "$FORGE_ROOT/$_backend_path"/*/src/ 2>/dev/null | grep -v '#\[cfg(test)\]' | wc -l | tr -d ' ')
+    if [ "$panic_count" = "0" ]; then
+      pass "  Zero panic!() in production code (scoped)"
+    else
+      fail "  $panic_count panic!() calls in production code (scoped)"
+    fi
+    if [ -d "$FORGE_ROOT/$_backend_path/crates/domain/src" ]; then
+      infra_imports=$(grep -rn 'sqlx\|reqwest\|hyper\|tonic' "$FORGE_ROOT/$_backend_path/crates/domain/src" 2>/dev/null | wc -l | tr -d ' ')
+      if [ "$infra_imports" = "0" ]; then
+        pass "  Domain layer has zero infra imports (scoped)"
+      else
+        fail "  $infra_imports infra imports in backend/crates/domain/src (scoped)"
+      fi
+    fi
+  fi
 fi
 
 # ── Article VIII: Infrastructure ──────────────────────────────
