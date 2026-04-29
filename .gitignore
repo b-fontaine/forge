@@ -1,5 +1,6 @@
-# OMC runtime state — per-session journals, never committed
+# OMC runtime state — per-session journals + working state, never committed
 .omc/sessions/
+.omc/state/
 
 # Local Claude settings overrides
 .claude/settings.local.json
