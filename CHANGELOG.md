@@ -12,13 +12,205 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
-Second delivery of the flagship archetype `full-stack-monorepo` — the
-scaffolder layer. Combined with the foundations delivery (below), a
-user can now run `/forge:init --archetype full-stack-monorepo <name>
---org <reverse-dns>` and get a contract-conformant Flutter + Rust +
-Infra monorepo in ~3 seconds. The schema is promoted from `draft /
-0.1.0` to `candidate / 1.0.0-rc.1` per the promotion rule from
-`b1-foundations` ADR-004.
+**Module B.1 closed — flagship archetype `full-stack-monorepo`
+delivered end-to-end.** Four changes accumulated since v0.2.1
+(`b1-foundations` → `b1-scaffolder` → `b1-workflow` → `b1-delivery`)
+combine to ship a contract-conformant Flutter + Rust + Infra
+monorepo with multi-layer change orchestration, 4 reference CI
+workflows, Kustomize base + 3 deployment overlays, and a local
+OTel + SigNoz observability stack — scaffoldable in ~3 seconds via
+`/forge:init --archetype full-stack-monorepo`. The schema is
+promoted from `draft / 0.1.0` (foundations) → `candidate /
+1.0.0-rc.1` (scaffolder) → **`stable / 1.0.0`** (delivery), with
+`promoted_from / promoted_in / promoted_on` traceability fields.
+75/75 test scenarios PASS across 4 harnesses.
+
+### Added — `b1-delivery` (2026-04-29)
+
+Final B.1 brick — runtime delivery surface (CI + deployment +
+observability). Templates live under
+`.forge/templates/archetypes/full-stack-monorepo/`, inert until a
+project is scaffolded. Zero scaffolder code change ;
+`scaffold-plan.yaml` gains 18 entries and removes 3 obsolete
+`.gitkeep` placeholders.
+
+- **4 reference GitHub Actions workflows** under `.github/workflows/`
+  (FR-IN-002..005) :
+    - `forge-backend.yml` — `dorny/paths-filter@v3` on `backend/**`
+      OR `shared/protos/**` ; `cargo fmt → clippy -D warnings →
+      test → verify.sh → constitution-linter.sh`. Two-job split
+      (filter + build gated on output) for clean PASS-with-skip
+      semantics on out-of-scope PRs ; `actions/cache@v4` keyed on
+      `Cargo.lock` per ADR-011.
+    - `forge-frontend.yml` — same shape on `frontend/**` ; Flutter
+      SDK pinned via `.flutter-version` consumed by
+      `subosito/flutter-action@v2` ; `pub get → dart format
+      --set-exit-if-changed → flutter analyze --fatal-infos
+      --fatal-warnings → flutter test --coverage → Forge gates`.
+    - `forge-infra.yml` — `dorny/paths-filter@v3` on `infra/**` ;
+      `kustomize build × 3 overlays → kubeconform --summary
+      --strict × 3 → Forge gates`. `imranismail/setup-kustomize@v2`
+      pinned to 5.4.2, kubeconform 0.6.7 from upstream tarball
+      (ADR-008).
+    - `forge-integration.yml` — triggers ONLY on `push: main` +
+      nightly cron `'0 3 * * *'` UTC + `workflow_dispatch` (NFR-014
+      protection). `docker compose up -d --wait` (ADR-012) → cargo
+      integration tests → Patrol Android E2E on
+      `reactivecircus/android-emulator-runner@v2` API 34 →
+      `if: always()` teardown.
+
+- **Kustomize base + 3 overlays** under `infra/k8s/` (FR-IN-006) :
+    - `base/` — Deployment (gRPC :50051 + HTTP :8080, /healthz +
+      /readyz probes, OTLP env from optional ConfigMap, resource
+      requests/limits) + Service (ClusterIP, named ports) +
+      ServiceAccount (`automountServiceAccountToken: false`) +
+      Ingress (host placeholder).
+    - `overlays/dev` — namespace `<project>-dev`, image
+      `dev-latest`, replicas: 1, ConfigMapGenerator with
+      `OTEL_EXPORTER_OTLP_ENDPOINT` + `APP_ENV=dev`,
+      commonAnnotations `forge.io/managed-by`, `forge.io/overlay`,
+      `forge.io/project`.
+    - `overlays/staging` — namespace `<project>-staging`, image
+      `sha-replace-at-deploy`, replicas: 2.
+    - `overlays/prod` — namespace `<project>-prod`, image
+      `v0.0.0-replace-at-release`, replicas: 3 baseline +
+      `HorizontalPodAutoscaler` (autoscaling/v2, min=3, max=10,
+      CPU averageUtilization 70%).
+
+- **Local OTel + SigNoz observability stack** in
+  `docker-compose.dev.yml.tmpl` (FR-IN-007 + FR-IN-008) — 4 new
+  services on the existing `fsm-dev` network with the existing
+  `fsm-` prefix convention :
+    - `fsm-otel-collector` —
+      `otel/opentelemetry-collector-contrib:0.96.0`. OTLP gRPC
+      :4317 + OTLP HTTP :4318 + health :13133. Config in
+      `infra/observability/otel-collector-config.yaml` declares
+      `memory_limiter` (256 MiB cap) → `batch` processors and
+      `traces / metrics / logs` pipelines (Article IX three
+      signals).
+    - `fsm-signoz-clickhouse` —
+      `clickhouse/clickhouse-server:24.1.2-alpine`. Internal-only.
+      Named volume `signoz-clickhouse-data` for persistence.
+    - `fsm-signoz-query` — `signoz/query-service:0.55.1`.
+      Internal-only. Auth disabled in dev (with explicit
+      MUST-flip-on comment for staging/prod).
+    - `fsm-signoz-frontend` — `signoz/frontend:0.55.1`. Only
+      observability service host-exposing a port (3301).
+      `depends_on` chain : `query → clickhouse: service_healthy`,
+      `frontend → query: service_healthy`. `restart:
+      unless-stopped` on every SigNoz service.
+
+- **App-side OTLP defaults** (FR-IN-009) — `backend/.env.dev` and
+  `frontend/.env.dev` ship 7 `OTEL_*` env vars. Backend uses
+  gRPC :4317 ; frontend uses HTTP/protobuf :4318 (Dart SDK
+  constraint documented inline). Both files header-flagged "no
+  secrets — use `.env.local`" (gitignored by scaffolder).
+
+- **`task observe`** target in `Taskfile.yml.tmpl` (FR-IN-008) —
+  opens `http://localhost:3301` in the default browser via `open`
+  (macOS) or `xdg-open` (Linux), echo fallback otherwise.
+
+- **3 new infra standards** (FR-IN-010..012) :
+    - `standards/infra/ci-workflows.md` (~180 lines) — 7 canonical
+      H2 sections (paths filter, gate ordering, integration scope,
+      concurrency, caching, tool pinning, failure semantics) +
+      tables + extension budget (max 2 extra steps before Forge
+      gates).
+    - `standards/infra/k8s-overlays.md` (~150 lines) — 6 canonical
+      H2 sections, per-overlay diff table, image tag policy table,
+      resource budget table, secret management Allowed/Forbidden,
+      promotion-gating mapping (Forge change status → eligible
+      environments).
+    - `standards/infra/observability-local.md` (~150 lines) — 5
+      canonical H2 sections, version table as single source of
+      truth for the 4 pinned images, 5-step migration runbook to
+      production-grade observability (managed collector → tail
+      sampling → auth flip → retention → alerts).
+    - `.forge/standards/index.yml` extended with 3 entries
+      (scope: infra, priority: high).
+
+- **Schema promotion** (FR-GL-001 MODIFIED + FR-GL-024) —
+  `.forge/schemas/full-stack-monorepo/schema.yaml` flips
+  `stage: candidate / version: "1.0.0-rc.1"` →
+  `stage: stable / version: "1.0.0"` and gains
+  `promoted_from: "1.0.0-rc.1"`, `promoted_in: b1-delivery`,
+  `promoted_on: "2026-04-29"`. Spec `Schema evolution` table
+  records the event.
+
+- **`delivery.test.sh` harness** (FR-GL-025) — 24 tests across L1
+  structural / L2 fixture / L3 long-mode levels, sharing
+  `_helpers.sh` with the prior 3 harnesses (ADR-010). Manifest
+  comment block declares every `test_*` ;
+  `test_manifest_self_consistency` is the meta self-check.
+  `test_schema_header_post_archive` is gated on
+  `.forge.yaml status: archived` per ADR-009 (SKIPS during
+  implementation, PASSES post-archive).
+
+- **6 NFRs** (NFR-013..018) — per-layer workflow runtime budgets
+  (≤8min warm / ≤15min cold), integration ≤30min, observability
+  stack startup ≤90s, workflow file ≤250 lines, overlay diff
+  ≤4KB, image pinning audit trail (no `:latest` anywhere,
+  enforced by `test_no_latest_tag_anywhere`).
+
+- **BDD feature file** at `.forge/changes/b1-delivery/features/`
+  with 5 scenarios mirroring AC-001/002/006/007/008.
+
+### Added — `b1-workflow` (2026-04-23)
+
+Multi-layer change workflow + cross-layer orchestration. Adds the
+ability for a single change to span backend + frontend + infra
+with per-layer designs and tasks, coordinated by a new agent.
+
+- **Janus agent** (`.claude/agents/cross-layer-orchestrator.md`,
+  FR-GL-015) — Roman mythology persona for the cross-layer
+  orchestrator. Pure orchestrator (NEVER writes application code,
+  ADR-001) ; dispatches Hera (frontend), Vulcan (backend), Atlas
+  (infra), Hermes-API (protos contracts) ; aggregates outputs ;
+  enforces cross-layer contract alignment ; surfaces conflicts as
+  `[NEEDS CLARIFICATION]` rather than silently resolving them.
+  12-step workflow.
+
+- **Multi-layer change metadata** (FR-GL-016) —
+  `.forge/templates/change.yaml` gains 3 optional top-level fields :
+  `layers:` (subset of archetype schema's `layers[].id`),
+  `designs_per_layer:` (map layer-id → filename),
+  `tasks_per_layer:` (same shape). Required when `layers:` has ≥ 2
+  entries ; backwards-compatible when single-layer or absent.
+
+- **Validator multi-layer check** (FR-GL-017) —
+  `validate-foundations.sh` gains `check_multi_layer_change_metadata`
+  inspecting every `.forge/changes/*/.forge.yaml`. Validates layer
+  ids against schema, requires per-layer files when multi-layer,
+  rejects unknown layer ids. Skips cleanly on non-monorepo
+  projects.
+
+- **Standard `global/multi-layer-workflow.md`** (FR-GL-018) — 6
+  canonical H2 sections covering routing policy (single-layer vs
+  multi-layer), per-layer deliverable conventions, cross-layer
+  contract alignment rules, Hermes-API delegation (ADR-003).
+
+- **Multi-root `verify.sh` and `constitution-linter.sh`**
+  (FR-BE-002, FR-FE-002, FR-GL-021, FR-GL-022) — when the target
+  declares the `full-stack-monorepo` schema, the scripts walk
+  `frontend/`, `backend/`, `shared/protos/`, `infra/` separately
+  and prefix every output line with `[backend]`, `[frontend]`,
+  `[protos]`, `[infra]`. Layer paths read dynamically from the
+  schema's `layers[].path` (ADR-004), preserving single-root mode
+  on non-monorepo projects (NFR-010 backwards compatibility).
+
+- **Per-layer templates** (FR-GL-020) —
+  `.forge/templates/{design,tasks}-per-layer.md` with cross-layer
+  references first, layer-prefixed phase numbering (ADR-010).
+
+- **Index extension** — `global/multi-layer-workflow` added to
+  `.forge/standards/index.yml` (scope: monorepo, priority: high).
+
+- **`workflow.test.sh` harness** (FR-GL-023) — 16 tests across L1
+  structural + L2 fixture-based + L3 multi-root E2E levels.
+
+- **Spec change** : MODIFIED FR-GL-008 — validator gains the
+  Section 7 dispatch for multi-layer checks. 11 ADDED FRs, 4
+  ADDED NFRs (NFR-009..012).
 
 ### Added — `b1-scaffolder` (2026-04-22)
 
@@ -103,9 +295,14 @@ Infra monorepo in ~3 seconds. The schema is promoted from `draft /
   Buf STANDARD lint expects service-first (`<svc>/v1/`). `buf.yaml`
   excludes `PACKAGE_DIRECTORY_MATCH` with documented justification
   pointing to a future Forge change that reconciles the two.
-- **`_scaffolder_lib.sh` extraction** — deferred. Only 2 scaffolder
-  scripts today with minimal overlap. Re-evaluate when a third script
-  lands (likely in `b1-workflow` or `b1-delivery`).
+- **`_scaffolder_lib.sh` extraction** — still deferred after
+  `b1-workflow` and `b1-delivery` archive. Per `b1-delivery`
+  ADR-010, the 4 test harnesses (`foundations`, `scaffolder`,
+  `workflow`, `delivery`) all source the existing shared
+  `_helpers.sh` and otherwise duplicate ~50 lines of harness
+  scaffolding ; pulling the duplication into a `_scaffolder_lib.sh`
+  remains a future cleanup, re-evaluated if a fifth harness lands
+  with material overlap.
 
 ### Performance baseline
 
