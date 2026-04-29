@@ -157,9 +157,9 @@
 - [x] Verify SKIP path — emits `SKIP : b1-delivery status='planned' (gated on archive per ADR-009)` and PASSES the harness. Correct intermediate state ; the assertion will activate at archive time [Story: FR-GL-024]
 
 ### 7.2 Schema bump payload (executed by `/forge:archive`)
-- [ ] Author the exact YAML diff to apply to `.forge/schemas/full-stack-monorepo/schema.yaml` at archive time : flip `status: candidate` → `stable`, `version: "1.0.0-rc.1"` → `"1.0.0"`, add `promoted_from`, `promoted_in`, `promoted_on` fields. **DEFERRED to Phase 10 (`/forge:archive`)** [Story: FR-GL-024]
-- [ ] Author the exact append to `.forge/specs/full-stack-monorepo.md` Schema Evolution table — one row recording the promotion with rationale "B.1 archetype contract fully delivered : foundations + scaffolder + workflow + delivery". **DEFERRED to Phase 10** [Story: FR-GL-024]
-- [ ] (Both payloads applied by `/forge:archive b1-delivery` post-implementation. Test 7.1 flips from SKIP to PASS at that moment.) [Story: FR-GL-024, ADR-009]
+- [x] Apply YAML diff to `.forge/schemas/full-stack-monorepo/schema.yaml` : flipped `stage: candidate` → `stable`, `version: "1.0.0-rc.1"` → `"1.0.0"`, added `promoted_from: "1.0.0-rc.1"`, `promoted_in: b1-delivery`, `promoted_on: "2026-04-29"`. **TDD reveal during archive** : the schema field name is `stage:` (not `status:`) per the existing convention from `b1-foundations` ; spec FR-GL-024 + test_schema_header_post_archive aligned to use `stage:` accordingly [Story: FR-GL-024]
+- [x] Append delta to `.forge/specs/full-stack-monorepo.md`: 12 ADDED FRs (FR-IN-002..012 + FR-GL-024..025), 6 ADDED NFRs (NFR-013..018), MODIFIED FR-GL-001 with append-only `<!-- Modified in b1-delivery -->` comment + new `promoted_*` MUST. New `Archived changes` row + new Schema Evolution row recording the promotion. Updated `Scope` section to reflect B.1 fully delivered [Story: FR-GL-024, Article IV]
+- [x] Both payloads applied. Test 7.1 flipped SKIP → PASS [Story: FR-GL-024, ADR-009]
 
 ## Phase 8: Quality, BDD, and integration
 
@@ -182,7 +182,7 @@
 - [x] Manual review: SigNoz auth disabled in dev only — confirmed via `auth: enabled: false` + MUST-flip-on comment in `signoz-config.yaml.tmpl` and § Secret management section in `standards/infra/k8s-overlays.md` [Story: design Security § 4]
 
 ### 8.3 BDD feature file
-- [ ] Create `.forge/changes/b1-delivery/features/b1-delivery.feature` capturing AC-001 (backend filter skip), AC-002 (clippy gate), AC-006 (Kustomize render + validate), AC-007 (`task dev` boots stack), AC-008 (trace visibility) — exact Gherkin from spec. **DEFERRED to Phase 9** (alongside spec finalization) [Story: AC-001, 002, 006, 007, 008]
+- [x] Created `.forge/changes/b1-delivery/features/b1-delivery.feature` (~50 lines) — Background scenario + 5 scenarios mirroring AC-001 (backend filter skip), AC-002 (clippy gate), AC-006 (Kustomize render + validate, including `prod` HPA shape), AC-007 (`task dev` boots stack within NFR-015 90s budget), AC-008 (trace visibility within 30s with correct service.name + deployment.environment resource attributes) [Story: AC-001, 002, 006, 007, 008]
 
 ### 8.4 Editorial pass
 - [ ] Markdownlint on the three new standards (consistent heading levels, no trailing spaces, fenced code blocks have language hints). Visual review during Phase 5 GREEN gave a clean reading ; formal markdownlint run **DEFERRED to Phase 9** alongside spec finalization [Story: NFR-003 in foundations spec]
@@ -195,23 +195,27 @@
 ## Phase 9: Spec finalization (executed by `/forge:archive`)
 
 ### 9.1 Append delta to `.forge/specs/full-stack-monorepo.md`
-- [ ] Author the exact append : 12 ADDED FRs (FR-IN-002..012 + FR-GL-024 + FR-GL-025), 6 ADDED NFRs (NFR-013..018), 1 MODIFIED entry for FR-GL-001, no REMOVED [Story: Article IV]
-- [ ] Append a Schema Evolution table row : `1.0.0-rc.1 → 1.0.0`, change `b1-delivery`, archive date [Story: FR-GL-024]
-- [ ] Append the change to the Archived changes index at the top of the spec [Story: design Phase 9]
+- [x] Appended 12 ADDED FRs (FR-IN-002..012 + FR-GL-024 + FR-GL-025) before `## Non-Functional Requirements`, each with full body + Constitution reference + Testable line + audit comment `<!-- From change: b1-delivery (2026-04-29) -->` [Story: Article IV]
+- [x] Appended 6 ADDED NFRs (NFR-013..018) inside `## Non-Functional Requirements` [Story: Article IV]
+- [x] MODIFIED FR-GL-001 with `<!-- Modified in b1-delivery (2026-04-29) -->` comment + new MUST clause for `promoted_from/in/on` traceability [Story: Article IV]
+- [x] Appended Schema Evolution row : `1.0.0-rc.1 → 1.0.0`, change `b1-delivery`, archive date 2026-04-29 [Story: FR-GL-024]
+- [x] Appended Archived changes row mapping b1-delivery to its FR/NFR set [Story: design Phase 9]
+- [x] Updated Scope section to mark B.1 as **fully delivered** ; remaining items (forge upgrade, C.1, prod observability migration, Forge Guardian) flagged as future modules [Story: design Phase 9]
 
 ### 9.2 Final delivery.test.sh self-check
-- [ ] `bash .forge/scripts/tests/delivery.test.sh` exits 0 on a clean run [Story: FR-GL-025]
-- [ ] Every FR ID listed Testable in specs.md has a matching `test_*` function in the harness manifest [Story: FR-GL-025]
-- [ ] Run the full suite (`foundations.test.sh` + `workflow.test.sh` + `delivery.test.sh`) — all three exit 0 (no regression) [Story: NFR-010]
+- [x] `bash .forge/scripts/tests/delivery.test.sh` exits 0 — 24/24 PASS including `test_schema_header_post_archive` (now flipped from SKIP to PASS) [Story: FR-GL-025]
+- [x] Every Testable FR/NFR in specs.md has a matching `test_*` function ; manifest self-consistency PASSES [Story: FR-GL-025]
+- [x] Full suite no-regression : foundations 21/21, workflow 16/16, scaffolder 14/14, delivery 24/24 = **75/75 PASS** [Story: NFR-010]
 
 ## Phase 10: Archive (gate to schema promotion)
 
 ### 10.1 `/forge:archive b1-delivery`
-- [ ] Apply the schema header bump from Phase 7.2 [Story: FR-GL-024, ADR-009]
-- [ ] Apply the spec delta append from Phase 9.1 [Story: Article IV]
-- [ ] Set `.forge/changes/b1-delivery/.forge.yaml` `status: archived`, `timeline.archived: <date>` [Story: lifecycle]
-- [ ] Re-run `delivery.test.sh` — `test_schema_header_post_archive` flips from SKIP to PASS [Story: FR-GL-024]
-- [ ] Re-run `verify.sh` and `constitution-linter.sh` on the Forge repo — both PASS [Story: NFR-010]
+- [x] Schema header bump applied : `stage: candidate / version: "1.0.0-rc.1"` → `stage: stable / version: "1.0.0"` + 3 traceability fields [Story: FR-GL-024, ADR-009]
+- [x] Spec delta append applied per Phase 9.1 [Story: Article IV]
+- [x] `.forge/changes/b1-delivery/.forge.yaml` set to `status: archived`, `timeline.archived: 2026-04-29` [Story: lifecycle]
+- [x] `delivery.test.sh` re-run : `test_schema_header_post_archive` PASSES (was SKIP at planned/implemented) [Story: FR-GL-024]
+- [x] `verify.sh` 50 PASS / 0 FAIL / 1 WARN, `constitution-linter.sh` 4 PASS / 0 FAIL / 6 N/A — both OVERALL: PASS [Story: NFR-010]
+- [x] Roadmap updated : B.1 marked **Done**, schema promoted to `stable / 1.0.0`, 75/75 tests recorded
 
 ---
 

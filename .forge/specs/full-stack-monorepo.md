@@ -18,6 +18,7 @@ changes land. Order of sections reflects the FR-ID, not chronology.
 | [`b1-foundations`](../changes/b1-foundations/) | 2026-04-21 | Foundations (contract layer) | FR-GL-001..008 + NFR-001..004 |
 | [`b1-scaffolder`](../changes/b1-scaffolder/) | 2026-04-22 | Scaffolder (generator layer) | FR-GL-009..014 + FR-BE-001 + FR-FE-001 + FR-IN-001 + NFR-005..008 |
 | [`b1-workflow`](../changes/b1-workflow/) | 2026-04-23 | Workflow (multi-layer orchestration) | FR-GL-015..023 + FR-BE-002 + FR-FE-002 + NFR-009..012 ; MODIFIED FR-GL-008 |
+| [`b1-delivery`](../changes/b1-delivery/) | 2026-04-29 | Delivery (CI + overlays + observability) | FR-IN-002..012 + FR-GL-024..025 + NFR-013..018 ; MODIFIED FR-GL-001 (schema promotion) |
 
 ## Schema evolution
 
@@ -26,6 +27,7 @@ changes land. Order of sections reflects the FR-ID, not chronology.
 | 2026-04-21 — b1-foundations archived | `draft` | `0.1.0` | Schema first declared, no consumer yet |
 | 2026-04-22 — b1-scaffolder archived | `candidate` | `1.0.0-rc.1` | Scaffolder successfully consumes the schema end-to-end (21/21 test scenarios + manual smoke) — promotion rule from b1-foundations ADR-004 |
 | 2026-04-23 — b1-workflow archived | `candidate` | `1.0.0-rc.1` | No schema shape change ; multi-layer orchestration layered on top (Janus agent + per-change `layers:` metadata + multi-root scripts). Promotion to `stable / 1.0.0` deferred to `b1-delivery`. |
+| 2026-04-29 — b1-delivery archived | **`stable`** | **`1.0.0`** | B.1 archetype contract fully delivered : foundations + scaffolder + workflow + delivery (4 reference workflows, Kustomize base + 3 overlays, OTel + SigNoz local stack, 3 infra standards). All 75 test scenarios PASS across 4 harnesses, zero regression. Schema header gains `promoted_from`, `promoted_in`, `promoted_on` traceability fields. |
 
 ---
 
@@ -34,6 +36,7 @@ changes land. Order of sections reflects the FR-ID, not chronology.
 ### FR-GL-001: Schema `full-stack-monorepo` declares the monorepo contract
 
 <!-- From change: b1-foundations (2026-04-21) -->
+<!-- Modified in b1-delivery (2026-04-29) — schema promoted from candidate / 1.0.0-rc.1 to stable / 1.0.0; gained promoted_from, promoted_in, promoted_on traceability fields. -->
 
 - **MUST** — a file `.forge/schemas/full-stack-monorepo/schema.yaml` exists
   and parses as valid YAML (via `yaml.safe_load`).
@@ -41,12 +44,19 @@ changes land. Order of sections reflects the FR-ID, not chronology.
   `description`, `tdd_enforced`, `bdd_required_for_user_facing`,
   `coverage_threshold`, `phases`, `layers`, `stage`.
 - **MUST** — `name` is exactly `full-stack-monorepo`.
-- **MUST** — `version` matches SemVer `^\d+\.\d+\.\d+(-[\w.-]+)?$`.
+- **MUST** — `version` matches SemVer `^\d+\.\d+\.\d+(-[\w.-]+)?$`. **As of
+  b1-delivery archive (2026-04-29) the version is `1.0.0`.**
 - **MUST** — `layers` is a non-empty list containing at least `backend`,
   `frontend`, `infra` by `id`, each object with `id`, `path`,
   `fr_id_prefix`, `primary_agent`, `standards_scope`.
 - **MUST** — `stage` is one of `draft` | `candidate` | `stable`. If
   `stage == stable`, `version` is at least `1.0.0` without prerelease.
+  **As of b1-delivery archive the schema is at `stage: stable`.**
+- **MUST** *(added in b1-delivery)* — when `stage == stable`, the schema
+  declares the traceability triple `promoted_from` (prior version),
+  `promoted_in` (the change that drove the promotion — `b1-delivery`),
+  `promoted_on` (ISO date). These fields are append-only history ; future
+  promotions add new fields rather than overwriting these.
 - **MUST** — `phases` extends the phases of `default/schema.yaml`
   (proposal, specs, design, tasks, implementation, review, archive).
 - **MUST** — `cross_layer.agent` references `Janus` (the agent itself is
@@ -572,6 +582,237 @@ self-testing — 16/16 scenarios PASS on the full suite at archive time.
 
 ---
 
+### FR-IN-002: Reference per-layer backend workflow
+
+<!-- From change: b1-delivery (2026-04-29) -->
+
+- **MUST** — a template `.forge/templates/archetypes/full-stack-monorepo/.github/workflows/forge-backend.yml.tmpl`
+  exists and triggers on `pull_request` and `push` to the default branch.
+- **MUST** — uses `dorny/paths-filter@v3` scoped to `backend/**` OR
+  `shared/protos/**`. Outside that scope, the build job emits `skipped`.
+- **MUST** — when the filter matches, executes in order : `cargo fmt
+  --check`, `cargo clippy --workspace --all-targets -- -D warnings`,
+  `cargo test --workspace`, then `bash .forge/scripts/verify.sh` and
+  `bash .forge/scripts/constitution-linter.sh`.
+- **MUST** — no `continue-on-error: true` anywhere in the workflow.
+- **SHALL** — caches `~/.cargo/registry`, `~/.cargo/git`, `target/`
+  keyed on `Cargo.lock`.
+
+**Constitution reference:** Article V, Article VII, Article X.
+**Testable:** yes — `test_workflow_backend_paths_filter_and_steps`.
+
+### FR-IN-003: Reference per-layer frontend workflow
+
+<!-- From change: b1-delivery (2026-04-29) -->
+
+- **MUST** — `.forge/templates/archetypes/full-stack-monorepo/.github/workflows/forge-frontend.yml.tmpl`
+  with `dorny/paths-filter@v3` on `frontend/**` OR `shared/protos/**`.
+- **MUST** — Steps: `flutter pub get`, `dart format
+  --set-exit-if-changed`, `flutter analyze --fatal-infos
+  --fatal-warnings`, `flutter test --coverage`, then the Forge gates.
+- **MUST** — Flutter SDK pinned via `.flutter-version` consumed by
+  `subosito/flutter-action`.
+- **MAY** — uploads `coverage/lcov.info` artifact on `push: main` only.
+
+**Constitution reference:** Article V, Article VI, Article X.
+**Testable:** yes — `test_workflow_frontend_paths_filter_and_steps`.
+
+### FR-IN-004: Reference per-layer infra workflow
+
+<!-- From change: b1-delivery (2026-04-29) -->
+
+- **MUST** — `.forge/templates/archetypes/full-stack-monorepo/.github/workflows/forge-infra.yml.tmpl`
+  with `dorny/paths-filter@v3` on `infra/**`.
+- **MUST** — Steps: three `kustomize build infra/k8s/overlays/<env>`
+  invocations (dev/staging/prod), each piped through `kubeconform
+  --strict`, then the Forge gates.
+- **MUST** — Kustomize and kubeconform versions pinned in their
+  setup steps (no implicit `:latest`).
+
+**Constitution reference:** Article V, Article VIII, Article X.
+**Testable:** yes — `test_workflow_infra_paths_filter_and_steps`.
+
+### FR-IN-005: Cross-layer integration workflow
+
+<!-- From change: b1-delivery (2026-04-29) -->
+
+- **MUST** — `.forge/templates/archetypes/full-stack-monorepo/.github/workflows/forge-integration.yml.tmpl`
+  triggers on `push: main` and on a nightly cron `'0 3 * * *'` (UTC).
+  MUST NOT trigger on `pull_request`.
+- **MUST** — boots the local stack via `docker compose -f
+  docker-compose.dev.yml up -d --wait`, then runs `cargo test
+  --features integration --workspace` and Patrol Android E2E.
+- **MUST** — teardown step `docker compose down -v` runs under
+  `if: always()`.
+- **SHALL** — exposes a `workflow_dispatch:` trigger.
+- **MAY** — posts a structured comment to a tracking issue on
+  failure (opt-in via `secrets.FORGE_INTEGRATION_TRACKING_ISSUE`).
+
+**Constitution reference:** Article V, Article X. **Testable:** yes
+— `test_workflow_integration_triggers_and_lifecycle`.
+
+### FR-IN-006: Canonical Kustomize overlays for dev/staging/prod
+
+<!-- From change: b1-delivery (2026-04-29) -->
+
+- **MUST** — under `.forge/templates/archetypes/full-stack-monorepo/infra/k8s/`
+  the `base/` tree exposes `kustomization.yaml.tmpl`,
+  `deployment.yaml.tmpl`, `service.yaml.tmpl`,
+  `serviceaccount.yaml.tmpl`, `ingress.yaml.tmpl`, `README.md.tmpl`.
+- **MUST** — overlays/{dev,staging,prod}/kustomization.yaml.tmpl
+  exist with namespace `<project-name>-<env>`, image `newTag`
+  policy per env (dev: `dev-latest`, staging: `sha-…`, prod:
+  `v…`), replicas count (dev: 1, staging: 2, prod: 3).
+- **MUST** — `overlays/prod/hpa.yaml.tmpl` declares a
+  `HorizontalPodAutoscaler` with `minReplicas: 3`,
+  `maxReplicas: 10`, CPU `averageUtilization: 70`.
+- **MUST** — `kustomize build` exits 0 against every overlay
+  out of the box ; rendered YAML passes `kubeconform --strict`.
+- **SHALL** — every overlay declares `commonAnnotations` :
+  `forge.io/managed-by: forge`, `forge.io/overlay: <env>`,
+  `forge.io/project: <project-name>`.
+
+**Constitution reference:** Article VIII, Article X. **Testable:**
+yes — `test_kustomize_base_renders` + `test_overlay_<env>_renders_and_validates`.
+
+### FR-IN-007: OTel collector service in `docker-compose.dev.yml.tmpl`
+
+<!-- From change: b1-delivery (2026-04-29) -->
+
+- **MUST** — service `fsm-otel-collector` based on
+  `otel/opentelemetry-collector-contrib` pinned to a specific
+  minor version (`:0.96.0` at archive time, no `:latest`).
+- **MUST** — exposes OTLP gRPC :4317 + OTLP HTTP :4318 + health
+  :13133. Healthcheck wget-probes :13133.
+- **MUST** — joins the existing `fsm-dev` Docker network.
+- **MUST** — mounts `infra/observability/otel-collector-config.yaml`
+  declaring `receivers + processors + exporters + service` with
+  pipelines `traces`, `metrics`, `logs` (Article IX three signals).
+
+**Constitution reference:** Article IX, Article VIII. **Testable:**
+yes — `test_compose_otel_service_shape`.
+
+### FR-IN-008: SigNoz services in `docker-compose.dev.yml.tmpl`
+
+<!-- From change: b1-delivery (2026-04-29) -->
+
+- **MUST** — three services `fsm-signoz-clickhouse` (storage),
+  `fsm-signoz-query` (HTTP API), `fsm-signoz-frontend` (UI on
+  :3301). All pinned to specific versions (no `:latest`).
+- **MUST** — only `fsm-signoz-frontend` host-exposes a port (3301).
+  `clickhouse` and `query-service` are internal-only.
+- **MUST** — every SigNoz service declares a healthcheck and
+  `restart: unless-stopped`.
+- **MUST** — `depends_on` chain : `query → clickhouse:
+  service_healthy`, `frontend → query: service_healthy`.
+- **SHALL** — named volume `signoz-clickhouse-data` for persistence.
+- **SHOULD** — `Taskfile.yml.tmpl` declares `task observe` that
+  opens `http://localhost:3301` via `open` (macOS) or `xdg-open`
+  (Linux).
+
+**Constitution reference:** Article IX. **Testable:** yes —
+`test_compose_signoz_services_shape` + `test_taskfile_has_observe_target`.
+
+### FR-IN-009: OTel exporter env defaults shipped to apps
+
+<!-- From change: b1-delivery (2026-04-29) -->
+
+- **MUST** — `backend/.env.dev.tmpl` and `frontend/.env.dev.tmpl`
+  declare `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`,
+  `OTEL_TRACES_EXPORTER=otlp`, `OTEL_METRICS_EXPORTER=otlp`,
+  `OTEL_LOGS_EXPORTER=otlp`.
+- **MUST** — backend declares `OTEL_EXPORTER_OTLP_PROTOCOL=grpc`
+  (endpoint :4317) ; frontend declares `OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf`
+  (endpoint :4318) per Dart SDK constraint.
+- **SHALL** — both files carry a header comment warning that
+  they are committed to the repo (no secrets — `.env.local` is
+  the gitignored secret store).
+
+**Constitution reference:** Article IX, Article VIII. **Testable:**
+yes — `test_env_dev_files_export_otel_defaults`.
+
+### FR-IN-010: Standard `infra/ci-workflows.md`
+
+<!-- From change: b1-delivery (2026-04-29) -->
+
+- **MUST** — file exists with 7 canonical H2 sections : Per-layer
+  paths filter, Gate ordering, Integration workflow scope,
+  Concurrency policy, Caching strategy, Tool version pinning,
+  Failure semantics.
+- **MUST** — names every reference workflow shipped by FR-IN-002..005
+  and links to its `.tmpl` path.
+
+**Constitution reference:** Article V, Article X. **Testable:** yes
+— `test_standard_ci_workflows_has_required_sections`.
+
+### FR-IN-011: Standard `infra/k8s-overlays.md`
+
+<!-- From change: b1-delivery (2026-04-29) -->
+
+- **MUST** — file exists with 6 canonical H2 sections :
+  Three-environment promotion model, Per-overlay diff conventions,
+  Image tag policy by environment, Resource budget table, Secret
+  management, Promotion gating.
+- **MUST** — explicitly forbids hand-editing the rendered output
+  of `kustomize build`.
+
+**Constitution reference:** Article VIII, Article X. **Testable:**
+yes — `test_standard_k8s_overlays_has_required_sections`.
+
+### FR-IN-012: Standard `infra/observability-local.md`
+
+<!-- From change: b1-delivery (2026-04-29) -->
+
+- **MUST** — file exists with 5 canonical H2 sections : Local OTel
+  + SigNoz topology, App-side OTLP configuration, Versioning
+  policy, Trace sampling defaults, Migration to production
+  observability.
+- **MUST** — records the exact pinned image versions for
+  `otel-collector`, `signoz-clickhouse`, `signoz-query-service`,
+  `signoz-frontend` — single source of truth referenced by the
+  compose template.
+
+**Constitution reference:** Article IX. **Testable:** yes —
+`test_standard_observability_local_has_required_sections`.
+
+### FR-GL-024: Schema promotion to stable / 1.0.0
+
+<!-- From change: b1-delivery (2026-04-29) -->
+
+- **MUST** — `.forge/schemas/full-stack-monorepo/schema.yaml`
+  declares (post-archive) : `stage: stable`, `version: "1.0.0"`,
+  `promoted_from: "1.0.0-rc.1"`, `promoted_in: b1-delivery`,
+  `promoted_on: "<archive-date>"`.
+- **MUST** — the spec's Schema Evolution table records the
+  promotion event with rationale.
+- **MUST** — no other field of the schema (layers, contracts,
+  cross-layer agent name) changes as part of the promotion ;
+  promotion is a status + version edit only.
+
+**Constitution reference:** Article IV (semantic deltas), Article V.
+**Testable:** yes — `test_schema_header_post_archive` (gated on
+the change's `status: archived`).
+
+### FR-GL-025: Test harness `delivery.test.sh`
+
+<!-- From change: b1-delivery (2026-04-29) -->
+
+- **MUST** — `.forge/scripts/tests/delivery.test.sh` exists and is
+  executable.
+- **MUST** — sources the existing `_helpers.sh` framework (no new
+  framework, no duplication).
+- **MUST** — every Testable FR/NFR from this change has at least
+  one corresponding `test_*` function. Meta self-check
+  `test_manifest_self_consistency` parses the harness's MANIFEST
+  comment block and asserts every declared function is defined.
+- **MUST** — `bash .forge/scripts/tests/delivery.test.sh` exits 0
+  when every fixture passes.
+
+**Constitution reference:** Article I (TDD harness), Article V.
+**Testable:** self-testing — 24/24 scenarios PASS at archive time.
+
+---
+
 ## Non-Functional Requirements
 
 ### NFR-001: Validator idempotence
@@ -687,24 +928,92 @@ every artifact back to its audit module.
   field of the new `.forge.yaml` extension with a realistic example and a
   one-sentence purpose.
 
+### NFR-013: Per-layer workflow runtime budget
+
+<!-- From change: b1-delivery (2026-04-29) -->
+
+- **MUST** — the per-layer reference workflows (`forge-backend.yml`,
+  `forge-frontend.yml`, `forge-infra.yml`) MUST complete in ≤ 8
+  minutes wall-clock on the standard `ubuntu-latest` runner with a
+  warm cache, measured on a reference scaffolded project.
+- **SHALL** — cold-cache runs MUST complete in ≤ 15 minutes.
+
+### NFR-014: Integration workflow runtime budget
+
+<!-- From change: b1-delivery (2026-04-29) -->
+
+- **MUST** — `forge-integration.yml` MUST complete (success or
+  failure) in ≤ 30 minutes wall-clock on `ubuntu-latest`.
+
+### NFR-015: Local observability stack startup time
+
+<!-- From change: b1-delivery (2026-04-29) -->
+
+- **MUST** — `docker compose -f docker-compose.dev.yml up -d --wait`
+  reports all observability services (otel-collector,
+  signoz-clickhouse, signoz-query-service, signoz-frontend) healthy
+  within 90 seconds on a developer-class machine (8 CPU cores, 16
+  GB RAM, SSD).
+
+### NFR-016: Reference workflow file size
+
+<!-- From change: b1-delivery (2026-04-29) -->
+
+- **SHOULD** — each reference workflow `.tmpl` file MUST be ≤ 250
+  lines (including comments) to stay legible to a human reviewer.
+  Enforced by `test_workflow_files_under_size_budget`.
+
+### NFR-017: Overlay diffability
+
+<!-- From change: b1-delivery (2026-04-29) -->
+
+- **SHOULD** — the YAML diff between `kustomize build overlays/dev`
+  and `kustomize build overlays/prod` MUST be ≤ 4 KB (uncompressed)
+  for the reference scaffolded project. Bloated overlays defeat the
+  Kustomize base+overlays model.
+
+### NFR-018: Image version pinning audit trail
+
+<!-- From change: b1-delivery (2026-04-29) -->
+
+- **MUST** — every container image referenced by the reference
+  templates (workflows, compose, overlays) MUST be pinned to a
+  specific version tag. `:latest` is forbidden — enforced by
+  `test_no_latest_tag_anywhere`.
+- **MUST** — pinned versions for the local observability stack
+  are documented in `standards/infra/observability-local.md` —
+  single source of truth.
+
 ---
 
 ## Scope
 
-**In scope for the archetype `full-stack-monorepo` (delivered so far):**
+**In scope for the archetype `full-stack-monorepo` — fully delivered as
+of `b1-delivery` archive (2026-04-29 ; schema at `stable` / `1.0.0`):**
 
-- The canonical contract, schema (at `candidate` stage, `1.0.0-rc.1`),
-  and standards declared by FR-GL-001..007 — **b1-foundations**.
+- The canonical contract, schema, and standards declared by
+  FR-GL-001..007 — **b1-foundations**.
 - The deterministic validator (FR-GL-008) — **b1-foundations**.
 - The scaffolder `/forge:init --archetype full-stack-monorepo` with
   its archetype template tree, machine-readable plan, 3-level test
   harness, and reproducible-build manifest
   (FR-GL-009..014 + FR-BE-001 + FR-FE-001 + FR-IN-001) —
   **b1-scaffolder**.
+- Multi-layer change workflow + agent `Janus` (cross-layer
+  orchestrator) + multi-root `verify.sh` / `constitution-linter.sh`
+  (FR-GL-015..023 + FR-BE-002 + FR-FE-002) — **b1-workflow**.
+- Four reference GitHub Actions workflows with `dorny/paths-filter`
+  (per-layer + cross-layer integration), Kustomize base + 3 overlays
+  (dev/staging/prod with HPA), local OTel + SigNoz observability
+  stack wired into `docker-compose.dev.yml`, three new infra
+  standards (FR-IN-002..012 + FR-GL-024..025) — **b1-delivery**.
 
-**Deferred to future changes (explicitly out of scope here):**
-- Multi-layer change workflow + agent `Janus` + multi-root `verify.sh` /
-  `constitution-linter.sh` — `b1-workflow`.
-- GitHub Actions reference workflow + `forge upgrade` + env matrix —
-  `b1-delivery`.
-- Reference project (`C.1`) and migration paths — later.
+**Deferred to future modules (out of scope for B.1):**
+- `forge upgrade` to migrate scaffolded projects to schema bumps
+  (audit module A.7).
+- Reference project end-to-end demonstration (`C.1`).
+- Production observability migration (managed collector + tail
+  sampling + alerting) — runbook stub in
+  `standards/infra/observability-local.md` § Migration.
+- GitHub App "Forge Guardian" for automated constitutional gate
+  on PRs (audit module G.3).

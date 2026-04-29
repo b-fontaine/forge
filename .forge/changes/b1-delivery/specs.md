@@ -380,7 +380,7 @@ yes — `test_standard_k8s_overlays_has_required_sections` in
 - **MUST** — once `b1-delivery` is archived, the file
   `.forge/schemas/full-stack-monorepo/schema.yaml` MUST declare,
   in its top-level metadata block :
-    - `status: stable`
+    - `stage: stable`
     - `version: "1.0.0"`
     - `promoted_from: "1.0.0-rc.1"`
     - `promoted_in: b1-delivery`

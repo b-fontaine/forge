@@ -19,8 +19,11 @@
 # amendment if the invoked articles change.
 
 name: full-stack-monorepo
-version: "1.0.0-rc.1"
-stage: candidate
+version: "1.0.0"
+stage: stable
+promoted_from: "1.0.0-rc.1"
+promoted_in: b1-delivery
+promoted_on: "2026-04-29"
 description: >
   Full-stack monorepo archetype: Flutter (frontend) + Rust (backend) +
   Infrastructure, with protos as single source of truth for cross-layer

@@ -490,8 +490,8 @@ if status != "archived":
 with open(schema_path) as fh:
     schema = yaml.safe_load(fh)
 errors = []
-if (schema or {}).get("status") != "stable":
-    errors.append(f"schema status must be 'stable'; got {(schema or {}).get('status')!r}")
+if (schema or {}).get("stage") != "stable":
+    errors.append(f"schema stage must be 'stable'; got {(schema or {}).get('stage')!r}")
 if (schema or {}).get("version") != "1.0.0":
     errors.append(f"schema version must be '1.0.0'; got {(schema or {}).get('version')!r}")
 if (schema or {}).get("promoted_from") != "1.0.0-rc.1":
