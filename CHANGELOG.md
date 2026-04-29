@@ -12,18 +12,93 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
-**Module B.1 closed — flagship archetype `full-stack-monorepo`
-delivered end-to-end.** Four changes accumulated since v0.2.1
-(`b1-foundations` → `b1-scaffolder` → `b1-workflow` → `b1-delivery`)
-combine to ship a contract-conformant Flutter + Rust + Infra
-monorepo with multi-layer change orchestration, 4 reference CI
-workflows, Kustomize base + 3 deployment overlays, and a local
-OTel + SigNoz observability stack — scaffoldable in ~3 seconds via
-`/forge:init --archetype full-stack-monorepo`. The schema is
-promoted from `draft / 0.1.0` (foundations) → `candidate /
-1.0.0-rc.1` (scaffolder) → **`stable / 1.0.0`** (delivery), with
-`promoted_from / promoted_in / promoted_on` traceability fields.
-75/75 test scenarios PASS across 4 harnesses.
+**Module B.1 closed + Module G.1 closed.** Five changes
+accumulated since v0.2.1 :
+`b1-foundations` → `b1-scaffolder` → `b1-workflow` → `b1-delivery`
+shipped the flagship archetype `full-stack-monorepo` end-to-end
+(Flutter + Rust + Infra with multi-layer change orchestration,
+4 reference CI workflows, Kustomize base + 3 deployment overlays,
+local OTel + SigNoz observability stack — scaffoldable via
+`/forge:init --archetype full-stack-monorepo`). Schema promoted
+from `draft / 0.1.0` → `candidate / 1.0.0-rc.1` →
+**`stable / 1.0.0`** with `promoted_from / promoted_in /
+promoted_on` traceability fields.
+
+`g1-forge-ci` then closed the dog-fooding gap : Forge runs its
+own gates in CI on every PR via `forge-ci.yml` (5-job workflow
+with single required status `forge-ci / summary`).
+
+84/84 test scenarios PASS across 5 harnesses (foundations 21,
+scaffolder 14, workflow 11 at L1+L2, delivery 24, g1 14).
+
+### Added — `g1-forge-ci` (2026-04-29)
+
+Forge's own CI workflow — `.github/workflows/forge-ci.yml`. Closes
+the dog-fooding gap left after B.1 : Forge will finally enforce
+its own constitutional gates in CI rather than relying on
+maintainer discipline.
+
+- **Single workflow with 5 jobs** : `harness` (4 shell test
+  harnesses), `gates` (`verify.sh` + `constitution-linter.sh`),
+  `cli` (`npm ci` + lint + test + bundle), `lint` (shellcheck ×
+  2 scandirs), `summary` (aggregator).
+- **Triggers** : `pull_request: branches:[main]` +
+  `push: branches:[main]`. No `paths-filter` (Forge is a flat
+  repo, ADR-001 of g1-forge-ci) ; no `workflow_dispatch`.
+- **Concurrency policy** with conditional `cancel-in-progress :
+  ${{ github.event_name == 'pull_request' }}` — PRs cancel
+  superseded runs, main pushes do not (ADR-002).
+- **Permissions hygiene** : top-level `contents: read` only ;
+  no per-job overrides ; principle of least privilege (Aegis pass).
+- **Action pinning** : `actions/checkout@v4`,
+  `actions/setup-node@v4`, `actions/setup-python@v5`,
+  `ludeeus/action-shellcheck@2.0.0` — every `uses:` pinned, no
+  `@main` / `@master` / `@HEAD`, no `:latest`.
+- **Built-in `setup-node@v4` cache** keyed on `cli/package-lock.json`
+  (ADR-008). NFR-CI-004 cache hit rate target ≥ 95%.
+- **Summary aggregator** : always runs (`if: always()`), reads
+  each `needs.<job>.result` via `env:` indirection (avoids
+  mixing `${{ }}` with bash heredocs), exits 1 on any non-success
+  with `::error::forge-ci: <job>=<result> FAILED`, emits
+  `::notice::forge-ci: 4/4 jobs PASS` on full success (ADR-007).
+- **`cli/.nvmrc`** — Node 20.18.0 patch-pinned (LTS), satisfies
+  `cli/package.json engines.node: ">=20"`. Local maintainer
+  tooling and CI read the same file for byte-identical Node
+  across environments.
+- **New standard `global/forge-self-ci.md`** (~150 lines, 3 H2
+  sections) — Workflow shape, Differences from
+  `infra/ci-workflows.md`, Branch protection. Documents
+  deliberate deviations from the archetype workflows
+  (no paths-filter, single workflow, no per-layer split — Forge
+  is not a `full-stack-monorepo` project) and the manual
+  branch-protection setup. Audience : Forge maintainers.
+- **`docs/CONTRIBUTING.md`** gains a § Continuous Integration
+  with branch-protection setup steps (manual GitHub UI config,
+  not automated by Forge — least privilege).
+- **`g1.test.sh` harness** (~440 lines, 14 tests at L1) —
+  validates workflow shape (5 jobs, summary's `needs:`, no
+  `continue-on-error: true`, paths-filter NOT used,
+  `permissions: contents: read` only, every `uses:` pinned),
+  `cli/.nvmrc` content, standard sections, index entry,
+  `CONTRIBUTING.md` branch-protection text. Sources `_helpers.sh`
+  per ADR-010 of `b1-delivery`. Manifest comment block enforces
+  test ↔ FR parity via meta self-check.
+- **6 NFRs** (NFR-CI-001..006) — workflow runtime ≤ 5 min warm
+  / ≤ 8 min cold, file size ≤ 250 lines, no `continue-on-error`,
+  cache hit rate ≥ 95%, permissions minimal, harnesses
+  unmodified by CI usage (backwards-compat invariant).
+- **BDD feature file** (`features/g1-forge-ci.feature`) with 7
+  scenarios mirroring AC-001..007.
+- **New consolidated spec** `.forge/specs/forge-ci.md` (created
+  at archive time) — distinct namespace `FR-CI-*` from the
+  archetype `FR-GL-*` work, separate audiences.
+
+Residual risk : `shellcheck` was not available locally during
+implementation, so the lint job's first CI run may surface
+warnings on existing scripts (`foundations.test.sh`, `verify.sh`,
+etc.). Acceptable per Aegis : discovery-via-CI is the design
+intent of the lint job ; if findings arise, follow-up change
+`g1-shellcheck-cleanup` (or similar) addresses them.
 
 ### Added — `b1-delivery` (2026-04-29)
 

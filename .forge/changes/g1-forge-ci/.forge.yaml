@@ -1,5 +1,5 @@
 name: g1-forge-ci
-status: implemented
+status: archived
 created: 2026-04-29
 schema: default
 constitution_version: "1.0.0"
@@ -13,4 +13,4 @@ timeline:
   designed: 2026-04-29
   planned: 2026-04-29
   implemented: 2026-04-29
-  # archived: <!-- auto-filled by /forge:archive -->
+  archived: 2026-04-29

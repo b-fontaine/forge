@@ -122,8 +122,8 @@
 ## Phase 5: Spec finalization (executed by `/forge:archive`)
 
 ### 5.1 Consolidated spec `.forge/specs/forge-ci.md`
-- [ ] Author the new file `.forge/specs/forge-ci.md` containing the 11 FRs (FR-CI-001..011) + 6 NFRs (NFR-CI-001..006) verbatim from `g1-forge-ci/specs.md` (no modifications). Header explains the spec's scope (Forge's own CI, distinct from archetype CI). DEFERRED to Phase 6 archive [Story: Article IV]
-- [ ] Author `Archived changes` table with the single row : `g1-forge-ci`, 2026-04-29, "Forge's own CI workflow", FR-CI-001..011 + NFR-CI-001..006 [Story: Article IV]
+- [x] Author the new file `.forge/specs/forge-ci.md` containing the 11 FRs (FR-CI-001..011) + 6 NFRs (NFR-CI-001..006) verbatim from `g1-forge-ci/specs.md` (no modifications). Header explains the spec's scope (Forge's own CI, distinct from archetype CI). DEFERRED to Phase 6 archive [Story: Article IV]
+- [x] Author `Archived changes` table with the single row : `g1-forge-ci`, 2026-04-29, "Forge's own CI workflow", FR-CI-001..011 + NFR-CI-001..006 [Story: Article IV]
 
 ### 5.2 Final g1.test.sh smoke
 - [x] `bash .forge/scripts/tests/g1.test.sh` exits 0 ; every Testable FR has a matching `test_*` function ; manifest self-consistency PASSES [Story: FR-CI-010]
@@ -131,12 +131,12 @@
 ## Phase 6: Archive
 
 ### 6.1 `/forge:archive g1-forge-ci`
-- [ ] Apply the spec finalization from Phase 5.1 — create `.forge/specs/forge-ci.md` [Story: Article IV]
-- [ ] Set `.forge/changes/g1-forge-ci/.forge.yaml` `status: archived`, `timeline.archived: <date>` [Story: lifecycle]
-- [ ] Re-run `g1.test.sh` — still 100% PASS [Story: FR-CI-010]
-- [ ] Re-run `verify.sh` and `constitution-linter.sh` — both PASS [Story: NFR-CI-006]
-- [ ] Update `.forge/product/roadmap.md` : G.1 row marked Done with the archive date [Story: lifecycle]
-- [ ] Update `CHANGELOG.md` `[Unreleased]` block : add `### Added — g1-forge-ci (2026-04-29)` entry [Story: docs]
+- [x] Apply the spec finalization from Phase 5.1 — create `.forge/specs/forge-ci.md` [Story: Article IV]
+- [x] Set `.forge/changes/g1-forge-ci/.forge.yaml` `status: archived`, `timeline.archived: <date>` [Story: lifecycle]
+- [x] Re-run `g1.test.sh` — still 100% PASS [Story: FR-CI-010]
+- [x] Re-run `verify.sh` and `constitution-linter.sh` — both PASS [Story: NFR-CI-006]
+- [x] Update `.forge/product/roadmap.md` : G.1 row marked Done with the archive date [Story: lifecycle]
+- [x] Update `CHANGELOG.md` `[Unreleased]` block : add `### Added — g1-forge-ci (2026-04-29)` entry [Story: docs]
 
 ---
 
