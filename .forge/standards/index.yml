@@ -262,6 +262,24 @@ standards:
     scope: infra
     priority: medium
 
+  - id: infra/ci-workflows
+    path: standards/infra/ci-workflows.md
+    triggers: [ci, github actions, workflow, paths-filter, dorny, gate, integration, nightly, forge-backend, forge-frontend, forge-infra, forge-integration]
+    scope: infra
+    priority: high
+
+  - id: infra/k8s-overlays
+    path: standards/infra/k8s-overlays.md
+    triggers: [kustomize, overlay, kubernetes, k8s, deployment, namespace, replicas, hpa, ingress, base, dev, staging, prod, kubeconform]
+    scope: infra
+    priority: high
+
+  - id: infra/observability-local
+    path: standards/infra/observability-local.md
+    triggers: [observability, otel, opentelemetry, signoz, traces, metrics, logs, otlp, collector, clickhouse, fsm-otel-collector, fsm-signoz]
+    scope: infra
+    priority: high
+
   - id: global/multi-layer-workflow
     path: standards/global/multi-layer-workflow.md
     triggers: [multi-layer, janus, cross-layer, "layers:", layers count, designs_per_layer, tasks_per_layer, cross-layer contract, multi-root verify]

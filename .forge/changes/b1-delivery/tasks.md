@@ -114,28 +114,28 @@
 ## Phase 5: Standards (parallelizable [P])
 
 ### 5.1 FR-IN-010 — `infra/ci-workflows.md` [P]
-- [ ] RED: `test_standard_ci_workflows_has_required_sections()` — 7 canonical H2 sections exact match [Story: FR-IN-010]
-- [ ] Verify RED [Story: FR-IN-010]
-- [ ] GREEN: write `standards/infra/ci-workflows.md` (~150 lines) — Per-layer paths filter, Gate ordering, Integration workflow scope, Concurrency policy, Caching strategy, Tool version pinning, Failure semantics. Reference each `.tmpl` file by relative path. Cross-ref to Articles V + X [Story: FR-IN-010, ADR-002, ADR-011, ADR-012]
-- [ ] Verify GREEN [Story: FR-IN-010]
+- [x] RED: `test_standard_ci_workflows_has_required_sections()` — 7 canonical H2 sections via `assert_h2_sections` helper [Story: FR-IN-010]
+- [x] Verify RED [Story: FR-IN-010]
+- [x] GREEN: write `standards/infra/ci-workflows.md` (~180 lines) — 7 H2 sections (Per-layer paths filter, Gate ordering, Integration workflow scope, Concurrency policy, Caching strategy, Tool version pinning, Failure semantics) + extending-the-reference-workflows section. Tables for caching strategy + tool version pinning. Cross-ref to Articles V + X. Documents the 2-extra-step deviation budget [Story: FR-IN-010, ADR-002, ADR-011, ADR-012]
+- [x] Verify GREEN [Story: FR-IN-010]
 
 ### 5.2 FR-IN-011 — `infra/k8s-overlays.md` [P]
-- [ ] RED: `test_standard_k8s_overlays_has_required_sections()` — 6 canonical H2 sections [Story: FR-IN-011]
-- [ ] Verify RED [Story: FR-IN-011]
-- [ ] GREEN: write `standards/infra/k8s-overlays.md` (~180 lines) — Three-environment promotion model, Per-overlay diff conventions, Image tag policy by environment, Resource budget table (CPU/memory per env), Secret management (Sealed Secrets / External Secrets allowed ; plain `Secret` forbidden), Promotion gating mapping to Forge change lifecycle. Explicit interdiction of editing `kustomize build` output [Story: FR-IN-011, ADR-004]
-- [ ] Verify GREEN [Story: FR-IN-011]
+- [x] RED: `test_standard_k8s_overlays_has_required_sections()` — 6 canonical H2 sections [Story: FR-IN-011]
+- [x] Verify RED [Story: FR-IN-011]
+- [x] GREEN: write `standards/infra/k8s-overlays.md` (~150 lines) — 6 H2 sections, per-overlay diff table, image tag policy table, resource budget CPU/memory table, secret management Allowed/Forbidden, Forge change status → eligible environment promotion table. Explicit "no fourth environment" rule + interdiction on editing `kustomize build` output [Story: FR-IN-011, ADR-004]
+- [x] Verify GREEN [Story: FR-IN-011]
 
 ### 5.3 FR-IN-012 — `infra/observability-local.md` [P]
-- [ ] RED: `test_standard_observability_local_has_required_sections()` — 5 canonical H2 sections + version table block [Story: FR-IN-012]
-- [ ] Verify RED [Story: FR-IN-012]
-- [ ] GREEN: write `standards/infra/observability-local.md` (~140 lines) — Local OTel + SigNoz topology, App-side OTLP configuration, Versioning policy (with explicit pinned versions table), Trace sampling defaults, Migration to production observability (runbook stub). The version table is the **single source of truth** ; compose template references it [Story: FR-IN-012, ADR-005, ADR-006, ADR-008]
-- [ ] Verify GREEN [Story: FR-IN-012]
+- [x] RED: `test_standard_observability_local_has_required_sections()` — 5 canonical H2 sections [Story: FR-IN-012]
+- [x] Verify RED [Story: FR-IN-012]
+- [x] GREEN: write `standards/infra/observability-local.md` (~150 lines) — 5 H2 sections, version table as single source of truth (4 pinned images), per-layer OTLP config table (backend gRPC :4317, frontend HTTP :4318), no-head-sampling policy for dev with rationale, 5-step Migration to production runbook (managed collector → tail sampling → auth flip → retention → alerts). Documents OTLP-contract migration guarantee [Story: FR-IN-012, ADR-005, ADR-006, ADR-008]
+- [x] Verify GREEN [Story: FR-IN-012]
 
 ### 5.4 Index entries for the 3 new standards
-- [ ] RED: `test_index_has_three_new_infra_standards()` — strict YAML check : id, scope (infra), priority, triggers per entry [Story: FR-IN-010, FR-IN-011, FR-IN-012]
-- [ ] Verify RED [Story: FR-IN-010..012]
-- [ ] GREEN: append three entries to `.forge/standards/index.yml` (ci-workflows, k8s-overlays, observability-local) with appropriate triggers [Story: FR-IN-010..012]
-- [ ] Verify GREEN [Story: FR-IN-010..012]
+- [x] RED: `test_index_has_three_new_infra_standards()` — PyYAML check on `standards[].id` for `infra/ci-workflows`, `infra/k8s-overlays`, `infra/observability-local` [Story: FR-IN-010, FR-IN-011, FR-IN-012]
+- [x] Verify RED — `missing index entry: infra/ci-workflows` [Story: FR-IN-010..012]
+- [x] GREEN: append three entries to `.forge/standards/index.yml` (after `infra/docker-compose`, before `global/multi-layer-workflow`) — scope `infra`, priority `high`, triggers tuned per standard [Story: FR-IN-010..012]
+- [x] Verify GREEN [Story: FR-IN-010..012]
 
 ## Phase 6: Scaffolder integration
 

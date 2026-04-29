@@ -467,6 +467,60 @@ sys.exit(1 if errors else 0)
 PY
 }
 
+# ─── Phase 5 : Standards (canonical sections) ──────────────────
+
+# assert_h2_sections <file> <expected_csv>
+assert_h2_sections() {
+  local f="$1" expected_csv="$2"
+  if [ ! -f "$f" ]; then
+    echo "    file missing: $f" >&2; return 1
+  fi
+  python3 - "$f" "$expected_csv" <<'PY'
+import sys, re
+path, csv = sys.argv[1], sys.argv[2]
+with open(path) as fh:
+    text = fh.read()
+present = set(re.findall(r"^##\s+(.+?)\s*$", text, re.MULTILINE))
+expected = [s.strip() for s in csv.split("|") if s.strip()]
+missing = [s for s in expected if s not in present]
+if missing:
+    print(f"    missing required H2 sections: {missing}", file=sys.stderr)
+    print(f"    present sections: {sorted(present)}", file=sys.stderr)
+    sys.exit(1)
+PY
+}
+
+test_standard_ci_workflows_has_required_sections() {
+  assert_h2_sections "$STD_CI" \
+    "Per-layer paths filter|Gate ordering|Integration workflow scope|Concurrency policy|Caching strategy|Tool version pinning|Failure semantics"
+}
+
+test_standard_k8s_overlays_has_required_sections() {
+  assert_h2_sections "$STD_K8S" \
+    "Three-environment promotion model|Per-overlay diff conventions|Image tag policy by environment|Resource budget table|Secret management|Promotion gating"
+}
+
+test_standard_observability_local_has_required_sections() {
+  assert_h2_sections "$STD_OBS" \
+    "Local OTel + SigNoz topology|App-side OTLP configuration|Versioning policy|Trace sampling defaults|Migration to production observability"
+}
+
+test_index_has_three_new_infra_standards() {
+  python3 - "$INDEX_YML" <<'PY' || return 1
+import sys, yaml
+with open(sys.argv[1]) as fh:
+    doc = yaml.safe_load(fh)
+errors = []
+ids = {s.get("id") for s in (doc or {}).get("standards", [])}
+for needed in ("infra/ci-workflows", "infra/k8s-overlays", "infra/observability-local"):
+    if needed not in ids:
+        errors.append(f"missing index entry: {needed}")
+for e in errors:
+    print(f"    {e}", file=sys.stderr)
+sys.exit(1 if errors else 0)
+PY
+}
+
 # ─── Phase 4 : Local observability stack ───────────────────────
 
 test_compose_otel_service_shape() {
@@ -727,6 +781,10 @@ main() {
     run_test test_compose_signoz_services_shape
     run_test test_taskfile_has_observe_target
     run_test test_env_dev_files_export_otel_defaults
+    run_test test_standard_ci_workflows_has_required_sections
+    run_test test_standard_k8s_overlays_has_required_sections
+    run_test test_standard_observability_local_has_required_sections
+    run_test test_index_has_three_new_infra_standards
     run_test test_manifest_self_consistency
   fi
 
