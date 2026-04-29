@@ -1,0 +1,25 @@
+# <!-- Audit: B.1.12 (b1-delivery, FR-IN-006) -->
+# HorizontalPodAutoscaler — prod only.
+# Defaults: min=3 (matches replicas baseline), max=10 (NFR ceiling),
+# CPU target 70% (industry default for stateless backends).
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: <project-name>-backend
+  labels:
+    app.kubernetes.io/name: <project-name>
+    app.kubernetes.io/component: backend
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: <project-name>-backend
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

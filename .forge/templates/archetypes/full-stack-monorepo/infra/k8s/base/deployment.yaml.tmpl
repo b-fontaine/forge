@@ -1,0 +1,59 @@
+# <!-- Audit: B.1.12 (b1-delivery, FR-IN-006) -->
+# Backend Deployment — image and replicas patched per overlay.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: <project-name>-backend
+  labels:
+    app.kubernetes.io/name: <project-name>
+    app.kubernetes.io/component: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: <project-name>
+      app.kubernetes.io/component: backend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: <project-name>
+        app.kubernetes.io/component: backend
+    spec:
+      serviceAccountName: <project-name>-backend
+      containers:
+        - name: backend
+          image: <project-name>-backend:placeholder
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: grpc
+              containerPort: 50051
+              protocol: TCP
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-env
+                  key: OTEL_EXPORTER_OTLP_ENDPOINT
+                  optional: true
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

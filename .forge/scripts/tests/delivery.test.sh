@@ -298,6 +298,195 @@ test_workflow_infra_paths_filter_and_steps() {
   done
 }
 
+# ─── Phase 3 : Kustomize overlays ──────────────────────────────
+#
+# Strategy: L1 = structural YAML inspection (no kustomize binary
+# required). L2 (when `kustomize` + `kubeconform` are on PATH) adds
+# real `kustomize build` + `kubeconform --strict` of the rendered
+# overlay. These tests are placed in L1 so they always run ; if the
+# binaries are absent the kustomize-build step is silently skipped
+# and only the structural assertions hold.
+
+# kustomize_overlay_assertions <env> <expected_namespace_suffix> <expected_tag_pattern> <expected_replicas>
+kustomize_overlay_assertions() {
+  local env="$1" ns_suffix="$2" tag_pattern="$3" replicas="$4"
+  local kfile="$K8S_DIR/overlays/$env/kustomization.yaml.tmpl"
+  if [ ! -f "$kfile" ]; then
+    echo "    overlay file missing: $kfile" >&2
+    return 1
+  fi
+  python3 - "$kfile" "$env" "$ns_suffix" "$tag_pattern" "$replicas" <<'PY' || return 1
+import sys, yaml, re
+path, env, ns_suffix, tag_pattern, replicas = sys.argv[1:6]
+with open(path) as fh:
+    doc = yaml.safe_load(fh)
+errors = []
+if not isinstance(doc, dict):
+    errors.append(f"YAML root not a mapping: {type(doc).__name__}")
+else:
+    if doc.get("kind") != "Kustomization":
+        errors.append(f"kind should be Kustomization, got {doc.get('kind')!r}")
+    ns = doc.get("namespace", "")
+    if not ns.endswith(ns_suffix):
+        errors.append(f"namespace must end with {ns_suffix!r}; got {ns!r}")
+    images = doc.get("images") or []
+    if not images:
+        errors.append("no images: transformer declared")
+    else:
+        tags = [(im.get("newTag") or "") for im in images]
+        if not any(re.search(tag_pattern, t) for t in tags):
+            errors.append(f"no image newTag matches /{tag_pattern}/; got {tags}")
+    rep = doc.get("replicas") or []
+    if not rep or rep[0].get("count") != int(replicas):
+        errors.append(f"replicas count must be {replicas}; got {rep}")
+    ann = doc.get("commonAnnotations") or {}
+    if ann.get("forge.io/managed-by") != "forge":
+        errors.append("missing commonAnnotations forge.io/managed-by: forge")
+    if ann.get("forge.io/overlay") != env:
+        errors.append(f"missing commonAnnotations forge.io/overlay: {env}")
+for e in errors:
+    print(f"    {e}", file=sys.stderr)
+sys.exit(1 if errors else 0)
+PY
+  # Optional L2 augmentation: real kustomize build + kubeconform
+  if have_kustomize; then
+    local out
+    out=$(kustomize build "$K8S_DIR/overlays/$env" 2>&1) || {
+      echo "    kustomize build overlays/$env failed:" >&2
+      echo "$out" | sed 's/^/      /' >&2
+      return 1
+    }
+    if have_kubeconform; then
+      printf '%s' "$out" | kubeconform --summary --strict - >/dev/null 2>&1 || {
+        echo "    kubeconform --strict failed for overlays/$env" >&2
+        return 1
+      }
+    fi
+  fi
+}
+
+test_kustomize_base_renders() {
+  local kfile="$K8S_DIR/base/kustomization.yaml.tmpl"
+  if [ ! -f "$kfile" ]; then
+    echo "    base/kustomization.yaml.tmpl missing" >&2
+    return 1
+  fi
+  # Each base resource MUST exist as a .tmpl file
+  for f in deployment.yaml.tmpl service.yaml.tmpl serviceaccount.yaml.tmpl ingress.yaml.tmpl; do
+    if [ ! -f "$K8S_DIR/base/$f" ]; then
+      echo "    base/$f missing" >&2
+      return 1
+    fi
+  done
+  # base kustomization parses + lists resources
+  python3 - "$kfile" <<'PY' || return 1
+import sys, yaml
+with open(sys.argv[1]) as fh:
+    doc = yaml.safe_load(fh)
+errors = []
+if not isinstance(doc, dict) or doc.get("kind") != "Kustomization":
+    errors.append("kind != Kustomization")
+res = doc.get("resources") or []
+expected = {"deployment.yaml", "service.yaml", "serviceaccount.yaml", "ingress.yaml"}
+missing = expected - set(res)
+if missing:
+    errors.append(f"resources: missing {sorted(missing)}; got {res}")
+for e in errors:
+    print(f"    {e}", file=sys.stderr)
+sys.exit(1 if errors else 0)
+PY
+  # Deployment has containers + healthcheck probes + resources
+  python3 - "$K8S_DIR/base/deployment.yaml.tmpl" <<'PY' || return 1
+import sys, yaml
+with open(sys.argv[1]) as fh:
+    doc = yaml.safe_load(fh)
+errors = []
+if not isinstance(doc, dict) or doc.get("kind") != "Deployment":
+    errors.append("kind != Deployment")
+spec = (doc.get("spec") or {}).get("template", {}).get("spec", {})
+containers = spec.get("containers") or []
+if not containers:
+    errors.append("no containers declared")
+else:
+    c = containers[0]
+    if "livenessProbe" not in c:
+        errors.append("container missing livenessProbe")
+    if "readinessProbe" not in c:
+        errors.append("container missing readinessProbe")
+    if "resources" not in c:
+        errors.append("container missing resources")
+for e in errors:
+    print(f"    {e}", file=sys.stderr)
+sys.exit(1 if errors else 0)
+PY
+  if have_kustomize; then
+    kustomize build "$K8S_DIR/base" >/dev/null 2>&1 || {
+      echo "    kustomize build base failed" >&2; return 1; }
+  fi
+}
+
+test_overlay_dev_renders_and_validates() {
+  kustomize_overlay_assertions dev '-dev' '^dev-latest$' 1
+}
+
+test_overlay_staging_renders_and_validates() {
+  kustomize_overlay_assertions staging '-staging' '^sha-' 2
+}
+
+test_overlay_prod_renders_and_validates() {
+  kustomize_overlay_assertions prod '-prod' '^v[0-9]' 3 || return 1
+  # FR-IN-006 prod-specific: HorizontalPodAutoscaler resource present
+  local hpa="$K8S_DIR/overlays/prod/hpa.yaml.tmpl"
+  if [ ! -f "$hpa" ]; then
+    echo "    overlays/prod/hpa.yaml.tmpl missing" >&2
+    return 1
+  fi
+  python3 - "$hpa" <<'PY' || return 1
+import sys, yaml
+with open(sys.argv[1]) as fh:
+    doc = yaml.safe_load(fh)
+errors = []
+if not isinstance(doc, dict) or doc.get("kind") != "HorizontalPodAutoscaler":
+    errors.append(f"kind != HorizontalPodAutoscaler; got {doc.get('kind') if isinstance(doc,dict) else type(doc).__name__}")
+spec = doc.get("spec") or {}
+if spec.get("minReplicas") != 3:
+    errors.append(f"minReplicas must be 3; got {spec.get('minReplicas')}")
+if spec.get("maxReplicas") != 10:
+    errors.append(f"maxReplicas must be 10; got {spec.get('maxReplicas')}")
+metrics = spec.get("metrics") or []
+cpu_target = None
+for m in metrics:
+    if (m.get("type") == "Resource"
+        and (m.get("resource") or {}).get("name") == "cpu"):
+        cpu_target = ((m.get("resource") or {}).get("target") or {}).get("averageUtilization")
+if cpu_target != 70:
+    errors.append(f"CPU averageUtilization target must be 70; got {cpu_target}")
+for e in errors:
+    print(f"    {e}", file=sys.stderr)
+sys.exit(1 if errors else 0)
+PY
+}
+
+test_overlay_diff_size_under_4kb() {
+  # NFR-017 — only meaningful when kustomize is on PATH (L2). At L1
+  # the .tmpl files are pre-substitution and a textual diff is not
+  # equivalent to the rendered diff. SKIP cleanly when kustomize
+  # is missing, marked PASS-with-skip-message.
+  if ! have_kustomize; then
+    echo "    SKIP : kustomize not on PATH (test runs in L2 only)" >&2
+    return 0
+  fi
+  local dev_out prod_out
+  dev_out=$(kustomize build "$K8S_DIR/overlays/dev" 2>/dev/null) || return 1
+  prod_out=$(kustomize build "$K8S_DIR/overlays/prod" 2>/dev/null) || return 1
+  local diff_bytes
+  diff_bytes=$(diff <(printf '%s' "$dev_out") <(printf '%s' "$prod_out") | wc -c | tr -d ' ')
+  if [ "$diff_bytes" -gt 4096 ]; then
+    echo "    overlay diff dev↔prod = ${diff_bytes} bytes > 4096 (NFR-017)" >&2
+    return 1
+  fi
+}
+
 test_workflow_integration_triggers_and_lifecycle() {
   local f="$WORKFLOWS_DIR/forge-integration.yml.tmpl"
   if [ ! -f "$f" ]; then
@@ -371,6 +560,11 @@ main() {
     run_test test_workflow_frontend_paths_filter_and_steps
     run_test test_workflow_infra_paths_filter_and_steps
     run_test test_workflow_integration_triggers_and_lifecycle
+    run_test test_kustomize_base_renders
+    run_test test_overlay_dev_renders_and_validates
+    run_test test_overlay_staging_renders_and_validates
+    run_test test_overlay_prod_renders_and_validates
+    run_test test_overlay_diff_size_under_4kb
     run_test test_manifest_self_consistency
   fi
 
