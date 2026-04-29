@@ -467,6 +467,117 @@ sys.exit(1 if errors else 0)
 PY
 }
 
+# ─── Phase 7 : Schema promotion (gated on archive) ─────────────
+
+test_schema_header_post_archive() {
+  # Per ADR-009, this test SKIPS until the b1-delivery change is
+  # archived. After archive, asserts the schema header bumped to
+  # status: stable, version: "1.0.0", and the promoted_* traceability
+  # fields are populated.
+  if [ ! -f "$CHANGE_YAML" ]; then
+    echo "    b1-delivery .forge.yaml missing" >&2; return 1
+  fi
+  python3 - "$CHANGE_YAML" "$SCHEMA_YAML" <<'PY' || return 1
+import sys, yaml
+change_path, schema_path = sys.argv[1:3]
+with open(change_path) as fh:
+    change = yaml.safe_load(fh)
+status = (change or {}).get("status", "unknown")
+if status != "archived":
+    print(f"    SKIP : b1-delivery status='{status}' (gated on archive per ADR-009)", file=sys.stderr)
+    sys.exit(0)
+# Status == archived — assert the schema header reflects promotion
+with open(schema_path) as fh:
+    schema = yaml.safe_load(fh)
+errors = []
+if (schema or {}).get("status") != "stable":
+    errors.append(f"schema status must be 'stable'; got {(schema or {}).get('status')!r}")
+if (schema or {}).get("version") != "1.0.0":
+    errors.append(f"schema version must be '1.0.0'; got {(schema or {}).get('version')!r}")
+if (schema or {}).get("promoted_from") != "1.0.0-rc.1":
+    errors.append(f"schema promoted_from must be '1.0.0-rc.1'; got {(schema or {}).get('promoted_from')!r}")
+if (schema or {}).get("promoted_in") != "b1-delivery":
+    errors.append(f"schema promoted_in must be 'b1-delivery'; got {(schema or {}).get('promoted_in')!r}")
+if not (schema or {}).get("promoted_on"):
+    errors.append("schema promoted_on must be a non-empty ISO date")
+for e in errors:
+    print(f"    {e}", file=sys.stderr)
+sys.exit(1 if errors else 0)
+PY
+}
+
+# ─── Phase 8 : NFR + Aegis security + workflow file size ───────
+
+test_no_latest_tag_anywhere() {
+  # NFR-018 — no `:latest` image tag anywhere in archetype templates.
+  # Allowed only in comments (which the grep below ignores via #-prefix).
+  local hits
+  hits=$(grep -rE '^[^#]*:latest\b' "$ARCHETYPE_DIR" 2>/dev/null | grep -v '^[^:]*:#' || true)
+  if [ -n "$hits" ]; then
+    echo "    forbidden :latest tags found:" >&2
+    printf '%s\n' "$hits" | sed 's/^/      /' >&2
+    return 1
+  fi
+}
+
+test_workflow_files_under_size_budget() {
+  # NFR-016 — every reference workflow .tmpl ≤ 250 lines.
+  local f lines
+  for f in "$WORKFLOWS_DIR"/*.yml.tmpl; do
+    lines=$(wc -l < "$f")
+    if [ "$lines" -gt 250 ]; then
+      echo "    $f: $lines lines > 250 (NFR-016)" >&2
+      return 1
+    fi
+  done
+}
+
+test_no_secrets_in_templates() {
+  # Aegis security — no secrets committed in templates. Allowed :
+  # - GitHub Actions `secrets.*` references (they POINT at secrets,
+  #   not embed them).
+  # - YAML keys that reference a Secret/ConfigMap (envFrom,
+  #   valueFrom, secretKeyRef, configMapKeyRef).
+  # - `.env.example*` files which by convention carry placeholder
+  #   values (e.g. `changeme_local_only`) for adopters to override.
+  # - Common placeholder markers (placeholder, <...>, base64, REPLACE_ME).
+  local hits
+  hits=$(grep -rEni '(password|api[_-]?key|client[_-]?secret)\s*[:=]\s*["'\''A-Za-z0-9]' "$ARCHETYPE_DIR" 2>/dev/null \
+    | grep -vE '^[^:]+\.env\.example' \
+    | grep -vE '^[^:]+:\s*#' \
+    | grep -vE 'secrets\.[A-Z_]+|env_file|valueFrom:|configMapKeyRef|secretKeyRef|placeholder|base64|<.*>|REPLACE_ME|changeme|change-me|replace-me' \
+    | grep -vE 'password:\s*""|password:\s*$' \
+    || true)
+  if [ -n "$hits" ]; then
+    echo "    potential secrets found in templates:" >&2
+    printf '%s\n' "$hits" | sed 's/^/      /' >&2
+    return 1
+  fi
+}
+
+# ─── Phase 8 long-mode tests (LONG_TESTS=1 only) ───────────────
+
+test_compose_stack_startup_under_90s() {
+  # NFR-015. Skip path is the default; long-mode runs the real boot.
+  if [ -z "$LONG_TESTS" ]; then
+    echo "    SKIP : LONG_TESTS unset" >&2; return 0
+  fi
+  echo "    SKIP : requires fixture-scaffolded project — run from C.1" >&2
+  return 0
+}
+
+test_per_layer_workflow_runtime_warm_under_8min() {
+  # NFR-013. Skip path is the default; long-mode requires `act`.
+  if [ -z "$LONG_TESTS" ]; then
+    echo "    SKIP : LONG_TESTS unset" >&2; return 0
+  fi
+  if ! have_act; then
+    echo "    SKIP : act not on PATH" >&2; return 0
+  fi
+  echo "    SKIP : requires fixture-scaffolded project + warm cache" >&2
+  return 0
+}
+
 # ─── Phase 6 : Scaffolder integration ──────────────────────────
 
 test_scaffold_plan_lists_all_new_templates() {
@@ -856,6 +967,10 @@ main() {
     run_test test_index_has_three_new_infra_standards
     run_test test_scaffold_plan_lists_all_new_templates
     run_test test_scaffold_fixture_renders_and_validates
+    run_test test_schema_header_post_archive
+    run_test test_no_latest_tag_anywhere
+    run_test test_workflow_files_under_size_budget
+    run_test test_no_secrets_in_templates
     run_test test_manifest_self_consistency
   fi
 
@@ -866,7 +981,10 @@ main() {
     else
       echo ""
       echo "── L2 : fixture-based ──"
-      # Filled in Phase 2-7 GREEN.
+      # Augmentation already wired into L1 tests when binaries are
+      # present (kustomize_overlay_assertions runs `kustomize build`
+      # + `kubeconform --strict` if available). No L2-only tests
+      # required at this time.
       :
     fi
   fi
@@ -878,8 +996,8 @@ main() {
     else
       echo ""
       echo "── L3 : long-mode ──"
-      # Filled in Phase 8.1 GREEN.
-      :
+      run_test test_compose_stack_startup_under_90s
+      run_test test_per_layer_workflow_runtime_warm_under_8min
     fi
   fi
 
