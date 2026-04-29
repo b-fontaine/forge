@@ -1,0 +1,16 @@
+name: g1-forge-ci
+status: planned
+created: 2026-04-29
+schema: default
+constitution_version: "1.0.0"
+parent_audit_items:
+  - G.1  # GitHub Actions reference workflow running verify.sh + constitution-linter.sh on every PR (T1 carry-over, now expanded to include test harnesses + CLI Vitest)
+depends_on:
+  - b1-delivery   # archived 2026-04-29 — defines the workflow conventions (paths-filter, gate ordering, tool pinning) for archetype projects ; this change applies the same conventions to Forge itself with appropriate adaptations (no archetype paths to filter on Forge)
+timeline:
+  proposed: 2026-04-29
+  specified: 2026-04-29
+  designed: 2026-04-29
+  planned: 2026-04-29
+  # implemented: <!-- auto-filled by /forge:implement -->
+  # archived: <!-- auto-filled by /forge:archive -->
