@@ -9,22 +9,22 @@
 ## Phase 1: Foundation — harness skeleton + placeholder files
 
 ### 1.1 Delivery test harness skeleton
-- [ ] Create `.forge/scripts/tests/delivery.test.sh` with shebang, `set -euo pipefail`, manifest header listing every `test_*` function name, sourcing of the shared `_helpers.sh` (or copy-paste the helper block from `workflow.test.sh` per ADR-010), stub `main()` that loops the manifest [Story: FR-GL-025, design ADR-010]
-- [ ] Verify: `bash delivery.test.sh` exits 1 (RED baseline — manifest declares tests that do not yet exist) [Story: FR-GL-025]
+- [x] Create `.forge/scripts/tests/delivery.test.sh` with shebang, `set -euo pipefail`, manifest header listing every `test_*` function name, sourcing of the shared `_helpers.sh` (ADR-010 corrected — `_helpers.sh` is already a shared lib, source rather than copy-paste), stub `main()` with level dispatch [Story: FR-GL-025, design ADR-010]
+- [x] Verify: `bash delivery.test.sh` exits 1 (RED baseline — manifest declares 25 tests that do not yet exist + deliberate `test_phase_1_red_baseline` placeholder) [Story: FR-GL-025]
 
 ### 1.2 Placeholder template files with audit headers
-- [ ] Create `.forge/templates/archetypes/full-stack-monorepo/.github/workflows/forge-backend.yml.tmpl` placeholder (header comment only) [Story: FR-IN-002] [P]
-- [ ] Create `.forge/templates/archetypes/full-stack-monorepo/.github/workflows/forge-frontend.yml.tmpl` placeholder [Story: FR-IN-003] [P]
-- [ ] Create `.forge/templates/archetypes/full-stack-monorepo/.github/workflows/forge-infra.yml.tmpl` placeholder [Story: FR-IN-004] [P]
-- [ ] Create `.forge/templates/archetypes/full-stack-monorepo/.github/workflows/forge-integration.yml.tmpl` placeholder [Story: FR-IN-005] [P]
-- [ ] Create `.forge/templates/archetypes/full-stack-monorepo/infra/observability/otel-collector-config.yaml.tmpl` placeholder [Story: FR-IN-007] [P]
-- [ ] Create `.forge/templates/archetypes/full-stack-monorepo/infra/observability/signoz-config.yaml.tmpl` placeholder [Story: FR-IN-008] [P]
-- [ ] Create `.forge/templates/archetypes/full-stack-monorepo/backend/.env.dev.tmpl` placeholder [Story: FR-IN-009] [P]
-- [ ] Create `.forge/templates/archetypes/full-stack-monorepo/frontend/.env.dev.tmpl` placeholder [Story: FR-IN-009] [P]
-- [ ] Create `.forge/standards/infra/ci-workflows.md` placeholder [Story: FR-IN-010] [P]
-- [ ] Create `.forge/standards/infra/k8s-overlays.md` placeholder [Story: FR-IN-011] [P]
-- [ ] Create `.forge/standards/infra/observability-local.md` placeholder [Story: FR-IN-012] [P]
-- [ ] Remove `.forge/templates/archetypes/full-stack-monorepo/infra/k8s_base.gitkeep` and `k8s_overlays.gitkeep` (replaced by populated tree in Phase 3) [Story: FR-IN-006]
+- [x] Create `.forge/templates/archetypes/full-stack-monorepo/.github/workflows/forge-backend.yml.tmpl` placeholder (header comment only) [Story: FR-IN-002] [P]
+- [x] Create `.forge/templates/archetypes/full-stack-monorepo/.github/workflows/forge-frontend.yml.tmpl` placeholder [Story: FR-IN-003] [P]
+- [x] Create `.forge/templates/archetypes/full-stack-monorepo/.github/workflows/forge-infra.yml.tmpl` placeholder [Story: FR-IN-004] [P]
+- [x] Create `.forge/templates/archetypes/full-stack-monorepo/.github/workflows/forge-integration.yml.tmpl` placeholder [Story: FR-IN-005] [P]
+- [x] Create `.forge/templates/archetypes/full-stack-monorepo/infra/observability/otel-collector-config.yaml.tmpl` placeholder [Story: FR-IN-007] [P]
+- [x] Create `.forge/templates/archetypes/full-stack-monorepo/infra/observability/signoz-config.yaml.tmpl` placeholder [Story: FR-IN-008] [P]
+- [x] Create `.forge/templates/archetypes/full-stack-monorepo/backend/.env.dev.tmpl` placeholder [Story: FR-IN-009] [P]
+- [x] Create `.forge/templates/archetypes/full-stack-monorepo/frontend/.env.dev.tmpl` placeholder [Story: FR-IN-009] [P]
+- [x] Create `.forge/standards/infra/ci-workflows.md` placeholder [Story: FR-IN-010] [P]
+- [x] Create `.forge/standards/infra/k8s-overlays.md` placeholder [Story: FR-IN-011] [P]
+- [x] Create `.forge/standards/infra/observability-local.md` placeholder [Story: FR-IN-012] [P]
+- [x] Remove `.forge/templates/archetypes/full-stack-monorepo/infra/k8s_base.gitkeep` and `k8s_overlays.gitkeep` (replaced by populated tree in Phase 3) [Story: FR-IN-006]
 
 ## Phase 2: Reference CI workflows — TDD per FR
 

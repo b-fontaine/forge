@@ -1,0 +1,9 @@
+# <!-- Audit: B.1.9 (b1-delivery, FR-IN-004) -->
+# <!-- Placeholder — replaced by Phase 2.3 GREEN. See tasks.md FR-IN-004. -->
+# Reference per-layer infra CI workflow. Triggers on `pull_request`
+# and `push`, uses dorny/paths-filter@v3 to scope to infra/**.
+# Steps order : kustomize build × 3 overlays (dev/staging/prod) →
+# kubeconform --strict against each rendered overlay → verify.sh →
+# constitution-linter.sh. Kustomize version pinned in setup step.
+#
+# Templated placeholders : <project-name>

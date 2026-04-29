@@ -1,0 +1,10 @@
+# <!-- Audit: B.1.9 (b1-delivery, FR-IN-002) -->
+# <!-- Placeholder — replaced by Phase 2.1 GREEN. See tasks.md FR-IN-002. -->
+# Reference per-layer backend CI workflow for the full-stack-monorepo
+# archetype. Triggers on `pull_request` and `push` (default branch),
+# uses dorny/paths-filter@v3 to scope to backend/** + shared/protos/**.
+# Steps order : cargo fmt → clippy -D warnings → test → verify.sh →
+# constitution-linter.sh.
+#
+# Templated placeholders (substituted by scaffolder) :
+#   <project-name> — concurrency group scope

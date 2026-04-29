@@ -1,0 +1,9 @@
+# <!-- Audit: B.1.9 (b1-delivery, FR-IN-005) -->
+# <!-- Placeholder — replaced by Phase 2.4 GREEN. See tasks.md FR-IN-005. -->
+# Cross-layer integration workflow. Triggers ONLY on `push: main` +
+# `schedule: cron '0 3 * * *'` + `workflow_dispatch`. NEVER triggers
+# on `pull_request` (NFR-014 budget protection). Boots the local
+# stack via `docker compose up -d --wait`, runs cargo integration
+# tests + Patrol Android E2E, teardown `if: always()`.
+#
+# Templated placeholders : <project-name>

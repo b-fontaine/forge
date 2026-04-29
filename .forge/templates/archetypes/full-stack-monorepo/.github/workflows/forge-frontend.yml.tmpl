@@ -1,0 +1,10 @@
+# <!-- Audit: B.1.9 (b1-delivery, FR-IN-003) -->
+# <!-- Placeholder — replaced by Phase 2.2 GREEN. See tasks.md FR-IN-003. -->
+# Reference per-layer frontend CI workflow. Triggers on `pull_request`
+# and `push`, uses dorny/paths-filter@v3 to scope to frontend/** +
+# shared/protos/**. Steps order : pub get → dart format
+# --set-exit-if-changed → flutter analyze --fatal-infos
+# --fatal-warnings → flutter test --coverage → verify.sh →
+# constitution-linter.sh. Flutter SDK pinned via .flutter-version.
+#
+# Templated placeholders : <project-name>

@@ -1,0 +1,7 @@
+# <!-- Audit: B.1.14 (b1-delivery, FR-IN-007) -->
+# <!-- Placeholder — replaced by Phase 4.1 GREEN. See tasks.md FR-IN-007. -->
+# OpenTelemetry Collector config — local dev only.
+# Receivers : OTLP gRPC :4317 + OTLP HTTP :4318
+# Processors : memory_limiter → batch
+# Exporters : otlp → fsm-signoz-query, debug → stdout
+# Pipelines : traces, metrics, logs (three signals per Article IX)
