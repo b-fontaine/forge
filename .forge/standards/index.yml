@@ -291,3 +291,9 @@ standards:
     triggers: [forge-ci, self-ci, branch protection, dog-fooding, summary status, ludeeus, shellcheck, forge-ci.yml, .nvmrc]
     scope: meta
     priority: medium
+
+  - id: global/upgrade-policy
+    path: standards/global/upgrade-policy.md
+    triggers: [upgrade, forge upgrade, merge, framework-owned, archetype_version, upgrade_history, scaffold-snapshot, three-way merge, NEEDS MIGRATION]
+    scope: all
+    priority: high

@@ -19,3 +19,6 @@ examples/*/node_modules/
 examples/*/.dart_tool/
 examples/*/.cargo/
 examples/*/coverage/
+
+# a7-forge-upgrade — session-only conflict listing, never committed (FR-UP-012)
+.merge-conflicts
