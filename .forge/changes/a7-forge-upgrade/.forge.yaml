@@ -1,0 +1,19 @@
+name: a7-forge-upgrade
+status: planned
+created: 2026-04-30
+schema: default
+constitution_version: "1.0.0"
+parent_audit_items:
+  - A.7  # Non-destructive merge of framework updates into a scaffolded project
+depends_on:
+  - b1-foundations  # archived 2026-04-21 — schema versioning
+  - b1-scaffolder   # archived 2026-04-22 — provides scaffold-manifest.yaml
+  - b1-delivery     # archived 2026-04-29 — schema STABLE 1.0.0
+  - c1-reference-project  # archived 2026-04-30 — scaffold-plan version drift surfaced
+timeline:
+  proposed: 2026-04-30
+  specified: 2026-04-30
+  designed: 2026-04-30
+  planned: 2026-04-30
+  # implemented: <!-- auto-filled by /forge:implement -->
+  # archived: <!-- auto-filled by /forge:archive -->
