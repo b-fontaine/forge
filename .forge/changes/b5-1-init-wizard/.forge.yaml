@@ -1,0 +1,19 @@
+name: b5-1-init-wizard
+status: planned
+created: 2026-04-30
+schema: default
+constitution_version: "1.0.0"
+parent_audit_items:
+  - B.5.1  # /forge:init wizard with archetype auto-detection
+depends_on:
+  - b1-scaffolder       # archived 2026-04-22 — provides init.sh archetype scaffolder
+  - b1-delivery         # archived 2026-04-29 — schema STABLE 1.0.0
+  - c1-reference-project # archived 2026-04-30 — provides example fixture for L3
+  - a7-forge-upgrade    # archived 2026-04-30 — paves the dispatch + manifest patterns
+timeline:
+  proposed: 2026-04-30
+  specified: 2026-04-30
+  designed: 2026-04-30
+  planned: 2026-04-30
+  # implemented: <!-- auto-filled by /forge:implement -->
+  # archived: <!-- auto-filled by /forge:archive -->
