@@ -12,6 +12,111 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+**Module B.1 + G.1 + C.1 + A.7 closed.** Seven changes
+accumulated since v0.2.1 (`b1-foundations` → `b1-scaffolder` →
+`b1-workflow` → `b1-delivery` → `g1-forge-ci` →
+`c1-reference-project` → `a7-forge-upgrade`).
+
+143/143 test scenarios PASS across 7 harnesses (foundations 21,
+scaffolder L1+L2 14, workflow L1+L2 11, delivery 24, g1 14, c1
+30, **a7 29**) ; verify.sh 64 PASS / 0 FAIL ; Vitest 40/40
+(35 prior + 5 new for `forge upgrade`).
+
+### Added — `a7-forge-upgrade` (2026-04-30)
+
+`forge upgrade` — non-destructive 3-way merge of framework
+updates into scaffolded projects. Closes Audit Module A.7. The
+single biggest blocker for the first wave of adopters : without
+this, every Constitution / standards / agents bump becomes a
+manual copy-paste chore that destroys local customizations.
+
+- **New CLI subcommand** `forge upgrade [target]` —
+  `cli/src/commands/upgrade.ts` (TypeScript thin orchestrator
+  with dependency-injected runner / readManifest /
+  resolveFrameworkVersion). Spawns the underlying shell driver
+  via `node:child_process.spawn`. Flags : `--target <dir>`,
+  `--dry-run`, `--force`, `--verbose`. Exit codes : 0 success,
+  2 argument error, 5 missing tool, 7 upgrade aborted (major-
+  version migration / dirty Git tree / non-Git target with
+  `--force`), 8 conflicts produced (without `--force`).
+- **Shell driver** `bin/forge-upgrade.sh` — library + main
+  pattern. Sourcing exposes `_a7_*` helpers for unit-style
+  testing (truth-table classify, three-way merge, conflict
+  recording, force gate, version compat, manifest history
+  append). Direct invocation runs `_a7_main()` end-to-end.
+- **3-way merge** — for each path in `.forge/framework-owned-paths.yml`
+  `owned:` list : SHA-256 sameness comparison drives a 4-cell
+  truth table (unchanged, upgraded, preserved, merge_candidate)
+  + 1 cell for 2-way fallback when BASE is unavailable. The
+  merge_candidate cell delegates to `git merge-file --diff3`
+  which is battle-tested and writes git-style conflict markers
+  in-place.
+- **BASE recovery** — `.forge/scaffold-snapshots/<archetype>/<version>.tar.gz`
+  contains the framework's `owned:` paths at that version.
+  Bundled into the CLI tarball via the existing
+  bundle-assets.mjs pipeline. First snapshot at archive time :
+  `full-stack-monorepo / 1.0.0` is 422 KB gzipped (41 % of
+  NFR-UP-003 1 MB on-disk budget). Built via the new helper
+  `bin/forge-snapshot.sh build <archetype> <version>`.
+- **Conflict resolution** — git-style markers (`<<<<<<<` /
+  `|||||||` / `=======` / `>>>>>>>`) in-place + a
+  `.merge-conflicts` companion file at the project root listing
+  every conflicted path with `[CONFLICT]` prefix. The companion
+  is gitignored (FR-UP-012).
+- **`--force` discipline** — requires a clean Git working tree
+  (`git status --porcelain` empty) ; rejects with exit 7 on
+  dirty trees (suggests `git stash` / `git commit`) and on
+  non-Git targets (suggests `git init`).
+- **Major-version migration boundary** (Article III.4
+  anti-hallucination) — same major → proceed ; major diff →
+  exit 7 with `[NEEDS MIGRATION: from X.Y.Z to A.B.C]`.
+  Future `docs/MIGRATIONS.md` will document each major bump's
+  required adopter actions.
+- **`upgrade_history`** — new optional top-level field in
+  `scaffold-manifest.yaml`. Append-only list of upgrades :
+  date, from_version, to_version, from/to template_set_sha,
+  per-category counts, cli_version. Identity fields
+  (`project_name`, `reverse_domain`, `root_module`) are
+  immutable post-scaffold. MODIFIED FR-GL-009 of `b1-scaffolder`.
+- **Standard** `.forge/standards/global/upgrade-policy.md` —
+  6 H2 sections (Framework-owned paths, Three-way merge policy,
+  Conflict resolution discipline, Schema-version migration
+  boundary, Upgrade history audit trail, Interdictions). Three
+  Interdictions : (1) hand-editing `owned:` files outside a
+  Forge change, (2) `forge init --force` instead of
+  `forge upgrade`, (3) committing `.merge-conflicts`.
+- **Test harness `a7.test.sh`** — 29/29 PASS. L1 hermetic
+  (yml shape, owned paths exist, snapshot extractability +
+  size budget, standard sections, index entry, .gitignore,
+  feature file, CLI flags, archive-gated spec). L2 fixture-based
+  (truth table 5 cells, conflict markers, .merge-conflicts
+  listing, --force × 3 cases, version compat × 2, history
+  append + append-only + identity-immutable, idempotence,
+  legacy compat, deterministic merge, BASE recovery). L3 opt-in
+  against `examples/forge-fsm-example/`. Manifest pattern with
+  meta self-check.
+- **Vitest unit tests** — `cli/test/commands/upgrade.test.ts`
+  (5 tests : flag forwarding, missing manifest, version
+  resolution failure, exit code propagation, dry-run / force /
+  verbose flag wiring).
+- **forge-ci.yml** harness job extended with
+  `g1.test.sh` + `c1.test.sh` + `a7.test.sh` (catching up an
+  oversight from g1/c1 archive — the two prior harnesses were
+  not invoked from CI). Workflow now at 211 lines (under 250
+  NFR-CI-002 budget).
+- **Smoke test** against `examples/forge-fsm-example/` —
+  `forge upgrade --dry-run` reports 160 unchanged + 15
+  preserved + 0 upgraded/conflicted/skipped, exit 0. The 15
+  preserved files are the c1 demo customizations
+  (READMEs, demo Cargo.toml entries, demo source files) — the
+  framework correctly identifies them as user-edited and
+  preserves them.
+
+Spec consolidation : new `.forge/specs/upgrade.md` (15 FR-UP-*
++ 6 NFR-UP-*). MODIFIED FR-GL-009 in
+`.forge/specs/full-stack-monorepo.md` (scaffold-manifest gains
+`upgrade_history`).
+
 **Module B.1 closed + Module G.1 closed + Module C.1 closed.**
 Six changes accumulated since v0.2.1 :
 `b1-foundations` → `b1-scaffolder` → `b1-workflow` → `b1-delivery`

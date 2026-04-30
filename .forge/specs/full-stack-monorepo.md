@@ -20,6 +20,7 @@ changes land. Order of sections reflects the FR-ID, not chronology.
 | [`b1-workflow`](../changes/b1-workflow/) | 2026-04-23 | Workflow (multi-layer orchestration) | FR-GL-015..023 + FR-BE-002 + FR-FE-002 + NFR-009..012 ; MODIFIED FR-GL-008 |
 | [`b1-delivery`](../changes/b1-delivery/) | 2026-04-29 | Delivery (CI + overlays + observability) | FR-IN-002..012 + FR-GL-024..025 + NFR-013..018 ; MODIFIED FR-GL-001 (schema promotion) |
 | [`c1-reference-project`](../changes/c1-reference-project/) | 2026-04-30 | Reference project (skip-guards + .gitignore on the framework side) | FR-GL-026..028 ; MODIFIED NFR-013/014/015/017 (gained measured baselines). FR-EX-001..010 + NFR-EX-001..006 land in [`example-reference.md`](./example-reference.md). FR-CI-012..013 + MODIFIED FR-CI-001/006 land in [`forge-ci.md`](./forge-ci.md). |
+| [`a7-forge-upgrade`](../changes/a7-forge-upgrade/) | 2026-04-30 | Forge upgrade non-destructive merge | MODIFIED FR-GL-009 (scaffold-manifest gains `upgrade_history`). FR-UP-001..015 + NFR-UP-001..006 land in [`upgrade.md`](./upgrade.md). |
 
 ## Schema evolution
 
@@ -214,6 +215,7 @@ gates). **Testable:** yes — self-tested via
 ### FR-GL-009: Archetype template tree under `.forge/templates/archetypes/full-stack-monorepo/`
 
 <!-- From change: b1-scaffolder (2026-04-22) -->
+<!-- Modified in a7-forge-upgrade (2026-04-30) — scaffold-manifest schema gains optional `upgrade_history` append-only field. -->
 
 - **MUST** — the directory
   `.forge/templates/archetypes/full-stack-monorepo/` holds the complete
@@ -229,6 +231,14 @@ gates). **Testable:** yes — self-tested via
 - **MUST** — templates use only three placeholders : `<project-name>`,
   `<reverse-domain>`, `<root-module>`. Single-pass literal replacement
   at scaffold time, no DSL.
+- **MUST** *(added in a7-forge-upgrade)* — the scaffold-manifest schema
+  gains an optional top-level `upgrade_history:` list field, populated
+  post-scaffold by `forge upgrade` (FR-UP-007 of `upgrade.md`). At
+  scaffold time the field is absent or `[]` ; each `forge upgrade` run
+  appends one entry. Identity fields (`project_name`, `reverse_domain`,
+  `root_module`) are immutable post-scaffold ; canonical fields
+  (`archetype_version`, `scaffold_date`, `template_set_sha`, `tools`)
+  are mutated to reflect the most recent state.
 
 **Constitution reference:** Articles VI, VII, VIII, X. **Testable:** yes
 — L1 `test_plan_templates_sources_exist` + `test_plan_templates_count_minimum`.
