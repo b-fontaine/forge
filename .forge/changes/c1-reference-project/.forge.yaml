@@ -1,5 +1,5 @@
 name: c1-reference-project
-status: planned
+status: archived
 created: 2026-04-29
 schema: default
 constitution_version: "1.0.0"
@@ -16,5 +16,5 @@ timeline:
   specified: 2026-04-29
   designed: 2026-04-29
   planned: 2026-04-30
-  # implemented: <!-- auto-filled by /forge:implement -->
-  # archived: <!-- auto-filled by /forge:archive -->
+  implemented: 2026-04-30
+  archived: 2026-04-30

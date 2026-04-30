@@ -22,6 +22,7 @@ The full standard governing this spec is
 | Change | Date | Phase | FRs added |
 |---|---|---|---|
 | [`g1-forge-ci`](../changes/g1-forge-ci/) | 2026-04-29 | Forge's own CI workflow | FR-CI-001..011 + NFR-CI-001..006 |
+| [`c1-reference-project`](../changes/c1-reference-project/) | 2026-04-30 | Reference project — example tree CI | ADDED FR-CI-012..013 ; MODIFIED FR-CI-001 (5 → 6 jobs, adds `example`) ; MODIFIED FR-CI-006 (4 → 5 needs, treats `example=skipped` as success) |
 
 ---
 
@@ -30,6 +31,7 @@ The full standard governing this spec is
 ### FR-CI-001: Reference CI workflow `forge-ci.yml`
 
 <!-- From change: g1-forge-ci (2026-04-29) -->
+<!-- Modified in c1-reference-project (2026-04-30) — workflow now declares 6 top-level jobs (added `example`); summary's needs list extended accordingly. -->
 
 - **MUST** — a file `.github/workflows/forge-ci.yml` exists and
   parses as valid YAML.
@@ -44,18 +46,29 @@ The full standard governing this spec is
 - **MUST** — the workflow declares `permissions:` minimally :
   `contents: read` only. No write permissions, no `id-token`,
   no `pull-requests: write`.
-- **MUST** — the workflow declares **exactly five top-level
-  jobs** : `harness`, `gates`, `cli`, `lint`, `summary`. The
-  first four run in parallel ; `summary` declares
-  `needs: [harness, gates, cli, lint]`.
+- **MUST** — the workflow declares **exactly six top-level
+  jobs** *(modified in c1-reference-project)* : `harness`,
+  `gates`, `cli`, `lint`, `example`, `summary`. The first five
+  run in parallel ; `summary` declares
+  `needs: [harness, gates, cli, lint, example]`. The `example`
+  job is conditionally active via `dorny/paths-filter@v3` on
+  `examples/**` (FR-CI-012) and is **always** counted in the
+  summary aggregation (a `skipped` result from `example` is
+  treated as success — paths-filter mismatch is not a failure).
 - **MUST** — every job sets `runs-on: ubuntu-latest`. No
   matrix, no other runners.
 - **MUST** — no `continue-on-error: true` anywhere in the
   workflow.
 
+<!-- Previously (g1-forge-ci): "exactly five top-level jobs:
+     harness, gates, cli, lint, summary" with summary needing
+     [harness, gates, cli, lint]. Superseded by the 6-job shape
+     above per c1-reference-project. -->
+
 **Constitution reference:** Article V (gates), Article VIII (CI
 infrastructure), Article X (quality). **Testable:** yes —
-`test_forge_ci_workflow_shape` in `g1.test.sh`.
+`test_forge_ci_workflow_shape` (g1.test.sh, asserts 6 jobs) +
+`test_forge_ci_workflow_shape_six_jobs` (c1.test.sh).
 
 ### FR-CI-002: Harness job runs 4 test harnesses at L1+L2
 
@@ -127,26 +140,40 @@ yes — `test_forge_ci_cli_job_runs_npm_pipeline`.
 **Constitution reference:** Article X. **Testable:** yes —
 `test_forge_ci_lint_job_invokes_shellcheck_on_target_dirs`.
 
-### FR-CI-006: Summary job aggregates the four into one required status
+### FR-CI-006: Summary job aggregates the five into one required status
 
 <!-- From change: g1-forge-ci (2026-04-29) -->
+<!-- Modified in c1-reference-project (2026-04-30) — summary's needs list extended to include the new `example` job; example=skipped is treated as success. -->
 
-- **MUST** — `jobs.summary` declares
-  `needs: [harness, gates, cli, lint]`.
+- **MUST** — `jobs.summary` declares `needs: [harness, gates,
+  cli, lint, example]` *(modified in c1-reference-project)*.
 - **MUST** — the summary job ALWAYS runs (`if: always()`). Its
   bash step inspects each `needs.<job>.result` (read via
-  `env:` indirection from `${{ needs.<job>.result }}`) and
-  exits 1 if any is not exactly `'success'`. Skipped or
-  cancelled upstreams MUST cause the summary to fail.
-- **MUST** — when all four succeed, the summary emits
-  `::notice::forge-ci: 4/4 jobs PASS`. On any failure, emits
+  `env:` indirection from `${{ needs.<job>.result }}`).
+  Exit semantics : the four core jobs (`harness`, `gates`,
+  `cli`, `lint`) MUST exit `'success'` ; the `example` job MUST
+  exit `'success'` OR `'skipped'` (paths-filter miss is not a
+  failure). Any other result on any job — `failure`,
+  `cancelled`, or `skipped` on the four core jobs — causes the
+  summary to exit 1.
+- **MUST** — when all five succeed (or `example` is `skipped`),
+  the summary emits `::notice::forge-ci: 5/5 jobs PASS`. On
+  any failure, emits
   `::error::forge-ci: <job>=<result> FAILED`.
 - **MUST** — the GitHub Actions status name produced by this
   job is exactly `forge-ci / summary` so branch-protection
   rules can reference it as a single required check.
 
+<!-- Previously (g1-forge-ci): summary needed only the four
+     core jobs ([harness, gates, cli, lint]) and any non-success
+     result was a failure. Superseded by the 5-need + example-
+     skip-as-success semantics above per c1-reference-project. -->
+
 **Constitution reference:** Article V. **Testable:** yes —
-`test_forge_ci_summary_job_aggregates_needs`.
+`test_forge_ci_summary_job_aggregates_needs` (g1.test.sh,
+asserts 5 needs) + `test_forge_ci_summary_aggregates_five_needs`
++ `test_forge_ci_summary_treats_example_skip_as_success`
+(c1.test.sh).
 
 ### FR-CI-007: Concurrency policy
 
@@ -232,6 +259,50 @@ self-testing — 14/14 scenarios PASS at archive time.
 Article X. **Testable:** yes —
 `test_contributing_documents_branch_protection`.
 
+### FR-CI-012: New `example` job in `forge-ci.yml`
+
+<!-- From change: c1-reference-project (2026-04-30) -->
+
+- **MUST** — `.github/workflows/forge-ci.yml` declares a sixth
+  top-level job `example` running `runs-on: ubuntu-latest` with
+  `permissions: contents: read` only.
+- **MUST** — the `example` job runs **only** when the PR or
+  push touches `examples/**` (gated by `dorny/paths-filter@v3`,
+  pinned to the same major version as the archetype reference
+  workflows of FR-IN-002..005). On a paths-filter miss, the job
+  emits `skipped` and exits 0 — paths-filter mismatch is success,
+  not failure (per the modified FR-CI-006).
+- **MUST** — when the filter matches, the job executes, in
+  order : (1) `actions/checkout@v4`, (2) `dorny/paths-filter@v3`
+  with `id: examples-filter` and `filters: examples: ['examples/**']`,
+  (3) `actions/setup-python@v5` + PyYAML install (gated on the
+  filter output), (4) `cd examples/forge-fsm-example && bash
+  .forge/scripts/verify.sh`, (5) `bash .forge/scripts/constitution-linter.sh`,
+  (6) a Python `yaml.safe_load` over every
+  `.github/workflows/*.yml.tmpl` in the example tree (fail on
+  parse error). Steps 3-6 are gated on
+  `if: steps.examples-filter.outputs.examples == 'true'`.
+- **MUST** — no `continue-on-error: true` anywhere in the job ;
+  consistent with `NFR-CI-003`.
+
+**Constitution reference:** Articles V, X. **Testable:** yes —
+`test_forge_ci_example_job_present`,
+`test_forge_ci_example_job_paths_filter`,
+`test_forge_ci_example_job_steps` in `c1.test.sh`.
+
+### FR-CI-013: Example workflow file size budget
+
+<!-- From change: c1-reference-project (2026-04-30) -->
+
+- **SHOULD** — adding the `example` job MUST keep `forge-ci.yml`
+  ≤ 250 lines (the size budget from `NFR-CI-002`). Beyond that,
+  the job MUST be extracted into a composite action under
+  `.github/actions/forge-ci-example/action.yml`.
+
+**Constitution reference:** Article X. **Testable:** yes —
+`test_forge_ci_under_size_budget` (c1.test.sh) — at archive
+time of c1, `forge-ci.yml` is well under the 250-line cap.
+
 ---
 
 ## Non-Functional Requirements
@@ -284,15 +355,19 @@ Article X. **Testable:** yes —
 
 **In scope for the `forge-ci` workflow (delivered so far):**
 
-- The `forge-ci.yml` workflow with 5 jobs (harness, gates, cli,
-  lint, summary), conditional concurrency, minimal permissions,
-  pinned actions — **g1-forge-ci**.
+- The `forge-ci.yml` workflow with 6 jobs (harness, gates, cli,
+  lint, example, summary), conditional concurrency, minimal
+  permissions, pinned actions — **g1-forge-ci** for the original
+  5 ; **c1-reference-project** for the 6th (`example`).
 - `cli/.nvmrc` Node version pin — **g1-forge-ci**.
 - Standard `global/forge-self-ci.md` — **g1-forge-ci**.
 - Branch-protection guidance in `docs/CONTRIBUTING.md` —
   **g1-forge-ci**.
 - Test harness `g1.test.sh` (14 tests, L1 structural) —
-  **g1-forge-ci**.
+  **g1-forge-ci** ; updated in c1 to assert the 6-job + 5-needs
+  shape.
+- `example` job validating `examples/forge-fsm-example/` on PRs
+  touching `examples/**` (FR-CI-012) — **c1-reference-project**.
 
 **Deferred to future modules (out of scope for G.1):**
 

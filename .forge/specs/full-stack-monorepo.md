@@ -19,6 +19,7 @@ changes land. Order of sections reflects the FR-ID, not chronology.
 | [`b1-scaffolder`](../changes/b1-scaffolder/) | 2026-04-22 | Scaffolder (generator layer) | FR-GL-009..014 + FR-BE-001 + FR-FE-001 + FR-IN-001 + NFR-005..008 |
 | [`b1-workflow`](../changes/b1-workflow/) | 2026-04-23 | Workflow (multi-layer orchestration) | FR-GL-015..023 + FR-BE-002 + FR-FE-002 + NFR-009..012 ; MODIFIED FR-GL-008 |
 | [`b1-delivery`](../changes/b1-delivery/) | 2026-04-29 | Delivery (CI + overlays + observability) | FR-IN-002..012 + FR-GL-024..025 + NFR-013..018 ; MODIFIED FR-GL-001 (schema promotion) |
+| [`c1-reference-project`](../changes/c1-reference-project/) | 2026-04-30 | Reference project (skip-guards + .gitignore on the framework side) | FR-GL-026..028 ; MODIFIED NFR-013/014/015/017 (gained measured baselines). FR-EX-001..010 + NFR-EX-001..006 land in [`example-reference.md`](./example-reference.md). FR-CI-012..013 + MODIFIED FR-CI-001/006 land in [`forge-ci.md`](./forge-ci.md). |
 
 ## Schema evolution
 
@@ -810,6 +811,72 @@ the change's `status: archived`).
 
 **Constitution reference:** Article I (TDD harness), Article V.
 **Testable:** self-testing — 24/24 scenarios PASS at archive time.
+
+---
+
+### FR-GL-026: Skip-guard for `examples/` in `verify.sh`
+
+<!-- From change: c1-reference-project (2026-04-30) -->
+
+- **MUST** — `.forge/scripts/verify.sh` detects when an inspected
+  change directory or layer subtree falls under `<FORGE_ROOT>/examples/`
+  and SKIPS it with an explicit `[skipped: examples] ...` notice.
+  The skip is gated on the Forge framework-repo signature
+  (`.forge/specs/full-stack-monorepo.md` AND `examples/` both
+  present at `$FORGE_ROOT`) — i.e. when the script runs **inside**
+  the Forge framework repository, not when it runs inside a
+  scaffolded example project.
+- **MUST** — when invoked from inside `examples/forge-fsm-example/`
+  (i.e. `FORGE_ROOT` resolves to the example tree itself), the
+  signature does not match and the skip-guard does NOT activate ;
+  the example owns its own `verify.sh`.
+- **SHALL** — emitted lines are prefixed `[skipped: examples] ...`
+  for unambiguous aggregated output (consistent with `b1-workflow`
+  layer-scoping convention).
+
+**Constitution reference:** Article V (gates), Article X. **Testable:**
+yes — `test_verify_skip_guard_block_present` and
+`test_verify_no_skip_when_no_examples_dir` in
+`.forge/scripts/tests/c1.test.sh`.
+
+### FR-GL-027: Skip-guard for `examples/` in `constitution-linter.sh`
+
+<!-- From change: c1-reference-project (2026-04-30) -->
+
+- **MUST** — `.forge/scripts/constitution-linter.sh` applies the
+  same skip-guard as `verify.sh` (FR-GL-026). Tree-walks (`find
+  $FORGE_ROOT -name "*.feature"` and `-name "Dockerfile*"`) MUST
+  exclude `examples/` when running inside the Forge framework
+  repo, via the `find_excluding_examples` wrapper.
+- **MUST** — `FORGE_ROOT` is env-overridable (parity with
+  `verify.sh`) for testability ; default resolves to the script's
+  own framework root.
+- **MUST** — the existing scoped behaviour from FR-GL-022
+  (`[scoped: frontend]` / `[scoped: backend]`) is preserved
+  byte-for-byte for non-monorepo schemas. The skip is purely
+  additive.
+
+**Constitution reference:** Articles V, VI, VII. **Testable:** yes
+— `test_constitution_linter_skips_examples_features` (fixture
+asserts the linter counts only the .feature file outside
+`examples/`).
+
+### FR-GL-028: `.gitignore` covers example build artefacts
+
+<!-- From change: c1-reference-project (2026-04-30) -->
+
+- **MUST** — Forge repo's root `.gitignore` covers, at minimum :
+  `examples/*/build/`, `examples/*/target/`, `examples/*/cli/`,
+  `examples/*/node_modules/`, `examples/*/.dart_tool/`,
+  `examples/*/.cargo/`, `examples/*/coverage/`. Each example's own
+  `.gitignore` (committed under `examples/<name>/.gitignore`)
+  preserves the per-language ignores delivered by the scaffolder.
+- **SHALL** — `.env` and `.env.local` ignores apply at every level
+  (root + example) ; `.env.example` and `.env.dev` are committed
+  per FR-IN-009.
+
+**Constitution reference:** Article X (reproducibility). **Testable:**
+yes — `test_gitignore_covers_example_artefacts`.
 
 ---
 

@@ -12,8 +12,8 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
-**Module B.1 closed + Module G.1 closed.** Five changes
-accumulated since v0.2.1 :
+**Module B.1 closed + Module G.1 closed + Module C.1 closed.**
+Six changes accumulated since v0.2.1 :
 `b1-foundations` → `b1-scaffolder` → `b1-workflow` → `b1-delivery`
 shipped the flagship archetype `full-stack-monorepo` end-to-end
 (Flutter + Rust + Infra with multi-layer change orchestration,
@@ -25,11 +25,118 @@ from `draft / 0.1.0` → `candidate / 1.0.0-rc.1` →
 promoted_on` traceability fields.
 
 `g1-forge-ci` then closed the dog-fooding gap : Forge runs its
-own gates in CI on every PR via `forge-ci.yml` (5-job workflow
-with single required status `forge-ci / summary`).
+own gates in CI on every PR via `forge-ci.yml` (now 6-job
+workflow with single required status `forge-ci / summary`).
 
-84/84 test scenarios PASS across 5 harnesses (foundations 21,
-scaffolder 14, workflow 11 at L1+L2, delivery 24, g1 14).
+`c1-reference-project` closed Module C.1 : the first public
+reference project lives at `examples/forge-fsm-example/` —
+fully-scaffolded `full-stack-monorepo` tree (~2.3 MB) with 4 demo
+changes (3 archived single + multi-layer demos + 1 in-flight
+`status: specified` demo with `[NEEDS CLARIFICATION:]` markers).
+Skip-guards in `verify.sh` + `constitution-linter.sh` ; new
+`example` job in `forge-ci.yml` (paths-filter on `examples/**`).
+NFR-017 (overlay diff) measured at 2124 bytes (52 % of 4 KB
+budget) ; NFR-013/014/015 standardized as `TBD`-pending ledgers
+in their target standards.
+
+114/114 test scenarios PASS across 6 harnesses (foundations 21,
+scaffolder 14, workflow 11 at L1+L2, delivery 24, g1 14, c1 30).
+
+### Added — `c1-reference-project` (2026-04-30)
+
+First public reference project scaffolded via the actual
+`forge init --archetype full-stack-monorepo` command and committed
+verbatim under `examples/forge-fsm-example/`. Closes Audit Module
+C.1.
+
+- **Reference tree** at `examples/forge-fsm-example/` —
+  fully-scaffolded `full-stack-monorepo` project (frontend +
+  backend + infra + shared/protos + .forge + .claude +
+  .github/workflows + Taskfile + docker-compose + scaffold-manifest).
+  Tree size ≈ 2.3 MB (52 % of NFR-EX-002 5 MB budget). Tools at
+  scaffold time : flutter 3.41.7, cargo 1.91.0, buf 1.68.4.
+- **4 demo application changes** under
+  `examples/forge-fsm-example/.forge/changes/` :
+    * `demo-001-greeting-service` (single-layer backend, archived) —
+      gRPC Greeter service with hexagonal Rust, proto contract
+      under `shared/protos/v1/greeting/`, 5 unit tests pass on
+      domain + application crates.
+    * `demo-002-greeting-screen` (single-layer frontend, archived) —
+      Flutter Cubit + screen consuming demo-001's contract via a
+      fake adapter, 8 widget + bloc_test tests pass.
+    * `demo-003-rate-limit` (multi-layer backend+infra, archived) —
+      triggers Janus orchestration with per-layer designs / tasks
+      (FR-GL-016) ; adds Kong rate-limiting plugin to
+      `kong.yml.example`.
+    * `demo-004-user-onboarding` (multi-layer specified-only) —
+      illustrates Article III.4 anti-hallucination protocol with
+      4 realistic `[NEEDS CLARIFICATION:]` markers on
+      product/security decisions ; intentionally not advanced
+      past the spec phase.
+- **Demo manifest** at
+  `examples/forge-fsm-example/.forge/changes/MANIFEST.md` listing
+  the 4 demos chronologically.
+- **Skip-guards on Forge gates** (FR-GL-026 / FR-GL-027 /
+  FR-GL-028) :
+    * `verify.sh` adds the `FORGE_REPO_DETECTED` signature check +
+      defensive `is_under_examples` helper. `[skipped: examples]`
+      lines emitted on framework-repo invocations.
+    * `constitution-linter.sh` mirrors the signature check + adds
+      the `find_excluding_examples` wrapper applied to the two
+      recursive walks (`*.feature` files at line ~123,
+      `Dockerfile*` at line ~335). `FORGE_ROOT` is now
+      env-overridable for testability (parity with `verify.sh`).
+    * Root `.gitignore` covers `examples/*/{build,target,
+      .dart_tool,node_modules,.cargo,coverage,cli}/`.
+- **Forge's own CI extension** (FR-CI-012 + FR-CI-013, MODIFIED
+  FR-CI-001 + FR-CI-006) : new `example` job in `forge-ci.yml`
+  with `dorny/paths-filter@v3` on `examples/**` ; on a filter
+  miss, the job emits `skipped` (treated as success by the
+  summary). When the filter matches, the job runs the example
+  tree's `verify.sh` + `constitution-linter.sh` + a structural
+  YAML parse over archetype workflow `.tmpl` files. Workflow
+  shape modified from 5 to 6 top-level jobs ;
+  `summary.needs` extended from 4 to 5 ; success message bumped
+  to `5/5 jobs PASS`.
+- **NFR baselines** (FR-EX-008, MODIFIED NFR-013/014/015/017) :
+    * `standards/infra/ci-workflows.md` § Performance Baselines
+      added (TBD ledgers for NFR-013 + NFR-014 — populated on
+      first observed PR / nightly run).
+    * `standards/infra/observability-local.md` § Startup
+      Baselines added (TBD ledger for NFR-015).
+    * `standards/infra/k8s-overlays.md` § Diff Budget added
+      with **measured** NFR-017 baseline : **2124 bytes (52 % of
+      4096-byte budget)** via
+      `kubectl kustomize overlays/{dev,prod}` against
+      `examples/forge-fsm-example/infra/k8s/`.
+    * `specs/full-stack-monorepo.md` gains a "Baseline at
+      archive time of c1-reference-project" pointer line under
+      each of the 4 affected NFR sections.
+- **Test harness `c1.test.sh`** (FR-EX-009) — manifest pattern,
+  L1 hermetic by default, L2 opt-in `--require-example-tools`
+  (runs the example's own gates), L3 opt-in
+  `--require-external-tools` (reproducibility check by re-running
+  the scaffolder). 30 tests covering all FR-EX-* / MODIFIED
+  FR-CI-* / FR-GL-026..028 / NFR-EX-* / NFR-013/014/015/017
+  baselines. Invoked from `verify.sh` Section 7 alongside the
+  existing 5 harnesses.
+- **Spec consolidation** at `.forge/specs/example-reference.md`
+  (FR-EX-010) — new consolidated spec for the `FR-EX-*`
+  namespace, mirrors the convention used for `forge-ci.md` after
+  `g1-forge-ci`. Distinct audience from `full-stack-monorepo.md`
+  (archetype contract) — this new spec governs the example tree
+  itself.
+- **Drift fix** : `scaffold-plan.yaml` bumped from `0.1.0` →
+  `1.0.0` to align with the schema's stable promotion at
+  `b1-delivery`. The drift was surfaced by c1 — `b1-delivery`
+  promoted the schema but the plan version was not bumped at the
+  time, so manifests carried 0.1.0.
+
+Constitutional compliance : ✅ all 11 articles. Tests :
+foundations 21/21, scaffolder L1+L2 14/14, workflow L1+L2 11/11,
+delivery 24/24, g1 14/14, c1 30/30 (including the archive-gated
+`test_example_reference_spec_present_post_archive`). Verify.sh :
+59 PASS. Constitution-linter.sh : 4 PASS / 0 FAIL.
 
 ### Added — `g1-forge-ci` (2026-04-29)
 

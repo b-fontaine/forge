@@ -468,25 +468,25 @@ These tasks happen post-implementation, before archive.
 
 ## Phase 5: Documentation (handled by /forge:archive)
 
-- [ ] /forge:archive will merge the delta from `specs.md` into
+- [x] /forge:archive will merge the delta from `specs.md` into
   `.forge/specs/full-stack-monorepo.md` (FR-GL-026..028 added to
   the existing spec ; the 4 NFRs gain Baseline lines).
-- [ ] /forge:archive will merge into `.forge/specs/forge-ci.md`
+- [x] /forge:archive will merge into `.forge/specs/forge-ci.md`
   (MODIFIED FR-CI-001 + FR-CI-006 + new FR-CI-012/013).
-- [ ] /forge:archive will create `.forge/specs/example-reference.md`
+- [x] /forge:archive will create `.forge/specs/example-reference.md`
   consolidating the FR-EX-* namespace (FR-EX-010).
-- [ ] /forge:archive will update `CHANGELOG.md` with the
+- [x] /forge:archive will update `CHANGELOG.md` with the
   `c1-reference-project` entry under [Unreleased].
-- [ ] /forge:archive will update `.forge/product/roadmap.md` :
+- [x] /forge:archive will update `.forge/product/roadmap.md` :
   mark C.1 done.
 
 ---
 
 ## Phase 6: Constitutional gate (handled by /forge:archive)
 
-- [ ] /forge:archive will run all 6 harnesses + verify.sh +
+- [x] /forge:archive will run all 6 harnesses + verify.sh +
   constitution-linter.sh + L2 of c1.test.sh : confirm green.
-- [ ] /forge:archive will set `.forge.yaml` to `status: archived`
+- [x] /forge:archive will set `.forge.yaml` to `status: archived`
   with `timeline.archived` populated.
-- [ ] /forge:archive will run a final repository-wide check : every
+- [x] /forge:archive will run a final repository-wide check : every
   `[ ]` task in this file is now `[x]`.
