@@ -21,6 +21,7 @@ changes land. Order of sections reflects the FR-ID, not chronology.
 | [`b1-delivery`](../changes/b1-delivery/) | 2026-04-29 | Delivery (CI + overlays + observability) | FR-IN-002..012 + FR-GL-024..025 + NFR-013..018 ; MODIFIED FR-GL-001 (schema promotion) |
 | [`c1-reference-project`](../changes/c1-reference-project/) | 2026-04-30 | Reference project (skip-guards + .gitignore on the framework side) | FR-GL-026..028 ; MODIFIED NFR-013/014/015/017 (gained measured baselines). FR-EX-001..010 + NFR-EX-001..006 land in [`example-reference.md`](./example-reference.md). FR-CI-012..013 + MODIFIED FR-CI-001/006 land in [`forge-ci.md`](./forge-ci.md). |
 | [`a7-forge-upgrade`](../changes/a7-forge-upgrade/) | 2026-04-30 | Forge upgrade non-destructive merge | MODIFIED FR-GL-009 (scaffold-manifest gains `upgrade_history`). FR-UP-001..015 + NFR-UP-001..006 land in [`upgrade.md`](./upgrade.md). |
+| [`b5-1-init-wizard`](../changes/b5-1-init-wizard/) | 2026-04-30 | Multi-archetype dispatcher + interactive wizard | MODIFIED FR-GL-011 (CLI becomes the canonical entry point). FR-IW-001..012 + NFR-IW-001..006 land in [`init-wizard.md`](./init-wizard.md). |
 
 ## Schema evolution
 
@@ -263,6 +264,7 @@ regex, source existence, official_scaffolders shape, minimum count.
 ### FR-GL-011: `/forge:init --archetype full-stack-monorepo` slash command branch
 
 <!-- From change: b1-scaffolder (2026-04-22) -->
+<!-- Modified in b5-1-init-wizard (2026-04-30) — npm CLI `forge init` becomes the canonical entry point ; init.sh direct invocation is now an escape hatch. -->
 
 - **MUST** — the slash command delegates to
   `.forge/scripts/scaffolder/init.sh` which executes a non-negotiable
@@ -279,6 +281,16 @@ regex, source existence, official_scaffolders shape, minimum count.
 - **MUST** — `--force` allows overwriting overlay paths ; NEVER touches
   flutter-create or cargo-new output.
 - **SHALL** — `--dry-run` prints the sequence without executing.
+
+**Canonical user-facing entry point** *(modified in
+b5-1-init-wizard)* : the npm CLI's `forge init --archetype
+full-stack-monorepo <project-name> --org <reverse-domain>` is the
+canonical path. The dispatcher (FR-IW-001) translates this into
+`init.sh`'s legacy ABI via the `bin/forge-init-fsm.sh` wrapper
+(FR-IW-004). Direct invocation of `bash
+.forge/scripts/scaffolder/init.sh ...` remains supported (Forge
+maintainers + advanced users) as an escape hatch ; documentation
+favours the CLI flow.
 
 **Constitution reference:** Articles I, III, V, VI, VII, VIII, X.
 **Testable:** yes — L3 `test_e2e_happy_path`, `test_e2e_missing_flutter_aborts`.

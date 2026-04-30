@@ -12,15 +12,94 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
-**Module B.1 + G.1 + C.1 + A.7 closed.** Seven changes
+**Module B.1 + G.1 + C.1 + A.7 + B.5.1 closed.** Eight changes
 accumulated since v0.2.1 (`b1-foundations` → `b1-scaffolder` →
 `b1-workflow` → `b1-delivery` → `g1-forge-ci` →
-`c1-reference-project` → `a7-forge-upgrade`).
+`c1-reference-project` → `a7-forge-upgrade` → `b5-1-init-wizard`).
 
 143/143 test scenarios PASS across 7 harnesses (foundations 21,
 scaffolder L1+L2 14, workflow L1+L2 11, delivery 24, g1 14, c1
 30, **a7 29**) ; verify.sh 64 PASS / 0 FAIL ; Vitest 40/40
 (35 prior + 5 new for `forge upgrade`).
+
+### Added — `b5-1-init-wizard` (2026-04-30)
+
+`forge init` becomes the **canonical entry point** for project
+scaffolding with three selection modes : `--archetype <name>`
+(explicit), `--auto` (signals heuristic), `--wizard` (interactive
+prompt). Closes Audit Module B.5.1. Dependency amont of
+B.2 / B.3 / B.4 (T3 second-archetype work) — adding a future
+archetype = registering one row in the dispatch table + one
+`bin/forge-init-<archetype>.sh` wrapper, NO TS edits.
+
+- **TS dispatcher** — `cli/src/commands/init.ts` refactored
+  into a pure dispatcher routing argv to one of four code
+  paths : explicit archetype, auto-detection, wizard, or silent
+  default (no flags + non-TTY stdin → preserves legacy
+  behavior, NFR-IW-004). Mutual exclusion of selection flags ;
+  exits 2 on conflicting flags or unknown archetype.
+- **Domain pure functions** — `cli/src/domain/archetype-detect.ts`
+  (heuristic over a signal record, returns
+  match/ambiguous/none), `cli/src/domain/reverse-domain.ts`
+  (regex validator), `cli/src/domain/dispatch-table.ts`
+  (minimal YAML subset parser, zero new third-party deps per
+  NFR-IW-002).
+- **Wizard via Node `readline`** — sequential prompts
+  (numbered archetype menu, project name, reverse domain),
+  re-prompt × 3 on invalid input, auto-skip when stdin is
+  non-TTY. NO `inquirer` / `prompts` / `enquirer` etc.
+- **Stable per-archetype scaffolder ABI** —
+  `bin/forge-init-<archetype>.sh --target <dir> --project-name
+  <slug> --reverse-domain <fqdn> [--force]`. The TS dispatcher
+  shells out via this ABI ; the wrapper translates to the
+  underlying scaffolder's native flags. At archive : one
+  wrapper shipped (`bin/forge-init-fsm.sh` for
+  `full-stack-monorepo`, translates to `init.sh` of
+  `b1-scaffolder`).
+- **Dispatch table** at `.forge/scaffolding/dispatch-table.yml`
+  with 2 active archetypes (`default`, `full-stack-monorepo`).
+  Forward-compatible : new optional fields can be added without
+  breaking parsers. The dispatcher reads it at runtime ; no
+  hard-coded archetype names in TS source (Interdiction).
+- **Strict ambiguity abort** (Article III.4) — `--auto` on a
+  target with ambiguous signals emits `[NEEDS DECISION: ...]`
+  and exits 2. Today, `pubspec.yaml`-only or `Cargo.toml`-only
+  is ambiguous because no Flutter-only or Rust-only archetype
+  ships yet ; abort message guides adopters to
+  `--archetype default`.
+- **Standard** `.forge/standards/global/scaffolding.md` with
+  6 H2 sections + 3 Interdictions covering : dispatch table
+  contract, per-archetype scaffolder ABI, auto-detection
+  heuristic, wizard mode, adding a new archetype.
+- **Decision matrix** at `docs/ARCHETYPES.md` with 5 rows
+  (2 active + 3 planned). Public-facing onboarding doc.
+- **Test harness `b5.test.sh`** — 17/17 PASS at L1 + L2.
+  L1 hermetic (yml shape, scaffolder paths, standard sections,
+  index entry, decision matrix, feature file, regex, no new
+  third-party deps). L2 fixture-based (CLI flag parsing,
+  default-dispatcher idempotence, wizard non-TTY skip,
+  ambiguous auto abort). L3 deferred to scaffolder.test.sh
+  (same scaffolder under the hood).
+- **Vitest** — 16 new unit tests (5 archetype-detect cases,
+  9 reverse-domain cases, 7 dispatcher path-selection tests,
+  5 init-default migrated tests preserving file-copy
+  semantics). Total Vitest 56/56.
+- **MODIFIED FR-GL-011** in
+  `.forge/specs/full-stack-monorepo.md` : the npm CLI is now
+  the canonical entry point ; direct invocation of `init.sh`
+  remains supported as an escape hatch.
+
+Cumulative test status : foundations 21, scaffolder L1+L2 14,
+workflow L1+L2 11, delivery 24, g1 14, c1 30, a7 29, b5 17.
+**160 total**. Vitest 56/56. Verify.sh 64 PASS / 0 FAIL.
+
+Smoke tests on the built CLI :
+- `forge init --archetype default --target <tmp>` →
+  exit 0 + "forge init: copied N, scaffolded M, skipped K — OK".
+- `forge init --auto --target <pubspec-only-dir>` →
+  exit 2 + "[NEEDS DECISION: ...]".
+- `forge init --archetype default --auto` →
+  exit 2 + "--archetype, --auto, --wizard are mutually exclusive".
 
 ### Added — `a7-forge-upgrade` (2026-04-30)
 
