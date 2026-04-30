@@ -1,0 +1,37 @@
+# <!-- Audit: B.5.1 (b5-1-init-wizard) -->
+#
+# Authoritative archetype registry for `forge init`. Maps each
+# archetype name to its scaffolder script + signals + metadata.
+# Read at runtime by the TS dispatcher (cli/src/commands/init.ts)
+# AND by `forge-init-<archetype>.sh` wrappers when they exist.
+#
+# Adding a new archetype = (1) appending one entry here +
+# (2) writing the corresponding `bin/forge-init-<archetype>.sh`
+# wrapper following the stable ABI declared in
+# `global/scaffolding.md`. NO edit to the TS dispatcher needed.
+#
+# Schema (per FR-IW-002 of b5-1-init-wizard) :
+#   name        : string, MUST equal the map key.
+#   scaffolder  : "<built-in>" | shell-script path relative to repo root.
+#   description : human-readable one-line summary.
+#   signals     : list of file paths (relative to target dir) that
+#                 suggest this archetype during --auto detection.
+#   since       : SemVer of the framework version that registered
+#                 this archetype.
+
+archetypes:
+  default:
+    name: default
+    scaffolder: "<built-in>"
+    description: "Minimal Forge install — copy framework assets only, no language scaffold."
+    signals: []
+    since: "0.1.0"
+
+  full-stack-monorepo:
+    name: full-stack-monorepo
+    scaffolder: "bin/forge-init-fsm.sh"
+    description: "Flutter frontend + Rust backend + Infra (Kustomize / Kong / OTel) with protos as single source of truth."
+    signals:
+      - pubspec.yaml
+      - Cargo.toml
+    since: "1.0.0"

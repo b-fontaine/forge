@@ -297,3 +297,9 @@ standards:
     triggers: [upgrade, forge upgrade, merge, framework-owned, archetype_version, upgrade_history, scaffold-snapshot, three-way merge, NEEDS MIGRATION]
     scope: all
     priority: high
+
+  - id: global/scaffolding
+    path: standards/global/scaffolding.md
+    triggers: [init, forge init, wizard, archetype, dispatch-table, --auto, --wizard, NEEDS DECISION, scaffolder ABI]
+    scope: all
+    priority: high
