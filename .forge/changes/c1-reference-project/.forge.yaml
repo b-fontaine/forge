@@ -1,5 +1,5 @@
 name: c1-reference-project
-status: proposed
+status: planned
 created: 2026-04-29
 schema: default
 constitution_version: "1.0.0"
@@ -13,8 +13,8 @@ depends_on:
   - g1-forge-ci     # archived 2026-04-29 — adopters expect Forge to dog-food its own CI
 timeline:
   proposed: 2026-04-29
-  # specified: <!-- auto-filled by /forge:specify -->
-  # designed: <!-- auto-filled by /forge:design -->
-  # planned: <!-- auto-filled by /forge:plan -->
+  specified: 2026-04-29
+  designed: 2026-04-29
+  planned: 2026-04-30
   # implemented: <!-- auto-filled by /forge:implement -->
   # archived: <!-- auto-filled by /forge:archive -->
