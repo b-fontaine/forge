@@ -1,0 +1,30 @@
+// <!-- Audit: B.4 (b4-mobile-only, FR-MO-026) -->
+// iOS App Attest implementation. Communicates with
+// ios/Runner/AppAttestService.swift via the MethodChannel
+// `forge.attestation/app_attest`.
+
+import 'package:flutter/services.dart';
+
+import 'package:{{project_name}}/domain/attestation/device_attestor.dart';
+
+class IosAppAttestAttestor implements DeviceAttestor {
+  static const _channel = MethodChannel('forge.attestation/app_attest');
+
+  @override
+  Future<bool> isSupported() async {
+    final r = await _channel.invokeMethod<bool>('isSupported');
+    return r ?? false;
+  }
+
+  @override
+  Future<String> requestAttestationToken({required String nonce}) async {
+    final r = await _channel.invokeMethod<String>(
+      'requestAttestationToken',
+      {'nonce': nonce},
+    );
+    if (r == null) {
+      throw StateError('App Attest returned null token');
+    }
+    return r;
+  }
+}

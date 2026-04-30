@@ -1,0 +1,25 @@
+// <!-- Audit: B.4 (b4-mobile-only) -->
+import 'package:equatable/equatable.dart';
+
+class AuthToken extends Equatable {
+  final String accessToken;
+  final String refreshToken;
+  final DateTime expiresAt;
+  final String tokenType;
+
+  const AuthToken({
+    required this.accessToken,
+    required this.refreshToken,
+    required this.expiresAt,
+    this.tokenType = 'Bearer',
+  });
+
+  bool get isExpired => DateTime.now().isAfter(expiresAt.subtract(const Duration(seconds: 30)));
+
+  @override
+  List<Object?> get props => [accessToken, refreshToken, expiresAt, tokenType];
+
+  /// Equatable's stringify is OFF for AuthToken — never log token values.
+  @override
+  bool get stringify => false;
+}

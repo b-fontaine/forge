@@ -1,0 +1,26 @@
+// <!-- Audit: B.4 (b4-mobile-only, FR-MO-022) -->
+import 'package:local_auth/local_auth.dart';
+
+class BiometricService {
+  final LocalAuthentication _auth;
+
+  BiometricService({LocalAuthentication? auth})
+      : _auth = auth ?? LocalAuthentication();
+
+  Future<bool> canCheckBiometric() async {
+    final supported = await _auth.isDeviceSupported();
+    final canCheck = await _auth.canCheckBiometrics;
+    return supported && canCheck;
+  }
+
+  Future<bool> authenticate({required String reason}) async {
+    return _auth.authenticate(
+      localizedReason: reason,
+      options: const AuthenticationOptions(
+        biometricOnly: true,
+        stickyAuth: true,
+        useErrorDialogs: true,
+      ),
+    );
+  }
+}

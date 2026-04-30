@@ -303,3 +303,9 @@ standards:
     triggers: [init, forge init, wizard, archetype, dispatch-table, --auto, --wizard, NEEDS DECISION, scaffolder ABI]
     scope: all
     priority: high
+
+  - id: global/flutter-mobile
+    path: standards/global/flutter-mobile.md
+    triggers: [flutter mobile, mobile-only, ios, android, oidc, flutter_appauth, flutter_secure_storage, local_auth, biometric, app attest, play integrity, fastlane, "minSdk", "MinimumOSVersion", FlutterFragmentActivity, "lib/", "ios/", "android/"]
+    scope: app
+    priority: high

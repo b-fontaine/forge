@@ -1,0 +1,118 @@
+// <!-- Audit: B.4 (b4-mobile-only, FR-MO-019, FR-MO-021, FR-MO-029) -->
+// Concrete AuthRepository backed by flutter_appauth (PKCE) +
+// flutter_secure_storage (persistence) + DeviceAttestor (integrity header).
+// Instrumented with OpenTelemetry spans (Article IX).
+
+import 'package:flutter_appauth/flutter_appauth.dart';
+import 'package:opentelemetry_api/opentelemetry_api.dart';
+
+import 'package:{{project_name}}/domain/attestation/device_attestor.dart';
+import 'package:{{project_name}}/domain/auth/auth_repository.dart';
+import 'package:{{project_name}}/domain/auth/auth_token.dart';
+import 'package:{{project_name}}/infrastructure/auth/oidc_config.dart';
+import 'package:{{project_name}}/infrastructure/storage/secure_storage_adapter.dart';
+
+class AuthRepositoryImpl implements AuthRepository {
+  final FlutterAppAuth _appAuth;
+  final SecureStorageAdapter _storage;
+  final DeviceAttestor _attestor;
+  final OidcConfig _config;
+  final Tracer _tracer;
+
+  AuthRepositoryImpl({
+    required FlutterAppAuth appAuth,
+    required SecureStorageAdapter storage,
+    required DeviceAttestor attestor,
+    required OidcConfig config,
+    required Tracer tracer,
+  })  : _appAuth = appAuth,
+        _storage = storage,
+        _attestor = attestor,
+        _config = config,
+        _tracer = tracer;
+
+  @override
+  Future<AuthToken> login() async {
+    final span = _tracer.startSpan('auth.login');
+    try {
+      // Optional: attach attestation token in additional headers.
+      // The backend (out of scope of this archetype) is expected to verify it.
+      final nonce = DateTime.now().millisecondsSinceEpoch.toString();
+      String? attestationToken;
+      if (await _attestor.isSupported()) {
+        attestationToken = await _attestor.requestAttestationToken(nonce: nonce);
+      }
+
+      final result = await _appAuth.authorizeAndExchangeCode(
+        AuthorizationTokenRequest(
+          _config.clientId,
+          _config.redirectUri,
+          issuer: _config.issuer,
+          scopes: _config.scopes,
+          additionalParameters: attestationToken != null
+              ? {'X-Device-Attestation': attestationToken}
+              : null,
+        ),
+      );
+
+      final token = AuthToken(
+        accessToken: result.accessToken!,
+        refreshToken: result.refreshToken!,
+        expiresAt: result.accessTokenExpirationDateTime!,
+      );
+      await _storage.writeToken(token);
+      return token;
+    } finally {
+      span.end();
+    }
+  }
+
+  @override
+  Future<AuthToken> refresh(String refreshToken) async {
+    final span = _tracer.startSpan('auth.refresh');
+    try {
+      final result = await _appAuth.token(
+        TokenRequest(
+          _config.clientId,
+          _config.redirectUri,
+          issuer: _config.issuer,
+          refreshToken: refreshToken,
+          grantType: 'refresh_token',
+        ),
+      );
+      final token = AuthToken(
+        accessToken: result.accessToken!,
+        refreshToken: result.refreshToken ?? refreshToken,
+        expiresAt: result.accessTokenExpirationDateTime!,
+      );
+      await _storage.writeToken(token);
+      return token;
+    } finally {
+      span.end();
+    }
+  }
+
+  @override
+  Future<void> logout() async {
+    final span = _tracer.startSpan('auth.logout');
+    try {
+      await _storage.clear();
+    } finally {
+      span.end();
+    }
+  }
+
+  @override
+  Future<AuthToken?> getCurrentToken() async {
+    final stored = await _storage.readToken();
+    if (stored == null) return null;
+    if (!stored.isExpired) return stored;
+    try {
+      return await refresh(stored.refreshToken);
+    } catch (_) {
+      // Refresh failed — clear session, caller should redirect to login.
+      await logout();
+      return null;
+    }
+  }
+}

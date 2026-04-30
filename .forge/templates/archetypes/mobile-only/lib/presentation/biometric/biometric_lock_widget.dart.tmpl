@@ -1,0 +1,90 @@
+// <!-- Audit: B.4 (b4-mobile-only, FR-MO-023) -->
+// Wrap MaterialApp with this widget to enforce biometric re-prompt
+// after the app has been backgrounded for more than [timeout].
+//
+// Pattern: WidgetsBindingObserver listens to AppLifecycleState changes.
+// On `paused`, record timestamp. On `resumed`, if delta > timeout, show
+// the lock overlay and require BiometricService.authenticate(). On
+// failure, the adopter-implemented PIN fallback takes over.
+
+import 'package:flutter/material.dart';
+
+import 'package:{{project_name}}/infrastructure/biometric/biometric_service.dart';
+
+class BiometricLockWidget extends StatefulWidget {
+  final Widget child;
+  final BiometricService biometricService;
+  final Duration timeout;
+
+  const BiometricLockWidget({
+    super.key,
+    required this.child,
+    required this.biometricService,
+    this.timeout = const Duration(seconds: 60),
+  });
+
+  @override
+  State<BiometricLockWidget> createState() => _BiometricLockWidgetState();
+}
+
+class _BiometricLockWidgetState extends State<BiometricLockWidget>
+    with WidgetsBindingObserver {
+  DateTime? _pausedAt;
+  bool _locked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _pausedAt = DateTime.now();
+    } else if (state == AppLifecycleState.resumed) {
+      if (_pausedAt != null && DateTime.now().difference(_pausedAt!) > widget.timeout) {
+        setState(() => _locked = true);
+      }
+      _pausedAt = null;
+    }
+  }
+
+  Future<void> _attemptUnlock() async {
+    final ok = await widget.biometricService.authenticate(
+      reason: 'Unlock {{project_name}}',
+    );
+    if (ok && mounted) {
+      setState(() => _locked = false);
+    }
+    // On failure: adopter MUST implement PIN fallback UI here.
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        widget.child,
+        if (_locked)
+          Positioned.fill(
+            child: ColoredBox(
+              color: Colors.black.withOpacity(0.92),
+              child: Center(
+                child: ElevatedButton.icon(
+                  onPressed: _attemptUnlock,
+                  icon: const Icon(Icons.fingerprint),
+                  label: const Text('Unlock'),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}

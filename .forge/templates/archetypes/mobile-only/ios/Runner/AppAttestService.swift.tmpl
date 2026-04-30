@@ -1,0 +1,65 @@
+// <!-- Audit: B.4 (b4-mobile-only, FR-MO-013) -->
+// Bridges Dart (DeviceAttestor) to iOS DeviceCheck framework's
+// DCAppAttestService. Registers MethodChannel "forge.attestation/app_attest".
+
+import Flutter
+import DeviceCheck
+import Foundation
+
+@available(iOS 14.0, *)
+class AppAttestService: NSObject {
+    static let channelName = "forge.attestation/app_attest"
+    private let attestService = DCAppAttestService.shared
+
+    static func register(controller: FlutterViewController) {
+        let channel = FlutterMethodChannel(name: channelName, binaryMessenger: controller.binaryMessenger)
+        let instance = AppAttestService()
+        channel.setMethodCallHandler { call, result in
+            instance.handle(call: call, result: result)
+        }
+    }
+
+    private func handle(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        switch call.method {
+        case "isSupported":
+            result(attestService.isSupported)
+        case "requestAttestationToken":
+            guard let args = call.arguments as? [String: Any],
+                  let nonce = args["nonce"] as? String else {
+                result(FlutterError(code: "BAD_ARGS", message: "missing nonce", details: nil))
+                return
+            }
+            generateAndAttest(nonce: nonce, result: result)
+        default:
+            result(FlutterMethodNotImplemented)
+        }
+    }
+
+    private func generateAndAttest(nonce: String, result: @escaping FlutterResult) {
+        attestService.generateKey { keyId, error in
+            if let error = error {
+                result(FlutterError(code: "GEN_KEY_FAILED",
+                                    message: error.localizedDescription, details: nil))
+                return
+            }
+            guard let keyId = keyId else {
+                result(FlutterError(code: "GEN_KEY_FAILED", message: "nil keyId", details: nil))
+                return
+            }
+            let clientHash = Data(nonce.utf8)
+            self.attestService.attestKey(keyId, clientDataHash: clientHash) { attestation, error in
+                if let error = error {
+                    result(FlutterError(code: "ATTEST_FAILED",
+                                        message: error.localizedDescription, details: nil))
+                    return
+                }
+                guard let attestation = attestation else {
+                    result(FlutterError(code: "ATTEST_FAILED", message: "nil attestation", details: nil))
+                    return
+                }
+                let token = "\(keyId).\(attestation.base64EncodedString())"
+                result(token)
+            }
+        }
+    }
+}

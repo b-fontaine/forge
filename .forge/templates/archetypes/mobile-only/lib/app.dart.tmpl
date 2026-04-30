@@ -1,23 +1,66 @@
 // <!-- Audit: B.4 (b4-mobile-only, FR-MO-010) -->
-// Phase A skeleton — Phase B will wrap MaterialApp with BiometricLockWidget
-// and provide AuthBloc / DeviceAttestor / SecureStorage via DI.
+// Widget root + DI graph. AuthBloc, BiometricService, DeviceAttestor are
+// provisioned here ; BiometricLockWidget wraps the MaterialApp to enforce
+// re-prompt after backgrounding.
+
+import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_appauth/flutter_appauth.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:opentelemetry_api/opentelemetry_api.dart';
+
+import 'data/auth/auth_repository_impl.dart';
+import 'domain/attestation/device_attestor.dart';
+import 'domain/auth/auth_repository.dart';
+import 'infrastructure/attestation/android_play_integrity_attestor.dart';
+import 'infrastructure/attestation/fake_attestor.dart';
+import 'infrastructure/attestation/ios_app_attest_attestor.dart';
+import 'infrastructure/auth/oidc_config.dart';
+import 'infrastructure/biometric/biometric_service.dart';
+import 'infrastructure/storage/secure_storage_adapter.dart';
+import 'observability/otel_init.dart';
+import 'presentation/auth/auth_bloc.dart';
+import 'presentation/biometric/biometric_lock_widget.dart';
+
+DeviceAttestor _selectAttestor() {
+  if (Platform.isIOS) return IosAppAttestAttestor();
+  if (Platform.isAndroid) return AndroidPlayIntegrityAttestor();
+  // Desktop / web fallback (rare for this archetype but keep it safe).
+  return FakeAttestor();
+}
 
 class App extends StatelessWidget {
   const App({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: '{{project_name}}',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const Scaffold(
-        body: Center(
-          child: Text('{{project_name}} — mobile-only scaffold'),
+    final storage = SecureStorageAdapter();
+    final attestor = _selectAttestor();
+    final repository = AuthRepositoryImpl(
+      appAuth: const FlutterAppAuth(),
+      storage: storage,
+      attestor: attestor,
+      config: defaultConfig,
+      tracer: globalTracerProvider.getTracer('{{project_name}}.auth'),
+    );
+    final biometricService = BiometricService();
+
+    return BlocProvider<AuthBloc>(
+      create: (_) => AuthBloc(repository: repository),
+      child: BiometricLockWidget(
+        biometricService: biometricService,
+        child: MaterialApp(
+          title: '{{project_name}}',
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+            useMaterial3: true,
+          ),
+          home: const Scaffold(
+            body: Center(
+              child: Text('{{project_name}} — mobile-only scaffold'),
+            ),
+          ),
         ),
       ),
     );

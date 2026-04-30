@@ -336,6 +336,172 @@ _test_b4_l2_005() {
     || { echo "    reverse_domain not in build.gradle.kts" >&2; return 1; }
 }
 
+# ─── Phase B — runtime + standards ───────────────────────────────
+#
+# MANIFEST: _test_b4_020 — FR-MO-017 oidc_config TODO_REPLACE + 4 providers in comments
+# MANIFEST: _test_b4_021 — FR-MO-019 auth_repository.dart interface 4 methods
+# MANIFEST: _test_b4_022 — FR-MO-019 auth_repository_impl uses FlutterAppAuth + no token logging
+# MANIFEST: _test_b4_023 — FR-MO-018 auth_bloc has states + events
+# MANIFEST: _test_b4_024 — FR-MO-020 secure_storage_adapter Keychain + EncryptedSharedPreferences
+# MANIFEST: _test_b4_025 — FR-MO-022 biometric_service wraps LocalAuthentication
+# MANIFEST: _test_b4_026 — FR-MO-023 biometric_lock_widget uses WidgetsBindingObserver
+# MANIFEST: _test_b4_027 — FR-MO-025 device_attestor interface 2 methods
+# MANIFEST: _test_b4_028 — FR-MO-026,027 3 attestor impls (ios, android, fake)
+# MANIFEST: _test_b4_029 — FR-MO-013 AppAttestService.swift with DCAppAttestService
+# MANIFEST: _test_b4_030 — FR-MO-016 PlayIntegrityService.kt with IntegrityManager
+# MANIFEST: _test_b4_031 — FR-MO-028 otel_init.dart with OtlpExporter
+# MANIFEST: _test_b4_032 — FR-MO-029 auth_repository_impl instrumented with span
+# MANIFEST: _test_b4_033 — FR-MO-036 flutter-mobile.md 7 H2 + 3 Interdictions
+# MANIFEST: _test_b4_034 — FR-MO-036 index.yml has flutter-mobile entry
+
+_test_b4_020() {
+  local f="$TEMPLATES/lib/infrastructure/auth/oidc_config.dart.tmpl"
+  [ -f "$f" ] || { echo "    expected: $f" >&2; return 1; }
+  grep -qF 'TODO_REPLACE_' "$f" || { echo "    missing TODO_REPLACE_ placeholder" >&2; return 1; }
+  for provider in Auth0 Keycloak Okta Cognito; do
+    grep -qiF "$provider" "$f" || { echo "    missing reference to $provider" >&2; return 1; }
+  done
+}
+
+_test_b4_021() {
+  local f="$TEMPLATES/lib/domain/auth/auth_repository.dart.tmpl"
+  [ -f "$f" ] || { echo "    expected: $f" >&2; return 1; }
+  for sig in 'login' 'refresh' 'logout' 'getCurrentToken'; do
+    grep -qE "$sig" "$f" || { echo "    missing method: $sig" >&2; return 1; }
+  done
+  grep -qE 'abstract class|abstract interface class' "$f" \
+    || { echo "    not an abstract class/interface" >&2; return 1; }
+}
+
+_test_b4_022() {
+  local f="$TEMPLATES/lib/data/auth/auth_repository_impl.dart.tmpl"
+  [ -f "$f" ] || { echo "    expected: $f" >&2; return 1; }
+  grep -qF 'FlutterAppAuth' "$f" || { echo "    missing FlutterAppAuth" >&2; return 1; }
+  # No token logging (FR-MO-019).
+  if grep -qE 'print\(.*token|debugPrint\(.*token' "$f"; then
+    echo "    forbidden: print/debugPrint of token detected" >&2; return 1
+  fi
+}
+
+_test_b4_023() {
+  local f="$TEMPLATES/lib/presentation/auth/auth_bloc.dart.tmpl"
+  [ -f "$f" ] || { echo "    expected: $f" >&2; return 1; }
+  for state in AuthInitial AuthLoading AuthAuthenticated AuthUnauthenticated AuthError; do
+    grep -qF "$state" "$f" || { echo "    missing state: $state" >&2; return 1; }
+  done
+  for ev in AuthLoginRequested AuthLogoutRequested AuthTokenRefreshRequested; do
+    grep -qF "$ev" "$f" || { echo "    missing event: $ev" >&2; return 1; }
+  done
+}
+
+_test_b4_024() {
+  local f="$TEMPLATES/lib/infrastructure/storage/secure_storage_adapter.dart.tmpl"
+  [ -f "$f" ] || { echo "    expected: $f" >&2; return 1; }
+  grep -qF 'FlutterSecureStorage' "$f" || { echo "    missing FlutterSecureStorage" >&2; return 1; }
+  grep -qiF 'first_unlock_this_device' "$f" \
+    || { echo "    missing iOS Keychain accessibility config" >&2; return 1; }
+  grep -qF 'EncryptedSharedPreferences' "$f" \
+    || { echo "    missing Android EncryptedSharedPreferences" >&2; return 1; }
+}
+
+_test_b4_025() {
+  local f="$TEMPLATES/lib/infrastructure/biometric/biometric_service.dart.tmpl"
+  [ -f "$f" ] || { echo "    expected: $f" >&2; return 1; }
+  grep -qF 'LocalAuthentication' "$f" || { echo "    missing LocalAuthentication" >&2; return 1; }
+  grep -qF 'biometricOnly' "$f" || { echo "    missing biometricOnly option" >&2; return 1; }
+  grep -qF 'stickyAuth' "$f" || { echo "    missing stickyAuth option" >&2; return 1; }
+}
+
+_test_b4_026() {
+  local f="$TEMPLATES/lib/presentation/biometric/biometric_lock_widget.dart.tmpl"
+  [ -f "$f" ] || { echo "    expected: $f" >&2; return 1; }
+  grep -qF 'WidgetsBindingObserver' "$f" \
+    || { echo "    missing WidgetsBindingObserver" >&2; return 1; }
+  grep -qF 'AppLifecycleState' "$f" \
+    || { echo "    missing AppLifecycleState reference" >&2; return 1; }
+}
+
+_test_b4_027() {
+  local f="$TEMPLATES/lib/domain/attestation/device_attestor.dart.tmpl"
+  [ -f "$f" ] || { echo "    expected: $f" >&2; return 1; }
+  grep -qE 'requestAttestationToken' "$f" \
+    || { echo "    missing requestAttestationToken" >&2; return 1; }
+  grep -qE 'isSupported' "$f" \
+    || { echo "    missing isSupported" >&2; return 1; }
+}
+
+_test_b4_028() {
+  for impl in ios_app_attest_attestor android_play_integrity_attestor fake_attestor; do
+    local f="$TEMPLATES/lib/infrastructure/attestation/${impl}.dart.tmpl"
+    [ -f "$f" ] || { echo "    expected: $f" >&2; return 1; }
+  done
+  # MethodChannel names match Dart side
+  grep -qF 'forge.attestation/app_attest' \
+    "$TEMPLATES/lib/infrastructure/attestation/ios_app_attest_attestor.dart.tmpl" \
+    || { echo "    iOS impl missing MethodChannel name" >&2; return 1; }
+  grep -qF 'forge.attestation/play_integrity' \
+    "$TEMPLATES/lib/infrastructure/attestation/android_play_integrity_attestor.dart.tmpl" \
+    || { echo "    Android impl missing MethodChannel name" >&2; return 1; }
+}
+
+_test_b4_029() {
+  local f="$TEMPLATES/ios/Runner/AppAttestService.swift.tmpl"
+  [ -f "$f" ] || { echo "    expected: $f" >&2; return 1; }
+  grep -qF 'DCAppAttestService' "$f" \
+    || { echo "    missing DCAppAttestService reference" >&2; return 1; }
+  grep -qF 'forge.attestation/app_attest' "$f" \
+    || { echo "    missing MethodChannel name" >&2; return 1; }
+}
+
+_test_b4_030() {
+  local match
+  match=$(find "$TEMPLATES/android/app/src/main/kotlin" -name 'PlayIntegrityService.kt.tmpl' 2>/dev/null | head -1)
+  if [ -z "$match" ]; then echo "    PlayIntegrityService.kt.tmpl not found" >&2; return 1; fi
+  grep -qF 'IntegrityManager' "$match" \
+    || { echo "    missing IntegrityManager reference" >&2; return 1; }
+  grep -qF 'forge.attestation/play_integrity' "$match" \
+    || { echo "    missing MethodChannel name" >&2; return 1; }
+}
+
+_test_b4_031() {
+  local f="$TEMPLATES/lib/observability/otel_init.dart.tmpl"
+  [ -f "$f" ] || { echo "    expected: $f" >&2; return 1; }
+  grep -qiE 'otlp|exporter' "$f" \
+    || { echo "    missing OTLP exporter" >&2; return 1; }
+  grep -qF '4318' "$f" \
+    || { echo "    missing default endpoint port 4318" >&2; return 1; }
+}
+
+_test_b4_032() {
+  local f="$TEMPLATES/lib/data/auth/auth_repository_impl.dart.tmpl"
+  [ -f "$f" ] || { echo "    expected: $f" >&2; return 1; }
+  grep -qE 'startSpan|tracer\.' "$f" \
+    || { echo "    missing tracer.startSpan instrumentation" >&2; return 1; }
+}
+
+_test_b4_033() {
+  [ -f "$STD_FLUTTER_MOBILE" ] || { echo "    expected: $STD_FLUTTER_MOBILE" >&2; return 1; }
+  local sections=("Lifecycle and Backgrounding" "Permissions" "OIDC and Token Storage" "Biometric Lock" "Device Attestation" "Native Configuration" "CI / Fastlane")
+  local missing=()
+  for s in "${sections[@]}"; do
+    grep -qE "^## ${s}\$" "$STD_FLUTTER_MOBILE" || missing+=("$s")
+  done
+  if [ "${#missing[@]}" -gt 0 ]; then
+    echo "    missing H2 sections: ${missing[*]}" >&2; return 1
+  fi
+  local n
+  n=$(grep -ciE 'interdiction' "$STD_FLUTTER_MOBILE")
+  if [ "$n" -lt 3 ]; then
+    echo "    only $n Interdictions (need ≥ 3)" >&2; return 1
+  fi
+}
+
+_test_b4_034() {
+  [ -f "$INDEX_YML" ] || { echo "    expected: $INDEX_YML" >&2; return 1; }
+  grep -qF 'flutter-mobile' "$INDEX_YML" \
+    || { echo "    flutter-mobile entry missing in index.yml" >&2; return 1; }
+}
+
 # ─── Main ───────────────────────────────────────────────────────
 
 main() {
@@ -363,6 +529,24 @@ main() {
   run_test _test_b4_017
   run_test _test_b4_018
   run_test _test_b4_019
+
+  echo ""
+  echo "── Phase B : runtime + standards ──"
+  run_test _test_b4_020
+  run_test _test_b4_021
+  run_test _test_b4_022
+  run_test _test_b4_023
+  run_test _test_b4_024
+  run_test _test_b4_025
+  run_test _test_b4_026
+  run_test _test_b4_027
+  run_test _test_b4_028
+  run_test _test_b4_029
+  run_test _test_b4_030
+  run_test _test_b4_031
+  run_test _test_b4_032
+  run_test _test_b4_033
+  run_test _test_b4_034
 
   case ",$LEVEL," in
     *,2,*)

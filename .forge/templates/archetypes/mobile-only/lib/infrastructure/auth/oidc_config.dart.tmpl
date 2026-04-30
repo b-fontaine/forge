@@ -1,0 +1,42 @@
+// <!-- Audit: B.4 (b4-mobile-only, FR-MO-017) -->
+// OIDC configuration — adopter MUST replace TODO_REPLACE_* with their
+// provider-specific values. The mobile-only archetype is provider-neutral
+// (ADR-003); pick one of the following based on your stack:
+//
+//   • Auth0          — https://auth0.com/docs/get-started/applications/application-grant-types
+//   • Keycloak       — https://www.keycloak.org/docs/latest/securing_apps/#_mobile_apps
+//   • Okta           — https://developer.okta.com/docs/guides/mobile-app/main/
+//   • AWS Cognito    — https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-app-integration.html
+//
+// PKCE flow is enforced by flutter_appauth — no client_secret is shipped
+// with the app (this is correct for native mobile clients per RFC 8252).
+
+import 'package:equatable/equatable.dart';
+
+class OidcConfig extends Equatable {
+  final String issuer;
+  final String clientId;
+  final String redirectUri;
+  final List<String> scopes;
+  final String? discoveryUrl; // optional, falls back to <issuer>/.well-known/openid-configuration
+
+  const OidcConfig({
+    required this.issuer,
+    required this.clientId,
+    required this.redirectUri,
+    required this.scopes,
+    this.discoveryUrl,
+  });
+
+  @override
+  List<Object?> get props => [issuer, clientId, redirectUri, scopes, discoveryUrl];
+}
+
+/// Default placeholder configuration. The app will refuse to start
+/// the auth flow with these values — adopter MUST override.
+const OidcConfig defaultConfig = OidcConfig(
+  issuer: 'TODO_REPLACE_ISSUER_URL', // e.g. https://your-tenant.auth0.com/
+  clientId: 'TODO_REPLACE_CLIENT_ID',
+  redirectUri: 'TODO_REPLACE_REDIRECT_URI', // e.g. {{reverse_domain}}://callback
+  scopes: ['openid', 'profile', 'email', 'offline_access'],
+);
