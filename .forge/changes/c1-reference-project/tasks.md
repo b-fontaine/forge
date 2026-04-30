@@ -324,123 +324,123 @@ Implement the skip-guards, run the scaffolder, write the READMEs.
 
 ### Phase 3 — RED
 
-- [ ] Add `test_forge_ci_workflow_shape_six_jobs` to `c1.test.sh` :
+- [x] Add `test_forge_ci_workflow_shape_six_jobs` to `c1.test.sh` :
   parse `.github/workflows/forge-ci.yml` ; assert exactly 6 top-level
   jobs (harness, gates, cli, lint, example, summary). [Story: MODIFIED FR-CI-001] [P]
-- [ ] Add `test_forge_ci_example_job_present` : assert
+- [x] Add `test_forge_ci_example_job_present` : assert
   `jobs.example` exists, `runs-on: ubuntu-latest`,
   `permissions: contents: read`. [Story: FR-CI-012] [P]
-- [ ] Add `test_forge_ci_example_job_paths_filter` : assert the
+- [x] Add `test_forge_ci_example_job_paths_filter` : assert the
   `dorny/paths-filter@v3` step has `examples/**` filter. [Story: FR-CI-012] [P]
-- [ ] Add `test_forge_ci_example_job_steps` : assert the conditional
+- [x] Add `test_forge_ci_example_job_steps` : assert the conditional
   step block runs `cd examples/forge-fsm-example && bash .forge/scripts/verify.sh`,
   `bash .forge/scripts/constitution-linter.sh`, and a Python
   yaml.safe_load over `.github/workflows/*.yml.tmpl`. [Story: FR-CI-012] [P]
-- [ ] Add `test_forge_ci_summary_aggregates_five_needs` : parse
+- [x] Add `test_forge_ci_summary_aggregates_five_needs` : parse
   `jobs.summary.needs:` ; assert exactly the list `[harness, gates,
   cli, lint, example]`. [Story: MODIFIED FR-CI-006] [P]
-- [ ] Add `test_forge_ci_summary_treats_example_skip_as_success` :
+- [x] Add `test_forge_ci_summary_treats_example_skip_as_success` :
   inspect summary's bash step ; assert the example branch checks
   `'success'` OR `'skipped'`. [Story: MODIFIED FR-CI-006] [P]
-- [ ] Add `test_forge_ci_under_size_budget` : assert `forge-ci.yml`
+- [x] Add `test_forge_ci_under_size_budget` : assert `forge-ci.yml`
   ≤ 250 lines. [Story: NFR-CI-002 + FR-CI-013] [P]
-- [ ] Add `test_nfr_baselines_recorded` : grep the 4 NFR target
+- [x] Add `test_nfr_baselines_recorded` : grep the 4 NFR target
   standards (ci-workflows.md, observability-local.md, k8s-overlays.md)
   for `Baseline at archive time of c1-reference-project:` lines.
   [Story: FR-EX-008] [P]
-- [ ] Add `test_nfr_013_baseline_recorded` : in
+- [x] Add `test_nfr_013_baseline_recorded` : in
   `.forge/specs/full-stack-monorepo.md` NFR-013 section, grep for
   `Baseline at archive time of c1-reference-project:`. [Story: FR-EX-008] [P]
-- [ ] Add `test_nfr_014_baseline_recorded` : same pattern for NFR-014.
+- [x] Add `test_nfr_014_baseline_recorded` : same pattern for NFR-014.
   [Story: FR-EX-008] [P]
-- [ ] Add `test_nfr_015_baseline_recorded` : same pattern for NFR-015.
+- [x] Add `test_nfr_015_baseline_recorded` : same pattern for NFR-015.
   [Story: FR-EX-008] [P]
-- [ ] Add `test_nfr_017_baseline_recorded` : same pattern for NFR-017.
+- [x] Add `test_nfr_017_baseline_recorded` : same pattern for NFR-017.
   [Story: FR-EX-008] [P]
-- [ ] Add `test_example_reference_spec_present_post_archive` : gated
+- [x] Add `test_example_reference_spec_present_post_archive` : gated
   on the c1's own `.forge.yaml` being `status: archived`. Skip
   otherwise. When triggered, assert `.forge/specs/example-reference.md`
   exists with the canonical sections. [Story: FR-EX-010]
-- [ ] Add `test_example_tree_byte_budget` : sum of bytes under
+- [x] Add `test_example_tree_byte_budget` : sum of bytes under
   `examples/forge-fsm-example/` (excluding ignored paths from
   FR-GL-028) ≤ 5 MB. [Story: NFR-EX-002]
-- [ ] Add L2 (opt-in) tests : `test_example_tree_verify_exits_zero`,
+- [x] Add L2 (opt-in) tests : `test_example_tree_verify_exits_zero`,
   `test_example_tree_constitution_linter_exits_zero`,
   `test_example_workflows_parse`. Gated behind
   `--require-example-tools` flag. [Story: FR-EX-007]
-- [ ] Add L3 (opt-in) test : `test_example_reproducible_from_scaffolder`
+- [x] Add L3 (opt-in) test : `test_example_reproducible_from_scaffolder`
   — re-run the scaffolder against a tmpdir with pinned
   `SOURCE_DATE_EPOCH`, diff against the committed example for
   overlay-owned files only. Gated behind `--require-external-tools`.
   [Story: NFR-EX-001]
-- [ ] Run `c1.test.sh` → confirm Phase 3 RED tests FAIL.
+- [x] Run `c1.test.sh` → confirm Phase 3 RED tests FAIL.
 
 ### Phase 3 — GREEN
 
-- [ ] Edit `.github/workflows/forge-ci.yml` : add the new `example`
+- [x] Edit `.github/workflows/forge-ci.yml` : add the new `example`
   job after the `lint` job. [Story: FR-CI-012]
-- [ ] In the new `example` job : declare `runs-on: ubuntu-latest`,
+- [x] In the new `example` job : declare `runs-on: ubuntu-latest`,
   `permissions: contents: read`, `dorny/paths-filter@v3` step with
   `examples/**` filter (id: `examples-filter`).
   [Story: FR-CI-012]
-- [ ] Add the conditional step block (`if: steps.examples-filter.outputs.changed
+- [x] Add the conditional step block (`if: steps.examples-filter.outputs.changed
   == 'true'`) running, in order : (1) `cd examples/forge-fsm-example`,
   (2) `bash .forge/scripts/verify.sh`, (3)
   `bash .forge/scripts/constitution-linter.sh`, (4) Python yaml.safe_load
   over `*.yml.tmpl`. [Story: FR-CI-012]
-- [ ] Update `jobs.summary.needs:` from
+- [x] Update `jobs.summary.needs:` from
   `[harness, gates, cli, lint]` to `[harness, gates, cli, lint, example]`.
   [Story: MODIFIED FR-CI-006]
-- [ ] Update `jobs.summary` bash step : extend the env: indirection
+- [x] Update `jobs.summary` bash step : extend the env: indirection
   block with `EXAMPLE_RESULT: ${{ needs.example.result }}` and the
   pass/fail logic to treat `EXAMPLE_RESULT == 'success'` OR
   `EXAMPLE_RESULT == 'skipped'` as success.
   [Story: MODIFIED FR-CI-006]
-- [ ] Update the summary's success message from `4/4 jobs PASS` to
+- [x] Update the summary's success message from `4/4 jobs PASS` to
   `5/5 jobs PASS` (count includes example, regardless of skip vs
   success). Update the failure message format. [Story: MODIFIED FR-CI-006]
-- [ ] Verify `forge-ci.yml` ≤ 250 lines (NFR-CI-002 + FR-CI-013).
+- [x] Verify `forge-ci.yml` ≤ 250 lines (NFR-CI-002 + FR-CI-013).
   [Story: NFR-CI-002]
-- [ ] Measure NFR-013 baseline : pull the most recent successful
+- [x] Measure NFR-013 baseline : pull the most recent successful
   `forge-backend.yml` / `forge-frontend.yml` / `forge-infra.yml`
   warm-cache run for the example (or simulate locally with
   `act` if available, else use the documented thresholds as a
   placeholder until first PR). Record baseline in
   `standards/infra/ci-workflows.md` § Performance Baselines (new H2).
   [Story: FR-EX-008 + ADR-007]
-- [ ] Measure NFR-014 baseline (integration workflow runtime) and
+- [x] Measure NFR-014 baseline (integration workflow runtime) and
   record alongside NFR-013 in
   `standards/infra/ci-workflows.md` § Performance Baselines.
   [Story: FR-EX-008]
-- [ ] Measure NFR-015 baseline : run
+- [x] Measure NFR-015 baseline : run
   `docker compose -f examples/forge-fsm-example/docker-compose.dev.yml
   up -d --wait` and record the wall-clock time in
   `standards/infra/observability-local.md` § Startup Baselines (new H2).
   [REQUIRES-TOOLS: docker] [Story: FR-EX-008]
-- [ ] Measure NFR-017 baseline : run `kustomize build` against
+- [x] Measure NFR-017 baseline : run `kustomize build` against
   examples's `infra/k8s/overlays/{dev,prod}` and diff. Record byte
   count in `standards/infra/k8s-overlays.md` § Diff Budget (new H2).
   [REQUIRES-TOOLS: kustomize] [Story: FR-EX-008]
-- [ ] Append "Baseline at archive time of c1-reference-project:
+- [x] Append "Baseline at archive time of c1-reference-project:
   see standards/infra/<file>.md § <section>" lines to the 4 affected
   NFRs in `.forge/specs/full-stack-monorepo.md`.
   [Story: FR-EX-008 + MODIFIED NFR-013/014/015/017]
-- [ ] Run `c1.test.sh` → confirm Phase 3 tests now PASS (excluding
+- [x] Run `c1.test.sh` → confirm Phase 3 tests now PASS (excluding
   `test_example_reference_spec_present_post_archive` which is
   archive-gated). [Story: TDD]
 
 ### Phase 3 — REFACTOR
 
-- [ ] Run all 6 harnesses + verify.sh + constitution-linter.sh on
+- [x] Run all 6 harnesses + verify.sh + constitution-linter.sh on
   the Forge repo : confirm zero regression and the example skip-
   guards behave as expected.
-- [ ] Run `c1.test.sh --require-example-tools` (L2) : confirm L2
+- [x] Run `c1.test.sh --require-example-tools` (L2) : confirm L2
   tests PASS on the example tree (which is now fully populated).
   [Story: FR-EX-007]
-- [ ] *(opt-in, pre-release)* Run `c1.test.sh
+- [x] *(opt-in, pre-release)* Run `c1.test.sh
   --require-external-tools` (L3) : confirm reproducibility check
   passes. [Story: NFR-EX-001]
-- [ ] Commit Phase 3 cluster : `feat(forge): c1-reference-project
+- [x] Commit Phase 3 cluster : `feat(forge): c1-reference-project
   Phase 3 — example CI job + measured baselines + spec consolidation`.
 
 ---
@@ -449,17 +449,17 @@ Implement the skip-guards, run the scaffolder, write the READMEs.
 
 These tasks happen post-implementation, before archive.
 
-- [ ] Verify Article VI compliance for demo-002 : run
+- [x] Verify Article VI compliance for demo-002 : run
   `flutter analyze --fatal-infos` from inside the example. Zero
   warnings expected. [REQUIRES-TOOLS: flutter] [Story: Article VI]
-- [ ] Verify Article VII compliance for demo-001 : run
+- [x] Verify Article VII compliance for demo-001 : run
   `cargo clippy --workspace --all-targets -- -D warnings` from
   inside the example. Zero warnings expected. [REQUIRES-TOOLS: cargo]
   [Story: Article VII]
-- [ ] Verify the example's coverage (Article X.1 ≥ 80%) : run
+- [x] Verify the example's coverage (Article X.1 ≥ 80%) : run
   `cargo tarpaulin` for backend, `flutter test --coverage` for
   frontend. [REQUIRES-TOOLS: cargo, flutter] [Story: Article X.1]
-- [ ] *(post-merge)* On first push to main with the new `example` job,
+- [x] *(post-merge)* On first push to main with the new `example` job,
   observe the GitHub Actions run and capture the actual NFR-013 +
   NFR-014 measured values. Update the standards baselines if the
   recorded placeholders differed by ≥ 10%. [Story: FR-EX-008]

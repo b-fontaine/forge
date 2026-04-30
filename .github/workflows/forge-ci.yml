@@ -105,11 +105,62 @@ jobs:
           severity: warning
           scandir: ./bin
 
+  # ─── example ── validate examples/forge-fsm-example/ on touch ─
+  # Added by c1-reference-project (FR-CI-012). Conditional on the
+  # examples/** paths-filter ; on a miss, the job emits 'skipped'
+  # which the summary treats as success (paths-filter mismatch is
+  # not a failure).
+  example:
+    name: Example tree (examples/** paths-filter)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - id: examples-filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            examples:
+              - 'examples/**'
+      - uses: actions/setup-python@v5
+        if: steps.examples-filter.outputs.examples == 'true'
+        with:
+          python-version: "3.11"
+      - name: Install PyYAML
+        if: steps.examples-filter.outputs.examples == 'true'
+        run: pip install pyyaml
+      - name: example verify.sh
+        if: steps.examples-filter.outputs.examples == 'true'
+        run: |
+          cd examples/forge-fsm-example
+          bash .forge/scripts/verify.sh
+      - name: example constitution-linter.sh
+        if: steps.examples-filter.outputs.examples == 'true'
+        run: |
+          cd examples/forge-fsm-example
+          bash .forge/scripts/constitution-linter.sh
+      - name: parse archetype workflow templates (yaml.safe_load)
+        if: steps.examples-filter.outputs.examples == 'true'
+        run: |
+          python3 - <<'PY'
+          import glob, sys, yaml
+          paths = glob.glob('examples/forge-fsm-example/.forge/templates/archetypes/full-stack-monorepo/.github/workflows/*.yml.tmpl')
+          if not paths:
+              print('no archetype workflow templates found', file=sys.stderr); sys.exit(1)
+          for p in paths:
+              try:
+                  yaml.safe_load(open(p).read())
+              except Exception as e:
+                  print(f'parse failed: {p}: {e}', file=sys.stderr); sys.exit(1)
+              print(f'parsed: {p}')
+          PY
+
   # ─── summary ── aggregator → single required status ───────────
   summary:
     name: Summary (required status)
     runs-on: ubuntu-latest
-    needs: [harness, gates, cli, lint]
+    needs: [harness, gates, cli, lint, example]
     if: always()
     steps:
       - name: Aggregate job results
@@ -118,6 +169,7 @@ jobs:
           GATES_RESULT: ${{ needs.gates.result }}
           CLI_RESULT: ${{ needs.cli.result }}
           LINT_RESULT: ${{ needs.lint.result }}
+          EXAMPLE_RESULT: ${{ needs.example.result }}
         run: |
           set -eu
           declare -A results
@@ -125,16 +177,23 @@ jobs:
           results[gates]="$GATES_RESULT"
           results[cli]="$CLI_RESULT"
           results[lint]="$LINT_RESULT"
+          results[example]="$EXAMPLE_RESULT"
 
+          # The four core jobs MUST be exactly 'success'. The example
+          # job MAY be 'success' OR 'skipped' (paths-filter miss is
+          # not a failure). Any other value on any job → fail.
           failed=()
           for job in harness gates cli lint; do
             if [ "${results[$job]}" != "success" ]; then
               failed+=("$job=${results[$job]}")
             fi
           done
+          if [ "${results[example]}" != "success" ] && [ "${results[example]}" != "skipped" ]; then
+            failed+=("example=${results[example]}")
+          fi
 
           if [ "${#failed[@]}" -gt 0 ]; then
             echo "::error::forge-ci: ${failed[*]} FAILED"
             exit 1
           fi
-          echo "::notice::forge-ci: 4/4 jobs PASS"
+          echo "::notice::forge-ci: 5/5 jobs PASS"

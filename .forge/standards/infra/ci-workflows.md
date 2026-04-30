@@ -140,3 +140,29 @@ word.
 A project's deviation budget : at most 2 additional steps per
 workflow before the Forge gates. Above that, write a Forge change
 proposing the new step as a constitutional commitment.
+
+## Performance Baselines
+
+<!-- Added by c1-reference-project (2026-04-30) — measured against
+     examples/forge-fsm-example/. Authoritative ledger for the
+     NFR-013 / NFR-014 thresholds declared in
+     .forge/specs/full-stack-monorepo.md. -->
+
+The thresholds in NFR-013 (per-layer workflow ≤ 8 min warm,
+≤ 15 min cold) and NFR-014 (integration workflow ≤ 30 min) gain
+**measured baselines** as soon as the example tree's CI runs.
+The values below are appended on first observed run ; entries
+with `TBD` are placeholders to be replaced after the first PR /
+nightly run records a verified value.
+
+| NFR | Workflow | Budget (cap) | Baseline | Measured on | Notes |
+|---|---|---|---|---|---|
+| NFR-013 (warm) | `forge-backend.yml` | 8 min | TBD | first PR after c1 merges | warm = `Cargo.lock` hits the cache |
+| NFR-013 (warm) | `forge-frontend.yml` | 8 min | TBD | first PR after c1 merges | warm = `pubspec.lock` hits the cache |
+| NFR-013 (warm) | `forge-infra.yml` | 8 min | TBD | first PR after c1 merges | warm = `kubeconform` binary cached |
+| NFR-013 (cold) | per-layer workflows | 15 min | TBD | first PR with `cache: ''` override | rare ; record opportunistically |
+| NFR-014 | `forge-integration.yml` | 30 min | TBD | first nightly run | bounded by `docker compose pull` + Patrol Android suite |
+
+When an updated value is recorded, add the date under
+`Measured on` and the producing PR / run URL inline. Re-measure
+on every minor release of the archetype.

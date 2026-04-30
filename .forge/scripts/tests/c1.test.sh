@@ -585,41 +585,191 @@ if len(seen) != 4:
 PY
 }
 
-# ─── Phase 3 — CI + docs + baselines tests (skeleton) ─────────
+# ─── Phase 3 — CI + docs + baselines tests ────────────────────
 
+# MODIFIED FR-CI-001 — workflow has exactly 6 top-level jobs.
 test_forge_ci_workflow_shape_six_jobs() {
-  echo "    not yet implemented (Phase 3 GREEN)" >&2; return 1
+  if [ ! -f "$WORKFLOW_FILE" ]; then
+    echo "    workflow file missing: $WORKFLOW_FILE" >&2; return 1
+  fi
+  python3 - "$WORKFLOW_FILE" <<'PY' || return 1
+import sys, yaml
+doc = yaml.safe_load(open(sys.argv[1]).read()) or {}
+jobs = doc.get("jobs", {})
+expected = {"harness", "gates", "cli", "lint", "example", "summary"}
+if set(jobs.keys()) != expected:
+    print(f"    expected jobs {sorted(expected)}, got {sorted(jobs.keys())}", file=sys.stderr)
+    sys.exit(1)
+PY
 }
+
+# FR-CI-012 — example job present, runs-on, permissions.
 test_forge_ci_example_job_present() {
-  echo "    not yet implemented (Phase 3 GREEN)" >&2; return 1
+  python3 - "$WORKFLOW_FILE" <<'PY' || return 1
+import sys, yaml
+doc = yaml.safe_load(open(sys.argv[1]).read()) or {}
+job = (doc.get("jobs") or {}).get("example")
+if job is None:
+    print("    jobs.example missing", file=sys.stderr); sys.exit(1)
+errs = []
+if job.get("runs-on") != "ubuntu-latest":
+    errs.append(f"runs-on must be 'ubuntu-latest', got {job.get('runs-on')!r}")
+perms = job.get("permissions") or {}
+if perms.get("contents") != "read":
+    errs.append(f"permissions.contents must be 'read', got {perms.get('contents')!r}")
+allowed = {"contents"}
+extras = set(perms.keys()) - allowed
+if extras:
+    errs.append(f"unexpected permissions present: {sorted(extras)}")
+if errs:
+    for e in errs: print(f"    {e}", file=sys.stderr)
+    sys.exit(1)
+PY
 }
+
+# FR-CI-012 — example job uses dorny/paths-filter@v3 on examples/**.
 test_forge_ci_example_job_paths_filter() {
-  echo "    not yet implemented (Phase 3 GREEN)" >&2; return 1
+  python3 - "$WORKFLOW_FILE" <<'PY' || return 1
+import sys, yaml
+doc = yaml.safe_load(open(sys.argv[1]).read()) or {}
+job = (doc.get("jobs") or {}).get("example") or {}
+steps = job.get("steps") or []
+filter_step = next((s for s in steps
+                    if isinstance(s.get("uses"), str)
+                    and s["uses"].startswith("dorny/paths-filter@")), None)
+if filter_step is None:
+    print("    no dorny/paths-filter@vN step in jobs.example", file=sys.stderr); sys.exit(1)
+if not filter_step["uses"].startswith("dorny/paths-filter@v3"):
+    print(f"    paths-filter must be pinned @v3, got {filter_step['uses']!r}", file=sys.stderr); sys.exit(1)
+filters = (filter_step.get("with") or {}).get("filters") or ""
+if "examples/**" not in filters:
+    print(f"    paths-filter.filters does not declare 'examples/**' :\n      {filters!r}", file=sys.stderr); sys.exit(1)
+PY
 }
+
+# FR-CI-012 — example job conditional steps run verify, linter, parse.
 test_forge_ci_example_job_steps() {
-  echo "    not yet implemented (Phase 3 GREEN)" >&2; return 1
+  python3 - "$WORKFLOW_FILE" <<'PY' || return 1
+import sys, yaml
+doc = yaml.safe_load(open(sys.argv[1]).read()) or {}
+job = (doc.get("jobs") or {}).get("example") or {}
+steps = job.get("steps") or []
+needles = ["verify.sh", "constitution-linter.sh", "yaml.safe_load"]
+joined = "\n".join(s.get("run") or "" for s in steps if isinstance(s.get("run"), str))
+missing = [n for n in needles if n not in joined]
+if missing:
+    print(f"    example job missing step content for: {missing}", file=sys.stderr); sys.exit(1)
+# Conditional gate : at least one step must have an `if:` referencing
+# the paths-filter outputs (so unmatched PRs skip work).
+guarded = any(isinstance(s.get("if"), str) and "examples-filter" in s["if"] for s in steps)
+if not guarded:
+    print("    no step gated on the paths-filter output (steps.if missing)", file=sys.stderr); sys.exit(1)
+PY
 }
+
+# MODIFIED FR-CI-006 — summary's needs list extended to include example.
 test_forge_ci_summary_aggregates_five_needs() {
-  echo "    not yet implemented (Phase 3 GREEN)" >&2; return 1
+  python3 - "$WORKFLOW_FILE" <<'PY' || return 1
+import sys, yaml
+doc = yaml.safe_load(open(sys.argv[1]).read()) or {}
+summary = (doc.get("jobs") or {}).get("summary") or {}
+needs = summary.get("needs")
+if needs is None:
+    print("    jobs.summary.needs missing", file=sys.stderr); sys.exit(1)
+if isinstance(needs, str):
+    needs = [needs]
+expected = {"harness", "gates", "cli", "lint", "example"}
+if set(needs) != expected:
+    print(f"    summary.needs must be {sorted(expected)}, got {sorted(needs)}", file=sys.stderr); sys.exit(1)
+PY
 }
+
+# MODIFIED FR-CI-006 — summary treats example=skipped as success.
 test_forge_ci_summary_treats_example_skip_as_success() {
-  echo "    not yet implemented (Phase 3 GREEN)" >&2; return 1
+  python3 - "$WORKFLOW_FILE" <<'PY' || return 1
+import sys, yaml
+doc = yaml.safe_load(open(sys.argv[1]).read()) or {}
+summary = (doc.get("jobs") or {}).get("summary") or {}
+steps = summary.get("steps") or []
+joined_run = "\n".join(s.get("run") or "" for s in steps if isinstance(s.get("run"), str))
+joined_env = ""
+for s in steps:
+    env = s.get("env") or {}
+    for k, v in env.items():
+        joined_env += f"{k}: {v}\n"
+needs_example_in_env = "needs.example.result" in joined_env or \
+                       "EXAMPLE_RESULT" in joined_env
+if not needs_example_in_env:
+    print("    summary's env: block does not expose needs.example.result", file=sys.stderr); sys.exit(1)
+# Match either explicit string in run or implicit guard via env.
+if "skipped" not in joined_run:
+    print("    summary's bash logic does not handle example=skipped as success", file=sys.stderr); sys.exit(1)
+PY
 }
+
+# NFR-CI-002 + FR-CI-013 — workflow ≤ 250 lines.
 test_forge_ci_under_size_budget() {
-  echo "    not yet implemented (Phase 3 GREEN)" >&2; return 1
+  if [ ! -f "$WORKFLOW_FILE" ]; then
+    echo "    workflow file missing" >&2; return 1
+  fi
+  local lines
+  lines=$(wc -l < "$WORKFLOW_FILE" | tr -d ' ')
+  if [ "$lines" -gt 250 ]; then
+    echo "    forge-ci.yml is $lines lines (> 250 NFR-CI-002 budget)" >&2
+    return 1
+  fi
 }
+
+# FR-EX-008 — each affected NFR gets a "Baseline at archive time of
+# c1-reference-project" pointer in spec, plus a section + measured
+# value in the corresponding standard. The pointer string is the
+# canonical signal that the modification landed.
 test_nfr_013_baseline_recorded() {
-  echo "    not yet implemented (Phase 3 GREEN)" >&2; return 1
+  if ! grep -q 'NFR-013.*Baseline at archive time of c1-reference-project\|Baseline at archive time of c1-reference-project.*NFR-013' "$SPEC_FSM"; then
+    if ! grep -B1 -A20 '^### NFR-013' "$SPEC_FSM" 2>/dev/null \
+         | grep -q 'Baseline at archive time of c1-reference-project'; then
+      echo "    NFR-013 section in spec lacks 'Baseline at archive time of c1-reference-project' line" >&2
+      return 1
+    fi
+  fi
+  if ! grep -qE '^## Performance Baselines' "$STD_CI_WORKFLOWS"; then
+    echo "    standard infra/ci-workflows.md missing '## Performance Baselines' H2 section" >&2
+    return 1
+  fi
 }
+
 test_nfr_014_baseline_recorded() {
-  echo "    not yet implemented (Phase 3 GREEN)" >&2; return 1
+  if ! grep -B1 -A20 '^### NFR-014' "$SPEC_FSM" 2>/dev/null \
+       | grep -q 'Baseline at archive time of c1-reference-project'; then
+    echo "    NFR-014 section in spec lacks 'Baseline at archive time of c1-reference-project' line" >&2
+    return 1
+  fi
 }
+
 test_nfr_015_baseline_recorded() {
-  echo "    not yet implemented (Phase 3 GREEN)" >&2; return 1
+  if ! grep -B1 -A20 '^### NFR-015' "$SPEC_FSM" 2>/dev/null \
+       | grep -q 'Baseline at archive time of c1-reference-project'; then
+    echo "    NFR-015 section in spec lacks 'Baseline at archive time of c1-reference-project' line" >&2
+    return 1
+  fi
+  if ! grep -qE '^## Startup Baselines' "$STD_OBS_LOCAL"; then
+    echo "    standard infra/observability-local.md missing '## Startup Baselines' H2 section" >&2
+    return 1
+  fi
 }
+
 test_nfr_017_baseline_recorded() {
-  echo "    not yet implemented (Phase 3 GREEN)" >&2; return 1
+  if ! grep -B1 -A20 '^### NFR-017' "$SPEC_FSM" 2>/dev/null \
+       | grep -q 'Baseline at archive time of c1-reference-project'; then
+    echo "    NFR-017 section in spec lacks 'Baseline at archive time of c1-reference-project' line" >&2
+    return 1
+  fi
+  if ! grep -qE '^## Diff Budget' "$STD_K8S_OVERLAYS"; then
+    echo "    standard infra/k8s-overlays.md missing '## Diff Budget' H2 section" >&2
+    return 1
+  fi
 }
+
 test_example_reference_spec_present_post_archive() {
   # Archive-gated. Skip when c1's own status is not yet 'archived'.
   if [ -f "$C1_FORGE_YAML" ]; then
@@ -638,8 +788,32 @@ PY
     echo "    expected spec file: $SPEC_EXAMPLE" >&2; return 1
   fi
 }
+# NFR-EX-002 — example tree ≤ 5 MB committed (excludes ignored paths).
 test_example_tree_byte_budget() {
-  echo "    not yet implemented (Phase 3 GREEN)" >&2; return 1
+  if [ ! -d "$EXAMPLE_DIR" ]; then
+    echo "    example dir missing" >&2; return 1
+  fi
+  # Sum bytes ; excludes paths handled by .gitignore (build/,
+  # target/, .dart_tool/, etc.) since they are not committed.
+  local bytes
+  bytes=$(cd "$EXAMPLE_DIR" && \
+    find . -type f \
+      -not -path '*/build/*' \
+      -not -path '*/target/*' \
+      -not -path '*/.dart_tool/*' \
+      -not -path '*/node_modules/*' \
+      -not -path '*/.cargo/*' \
+      -not -path '*/coverage/*' \
+      -exec wc -c {} \; 2>/dev/null \
+      | awk '{sum += $1} END {print sum}')
+  bytes=${bytes:-0}
+  local budget=$((5 * 1024 * 1024))
+  if [ "$bytes" -gt "$budget" ]; then
+    local mb
+    mb=$(awk -v b="$bytes" 'BEGIN { printf "%.2f", b/1024/1024 }')
+    echo "    example tree is ${mb} MB (> 5 MB NFR-EX-002 budget)" >&2
+    return 1
+  fi
 }
 
 # ─── Main ───────────────────────────────────────────────────────

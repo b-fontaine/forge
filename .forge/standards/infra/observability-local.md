@@ -126,3 +126,26 @@ contract** — apps configured for `task dev` will export to a
 production collector with no code changes, just an
 `OTEL_EXPORTER_OTLP_ENDPOINT` swap. This is the migration
 guarantee Forge ships.
+
+## Startup Baselines
+
+<!-- Added by c1-reference-project (2026-04-30) — measured against
+     examples/forge-fsm-example/. Authoritative ledger for the
+     NFR-015 threshold declared in
+     .forge/specs/full-stack-monorepo.md. -->
+
+NFR-015 caps the time `docker compose -f docker-compose.dev.yml
+up -d --wait` takes to bring the four observability services
+(`fsm-otel-collector`, `fsm-signoz-clickhouse`,
+`fsm-signoz-query`, `fsm-signoz-frontend`) to a healthy state at
+**90 seconds** on a developer-class machine (8 CPU cores, 16 GB
+RAM, SSD).
+
+| NFR | Threshold | Baseline | Measured on | Hardware | Notes |
+|---|---|---|---|---|---|
+| NFR-015 | 90 s | TBD | first contributor `task dev:up` after c1 merges | record CPU + RAM + SSD model | bound by ClickHouse boot + SigNoz initial migrations |
+
+When a contributor records the baseline, append the date and the
+exact host hardware (CPU model, RAM, SSD type). Re-measure on
+every minor bump of any pinned image version listed in the
+"Versioning policy" section above.

@@ -120,3 +120,26 @@ This mapping is enforced **socially** (review discipline + the
 Forge change's `status:` field as the single source of truth) ;
 no automation blocks deploys yet. A future module (G.3 Forge
 Guardian) will mechanise the check.
+
+## Diff Budget
+
+<!-- Added by c1-reference-project (2026-04-30) — measured against
+     examples/forge-fsm-example/. Authoritative ledger for the
+     NFR-017 threshold declared in
+     .forge/specs/full-stack-monorepo.md. -->
+
+NFR-017 budgets the YAML diff between `kustomize build
+overlays/dev` and `kustomize build overlays/prod` at **4 KB
+(uncompressed)** for the reference scaffolded project. A bloated
+overlay defeats the Kustomize base+overlays model and signals
+that the divergence belongs in the `base/` (or in a per-env
+microservice) rather than as patch files.
+
+| NFR | Threshold | Baseline | Measured on | Method | Notes |
+|---|---|---|---|---|---|
+| NFR-017 | 4096 bytes | **2124 bytes** (52 %) | 2026-04-30 (c1-reference-project Phase 3) | `diff <(kubectl kustomize overlays/dev) <(kubectl kustomize overlays/prod) \| wc -c` against `examples/forge-fsm-example/infra/k8s/` | well within budget — primary differences : namespace, replica count, image tag, prod-only HPA |
+
+Re-measure when adding a new resource to the `base/` or any
+overlay. The threshold is a SHOULD ; an exceedance opens a
+follow-up change to consider whether the divergence justifies a
+new base resource or a per-env microservice instead.

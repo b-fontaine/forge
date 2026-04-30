@@ -931,6 +931,7 @@ every artifact back to its audit module.
 ### NFR-013: Per-layer workflow runtime budget
 
 <!-- From change: b1-delivery (2026-04-29) -->
+<!-- Modified in c1-reference-project (2026-04-30) — gained measured baseline pointer. -->
 
 - **MUST** — the per-layer reference workflows (`forge-backend.yml`,
   `forge-frontend.yml`, `forge-infra.yml`) MUST complete in ≤ 8
@@ -938,22 +939,37 @@ every artifact back to its audit module.
   warm cache, measured on a reference scaffolded project.
 - **SHALL** — cold-cache runs MUST complete in ≤ 15 minutes.
 
+**Baseline at archive time of c1-reference-project:** see
+`.forge/standards/infra/ci-workflows.md` § Performance Baselines
+(values populated on first observed PR / nightly run).
+
 ### NFR-014: Integration workflow runtime budget
 
 <!-- From change: b1-delivery (2026-04-29) -->
+<!-- Modified in c1-reference-project (2026-04-30) — gained measured baseline pointer. -->
 
 - **MUST** — `forge-integration.yml` MUST complete (success or
   failure) in ≤ 30 minutes wall-clock on `ubuntu-latest`.
 
+**Baseline at archive time of c1-reference-project:** see
+`.forge/standards/infra/ci-workflows.md` § Performance Baselines
+(value populated on first observed nightly run).
+
 ### NFR-015: Local observability stack startup time
 
 <!-- From change: b1-delivery (2026-04-29) -->
+<!-- Modified in c1-reference-project (2026-04-30) — gained measured baseline pointer. -->
 
 - **MUST** — `docker compose -f docker-compose.dev.yml up -d --wait`
   reports all observability services (otel-collector,
   signoz-clickhouse, signoz-query-service, signoz-frontend) healthy
   within 90 seconds on a developer-class machine (8 CPU cores, 16
   GB RAM, SSD).
+
+**Baseline at archive time of c1-reference-project:** see
+`.forge/standards/infra/observability-local.md` § Startup Baselines
+(value populated on first contributor `task dev:up` run after c1
+merges).
 
 ### NFR-016: Reference workflow file size
 
@@ -966,11 +982,18 @@ every artifact back to its audit module.
 ### NFR-017: Overlay diffability
 
 <!-- From change: b1-delivery (2026-04-29) -->
+<!-- Modified in c1-reference-project (2026-04-30) — gained measured baseline (2124 bytes, 52% of budget). -->
 
 - **SHOULD** — the YAML diff between `kustomize build overlays/dev`
   and `kustomize build overlays/prod` MUST be ≤ 4 KB (uncompressed)
   for the reference scaffolded project. Bloated overlays defeat the
   Kustomize base+overlays model.
+
+**Baseline at archive time of c1-reference-project:** **2124 bytes
+(52 % of 4096 budget)** measured against
+`examples/forge-fsm-example/infra/k8s/overlays/{dev,prod}`. See
+`.forge/standards/infra/k8s-overlays.md` § Diff Budget for the
+authoritative table and re-measurement protocol.
 
 ### NFR-018: Image version pinning audit trail
 

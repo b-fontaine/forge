@@ -98,9 +98,11 @@ perms = doc.get("permissions")
 if perms != {"contents": "read"}:
     errors.append(f"top-level permissions must be {{contents: read}}; got {perms!r}")
 
-# Exactly 5 jobs with the expected names
+# Exactly 6 jobs with the expected names. The 'example' job was
+# added by c1-reference-project (FR-CI-012) ; the original 5-job
+# shape from g1-forge-ci was MODIFIED in c1's specs.md.
 jobs = doc.get("jobs") or {}
-expected_jobs = {"harness", "gates", "cli", "lint", "summary"}
+expected_jobs = {"harness", "gates", "cli", "lint", "example", "summary"}
 if set(jobs.keys()) != expected_jobs:
     errors.append(f"jobs must be exactly {sorted(expected_jobs)}; got {sorted(jobs.keys())}")
 
@@ -258,7 +260,7 @@ errors = []
 job = (doc.get("jobs") or {}).get("summary") or {}
 needs = job.get("needs") or []
 if isinstance(needs, str): needs = [needs]
-expected = {"harness", "gates", "cli", "lint"}
+expected = {"harness", "gates", "cli", "lint", "example"}
 if set(needs) != expected:
     errors.append(f"summary.needs must be {sorted(expected)}; got {sorted(needs)}")
 # Summary always runs (no `if:` short-circuit on a non-failure condition)
@@ -279,7 +281,7 @@ for s in steps:
     if isinstance(env, dict):
         for v in env.values():
             combined_text += "\n" + str(v)
-for j in ("harness", "gates", "cli", "lint"):
+for j in ("harness", "gates", "cli", "lint", "example"):
     if f"needs.{j}.result" not in combined_text:
         errors.append(f"summary script doesn't read `needs.{j}.result`")
 for e in errors:
