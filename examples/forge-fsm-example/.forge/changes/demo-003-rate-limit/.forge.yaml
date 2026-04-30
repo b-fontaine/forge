@@ -1,0 +1,25 @@
+name: demo-003-rate-limit
+status: archived
+created: 2026-04-30
+schema: full-stack-monorepo
+constitution_version: "1.0.0"
+parent_audit_items:
+  - C.1  # Multi-layer demo demonstrating Janus orchestration
+depends_on:
+  - demo-001-greeting-service  # the rate-limited service
+layers:
+  - backend
+  - infra
+designs_per_layer:
+  backend: design-backend.md
+  infra: design-infra.md
+tasks_per_layer:
+  backend: tasks-backend.md
+  infra: tasks-infra.md
+timeline:
+  proposed: 2026-04-30
+  specified: 2026-04-30
+  designed: 2026-04-30
+  planned: 2026-04-30
+  implemented: 2026-04-30
+  archived: 2026-04-30

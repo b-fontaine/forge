@@ -1,14 +1,7 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+//! Application crate — orchestration layer between adapters
+//! (`grpc-api`, future REST/CLI) and the pure domain (`domain`).
+//! Per Article VII.1, depends only on the domain crate.
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub mod greet;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub use greet::GreetUseCase;

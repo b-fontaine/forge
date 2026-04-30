@@ -28,6 +28,29 @@ services:
           - http
           - https
 
+  # ── demo-003-rate-limit (added 2026-04-30) ────────────────────
+  # Greeter gRPC service with per-route rate-limiting. Demonstrates
+  # the multi-layer demo from c1-reference-project. The `policy:
+  # local` flag means counters are per Kong node ; horizontal
+  # scale requires switching to `cluster` and provisioning a
+  # counter backend (documented as a follow-up).
+  - name: greeter
+    url: grpc://fsm-backend:9090
+    protocol: grpc
+    routes:
+      - name: greeter-v1-route
+        paths:
+          - /greeting.v1.GreeterService
+        protocols:
+          - grpc
+          - grpcs
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 10
+              policy: local
+              fault_tolerant: true
+
 # Plugins — example: rate limiting applied globally.
 # Uncomment and tune for your project.
 #

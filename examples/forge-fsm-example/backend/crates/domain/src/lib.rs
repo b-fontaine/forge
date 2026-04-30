@@ -1,14 +1,11 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+//! Domain crate — pure business logic for forge-fsm-example.
+//!
+//! Per Article VII.1 (Hexagonal Rust), this crate has zero
+//! dependencies outside the standard library. Adapters
+//! (gRPC, HTTP, DB) live in the dedicated `grpc-api` and
+//! `infrastructure` crates ; orchestration lives in
+//! `application`.
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub mod greeting;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub use greeting::Greeting;

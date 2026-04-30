@@ -153,169 +153,169 @@ Implement the skip-guards, run the scaffolder, write the READMEs.
 
 ### Phase 2 — RED
 
-- [ ] Add `test_archived_demos_count_and_status` : list
+- [x] Add `test_archived_demos_count_and_status` : list
   `examples/forge-fsm-example/.forge/changes/demo-*/` ; assert exactly
   4 demos exist ; assert demo-001/002/003 declare
   `status: archived` ; demo-004 declares `status: specified`.
   [Story: FR-EX-004 + FR-EX-005] [P]
-- [ ] Add `test_each_archived_demo_has_five_artefacts` : for each of
+- [x] Add `test_each_archived_demo_has_five_artefacts` : for each of
   demo-001/002/003, assert presence of proposal.md, specs.md,
   design.md or designs_per_layer files, tasks.md or tasks_per_layer
   files, features/<demo>.feature with at least one Gherkin scenario.
   [Story: FR-EX-004] [P]
-- [ ] Add `test_demo_003_is_multi_layer` : parse `demo-003-rate-limit/.forge.yaml` ;
+- [x] Add `test_demo_003_is_multi_layer` : parse `demo-003-rate-limit/.forge.yaml` ;
   assert `layers: [backend, infra]` (length ≥ 2), assert
   `designs_per_layer:` and `tasks_per_layer:` present and non-empty,
   every referenced filename exists. [Story: FR-EX-004 + FR-GL-016] [P]
-- [ ] Add `test_demo_004_is_specified_only` : parse
+- [x] Add `test_demo_004_is_specified_only` : parse
   `demo-004-user-onboarding/.forge.yaml` ; assert `status: specified`,
   `timeline.specified` populated, `timeline.designed/planned/implemented/archived`
   absent or commented out ; demo-004 dir contains proposal.md +
   specs.md only (no design.md, no tasks.md, no features/).
   [Story: FR-EX-005] [P]
-- [ ] Add `test_demo_004_has_needs_clarification_marker` : grep
+- [x] Add `test_demo_004_has_needs_clarification_marker` : grep
   `demo-004-user-onboarding/specs.md` for `[NEEDS CLARIFICATION:` ;
   assert at least one occurrence. [Story: FR-EX-005] [P]
-- [ ] Add `test_demos_manifest_present_and_lists_four_demos` :
+- [x] Add `test_demos_manifest_present_and_lists_four_demos` :
   parse `examples/forge-fsm-example/.forge/changes/MANIFEST.md` ;
   assert table with 4 rows referencing each demo by name. [Story: FR-EX-006] [P]
-- [ ] Add `test_each_demo_proposal_under_size_budget` : for each demo,
+- [x] Add `test_each_demo_proposal_under_size_budget` : for each demo,
   assert `proposal.md` ≤ 200 lines. [Story: NFR-EX-004] [P]
-- [ ] Add `test_demos_cover_distinct_layer_combinations` : parse each
+- [x] Add `test_demos_cover_distinct_layer_combinations` : parse each
   demo's `.forge.yaml` `layers:` field ; assert the 4 combinations
   are distinct (backend / frontend / [backend, infra] / [backend,
   frontend, protos]). [Story: NFR-EX-005] [P]
-- [ ] Run `c1.test.sh` → confirm 8 new tests FAIL (no demos yet — RED).
+- [x] Run `c1.test.sh` → confirm 8 new tests FAIL (no demos yet — RED).
 
 ### Phase 2 — GREEN (chronological order per ADR-013)
 
 #### Demo-001-greeting-service (single-layer backend)
 
-- [ ] Inside the example tree, run `forge new demo-001-greeting-service`
+- [x] Inside the example tree, run `forge new demo-001-greeting-service`
   to bootstrap the change skeleton. Edit `.forge.yaml` to declare
   `layers: [backend]`. [Story: FR-EX-004]
-- [ ] Write `proposal.md` (≤ 200 lines per NFR-EX-004) describing
+- [x] Write `proposal.md` (≤ 200 lines per NFR-EX-004) describing
   a minimal gRPC `Greeter` service. Run `forge specify`. [Story: FR-EX-004]
-- [ ] Write `specs.md` with FR-BE-001 (Greeter domain entity) and
+- [x] Write `specs.md` with FR-BE-001 (Greeter domain entity) and
   FR-IN-001 (proto contract `shared/protos/v1/greeting/greeting.proto`).
   [Story: FR-EX-004]
-- [ ] Write `design.md` with one ADR (use cucumber-rs, hexagonal
+- [x] Write `design.md` with one ADR (use cucumber-rs, hexagonal
   layering, in-process tonic test server). Run `forge design`.
   [Story: FR-EX-004]
-- [ ] Write `tasks.md` (TDD-ordered : RED test for Greeter domain →
+- [x] Write `tasks.md` (TDD-ordered : RED test for Greeter domain →
   GREEN domain → RED grpc-api integration test → GREEN handler).
   Run `forge plan`. [Story: FR-EX-004]
-- [ ] Add `shared/protos/v1/greeting/greeting.proto` declaring
+- [x] Add `shared/protos/v1/greeting/greeting.proto` declaring
   `service GreeterService { rpc Greet(GreetRequest) returns (GreetResponse); }`.
   Run `task proto` to regenerate stubs. [REQUIRES-TOOLS: buf]
   [Story: FR-EX-004]
-- [ ] Implement TDD : RED unit test in `backend/crates/domain/`
+- [x] Implement TDD : RED unit test in `backend/crates/domain/`
   for `Greeter::greet(name)` → empty `Greeting`. Confirm it
   fails to compile (no Greeter type yet). [Story: Article I]
   [REQUIRES-TOOLS: cargo]
-- [ ] Implement `Greeter` domain entity (pure, no deps) → confirm
+- [x] Implement `Greeter` domain entity (pure, no deps) → confirm
   unit test passes. [REQUIRES-TOOLS: cargo] [Story: Article I, VII]
-- [ ] RED integration test in `backend/crates/grpc-api/` for the
+- [x] RED integration test in `backend/crates/grpc-api/` for the
   `GreeterService` tonic handler. Confirm it fails. [REQUIRES-TOOLS: cargo]
-- [ ] Implement the tonic handler delegating to `application::greet_use_case`
+- [x] Implement the tonic handler delegating to `application::greet_use_case`
   → integration test passes. [REQUIRES-TOOLS: cargo]
-- [ ] Write `features/greeter.feature` with a Greet happy-path scenario
+- [x] Write `features/greeter.feature` with a Greet happy-path scenario
   (`Given the Greeter is running, When I call Greet with "world", Then
   I receive "Hello, world"`). Implement via cucumber-rs steps in
   `backend/tests/`. [REQUIRES-TOOLS: cargo]
-- [ ] Run `task test` from inside the example → all backend tests
+- [x] Run `task test` from inside the example → all backend tests
   PASS. [REQUIRES-TOOLS: cargo, flutter (skipped)]
-- [ ] Run `forge implement` to mark all tasks `[x]`, then `forge archive`
+- [x] Run `forge implement` to mark all tasks `[x]`, then `forge archive`
   to set `status: archived`, populate `timeline.archived`. [Story: FR-EX-004]
 
 #### Demo-002-greeting-screen (single-layer frontend)
 
-- [ ] Bootstrap via `forge new demo-002-greeting-screen`. Set
+- [x] Bootstrap via `forge new demo-002-greeting-screen`. Set
   `layers: [frontend]`. [Story: FR-EX-004]
-- [ ] Write `proposal.md` (≤ 200 lines) for a Flutter screen consuming
+- [x] Write `proposal.md` (≤ 200 lines) for a Flutter screen consuming
   the `Greet` RPC. [Story: FR-EX-004]
-- [ ] Write `specs.md` with FR-FE-001 (GreetingScreen widget),
+- [x] Write `specs.md` with FR-FE-001 (GreetingScreen widget),
   FR-FE-002 (GreetingCubit), FR-FE-003 (a11y semantic labels).
   [Story: FR-EX-004]
-- [ ] Write `design.md` with ADR-001 (Cubit not Bloc — simple state),
+- [x] Write `design.md` with ADR-001 (Cubit not Bloc — simple state),
   ADR-002 (golden test against MaterialApp dark + light themes).
   [Story: FR-EX-004]
-- [ ] Write `tasks.md` TDD-ordered. [Story: FR-EX-004]
-- [ ] Run `task proto` again to ensure Flutter generated stubs are
+- [x] Write `tasks.md` TDD-ordered. [Story: FR-EX-004]
+- [x] Run `task proto` again to ensure Flutter generated stubs are
   fresh (consume demo-001's proto). [REQUIRES-TOOLS: buf, dart]
-- [ ] RED widget test in `frontend/test/features/greeting/`. Confirm
+- [x] RED widget test in `frontend/test/features/greeting/`. Confirm
   it fails. [REQUIRES-TOOLS: flutter]
-- [ ] Implement `GreetingCubit` + `GreetingScreen` widget. Confirm
+- [x] Implement `GreetingCubit` + `GreetingScreen` widget. Confirm
   widget test passes. [REQUIRES-TOOLS: flutter]
-- [ ] Add golden test against MaterialApp in light + dark themes.
+- [x] Add golden test against MaterialApp in light + dark themes.
   Generate goldens. Commit golden files. [REQUIRES-TOOLS: flutter]
-- [ ] Write `features/greeting_screen.feature` for bdd_widget_test.
+- [x] Write `features/greeting_screen.feature` for bdd_widget_test.
   [REQUIRES-TOOLS: flutter]
-- [ ] Run `flutter test` from inside the example → all PASS.
+- [x] Run `flutter test` from inside the example → all PASS.
   [REQUIRES-TOOLS: flutter]
-- [ ] `forge implement` + `forge archive`. [Story: FR-EX-004]
+- [x] `forge implement` + `forge archive`. [Story: FR-EX-004]
 
 #### Demo-003-rate-limit (multi-layer backend + infra)
 
-- [ ] Bootstrap via `forge new demo-003-rate-limit`. Set
+- [x] Bootstrap via `forge new demo-003-rate-limit`. Set
   `layers: [backend, infra]`. Declare `designs_per_layer:` and
   `tasks_per_layer:` per FR-GL-016. [Story: FR-EX-004]
-- [ ] Write `proposal.md` (≤ 200 lines) describing rate-limiting via
+- [x] Write `proposal.md` (≤ 200 lines) describing rate-limiting via
   Kong plugin on the Greeter service. [Story: FR-EX-004]
-- [ ] Write `specs.md` using per-layer delta semantics : `FR-IN-001`
+- [x] Write `specs.md` using per-layer delta semantics : `FR-IN-001`
   (Kong plugin config), `FR-BE-001` (handler is rate-limit-aware).
   [Story: FR-EX-004]
-- [ ] Write `designs/design-backend.md` and
+- [x] Write `designs/design-backend.md` and
   `designs/design-infra.md`. Each has a header `<!-- Layer: <id> -->`.
   Run `forge design` (Janus-orchestrated since 2 layers).
   [Story: FR-EX-004 + FR-GL-015]
-- [ ] Write `tasks/tasks-backend.md` and `tasks/tasks-infra.md`.
+- [x] Write `tasks/tasks-backend.md` and `tasks/tasks-infra.md`.
   [Story: FR-EX-004]
-- [ ] Add `infra/kong/kong.yml` declaration : a `rate-limiting`
+- [x] Add `infra/kong/kong.yml` declaration : a `rate-limiting`
   plugin on the `/greeter.GreeterService/Greet` route, 10 RPS per
   consumer. [Story: FR-EX-004]
-- [ ] Update `examples/forge-fsm-example/docker-compose.dev.yml`
+- [x] Update `examples/forge-fsm-example/docker-compose.dev.yml`
   if Kong needs to be added (it should already be there from
   `b1-foundations`). [Story: FR-EX-004]
-- [ ] No backend code change — the demo's interest is the
+- [x] No backend code change — the demo's interest is the
   multi-layer per-layer delta + Janus orchestration.
-- [ ] `forge implement` + `forge archive`. [Story: FR-EX-004]
+- [x] `forge implement` + `forge archive`. [Story: FR-EX-004]
 
 #### Demo-004-user-onboarding (specified only)
 
-- [ ] Bootstrap via `forge new demo-004-user-onboarding`. Set
+- [x] Bootstrap via `forge new demo-004-user-onboarding`. Set
   `layers: [backend, frontend, protos]`. [Story: FR-EX-005]
-- [ ] Write `proposal.md` (≤ 200 lines) for user onboarding flow.
+- [x] Write `proposal.md` (≤ 200 lines) for user onboarding flow.
   [Story: FR-EX-005]
-- [ ] Write `specs.md` with FR-BE-/FR-FE-/FR-IN- requirements
+- [x] Write `specs.md` with FR-BE-/FR-FE-/FR-IN- requirements
   AND at least one realistic `[NEEDS CLARIFICATION: <question>]`
   marker. Common clarification : "Should the email verification be
   synchronous (block onboarding) or asynchronous (allow access,
   verify later)?". [Story: FR-EX-005]
-- [ ] Run `forge specify`. STOP — do NOT run `forge design`. The demo
+- [x] Run `forge specify`. STOP — do NOT run `forge design`. The demo
   stays at `status: specified`. [Story: FR-EX-005]
-- [ ] Confirm `.forge.yaml` declares `status: specified`,
+- [x] Confirm `.forge.yaml` declares `status: specified`,
   `timeline.specified` populated, later timeline fields commented out.
   [Story: FR-EX-005]
 
 #### Manifest + Phase 2 GREEN closure
 
-- [ ] Write `examples/forge-fsm-example/.forge/changes/MANIFEST.md` :
+- [x] Write `examples/forge-fsm-example/.forge/changes/MANIFEST.md` :
   table with 4 rows (one per demo) — id, status, one-sentence summary.
   [Story: FR-EX-006]
-- [ ] Update `examples/forge-fsm-example/README.md` § Demo changes :
+- [x] Update `examples/forge-fsm-example/README.md` § Demo changes :
   populate the bullet list with the 4 demos and one-line summaries.
   [Story: FR-EX-002]
-- [ ] Run `c1.test.sh` → confirm Phase 2 tests now PASS (GREEN).
+- [x] Run `c1.test.sh` → confirm Phase 2 tests now PASS (GREEN).
   [Story: TDD]
 
 ### Phase 2 — REFACTOR
 
-- [ ] Run all existing harnesses : confirm zero regression.
-- [ ] Run `bash .forge/scripts/verify.sh` (Forge root) and confirm
+- [x] Run all existing harnesses : confirm zero regression.
+- [x] Run `bash .forge/scripts/verify.sh` (Forge root) and confirm
   the new `[skipped: examples]` lines cover demo-* paths inside
   the example tree.
-- [ ] Commit Phase 2 cluster : `feat(examples): c1-reference-project
+- [x] Commit Phase 2 cluster : `feat(examples): c1-reference-project
   Phase 2 — 4 demo changes (3 archived + 1 specified)`.
 
 ---

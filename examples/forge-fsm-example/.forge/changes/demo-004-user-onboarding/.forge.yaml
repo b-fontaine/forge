@@ -1,0 +1,22 @@
+name: demo-004-user-onboarding
+status: specified
+created: 2026-04-30
+schema: full-stack-monorepo
+constitution_version: "1.0.0"
+parent_audit_items:
+  - C.1  # In-flight specified demo demonstrating [NEEDS CLARIFICATION]
+layers:
+  - backend
+  - frontend
+  - protos
+# designs_per_layer + tasks_per_layer intentionally absent — this demo
+# stays at status: specified to illustrate Article III.4 (anti-hallucination
+# protocol). Adopters reading this directory see what an in-flight spec
+# looks like before the design phase begins.
+timeline:
+  proposed: 2026-04-30
+  specified: 2026-04-30
+  # designed:    <!-- intentionally not advanced — demo stays at specified -->
+  # planned:
+  # implemented:
+  # archived:

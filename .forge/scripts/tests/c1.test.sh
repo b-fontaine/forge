@@ -344,31 +344,245 @@ test_examples_meta_readme_present() {
   fi
 }
 
-# ─── Phase 2 — demos cluster tests (skeleton) ─────────────────
+# ─── Phase 2 — demos cluster tests ─────────────────────────────
 
+# FR-EX-004 + FR-EX-005 — exactly 4 demos, 3 archived + 1 specified.
 test_archived_demos_count_and_status() {
-  echo "    not yet implemented (Phase 2 GREEN)" >&2; return 1
+  if [ ! -d "$EXAMPLE_DEMOS_DIR" ]; then
+    echo "    demos dir missing: $EXAMPLE_DEMOS_DIR" >&2; return 1
+  fi
+  python3 - "$EXAMPLE_DEMOS_DIR" <<'PY' || return 1
+import os, sys, yaml, glob
+demos_dir = sys.argv[1]
+demos = sorted([d for d in os.listdir(demos_dir)
+                if os.path.isdir(os.path.join(demos_dir, d))
+                and d.startswith("demo-")])
+errs = []
+if len(demos) != 4:
+    errs.append(f"expected 4 demos, found {len(demos)}: {demos}")
+expected = ["demo-001-greeting-service", "demo-002-greeting-screen",
+            "demo-003-rate-limit", "demo-004-user-onboarding"]
+if demos != expected:
+    errs.append(f"demo names mismatch: got {demos!r}, expected {expected!r}")
+statuses = {}
+for d in demos:
+    fy = os.path.join(demos_dir, d, ".forge.yaml")
+    if not os.path.isfile(fy):
+        errs.append(f"{d}: missing .forge.yaml")
+        continue
+    with open(fy) as f:
+        statuses[d] = (yaml.safe_load(f) or {}).get("status", "")
+expected_statuses = {
+    "demo-001-greeting-service": "archived",
+    "demo-002-greeting-screen": "archived",
+    "demo-003-rate-limit": "archived",
+    "demo-004-user-onboarding": "specified",
 }
+for d, want in expected_statuses.items():
+    got = statuses.get(d, "<missing>")
+    if got != want:
+        errs.append(f"{d}: status='{got}', expected '{want}'")
+if errs:
+    for e in errs: print(f"    {e}", file=sys.stderr)
+    sys.exit(1)
+PY
+}
+
+# FR-EX-004 — each archived demo carries the 5 lifecycle artefacts.
+# Multi-layer demos substitute design.md/tasks.md with per-layer files
+# under designs/ and tasks/ subdirs (FR-GL-016).
 test_each_archived_demo_has_five_artefacts() {
-  echo "    not yet implemented (Phase 2 GREEN)" >&2; return 1
+  if [ ! -d "$EXAMPLE_DEMOS_DIR" ]; then
+    echo "    demos dir missing: $EXAMPLE_DEMOS_DIR" >&2; return 1
+  fi
+  python3 - "$EXAMPLE_DEMOS_DIR" <<'PY' || return 1
+import os, sys, yaml, glob
+demos_dir = sys.argv[1]
+errs = []
+for demo in ("demo-001-greeting-service", "demo-002-greeting-screen", "demo-003-rate-limit"):
+    d = os.path.join(demos_dir, demo)
+    fy = os.path.join(d, ".forge.yaml")
+    if not os.path.isfile(fy):
+        errs.append(f"{demo}: missing .forge.yaml"); continue
+    with open(fy) as f:
+        meta = yaml.safe_load(f) or {}
+    layers = meta.get("layers") or []
+    multi = len(layers) >= 2
+    # proposal + specs always required.
+    for f in ("proposal.md", "specs.md"):
+        if not os.path.isfile(os.path.join(d, f)):
+            errs.append(f"{demo}: missing {f}")
+    # design.md / tasks.md OR per-layer filenames at the change-dir
+    # root (b1-workflow convention — see change.yaml template).
+    if multi:
+        per_designs = meta.get("designs_per_layer") or {}
+        per_tasks = meta.get("tasks_per_layer") or {}
+        if not per_designs:
+            errs.append(f"{demo}: designs_per_layer missing or empty (multi-layer change)")
+        if not per_tasks:
+            errs.append(f"{demo}: tasks_per_layer missing or empty (multi-layer change)")
+        for layer, fname in per_designs.items():
+            if not os.path.isfile(os.path.join(d, fname)):
+                errs.append(f"{demo}: designs_per_layer references missing file {fname}")
+        for layer, fname in per_tasks.items():
+            if not os.path.isfile(os.path.join(d, fname)):
+                errs.append(f"{demo}: tasks_per_layer references missing file {fname}")
+    else:
+        for f in ("design.md", "tasks.md"):
+            if not os.path.isfile(os.path.join(d, f)):
+                errs.append(f"{demo}: missing {f}")
+    # features/<demo>.feature
+    features = glob.glob(os.path.join(d, "features", "*.feature"))
+    if not features:
+        errs.append(f"{demo}: missing features/*.feature")
+if errs:
+    for e in errs: print(f"    {e}", file=sys.stderr)
+    sys.exit(1)
+PY
 }
+
+# FR-EX-004 + FR-GL-016 — demo-003 declares layers ≥ 2 and references
+# valid per-layer designs / tasks files.
 test_demo_003_is_multi_layer() {
-  echo "    not yet implemented (Phase 2 GREEN)" >&2; return 1
+  local d="$EXAMPLE_DEMOS_DIR/demo-003-rate-limit"
+  if [ ! -d "$d" ]; then
+    echo "    demo-003 missing: $d" >&2; return 1
+  fi
+  python3 - "$d/.forge.yaml" "$d" <<'PY' || return 1
+import os, sys, yaml
+fy_path, demo_dir = sys.argv[1], sys.argv[2]
+with open(fy_path) as f:
+    meta = yaml.safe_load(f) or {}
+errs = []
+layers = meta.get("layers") or []
+if len(layers) < 2:
+    errs.append(f"layers must have >=2 entries, got {layers!r}")
+if "backend" not in layers or "infra" not in layers:
+    errs.append(f"layers must include backend AND infra, got {layers!r}")
+per_design = meta.get("designs_per_layer") or {}
+per_tasks = meta.get("tasks_per_layer") or {}
+if not per_design:
+    errs.append("designs_per_layer is empty or missing")
+if not per_tasks:
+    errs.append("tasks_per_layer is empty or missing")
+for layer, fname in per_design.items():
+    if not os.path.isfile(os.path.join(demo_dir, fname)):
+        errs.append(f"designs_per_layer.{layer}={fname!r} not found at change-dir root")
+for layer, fname in per_tasks.items():
+    if not os.path.isfile(os.path.join(demo_dir, fname)):
+        errs.append(f"tasks_per_layer.{layer}={fname!r} not found at change-dir root")
+if errs:
+    for e in errs: print(f"    {e}", file=sys.stderr)
+    sys.exit(1)
+PY
 }
+
+# FR-EX-005 — demo-004 carries proposal + specs only, no design/tasks.
 test_demo_004_is_specified_only() {
-  echo "    not yet implemented (Phase 2 GREEN)" >&2; return 1
+  local d="$EXAMPLE_DEMOS_DIR/demo-004-user-onboarding"
+  if [ ! -d "$d" ]; then
+    echo "    demo-004 missing: $d" >&2; return 1
+  fi
+  if [ ! -f "$d/proposal.md" ]; then echo "    demo-004 missing proposal.md" >&2; return 1; fi
+  if [ ! -f "$d/specs.md" ]; then echo "    demo-004 missing specs.md" >&2; return 1; fi
+  if [ -f "$d/design.md" ] || [ -d "$d/designs" ]; then
+    echo "    demo-004 must NOT ship design.md / designs/ at status=specified" >&2; return 1
+  fi
+  if [ -f "$d/tasks.md" ] || [ -d "$d/tasks" ]; then
+    echo "    demo-004 must NOT ship tasks.md / tasks/ at status=specified" >&2; return 1
+  fi
+  if [ -d "$d/features" ]; then
+    echo "    demo-004 must NOT ship features/ at status=specified" >&2; return 1
+  fi
+  python3 - "$d/.forge.yaml" <<'PY' || return 1
+import sys, yaml
+with open(sys.argv[1]) as f:
+    meta = yaml.safe_load(f) or {}
+errs = []
+if meta.get("status") != "specified":
+    errs.append(f"status must be 'specified', got {meta.get('status')!r}")
+tl = meta.get("timeline") or {}
+if not tl.get("specified"):
+    errs.append("timeline.specified must be populated")
+for fwd in ("designed", "planned", "implemented", "archived"):
+    if tl.get(fwd):
+        errs.append(f"timeline.{fwd} must NOT be set at status=specified")
+if errs:
+    for e in errs: print(f"    {e}", file=sys.stderr)
+    sys.exit(1)
+PY
 }
+
+# FR-EX-005 — demo-004 specs.md contains a realistic
+# [NEEDS CLARIFICATION] marker.
 test_demo_004_has_needs_clarification_marker() {
-  echo "    not yet implemented (Phase 2 GREEN)" >&2; return 1
+  local s="$EXAMPLE_DEMOS_DIR/demo-004-user-onboarding/specs.md"
+  if [ ! -f "$s" ]; then echo "    demo-004 specs.md missing" >&2; return 1; fi
+  if ! grep -qE '\[NEEDS CLARIFICATION:' "$s"; then
+    echo "    demo-004 specs.md does not contain a [NEEDS CLARIFICATION:] marker" >&2
+    return 1
+  fi
 }
+
+# FR-EX-006 — MANIFEST.md exists and lists the 4 demos.
 test_demos_manifest_present_and_lists_four_demos() {
-  echo "    not yet implemented (Phase 2 GREEN)" >&2; return 1
+  if [ ! -f "$EXAMPLE_DEMOS_MANIFEST" ]; then
+    echo "    demos MANIFEST.md missing: $EXAMPLE_DEMOS_MANIFEST" >&2; return 1
+  fi
+  for demo in demo-001-greeting-service demo-002-greeting-screen \
+              demo-003-rate-limit demo-004-user-onboarding; do
+    if ! grep -qF "$demo" "$EXAMPLE_DEMOS_MANIFEST"; then
+      echo "    MANIFEST.md does not list $demo" >&2; return 1
+    fi
+  done
 }
+
+# NFR-EX-004 — each demo's proposal.md ≤ 200 lines.
 test_each_demo_proposal_under_size_budget() {
-  echo "    not yet implemented (Phase 2 GREEN)" >&2; return 1
+  local d
+  local fail=0
+  for d in "$EXAMPLE_DEMOS_DIR"/demo-*/; do
+    [ -d "$d" ] || continue
+    local p="$d/proposal.md"
+    [ -f "$p" ] || continue
+    local lines
+    lines=$(wc -l < "$p" | tr -d ' ')
+    if [ "$lines" -gt 200 ]; then
+      echo "    $(basename "$d")/proposal.md is $lines lines (> 200 NFR-EX-004 budget)" >&2
+      fail=1
+    fi
+  done
+  return $fail
 }
+
+# NFR-EX-005 — the 4 demos cover 4 distinct layer combinations.
 test_demos_cover_distinct_layer_combinations() {
-  echo "    not yet implemented (Phase 2 GREEN)" >&2; return 1
+  if [ ! -d "$EXAMPLE_DEMOS_DIR" ]; then
+    echo "    demos dir missing" >&2; return 1
+  fi
+  python3 - "$EXAMPLE_DEMOS_DIR" <<'PY' || return 1
+import os, sys, yaml
+demos_dir = sys.argv[1]
+demos = sorted(d for d in os.listdir(demos_dir)
+               if os.path.isdir(os.path.join(demos_dir, d))
+               and d.startswith("demo-"))
+combos = []
+for d in demos:
+    fy = os.path.join(demos_dir, d, ".forge.yaml")
+    with open(fy) as f:
+        meta = yaml.safe_load(f) or {}
+    layers = tuple(sorted(meta.get("layers") or []))
+    combos.append((d, layers))
+seen = set()
+for d, c in combos:
+    if c in seen:
+        print(f"    duplicate layer combination {c!r} in {d}", file=sys.stderr)
+        sys.exit(1)
+    seen.add(c)
+if len(seen) != 4:
+    print(f"    expected 4 distinct layer combinations, got {len(seen)}: {seen}", file=sys.stderr)
+    sys.exit(1)
+PY
 }
 
 # ─── Phase 3 — CI + docs + baselines tests (skeleton) ─────────

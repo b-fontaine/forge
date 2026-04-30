@@ -74,9 +74,12 @@ narrative.
 | Demo | Layers | Status | What it demonstrates |
 |---|---|---|---|
 | [`demo-001-greeting-service`](.forge/changes/demo-001-greeting-service/) | `[backend]` | archived | Single-layer backend change — gRPC `Greeter` service with hexagonal Rust, proto-first design, BDD via cucumber-rs |
-| [`demo-002-greeting-screen`](.forge/changes/demo-002-greeting-screen/) | `[frontend]` | archived | Single-layer frontend change — Flutter screen consuming demo-001's proto stubs, BLoC state, golden test, BDD via bdd_widget_test |
-| [`demo-003-rate-limit`](.forge/changes/demo-003-rate-limit/) | `[backend, infra]` | archived | Multi-layer change triggering Janus orchestration — Kong rate-limit plugin with per-layer designs / tasks delta |
-| [`demo-004-user-onboarding`](.forge/changes/demo-004-user-onboarding/) | `[backend, frontend, protos]` | **specified** | In-flight spec demonstrating `[NEEDS CLARIFICATION]` markers (Article III.4) — purposely never archived to show what a "live spec" looks like |
+| [`demo-002-greeting-screen`](.forge/changes/demo-002-greeting-screen/) | `[frontend]` | archived | Single-layer frontend change — Flutter screen consuming demo-001's contract via Cubit + `flutter_bloc`, widget test, golden test |
+| [`demo-003-rate-limit`](.forge/changes/demo-003-rate-limit/) | `[backend, infra]` | archived | Multi-layer change triggering Janus orchestration — Kong rate-limit plugin with per-layer designs (`design-backend.md` + `design-infra.md`) and tasks (`tasks-backend.md` + `tasks-infra.md`) |
+| [`demo-004-user-onboarding`](.forge/changes/demo-004-user-onboarding/) | `[backend, frontend, protos]` | **specified** | In-flight spec demonstrating `[NEEDS CLARIFICATION]` markers (Article III.4) — purposely never advanced past the spec phase to show what a "live spec" looks like |
+
+A short summary of each demo with its archive date is also
+maintained at [`.forge/changes/MANIFEST.md`](.forge/changes/MANIFEST.md).
 
 The deliberate triviality of these demos (greeting, rate-limit,
 onboarding) is by design : the example's value is the **process
