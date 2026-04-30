@@ -35,3 +35,13 @@ archetypes:
       - pubspec.yaml
       - Cargo.toml
     since: "1.0.0"
+
+  mobile-only:
+    name: mobile-only
+    scaffolder: "bin/forge-init-mobile-only.sh"
+    description: "Flutter iOS + Android with OIDC (flutter_appauth) + secure storage + biometric + App Attest / Play Integrity + Fastlane. No backend, no BaaS."
+    signals:
+      - pubspec.yaml
+      - ios/Runner/Info.plist
+      - android/app/build.gradle
+    since: "1.2.0"

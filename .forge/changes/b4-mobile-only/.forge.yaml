@@ -1,0 +1,10 @@
+name: b4-mobile-only
+status: planned
+created: 2026-04-30
+schema: default
+constitution_version: "1.1.0"
+timeline:
+  proposed: 2026-04-30
+  specified: 2026-04-30
+  designed: 2026-04-30
+  planned: 2026-04-30

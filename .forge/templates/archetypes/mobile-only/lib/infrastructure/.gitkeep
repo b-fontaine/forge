@@ -1,0 +1,2 @@
+# Infrastructure layer — adapters to OS / SDK (auth, secure storage, biometric, attestation).
+# Phase B will populate auth/, storage/, biometric/, attestation/.

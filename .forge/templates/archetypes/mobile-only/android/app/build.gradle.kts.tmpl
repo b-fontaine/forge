@@ -1,0 +1,59 @@
+// <!-- Audit: B.4 (b4-mobile-only, FR-MO-014) -->
+// minSdk 26 (Android 8) — Play Integrity API ≥ 21, biometric strict ≥ 23,
+// StrongBox enclave ≥ 28 (preferred path). Adoption ≥ 92 % in 2026.
+
+plugins {
+    id("com.android.application")
+    id("kotlin-android")
+    id("dev.flutter.flutter-gradle-plugin")
+}
+
+android {
+    namespace = "{{reverse_domain}}"
+    compileSdk = 34
+    ndkVersion = flutter.ndkVersion
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_17.toString()
+    }
+
+    defaultConfig {
+        applicationId = "{{reverse_domain}}"
+        minSdk = 26
+        targetSdk = 34
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildFeatures {
+        viewBinding = true
+    }
+
+    buildTypes {
+        release {
+            // TODO: signing config provided by adopter via Fastlane match / keystore.
+            signingConfig = signingConfigs.getByName("debug")
+            isMinifyEnabled = true
+            isShrinkResources = true
+        }
+    }
+}
+
+flutter {
+    source = "../.."
+}
+
+dependencies {
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.0.0")
+    // Play Integrity API for device attestation (FR-MO-016).
+    implementation("com.google.android.play:integrity:1.4.0")
+    // androidx fragment for FlutterFragmentActivity hosting (local_auth).
+    implementation("androidx.fragment:fragment:1.8.0")
+}

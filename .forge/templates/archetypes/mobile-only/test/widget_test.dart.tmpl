@@ -1,0 +1,17 @@
+// <!-- Audit: B.4 (b4-mobile-only) -->
+// Smoke test — App() builds without throwing.
+// Phase B will add bloc_test, mocktail-based unit tests.
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:{{project_name}}/app.dart';
+
+void main() {
+  testWidgets('App builds and shows scaffold text', (WidgetTester tester) async {
+    await tester.pumpWidget(const App());
+    await tester.pump();
+    expect(find.byType(MaterialApp), findsOneWidget);
+    expect(find.byType(Scaffold), findsOneWidget);
+  });
+}

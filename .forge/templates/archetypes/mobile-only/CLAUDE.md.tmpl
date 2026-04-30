@@ -1,0 +1,30 @@
+# Claude Code Context — {{project_name}} (mobile-only Flutter app)
+
+This is a **Flutter iOS + Android** project scaffolded with the Forge
+`mobile-only` archetype. No backend, no infrastructure, no BaaS.
+
+## Stack
+
+- Flutter ≥ 3.16, Dart 3.x.
+- State: `flutter_bloc` (Article VI.4).
+- Auth: OIDC via `flutter_appauth` (PKCE).
+- Storage: `flutter_secure_storage` (Keychain / EncryptedSharedPreferences + StrongBox).
+- Biometric: `local_auth`.
+- Attestation: App Attest (iOS) + Play Integrity (Android).
+- Observability: OpenTelemetry SDK.
+- Tests: `flutter_test`, `bloc_test`, `mocktail`, `gherkin`.
+- Lints: `flutter_lints` + strict mode (`analysis_options.yaml`).
+
+## Discipline
+
+- TDD non-negotiable (Article I).
+- BDD via `integration_test/features/*.feature` (Article II + VI.7).
+- Clean architecture in `lib/` (4 layers).
+- No token logging (FR-MO-019). No `print` (Article X).
+- Fastlane secrets via ENV exclusively (FR-MO-032).
+
+## Platform-specific
+
+- iOS deployment target 15.0 (App Attest, Face ID).
+- Android `minSdkVersion 26` (Play Integrity, StrongBox).
+- `MainActivity` extends `FlutterFragmentActivity` (NOT `FlutterActivity`) — required by `local_auth`.

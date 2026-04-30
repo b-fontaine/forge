@@ -1,0 +1,11 @@
+// <!-- Audit: B.4 (b4-mobile-only, FR-MO-010) -->
+// Phase A skeleton — Phase B will wire BlocObserver + OTel init + DI graph.
+
+import 'package:flutter/widgets.dart';
+
+import 'app.dart';
+
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const App());
+}

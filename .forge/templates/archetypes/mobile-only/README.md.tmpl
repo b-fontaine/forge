@@ -1,0 +1,36 @@
+# {{project_name}}
+
+A mobile-only Flutter app scaffolded with the Forge `mobile-only` archetype.
+
+## Setup
+
+1. Install Flutter ≥ 3.16 (`fvm use stable` or system flutter).
+2. `flutter pub get`
+3. Configure your OIDC provider in `lib/infrastructure/auth/oidc_config.dart`
+   (replace `TODO_REPLACE_*` placeholders with your issuer / clientId / redirectUri).
+4. Configure secrets via direnv: `cp .envrc.example .envrc && direnv allow`.
+5. `flutter run` (debug) or use the Fastlane lanes for store builds.
+
+## Architecture
+
+- **State management**: `flutter_bloc` (Article VI.4).
+- **Auth**: OIDC via `flutter_appauth` (PKCE, no client secret).
+- **Token storage**: `flutter_secure_storage` (Keychain / EncryptedSharedPreferences + StrongBox).
+- **Biometric lock**: `local_auth` with re-prompt after backgrounding.
+- **Attestation**: App Attest (iOS) + Play Integrity (Android), abstracted as `DeviceAttestor`.
+- **Observability**: OpenTelemetry SDK with OTLP exporter (Article IX).
+
+## Platforms
+
+- iOS deployment target: **15.0** (App Attest, Face ID).
+- Android `minSdkVersion`: **26** (Play Integrity, biometric strict, StrongBox).
+
+## CI / Releases
+
+GitHub Actions workflow at `.github/workflows/mobile-ci.yml` runs `flutter analyze`
++ tests on every PR. Use Fastlane (`fastlane ios beta`, `fastlane android beta`)
+to publish to TestFlight / Play Internal Testing.
+
+See [Forge Constitution](.forge/constitution.md) and the
+[`flutter-mobile.md`](.forge/standards/global/flutter-mobile.md) standard for
+the full discipline.

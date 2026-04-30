@@ -1,0 +1,43 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+ios/Flutter/ephemeral/
+
+# Android
+android/.gradle/
+android/local.properties
+android/key.properties
+android/app/release/
+android/captures/
+
+# Coverage
+coverage/
+
+# Secrets — Article X.
+.envrc
+.env
+*.keystore
+*.jks
+*.mobileprovision
+*.p12
+*.p8
+
+# OS
+.DS_Store
+Thumbs.db

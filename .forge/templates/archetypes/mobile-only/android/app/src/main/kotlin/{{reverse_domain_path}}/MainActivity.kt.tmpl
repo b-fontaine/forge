@@ -1,0 +1,10 @@
+package {{reverse_domain}}
+
+import io.flutter.embedding.android.FlutterFragmentActivity
+
+// <!-- Audit: B.4 (b4-mobile-only, FR-MO-014, FR-MO-015) -->
+// MUST extend FlutterFragmentActivity (NOT FlutterActivity) for local_auth
+// biometric prompt fragment hosting.
+class MainActivity : FlutterFragmentActivity() {
+    // PlayIntegrityService.register() is wired in Phase B (FR-MO-016).
+}

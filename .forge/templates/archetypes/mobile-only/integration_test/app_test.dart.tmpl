@@ -1,0 +1,11 @@
+// <!-- Audit: B.4 (b4-mobile-only) -->
+// Integration test entry point — Phase B will wire cucumber/gherkin runner
+// with .feature files under integration_test/features/.
+
+import 'package:flutter/widgets.dart';
+import 'package:integration_test/integration_test.dart';
+
+void main() {
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  // Cucumber/gherkin wiring lands in Phase B.
+}
