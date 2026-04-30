@@ -48,6 +48,12 @@ jobs:
         run: bash .forge/scripts/tests/workflow.test.sh --level 1,2
       - name: delivery.test.sh
         run: bash .forge/scripts/tests/delivery.test.sh
+      - name: g1.test.sh
+        run: bash .forge/scripts/tests/g1.test.sh
+      - name: c1.test.sh
+        run: bash .forge/scripts/tests/c1.test.sh
+      - name: a7.test.sh
+        run: bash .forge/scripts/tests/a7.test.sh
 
   # ─── gates ── verify.sh + constitution-linter.sh ───────────────
   gates:

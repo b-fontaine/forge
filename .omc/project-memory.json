@@ -130,6 +130,12 @@
       "type": "file"
     },
     {
+      "path": ".forge/scripts/tests/a7.test.sh",
+      "accessCount": 6,
+      "lastAccessed": 1777550796504,
+      "type": "file"
+    },
+    {
       "path": ".forge/changes/c1-reference-project/.forge.yaml",
       "accessCount": 4,
       "lastAccessed": 1777538318904,
@@ -154,12 +160,6 @@
       "type": "file"
     },
     {
-      "path": ".forge/scripts/tests/a7.test.sh",
-      "accessCount": 3,
-      "lastAccessed": 1777550443868,
-      "type": "file"
-    },
-    {
       "path": ".forge/standards/infra/ci-workflows.md",
       "accessCount": 2,
       "lastAccessed": 1777536744030,
@@ -181,6 +181,12 @@
       "path": "CHANGELOG.md",
       "accessCount": 2,
       "lastAccessed": 1777538417742,
+      "type": "file"
+    },
+    {
+      "path": "bin/forge-upgrade.sh",
+      "accessCount": 2,
+      "lastAccessed": 1777550719727,
       "type": "file"
     },
     {
@@ -223,12 +229,6 @@
       "path": ".forge/changes/a7-forge-upgrade/features/upgrade.feature",
       "accessCount": 1,
       "lastAccessed": 1777550222458,
-      "type": "file"
-    },
-    {
-      "path": "bin/forge-upgrade.sh",
-      "accessCount": 1,
-      "lastAccessed": 1777550265859,
       "type": "file"
     },
     {
