@@ -312,12 +312,91 @@ if errs:
 PY
 }
 
-# ─── Phase 2 placeholders ──────────────────────────────────────
+# ─── Phase 2 — dispatcher + domain + wizard ───────────────────
 
-test_init_cli_flags_parse()                 { echo "    not yet implemented (Phase 2 GREEN)" >&2; return 1; }
-test_default_dispatcher_idempotent()        { echo "    not yet implemented (Phase 2 GREEN)" >&2; return 1; }
-test_wizard_skips_when_non_tty()            { echo "    not yet implemented (Phase 2 GREEN)" >&2; return 1; }
-test_auto_detection_ambiguous_aborts()      { echo "    not yet implemented (Phase 2 GREEN)" >&2; return 1; }
+# FR-IW-001 — cli.ts registers --archetype, --auto, --wizard, --org.
+test_init_cli_flags_parse() {
+  if [ ! -f "$CLI_TS" ]; then
+    echo "    cli.ts missing: $CLI_TS" >&2; return 1
+  fi
+  local needle
+  for needle in '--archetype <name>' '--auto' '--wizard' '--org <reverse-domain>'; do
+    if ! grep -qF -- "$needle" "$CLI_TS"; then
+      echo "    cli.ts missing option declaration: $needle" >&2
+      return 1
+    fi
+  done
+  if ! grep -q 'parseDispatchTable' "$CLI_TS"; then
+    echo "    cli.ts does not import parseDispatchTable" >&2
+    return 1
+  fi
+}
+
+# NFR-IW-001 — running default dispatch twice produces the same outcome.
+test_default_dispatcher_idempotent() {
+  local tmp_target tmp_source
+  tmp_target=$(mk_tmpdir_with_trap b5-idemp-target)
+  tmp_source=$(mk_tmpdir_with_trap b5-idemp-source)
+  trap "rm -rf '$tmp_target' '$tmp_source'" RETURN
+  printf "# minimal\n" > "$tmp_source/CLAUDE.md"
+  local cli_dist="$FORGE_ROOT_REAL/cli/dist/index.js"
+  if [ ! -f "$cli_dist" ]; then
+    echo "    CLI not built — run: cd cli && npm run build" >&2
+    return 1
+  fi
+  local rc1 rc2
+  node "$cli_dist" init --archetype default --source "$tmp_source" --target "$tmp_target" >/dev/null 2>&1 && rc1=0 || rc1=$?
+  node "$cli_dist" init --archetype default --source "$tmp_source" --target "$tmp_target" >/dev/null 2>&1 && rc2=0 || rc2=$?
+  if [ "$rc1" != "0" ] || [ "$rc2" != "0" ]; then
+    echo "    unexpected exit codes: first=$rc1 second=$rc2" >&2
+    return 1
+  fi
+}
+
+# NFR-IW-003 — non-TTY without flags routes to silent default.
+test_wizard_skips_when_non_tty() {
+  local tmp_target tmp_source
+  tmp_target=$(mk_tmpdir_with_trap b5-non-tty-target)
+  tmp_source=$(mk_tmpdir_with_trap b5-non-tty-source)
+  trap "rm -rf '$tmp_target' '$tmp_source'" RETURN
+  printf "# minimal\n" > "$tmp_source/CLAUDE.md"
+  local cli_dist="$FORGE_ROOT_REAL/cli/dist/index.js"
+  [ -f "$cli_dist" ] || { echo "    CLI not built" >&2; return 1; }
+  local out
+  out=$(node "$cli_dist" init --source "$tmp_source" --target "$tmp_target" </dev/null 2>&1)
+  if echo "$out" | grep -q 'Pick an archetype'; then
+    echo "    wizard prompt appeared on non-TTY stdin" >&2
+    return 1
+  fi
+  if ! echo "$out" | grep -q 'forge init: copied'; then
+    echo "    silent default did not produce the legacy summary line" >&2
+    echo "    output: $out" >&2
+    return 1
+  fi
+}
+
+# FR-IW-005 — --auto on ambiguous target dir aborts with [NEEDS DECISION:].
+test_auto_detection_ambiguous_aborts() {
+  local tmp_target tmp_source
+  tmp_target=$(mk_tmpdir_with_trap b5-auto-amb)
+  tmp_source=$(mk_tmpdir_with_trap b5-auto-amb-src)
+  trap "rm -rf '$tmp_target' '$tmp_source'" RETURN
+  printf "# pubspec\n" > "$tmp_target/pubspec.yaml"
+  local cli_dist="$FORGE_ROOT_REAL/cli/dist/index.js"
+  [ -f "$cli_dist" ] || { echo "    CLI not built" >&2; return 1; }
+  local out rc
+  out=$(node "$cli_dist" init --auto --source "$tmp_source" --target "$tmp_target" 2>&1) && rc=0 || rc=$?
+  if [ "$rc" != "2" ]; then
+    echo "    expected exit 2 on ambiguous --auto, got $rc" >&2
+    echo "    output: $out" >&2
+    return 1
+  fi
+  if ! echo "$out" | grep -q '\[NEEDS DECISION:'; then
+    echo "    expected '[NEEDS DECISION:' marker in output" >&2
+    echo "    output: $out" >&2
+    return 1
+  fi
+}
 
 # ─── Phase 3 placeholders ──────────────────────────────────────
 

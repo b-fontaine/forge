@@ -8,9 +8,11 @@ import { initCommand } from "./commands/init.js";
 import { upgradeCommand } from "./commands/upgrade.js";
 import { verifyCommand } from "./commands/verify.js";
 import { versionCommand } from "./commands/version.js";
+import { parseDispatchTable } from "./domain/dispatch-table.js";
 
 export interface CliIo {
   argv: string[];
+  stdin: NodeJS.ReadableStream & { isTTY?: boolean };
   stdout: NodeJS.WritableStream;
   stderr: NodeJS.WritableStream;
   cwd: string;
@@ -65,32 +67,87 @@ export async function runCli(io: CliIo): Promise<number> {
   program
     .command("init")
     .description("scaffold Forge into a project directory")
+    .argument("[project-name]", "project slug (required for non-default archetypes)")
     .option("--target <dir>", "target project directory", io.cwd)
     .option(
       "--source <dir>",
       "local Forge source checkout (default: the files bundled with this CLI)",
     )
+    .option("--archetype <name>", "explicit archetype (e.g. default | full-stack-monorepo)")
+    .option("--auto", "auto-detect archetype from target dir signals", false)
+    .option("--wizard", "force interactive wizard mode", false)
+    .option("--org <reverse-domain>", "reverse domain (required for non-default archetypes)")
     .option("--force", "overwrite existing framework files", false)
-    .action(async (opts: { target: string; source?: string; force: boolean }) => {
-      const source = opts.source ?? assetsRoot();
-      const result = await initCommand({
-        sourceDir: source,
-        targetDir: opts.target,
-        force: opts.force,
-      });
-      const copied = result.ops.filter((op) => op.type === "copy").length;
-      const scaffolded = result.ops.filter(
-        (op) => op.type === "scaffold",
-      ).length;
-      const skipped = result.ops.filter((op) => op.type === "skip").length;
-      io.stdout.write(
-        `forge init: copied ${copied}, scaffolded ${scaffolded}, skipped ${skipped} — OK\n`,
-      );
-      if (result.errors.length > 0) {
-        for (const e of result.errors) io.stderr.write(`${e}\n`);
-        exitCode = 1;
-      }
-    });
+    .action(
+      async (
+        projectName: string | undefined,
+        opts: {
+          target: string;
+          source?: string;
+          archetype?: string;
+          auto: boolean;
+          wizard: boolean;
+          org?: string;
+          force: boolean;
+        },
+      ) => {
+        const source = opts.source ?? assetsRoot();
+        const assets = assetsRoot();
+        const result = await initCommand({
+          options: {
+            sourceDir: source,
+            targetDir: opts.target,
+            force: opts.force,
+            archetype: opts.archetype,
+            auto: opts.auto,
+            wizard: opts.wizard,
+            projectName,
+            reverseDomain: opts.org,
+            isTty: Boolean((io.stdin as { isTTY?: boolean }).isTTY),
+          },
+          readDispatchTable: async (path) => {
+            const yamlContent = await readFile(path, "utf8");
+            return parseDispatchTable(yamlContent);
+          },
+          archetypeRunner: ({ scaffolderPath, args, cwd }) =>
+            new Promise((res, rej) => {
+              const child = spawn("bash", [scaffolderPath, ...args], {
+                cwd,
+                stdio: ["ignore", "inherit", "inherit"],
+              });
+              child.on("error", rej);
+              child.on("close", (code) => res({ exitCode: code ?? 1 }));
+            }),
+          dispatchTablePath: resolve(
+            assets,
+            ".forge/scaffolding/dispatch-table.yml",
+          ),
+          forgeRootDir: assets,
+          stdin: io.stdin as NodeJS.ReadableStream,
+          stdout: io.stdout,
+          stderr: io.stderr,
+        });
+        if (result.exitCode !== undefined && result.exitCode !== 0) {
+          exitCode = result.exitCode;
+          return;
+        }
+        if (result.ops) {
+          // Default-archetype path : print the legacy summary line.
+          const copied = result.ops.filter((op) => op.type === "copy").length;
+          const scaffolded = result.ops.filter(
+            (op) => op.type === "scaffold",
+          ).length;
+          const skipped = result.ops.filter((op) => op.type === "skip").length;
+          io.stdout.write(
+            `forge init: copied ${copied}, scaffolded ${scaffolded}, skipped ${skipped} — OK\n`,
+          );
+        }
+        if (result.errors.length > 0) {
+          for (const e of result.errors) io.stderr.write(`${e}\n`);
+          exitCode = exitCode || 1;
+        }
+      },
+    );
 
   program
     .command("upgrade")
