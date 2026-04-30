@@ -156,6 +156,7 @@ OpenSpec, Agent OS v3, Superpowers, oh-my-claudecode, Context7).
 
 ## Governance
 
+- [Governance model](GOVERNANCE.md) — maintainers, decision making, amendment process, release process
 - [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md)
 - [Security policy](SECURITY.md) — private disclosure channels
 - [Changelog](CHANGELOG.md) — Keep a Changelog format

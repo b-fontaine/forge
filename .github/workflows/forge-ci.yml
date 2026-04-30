@@ -54,6 +54,10 @@ jobs:
         run: bash .forge/scripts/tests/c1.test.sh
       - name: a7.test.sh
         run: bash .forge/scripts/tests/a7.test.sh
+      - name: b5.test.sh
+        run: bash .forge/scripts/tests/b5.test.sh
+      - name: d5.test.sh
+        run: bash .forge/scripts/tests/d5.test.sh
 
   # ─── gates ── verify.sh + constitution-linter.sh ───────────────
   gates:

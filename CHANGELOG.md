@@ -12,15 +12,79 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
-**Module B.1 + G.1 + C.1 + A.7 + B.5.1 closed.** Eight changes
+**Module B.1 + G.1 + C.1 + A.7 + B.5.1 + D.5 closed.** Nine changes
 accumulated since v0.2.1 (`b1-foundations` → `b1-scaffolder` →
 `b1-workflow` → `b1-delivery` → `g1-forge-ci` →
-`c1-reference-project` → `a7-forge-upgrade` → `b5-1-init-wizard`).
+`c1-reference-project` → `a7-forge-upgrade` → `b5-1-init-wizard` →
+`d5-governance`).
 
-143/143 test scenarios PASS across 7 harnesses (foundations 21,
-scaffolder L1+L2 14, workflow L1+L2 11, delivery 24, g1 14, c1
-30, **a7 29**) ; verify.sh 64 PASS / 0 FAIL ; Vitest 40/40
-(35 prior + 5 new for `forge upgrade`).
+187/187 test scenarios PASS across 9 harnesses (foundations 21,
+scaffolder L1+L2 21, workflow L1+L2 16, delivery 24, g1 14, c1 30,
+**a7 29**, **b5 17**, **d5 15**) ; verify.sh 74 PASS / 0 FAIL /
+1 WARN ; Vitest 56/56.
+
+**Constitution bumped v1.0.0 → v1.1.0** via amendment #1 (add Article XII —
+Governance ; ratified 2026-04-30). T2 P1 (Priority-1 facilitators)
+closed ; T2 P2 (second archetype) is the next gate before any PR
+to `main` or v0.3.x release.
+
+### Added — `d5-governance` (2026-04-30)
+
+Operational governance model and Code of Conduct. Closes Audit
+Module D.5 (last T2 P1 facilitator). Constitution amended
+v1.0.0 → v1.1.0 (Article XII delegates operational rules to
+`GOVERNANCE.md`, principles vs. procedures delimitation).
+
+- **`GOVERNANCE.md`** at repo root — BDFL-with-fallback model :
+  current phase (Constitution `1.x` ∧ < 5 regular contributors)
+  has Benoit Fontaine (`@bfontaine`) as BDFL ; mature phase
+  (activated by future amendment) has a 3-7 member maintainer
+  committee with majority vote, BDFL keeping veto on amendments
+  only. Documents Roles and Responsibilities, Amendment Process
+  (≥ 4 numbered steps, **7-day public discussion** minimum),
+  Release Process (4 steps, semver `vX.Y.Z` tag), Code of
+  Conduct delegation, Contact (`contact@benoitfontaine.fr` +
+  GitHub Discussions/Issues).
+- **`CODE_OF_CONDUCT.md`** at repo root — verbatim
+  **Contributor Covenant v2.1** fetched from
+  `contributor-covenant.org`, only the official
+  `[INSERT CONTACT METHOD]` placeholder substituted with the
+  governance contact email. ADR-002 forbids any other edit.
+- **Constitution amendment** — new **Article XII — Governance**
+  inserted between Article XI and the `## Amendments` table.
+  Article XII delegates Process Gate ownership to `GOVERNANCE.md`,
+  preserves the principles-vs-procedures separation, and forbids
+  diluting Constitutional guarantees through `GOVERNANCE.md`
+  edits. `**Version**: v1.1.0` shown in the header block ;
+  amendment row #1 dated `2026-04-30` ratified by Benoit Fontaine
+  (BDFL).
+- **Template bumps** — `.forge/templates/change.yaml` × 2
+  (active line + commented example block) and
+  `.forge/templates/archetypes/full-stack-monorepo/.forge.yaml.tmpl`
+  bumped to `"1.1.0"`. **Archived changes are not modified** — they
+  keep `"1.0.0"` for historical traceability. **The d5-governance
+  change itself stays at `"1.0.0"`** in its `.forge.yaml` (ADR-006
+  precedent : a change-amendment is ratified UNDER version N and
+  CREATES version N+1, never circular).
+- **README** — `## Governance` section gains a `[Governance model]`
+  link as the first bullet, leading the existing CoC / Security /
+  Changelog / Versioning links.
+- **Harness `d5.test.sh`** — 15 manifest-pattern tests,
+  one per FR-GOV-*, registered in
+  `.github/workflows/forge-ci.yml` under the `harness` job.
+  `b5.test.sh` was also added to the same job (regression spotted
+  during D.5 review : the b5.1 archive shipped without CI
+  registration). Both register nominally next to `a7.test.sh`.
+- **Spec** consolidated at `.forge/specs/governance.md` with the
+  full `FR-GOV-*` namespace + 4 NFR-GOV-* + 5 BDD scenarios.
+
+**Article XII implications for future contributors** — any
+operational tweak (appoint a co-maintainer, refine the release
+checklist, update contact channels) lands via a regular PR to
+`GOVERNANCE.md`. Any structural change (BDFL → committee, change
+the discussion window, change veto rules) requires a Constitution
+amendment, recorded in the Amendments table with a fresh
+`**Version**:` bump.
 
 ### Added — `b5-1-init-wizard` (2026-04-30)
 
