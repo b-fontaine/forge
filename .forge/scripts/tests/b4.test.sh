@@ -502,6 +502,117 @@ _test_b4_034() {
     || { echo "    flutter-mobile entry missing in index.yml" >&2; return 1; }
 }
 
+# ─── Phase C — Fastlane + CI + integrations ──────────────────────
+#
+# MANIFEST: _test_b4_035 — FR-MO-030,031 Fastlane structure + lanes per platform
+# MANIFEST: _test_b4_036 — FR-MO-032 Fastlane secrets via ENV (no hardcoded password)
+# MANIFEST: _test_b4_037 — FR-MO-033 mobile-ci.yml.tmpl ios + android jobs
+# MANIFEST: _test_b4_038 — FR-MO-034,035 coverage threshold + cache
+# MANIFEST: _test_b4_039 — FR-MO-039 ARCHETYPES.md mobile-only row
+# MANIFEST: _test_b4_040 — FR-MO-038 framework-owned-paths.yml.tmpl in archetype
+# MANIFEST: _test_b4_041 — FR-MO-037 b4.test.sh registered in forge-ci.yml
+# MANIFEST: _test_b4_042 — FR-MO-040 negative scope: no cli/src/ touched
+
+_test_b4_035() {
+  for platform in ios android; do
+    for f in Fastfile Appfile; do
+      local p="$TEMPLATES/$platform/fastlane/${f}.tmpl"
+      [ -f "$p" ] || { echo "    expected: $p" >&2; return 1; }
+    done
+  done
+  # Matchfile only for iOS
+  [ -f "$TEMPLATES/ios/fastlane/Matchfile.tmpl" ] \
+    || { echo "    iOS Matchfile.tmpl missing" >&2; return 1; }
+  # Lanes
+  for lane in 'lane :beta' 'lane :release' 'lane :screenshots'; do
+    grep -qF "$lane" "$TEMPLATES/ios/fastlane/Fastfile.tmpl" \
+      || { echo "    iOS Fastfile missing $lane" >&2; return 1; }
+    grep -qF "$lane" "$TEMPLATES/android/fastlane/Fastfile.tmpl" \
+      || { echo "    Android Fastfile missing $lane" >&2; return 1; }
+  done
+}
+
+_test_b4_036() {
+  for f in "$TEMPLATES/ios/fastlane/Fastfile.tmpl" "$TEMPLATES/android/fastlane/Fastfile.tmpl"; do
+    grep -qE 'ENV\[' "$f" \
+      || { echo "    no ENV[...] reference in $f" >&2; return 1; }
+    # Detect hardcoded password literals (basic heuristic).
+    if grep -E 'password.*=\s*"[A-Za-z0-9]{6,}"' "$f" >/dev/null 2>&1; then
+      echo "    suspicious hardcoded password in $f" >&2; return 1
+    fi
+  done
+  # .envrc.example documents required ENV vars.
+  local envrc="$TEMPLATES/.envrc.example"
+  [ -f "$envrc" ] || { echo "    .envrc.example missing" >&2; return 1; }
+  for var in MATCH_PASSWORD APP_STORE_CONNECT_API_KEY_PATH PLAY_STORE_JSON_KEY KEYSTORE_PASSWORD; do
+    grep -qF "$var" "$envrc" || { echo "    $var missing in .envrc.example" >&2; return 1; }
+  done
+}
+
+_test_b4_037() {
+  local f="$TEMPLATES/.github/workflows/mobile-ci.yml.tmpl"
+  [ -f "$f" ] || { echo "    expected: $f" >&2; return 1; }
+  grep -qF 'macos-latest' "$f" || { echo "    iOS job not on macos-latest" >&2; return 1; }
+  grep -qF 'ubuntu-latest' "$f" || { echo "    Android job not on ubuntu-latest" >&2; return 1; }
+  # ≥ 3 named jobs
+  local n
+  n=$(grep -cE '^[[:space:]]+(ios|android|summary|e2e-android):' "$f")
+  if [ "$n" -lt 3 ]; then echo "    only $n named jobs (need ≥ 3)" >&2; return 1; fi
+}
+
+_test_b4_038() {
+  local f="$TEMPLATES/.github/workflows/mobile-ci.yml.tmpl"
+  [ -f "$f" ] || { echo "    mobile-ci missing" >&2; return 1; }
+  grep -qF -- '--coverage' "$f" \
+    || { echo "    coverage flag missing" >&2; return 1; }
+  grep -qE '70|THRESHOLD' "$f" \
+    || { echo "    coverage threshold (70 or THRESHOLD) missing" >&2; return 1; }
+  grep -qE 'actions/cache' "$f" \
+    || { echo "    actions/cache missing" >&2; return 1; }
+  grep -qF 'pub-cache' "$f" \
+    || { echo "    pub-cache reference missing" >&2; return 1; }
+}
+
+_test_b4_039() {
+  [ -f "$ARCHETYPES_MD" ] || { echo "    docs/ARCHETYPES.md missing" >&2; return 1; }
+  grep -qF 'mobile-only' "$ARCHETYPES_MD" \
+    || { echo "    mobile-only row missing in ARCHETYPES.md" >&2; return 1; }
+}
+
+_test_b4_040() {
+  local f="$TEMPLATES/.forge/framework-owned-paths.yml.tmpl"
+  [ -f "$f" ] || { echo "    expected: $f" >&2; return 1; }
+  grep -qF 'owned:' "$f" || { echo "    'owned:' section missing" >&2; return 1; }
+}
+
+_test_b4_041() {
+  [ -f "$CI_WORKFLOW" ] || { echo "    forge-ci.yml missing" >&2; return 1; }
+  grep -qF 'b4.test.sh' "$CI_WORKFLOW" \
+    || { echo "    b4.test.sh not registered in forge-ci.yml" >&2; return 1; }
+}
+
+_test_b4_042() {
+  # Audit FR-MO-040 negative scope: B.4 commits MUST NOT touch cli/src/.
+  # Baseline = parent of the first commit that introduced .forge/changes/b4-mobile-only/.
+  # If b4 has no commits yet (pre-Phase-A run), or git history is shallow, skip.
+  local first_b4_commit
+  first_b4_commit=$(git -C "$FORGE_ROOT_REAL" log --reverse --format='%H' \
+    -- .forge/changes/b4-mobile-only/ 2>/dev/null | head -1)
+  if [ -z "$first_b4_commit" ]; then
+    echo "    skipped (no b4 commit in history)" >&2; return 0
+  fi
+  local baseline
+  baseline=$(git -C "$FORGE_ROOT_REAL" rev-parse "${first_b4_commit}^" 2>/dev/null) || {
+    echo "    skipped (cannot resolve baseline parent of $first_b4_commit)" >&2; return 0
+  }
+  local violators
+  violators=$(git -C "$FORGE_ROOT_REAL" diff --name-only "$baseline"...HEAD 2>/dev/null \
+    | grep -E '^cli/src/' | head -1)
+  if [ -n "$violators" ]; then
+    echo "    FR-MO-040 violation: cli/src/ touched since $baseline: $violators" >&2; return 1
+  fi
+}
+
 # ─── Main ───────────────────────────────────────────────────────
 
 main() {
@@ -547,6 +658,17 @@ main() {
   run_test _test_b4_032
   run_test _test_b4_033
   run_test _test_b4_034
+
+  echo ""
+  echo "── Phase C : Fastlane + CI + integrations ──"
+  run_test _test_b4_035
+  run_test _test_b4_036
+  run_test _test_b4_037
+  run_test _test_b4_038
+  run_test _test_b4_039
+  run_test _test_b4_040
+  run_test _test_b4_041
+  run_test _test_b4_042
 
   case ",$LEVEL," in
     *,2,*)

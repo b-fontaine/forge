@@ -1,5 +1,5 @@
 name: b4-mobile-only
-status: planned
+status: archived
 created: 2026-04-30
 schema: default
 constitution_version: "1.1.0"
@@ -8,3 +8,5 @@ timeline:
   specified: 2026-04-30
   designed: 2026-04-30
   planned: 2026-04-30
+  implemented: 2026-04-30
+  archived: 2026-04-30

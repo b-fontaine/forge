@@ -1,0 +1,50 @@
+# <!-- Audit: B.4 (b4-mobile-only, FR-MO-030, FR-MO-031, FR-MO-032) -->
+# Fastlane lanes for {{project_name}} (Android).
+
+default_platform(:android)
+
+platform :android do
+  desc "Build aab & upload to Play Internal Testing"
+  lane :beta do
+    gradle(
+      task: "bundle",
+      build_type: "Release",
+      properties: {
+        "android.injected.signing.store.file" => ENV["KEYSTORE_PATH"],
+        "android.injected.signing.store.password" => ENV["KEYSTORE_PASSWORD"],
+        "android.injected.signing.key.alias" => ENV["KEY_ALIAS"],
+        "android.injected.signing.key.password" => ENV["KEY_PASSWORD"],
+      },
+    )
+    upload_to_play_store(
+      track: "internal",
+      json_key: ENV["PLAY_STORE_JSON_KEY"],
+      skip_upload_apk: true,
+    )
+  end
+
+  desc "Build aab & upload to Play Production track"
+  lane :release do
+    gradle(
+      task: "bundle",
+      build_type: "Release",
+      properties: {
+        "android.injected.signing.store.file" => ENV["KEYSTORE_PATH"],
+        "android.injected.signing.store.password" => ENV["KEYSTORE_PASSWORD"],
+        "android.injected.signing.key.alias" => ENV["KEY_ALIAS"],
+        "android.injected.signing.key.password" => ENV["KEY_PASSWORD"],
+      },
+    )
+    upload_to_play_store(
+      track: "production",
+      json_key: ENV["PLAY_STORE_JSON_KEY"],
+      skip_upload_apk: true,
+      release_status: "draft",
+    )
+  end
+
+  desc "Generate Play screenshots via screengrab"
+  lane :screenshots do
+    screengrab
+  end
+end

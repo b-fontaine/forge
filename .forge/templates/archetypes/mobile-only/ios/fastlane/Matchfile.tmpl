@@ -1,0 +1,8 @@
+# <!-- Audit: B.4 (b4-mobile-only) -->
+# Match config — code-signing certs in a separate (private) git repo.
+
+git_url(ENV["MATCH_GIT_URL"])
+storage_mode("git")
+type("development")
+app_identifier(["{{reverse_domain}}"])
+username(ENV["APPLE_ID"])

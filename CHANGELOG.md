@@ -12,21 +12,116 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
-**Module B.1 + G.1 + C.1 + A.7 + B.5.1 + D.5 closed.** Nine changes
+**Module B.1 + G.1 + C.1 + A.7 + B.5.1 + D.5 + B.4 closed.** Ten changes
 accumulated since v0.2.1 (`b1-foundations` → `b1-scaffolder` →
 `b1-workflow` → `b1-delivery` → `g1-forge-ci` →
 `c1-reference-project` → `a7-forge-upgrade` → `b5-1-init-wizard` →
-`d5-governance`).
+`d5-governance` → `b4-mobile-only`).
 
-187/187 test scenarios PASS across 9 harnesses (foundations 21,
+234/234 test scenarios PASS across 10 harnesses (foundations 21,
 scaffolder L1+L2 21, workflow L1+L2 16, delivery 24, g1 14, c1 30,
-**a7 29**, **b5 17**, **d5 15**) ; verify.sh 74 PASS / 0 FAIL /
-1 WARN ; Vitest 56/56.
+**a7 29**, **b5 17**, **d5 15**, **b4 47**) ; verify.sh 79 PASS /
+0 FAIL / 1 WARN ; Vitest 56/56.
 
 **Constitution bumped v1.0.0 → v1.1.0** via amendment #1 (add Article XII —
-Governance ; ratified 2026-04-30). T2 P1 (Priority-1 facilitators)
-closed ; T2 P2 (second archetype) is the next gate before any PR
-to `main` or v0.3.x release.
+Governance ; ratified 2026-04-30). **T2 P1 (Priority-1 facilitators) +
+T2 P2 (second archetype) both closed.** Guard-rail "no PR optim → main,
+no v0.3.x release" is now liftable at user discretion.
+
+### Added — `b4-mobile-only` (2026-04-30)
+
+Second archetype premium. **Flutter iOS + Android** with OIDC via
+`flutter_appauth` (PKCE), secure token storage (Keychain /
+EncryptedSharedPreferences + StrongBox), biometric lock with
+re-prompt-after-backgrounding, App Attest (iOS) + Play Integrity
+(Android) device attestation, Fastlane per-platform pipelines,
+GitHub Actions CI. Closes Audit Module B.4. Delivered in 3 phases
+on `optim` (Phase A core scaffold, Phase B runtime + standard,
+Phase C Fastlane + CI + archive).
+
+**First validation of the B.5.1 dispatcher ABI** : zero TypeScript
+edit. Adding `mobile-only` = 1 entry in `dispatch-table.yml` + 1
+`bin/forge-init-mobile-only.sh` wrapper. **First change ratified
+under Constitution v1.1.0** (post-D.5).
+
+- **Schema** — `.forge/schemas/mobile-only/schema.yaml` declares
+  single-layer `app`, iOS deployment 15.0, Android `minSdk 26 /
+  targetSdk 34 / compileSdk 34`. Bound to Articles I, II, III, IV,
+  V, VI, IX, X, XII (VII, VIII, XI explicitly NA).
+- **Wrapper** — `bin/forge-init-mobile-only.sh` stable ABI per
+  B.5.1 (`--target / --project-name / --reverse-domain / --force`).
+  Validates `project-name = [a-z][a-z0-9_]+` and reverse-domain
+  FQDN. Substitutes `{{project_name}}`, `{{reverse_domain}}`,
+  `{{reverse_domain_path}}` (slash-separated) via `rsync + sed`.
+  Idempotent with `--force`.
+- **Templates** — `.forge/templates/archetypes/mobile-only/` with
+  Flutter project skeleton (pubspec pinned `flutter_bloc`,
+  `flutter_appauth`, `flutter_secure_storage`, `local_auth`,
+  `opentelemetry_api/sdk`, `bloc_test`, `mocktail`, `gherkin` ;
+  `analysis_options.yaml` strict with 5 lints), 4-layer `lib/`
+  (domain / data / presentation / infrastructure), iOS native
+  config (`Info.plist` with `MinimumOSVersion 15.0` +
+  `NSFaceIDUsageDescription`, `Podfile` pinned, `AppDelegate`),
+  Android native config (`build.gradle.kts` minSdk 26 + Play
+  Integrity dep, `AndroidManifest.xml` with `USE_BIOMETRIC` +
+  `INTERNET` + `FlutterFragmentActivity` + OIDC redirect
+  intent-filter, `MainActivity.kt`).
+- **OIDC + Auth + secure storage + biometric + attestation** —
+  Phase B runtime modules : `OidcConfig` (provider-neutral with
+  `TODO_REPLACE_*` placeholders pointing Auth0 / Keycloak / Okta /
+  Cognito), `AuthRepository` interface + `AuthRepositoryImpl`
+  (PKCE via `FlutterAppAuth` + secure storage + DeviceAttestor +
+  OTel `auth.login` / `auth.refresh` / `auth.logout` spans, NEVER
+  logs token), `AuthBloc` (5 states + 4 events),
+  `SecureStorageAdapter` (Keychain + EncryptedSharedPreferences +
+  StrongBox preference), `BiometricService` (`local_auth`
+  `biometricOnly: true / stickyAuth: true`), `BiometricLockWidget`
+  (WidgetsBindingObserver, default 60s timeout, overlay), three
+  `DeviceAttestor` impls (iOS App Attest via `DCAppAttestService`,
+  Android Play Integrity via `IntegrityManager`, Fake for tests),
+  Swift `AppAttestService.swift` (channel
+  `forge.attestation/app_attest`), Kotlin `PlayIntegrityService.kt`
+  (channel `forge.attestation/play_integrity`).
+- **Observability** — `lib/observability/otel_init.dart` with
+  OTLP HTTP exporter, default endpoint `http://localhost:4318`,
+  configurable. `lib/main.dart` wires `BlocObserver` + `initOtel()`
+  + `runApp(App())`.
+- **Fastlane** — `ios/fastlane/{Fastfile, Appfile, Matchfile}` and
+  `android/fastlane/{Fastfile, Appfile}` with lanes `:beta` (TestFlight /
+  Play Internal), `:release` (App Store manual / Play Production
+  draft), `:screenshots` (snapshot / screengrab). All secrets flow
+  through `ENV[...]` ; `.envrc.example` documents `MATCH_PASSWORD`,
+  `APP_STORE_CONNECT_API_KEY_PATH`, `PLAY_STORE_JSON_KEY`,
+  `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`, etc.
+- **CI workflow** — `.github/workflows/mobile-ci.yml.tmpl` with
+  `ios` job (macos-latest, no codesign), `android` job
+  (ubuntu-latest, debug APK + 70 % coverage threshold via lcov +
+  awk), `summary` required check, `e2e-android` opt-in via
+  `workflow_dispatch`. Cache `~/.pub-cache` keyed on
+  `pubspec.lock` hash.
+- **Standard** — `.forge/standards/global/flutter-mobile.md` (7 H2
+  sections : Lifecycle / Permissions / OIDC and Token Storage /
+  Biometric Lock / Device Attestation / Native Configuration / CI
+  and Fastlane) + 3 explicit Interdictions (no SharedPreferences /
+  NSUserDefaults for tokens, no token logging, no biometric bypass
+  in non-debug). Indexed in `standards/index.yml`.
+- **Archetype-specific framework-owned-paths** — per ADR-014, the
+  archetype ships its own `framework-owned-paths.yml.tmpl`
+  scaffolded into the project root. Lists OIDC config, OTel init,
+  native bridges, Fastfile lanes, `mobile-ci.yml` as owned (3-way
+  merged on `forge upgrade`). Excludes adopter-tuned files
+  (`Appfile`, `Info.plist`, `AndroidManifest.xml` post-scaffold).
+- **Snapshot** — `.forge/scaffold-snapshots/mobile-only/1.0.0.tar.gz`
+  (219 files, 465 KB gzipped, 23 % of NFR-MO-001 budget 2 MB).
+- **Harness `b4.test.sh`** — manifest pattern with 42 L1 + 5 L2
+  fixture-based tests (scaffolds tmp project via wrapper, asserts
+  substitutions + idempotence + `--force` protection +
+  reverse_domain propagation to Info.plist and build.gradle.kts).
+  Registered in `.github/workflows/forge-ci.yml` job `harness`.
+  `docs/ARCHETYPES.md` updated : `mobile-only` is now Active in the
+  decision matrix.
+- **Spec consolidated** at `.forge/specs/mobile-only.md`
+  (FR-MO-001..040 + NFR-MO-001..008 + 7 BDD scenarios).
 
 ### Added — `d5-governance` (2026-04-30)
 
