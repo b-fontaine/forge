@@ -1,0 +1,24 @@
+# <!-- Audit: B.1.12 (b1-delivery, FR-IN-006) -->
+# Ingress for the backend HTTP port. Hostname is overridden per
+# environment via overlay patches. Cluster operator decides whether
+# the IngressClass is `nginx`, `traefik`, etc. — annotations stay
+# in the overlay so the base remains controller-agnostic.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: <project-name>-backend
+  labels:
+    app.kubernetes.io/name: <project-name>
+    app.kubernetes.io/component: backend
+spec:
+  rules:
+    - host: <project-name>.example.invalid
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: <project-name>-backend
+                port:
+                  name: http

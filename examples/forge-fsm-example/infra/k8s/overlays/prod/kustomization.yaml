@@ -1,0 +1,31 @@
+# <!-- Audit: B.1.12 (b1-delivery, FR-IN-006) -->
+# Prod overlay — 3 replicas baseline + HPA (3..10), tag-pinned
+# image (immutable from release), full resource budget. Standard:
+# .forge/standards/infra/k8s-overlays.md
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: forge-fsm-example-prod
+
+resources:
+  - ../../base
+  - hpa.yaml
+
+images:
+  - name: forge-fsm-example-backend
+    newTag: v0.0.0-replace-at-release
+
+replicas:
+  - name: forge-fsm-example-backend
+    count: 3
+
+commonAnnotations:
+  forge.io/managed-by: forge
+  forge.io/overlay: prod
+  forge.io/project: forge-fsm-example
+
+configMapGenerator:
+  - name: backend-env
+    literals:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector.forge-fsm-example-prod.svc.cluster.local:4317
+      - APP_ENV=prod

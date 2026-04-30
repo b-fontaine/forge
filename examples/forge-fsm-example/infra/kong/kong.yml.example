@@ -1,0 +1,50 @@
+# <!-- Audit: B.1.2 (part of b1-scaffolder, Kong declarative example) -->
+# <!-- This is an EXAMPLE. Copy to infra/kong/kong.yml and edit for your project. -->
+#
+# Minimal Kong declarative configuration for local dev.
+# Uses DB-less mode (KONG_DATABASE=off + KONG_DECLARATIVE_CONFIG=/kong/kong.yml).
+#
+# Constitutional reference: Article VIII.1 (API gateway via Kong, declarative only).
+# Standard: infra/kong — no admin API mutations; all changes go through this file.
+
+_format_version: "3.0"
+_transform: true
+
+services:
+  - name: forge-fsm-example-backend
+    url: http://fsm-backend:8080
+    protocol: http
+    retries: 3
+    connect_timeout: 5000
+    read_timeout: 10000
+    write_timeout: 10000
+    routes:
+      - name: forge-fsm-example-api-route
+        paths:
+          - /api
+        strip_path: true
+        preserve_host: false
+        protocols:
+          - http
+          - https
+
+# Plugins — example: rate limiting applied globally.
+# Uncomment and tune for your project.
+#
+# plugins:
+#   - name: rate-limiting
+#     config:
+#       minute: 60
+#       policy: local
+#   - name: cors
+#     config:
+#       origins:
+#         - "http://localhost:*"
+#       methods:
+#         - GET
+#         - POST
+#         - PUT
+#         - PATCH
+#         - DELETE
+#         - OPTIONS
+#       credentials: true

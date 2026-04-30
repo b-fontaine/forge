@@ -1,0 +1,30 @@
+# <!-- Audit: B.1.12 (b1-delivery, FR-IN-006) -->
+# Staging overlay — 2 replicas, sha-pinned image (immutable from
+# main), medium resource budget. Standard:
+# .forge/standards/infra/k8s-overlays.md
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: forge-fsm-example-staging
+
+resources:
+  - ../../base
+
+images:
+  - name: forge-fsm-example-backend
+    newTag: sha-replace-at-deploy
+
+replicas:
+  - name: forge-fsm-example-backend
+    count: 2
+
+commonAnnotations:
+  forge.io/managed-by: forge
+  forge.io/overlay: staging
+  forge.io/project: forge-fsm-example
+
+configMapGenerator:
+  - name: backend-env
+    literals:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector.forge-fsm-example-staging.svc.cluster.local:4317
+      - APP_ENV=staging

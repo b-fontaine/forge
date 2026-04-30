@@ -1,0 +1,23 @@
+# <!-- Audit: B.1.2 (part of b1-scaffolder, .forge.yaml template) -->
+# Forge Root Configuration for <project-name>
+# This file configures the Forge framework for the current project.
+# See .forge/schemas/full-stack-monorepo/schema.yaml for the archetype contract.
+
+schema: full-stack-monorepo
+schema_version: "0.1.0"
+constitution_version: "1.0.0"
+
+# Layers declared by the archetype (inherited from the schema, repeated
+# here for transparency and for tools that don't load the full schema).
+layers:
+  - id: backend
+    path: backend/
+  - id: frontend
+    path: frontend/
+  - id: infra
+    path: infra/
+
+# Versioning model — release-train by default (see docs/VERSIONING.md
+# section "Monorepo Versioning Models"). Switch to "per-package" if the
+# team grows beyond 15 contributors.
+versioning_model: release-train

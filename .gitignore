@@ -7,3 +7,15 @@
 
 # OS
 .DS_Store
+
+# c1-reference-project — example tree build artefacts (FR-GL-028).
+# Each example tree under examples/* ships its own per-language
+# .gitignore for fine-grained ignores ; these patterns guarantee no
+# build output ever reaches the Forge repo.
+examples/*/build/
+examples/*/target/
+examples/*/cli/
+examples/*/node_modules/
+examples/*/.dart_tool/
+examples/*/.cargo/
+examples/*/coverage/

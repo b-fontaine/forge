@@ -1,0 +1,53 @@
+# <!-- Audit: B.1.14 (b1-delivery, FR-IN-007) -->
+# OpenTelemetry Collector config — local dev only.
+# Standard: .forge/standards/infra/observability-local.md
+#
+# Receivers : OTLP gRPC :4317 + OTLP HTTP :4318 (Article IX three signals)
+# Processors : memory_limiter (caps RAM) → batch (network efficiency)
+# Exporters : otlp (→ fsm-signoz-query) + debug (stdout for dev inspection)
+# Pipelines : traces, metrics, logs (one per signal)
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 256
+    spike_limit_mib: 64
+  batch:
+    send_batch_size: 1024
+    timeout: 5s
+
+exporters:
+  otlp/signoz:
+    endpoint: fsm-signoz-query:4317
+    tls:
+      insecure: true
+  debug:
+    verbosity: basic
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp/signoz, debug]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp/signoz, debug]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp/signoz, debug]

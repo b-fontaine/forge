@@ -1,0 +1,29 @@
+# <!-- Audit: B.1.14 (b1-delivery, FR-IN-008) -->
+# SigNoz query service config — local dev only.
+# Standard: .forge/standards/infra/observability-local.md
+#
+# Auth is DISABLED in dev. Staging and prod overlays MUST flip auth
+# on (see standards/infra/k8s-overlays.md § Secret management). The
+# dev stack is a developer-local convenience, not a public surface.
+
+storage:
+  driver: clickhouse
+  clickhouse:
+    address: fsm-signoz-clickhouse:9000
+    database: signoz_traces
+    username: default
+    password: ""
+
+server:
+  port: 8080
+  log_level: info
+
+auth:
+  # Dev only — never deploy this config to staging/prod as-is.
+  enabled: false
+
+# Telemetry retention — dev defaults; tuned per overlay in prod.
+retention:
+  traces: 7d
+  metrics: 30d
+  logs: 7d

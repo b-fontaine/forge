@@ -24,14 +24,14 @@ Phase 3 is the full manifest enforced.
 These tasks set up the `c1.test.sh` skeleton and its manifest pattern
 before any phase-specific tests are added.
 
-- [ ] Create `.forge/scripts/tests/c1.test.sh` skeleton — sources
+- [x] Create `.forge/scripts/tests/c1.test.sh` skeleton — sources
   `_helpers.sh`, declares the `# MANIFEST: ...` comment block (empty
   initially), implements `test_manifest_self_consistency` as the first
   test, exits 0 with empty manifest.
   [Story: FR-EX-009]
-- [ ] Make `c1.test.sh` executable (`chmod +x`).
+- [x] Make `c1.test.sh` executable (`chmod +x`).
   [Story: FR-EX-009]
-- [ ] Run `bash .forge/scripts/tests/c1.test.sh` once : confirm exits 0
+- [x] Run `bash .forge/scripts/tests/c1.test.sh` once : confirm exits 0
   with "1/1 PASS" (just the meta-test). This is the GREEN baseline.
   [Story: FR-EX-009]
 
@@ -44,107 +44,107 @@ before any phase-specific tests are added.
 Write failing tests for the skip-guard FRs, the .gitignore extension,
 and the example-tree structural FRs **before** any implementation.
 
-- [ ] Add `test_verify_skips_examples_tree` to `c1.test.sh` MANIFEST :
+- [x] Add `test_verify_skips_examples_tree` to `c1.test.sh` MANIFEST :
   fixture creates a tmpdir mimicking the Forge framework repo signature
   (an `examples/forge-fsm-example/` subtree + a
   `.forge/specs/full-stack-monorepo.md` file), then runs `bash
   $REPO/.forge/scripts/verify.sh` with `FORGE_ROOT=$tmpdir`. Assert :
   output contains `[skipped: examples]` lines AND no walk into
   `examples/` content. [Story: FR-GL-026] [P]
-- [ ] Add `test_verify_runs_inside_example_tree` : fixture is a plain
+- [x] Add `test_verify_runs_inside_example_tree` : fixture is a plain
   `full-stack-monorepo` tree (no `examples/` subdir). Assert : no
   `[skipped: examples]` line emitted. [Story: FR-GL-026] [P]
-- [ ] Add `test_verify_no_skip_when_no_examples_dir` : fixture is the
+- [x] Add `test_verify_no_skip_when_no_examples_dir` : fixture is the
   Forge repo signature WITHOUT an `examples/` subdir. Assert :
   byte-identical stdout to a baseline reference (NFR-EX-006 regression
   fixture). [Story: NFR-EX-006] [P]
-- [ ] Add `test_constitution_linter_skips_examples_tree` : same shape
+- [x] Add `test_constitution_linter_skips_examples_tree` : same shape
   as `test_verify_skips_examples_tree` but for
   `constitution-linter.sh`. [Story: FR-GL-027] [P]
-- [ ] Add `test_gitignore_covers_example_artefacts` : grep the Forge
+- [x] Add `test_gitignore_covers_example_artefacts` : grep the Forge
   repo's root `.gitignore` for `examples/*/build/`,
   `examples/*/target/`, `examples/*/.dart_tool/`, etc. (per ADR-003
   list). [Story: FR-GL-028] [P]
-- [ ] Add `test_example_tree_canonical_structure` : assert
+- [x] Add `test_example_tree_canonical_structure` : assert
   `examples/forge-fsm-example/` exists with frontend/, backend/,
   infra/, shared/protos/, .forge/, .claude/, .mcp.json, .github/
   workflows, Taskfile.yml, docker-compose.dev.yml, .env.example,
   .gitignore, CLAUDE.md, .forge.yaml. [Story: FR-EX-001]
-- [ ] Add `test_example_scaffold_manifest_complete` : parse
+- [x] Add `test_example_scaffold_manifest_complete` : parse
   `examples/forge-fsm-example/.forge/scaffold-manifest.yaml` ; assert
   required keys present (archetype, archetype_version,
   scaffold_plan_sha, template_set_sha, scaffold_date, project_name,
   reverse_domain, root_module, flutter_version, cargo_version,
   buf_version) AND `archetype_version == "1.0.0"`. [Story: FR-EX-001]
-- [ ] Add `test_example_readme_has_required_sections` : check
+- [x] Add `test_example_readme_has_required_sections` : check
   `examples/forge-fsm-example/README.md` contains the 4 H2 sections
   (How this example was built, What's in here, Demo changes,
   Reproducing this example). [Story: FR-EX-002]
-- [ ] Add `test_examples_meta_readme_present` : check `examples/README.md`
+- [x] Add `test_examples_meta_readme_present` : check `examples/README.md`
   exists, lists `forge-fsm-example` as one entry, mentions skip-guards.
   [Story: FR-EX-003]
-- [ ] Run `c1.test.sh` once → confirm all 9 new tests FAIL (RED).
+- [x] Run `c1.test.sh` once → confirm all 9 new tests FAIL (RED).
   [Story: TDD discipline per Article I]
 
 ### Phase 1 — GREEN
 
 Implement the skip-guards, run the scaffolder, write the READMEs.
 
-- [ ] Implement skip-guard detection block at the top of
+- [x] Implement skip-guard detection block at the top of
   `.forge/scripts/verify.sh` (signature check : both
   `.forge/specs/full-stack-monorepo.md` AND `examples/` exist →
   `FORGE_REPO_DETECTED=1`). [Story: FR-GL-026]
-- [ ] Add the per-section guard in `verify.sh`'s "Change Artifact
+- [x] Add the per-section guard in `verify.sh`'s "Change Artifact
   Completeness" loop : prefix-check `$change_dir` vs `$FORGE_ROOT/examples/`
   → `[skipped: examples] $change_dir` and `continue`. [Story: FR-GL-026]
-- [ ] Add the same prefix-check guard in any layer-scoped section that
+- [x] Add the same prefix-check guard in any layer-scoped section that
   walks the file tree (backend/frontend/infra resolvers in `verify.sh`).
   [Story: FR-GL-026]
-- [ ] Implement skip-guard detection block at the top of
+- [x] Implement skip-guard detection block at the top of
   `.forge/scripts/constitution-linter.sh` (mirror of verify.sh).
   [Story: FR-GL-027]
-- [ ] Add per-loop prefix-check guards in each section of
+- [x] Add per-loop prefix-check guards in each section of
   `constitution-linter.sh` that walks the tree. [Story: FR-GL-027]
-- [ ] Append to root `.gitignore` :
+- [x] Append to root `.gitignore` :
   `examples/*/build/`, `examples/*/target/`, `examples/*/cli/`,
   `examples/*/node_modules/`, `examples/*/.dart_tool/`,
   `examples/*/.cargo/`, `examples/*/coverage/`. Group under a comment
   `# c1-reference-project — example tree build artefacts`.
   [Story: FR-GL-028]
-- [ ] Run the scaffolder against a tmpdir to produce the example tree :
+- [x] Run the scaffolder against a tmpdir to produce the example tree :
   `forge init --archetype full-stack-monorepo forge-fsm-example
   --org io.forge.example`. Use the Forge CLI's actual binary as built
   by `cli/`. [REQUIRES-TOOLS: flutter, cargo, buf, node]
   [Story: FR-EX-001]
-- [ ] Copy the scaffolded tree to
+- [x] Copy the scaffolded tree to
   `examples/forge-fsm-example/` in the Forge repo. Verify
   `.forge/scaffold-manifest.yaml` is present and correct.
   [Story: FR-EX-001]
-- [ ] Drop into `examples/forge-fsm-example/` and run
+- [x] Drop into `examples/forge-fsm-example/` and run
   `bash .forge/scripts/verify.sh` once to confirm the example's own
   gates pass (FR-EX-007 sanity check, full check happens in Phase 3).
   [REQUIRES-TOOLS: python3, yaml]
-- [ ] Write `examples/forge-fsm-example/README.md` with the 4 H2
+- [x] Write `examples/forge-fsm-example/README.md` with the 4 H2
   sections (How this example was built, What's in here, Demo changes,
   Reproducing this example). The "Demo changes" section is empty for
   Phase 1 ; it will be populated by Phase 2. [Story: FR-EX-002]
-- [ ] Write `examples/README.md` (meta-doc) listing
+- [x] Write `examples/README.md` (meta-doc) listing
   `forge-fsm-example` and explaining `examples/` purpose +
   skip-guards reference. [Story: FR-EX-003]
-- [ ] Run `c1.test.sh` → confirm all 9 Phase 1 tests now PASS (GREEN).
+- [x] Run `c1.test.sh` → confirm all 9 Phase 1 tests now PASS (GREEN).
   [Story: TDD]
 
 ### Phase 1 — REFACTOR
 
-- [ ] Run `bash .forge/scripts/verify.sh` from the Forge repo root :
+- [x] Run `bash .forge/scripts/verify.sh` from the Forge repo root :
   confirm new `[skipped: examples]` lines emitted AND existing
   PASS/FAIL counts unchanged for non-example sections (NFR-EX-006).
   [Story: NFR-EX-006]
-- [ ] Run all existing harnesses (`foundations.test.sh`,
+- [x] Run all existing harnesses (`foundations.test.sh`,
   `scaffolder.test.sh --level 1,2`, `workflow.test.sh --level 1,2`,
   `delivery.test.sh`, `g1.test.sh`) : confirm zero regression.
   [Story: backwards compatibility]
-- [ ] Commit Phase 1 cluster : `feat(forge): c1-reference-project Phase 1
+- [x] Commit Phase 1 cluster : `feat(forge): c1-reference-project Phase 1
   — scaffold + skip-guards + readmes`.
 
 ---

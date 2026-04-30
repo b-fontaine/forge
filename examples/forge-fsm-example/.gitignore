@@ -1,0 +1,44 @@
+# <!-- Audit: B.1.2 (part of b1-scaffolder, .gitignore template) -->
+
+# ── Secrets ──
+.env
+.env.local
+*.pem
+*.key
+
+# ── Flutter (frontend/) ──
+frontend/build/
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.packages
+frontend/*.iml
+frontend/coverage/
+
+# ── Rust (backend/) ──
+backend/target/
+backend/**/*.rs.bk
+# Cargo.lock backup files are excluded; Cargo.lock itself is committed (workspace best practice)
+backend/Cargo.lock.*
+
+# ── Node (tooling / optional Cloud Functions) ──
+node_modules/
+npm-debug.log
+
+# ── Generated proto stubs (committed by default — uncomment to gitignore) ──
+# backend/crates/grpc-api/src/generated/
+# frontend/lib/generated/
+
+# ── IDE ──
+.idea/
+.vscode/settings.json
+*.iml
+.DS_Store
+
+# ── Forge runtime state (not framework assets) ──
+.forge/_memory/
+.forge/changes/*/draft*/
+.omc/
+
+# ── Docker / Compose ──
+docker-compose.override.yml

@@ -1,0 +1,206 @@
+# <!-- Audit: B.1.2 (part of b1-scaffolder, docker-compose.dev template) -->
+
+# =============================================================================
+# docker-compose.dev.yml — full-stack-monorepo archetype (LOCAL DEV ONLY)
+#
+# Archetype : full-stack-monorepo
+# Standard  : .forge/standards/infra/docker-compose.md
+#
+# Services declared in this stack:
+#   fsm-db       — PostgreSQL 16 relational datastore (primary persistence layer)
+#   fsm-backend  — Application backend (Rust gRPC service or equivalent)
+#   fsm-kong     — API gateway (Kong 3), handling REST↔gRPC transcoding
+#
+# IMPORTANT — before running `task dev:up`:
+#   1. Copy .env.example to .env   →   cp .env.example .env
+#   2. Fill in all required values in .env (DB password, ports, etc.)
+#   .env MUST exist locally — the stack will refuse to start without it.
+#   .env is gitignored and MUST NEVER be committed.
+#
+# WARNING: this is the DEV stack only.
+#   Production workloads run on Kubernetes — see infra/k8s/ for manifests.
+#   Do NOT use this file for staging or production deployments.
+# =============================================================================
+
+version: "3.8"
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # fsm-db — PostgreSQL 16 (primary relational datastore)
+  # ---------------------------------------------------------------------------
+  fsm-db:
+    image: postgres:16-alpine
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-forge-fsm-example_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-forge-fsm-example_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${FSM_DB_PORT:-5432}:5432"
+    volumes:
+      - fsm-db-data:/var/lib/postgresql/data
+    networks:
+      - fsm-dev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-forge-fsm-example_user} -d ${POSTGRES_DB:-forge-fsm-example_dev}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # fsm-backend — Application backend
+  # TODO(forge-fsm-example): set build: context and image: tag once Dockerfile is ready
+  # Replace the image below with the project image once built.
+  # Reference Dockerfile: infra/docker/Dockerfile.backend.example
+  # ---------------------------------------------------------------------------
+  fsm-backend:
+    # replace with project image once built (e.g. image: ghcr.io/org/forge-fsm-example-backend:dev)
+    image: scratch
+    env_file: .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "${FSM_BACKEND_PORT:-8080}:8080"
+    networks:
+      - fsm-dev
+    depends_on:
+      fsm-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # ---------------------------------------------------------------------------
+  # fsm-kong — API gateway (Kong 3.6, REST↔gRPC transcoding — Article VIII.1)
+  # ---------------------------------------------------------------------------
+  fsm-kong:
+    image: kong:3.6-alpine
+    env_file: .env
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/kong.yml
+    ports:
+      - "8000:8000"
+      - "${FSM_KONG_ADMIN_PORT:-8001}:8001"
+    volumes:
+      - ./infra/kong/kong.yml.example:/kong/kong.yml:ro
+    networks:
+      - fsm-dev
+    depends_on:
+      fsm-backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8001/status || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ---------------------------------------------------------------------------
+  # fsm-otel-collector — OpenTelemetry Collector (B.1.14, FR-IN-007)
+  # Standard: .forge/standards/infra/observability-local.md
+  # Receivers: OTLP gRPC :4317 + OTLP HTTP :4318. Health: :13133.
+  # ---------------------------------------------------------------------------
+  fsm-otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.96.0
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "13133:13133"
+    volumes:
+      - ./infra/observability/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
+    networks:
+      - fsm-dev
+    depends_on:
+      fsm-signoz-query:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider --quiet http://localhost:13133/ || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # fsm-signoz-clickhouse — SigNoz storage backend (B.1.14, FR-IN-008)
+  # Internal-only; no host port mapping.
+  # ---------------------------------------------------------------------------
+  fsm-signoz-clickhouse:
+    image: clickhouse/clickhouse-server:24.1.2-alpine
+    volumes:
+      - signoz-clickhouse-data:/var/lib/clickhouse
+    networks:
+      - fsm-dev
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider --quiet http://localhost:8123/ping || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # fsm-signoz-query — SigNoz query API (B.1.14, FR-IN-008)
+  # Internal-only; no host port mapping.
+  # ---------------------------------------------------------------------------
+  fsm-signoz-query:
+    image: signoz/query-service:0.55.1
+    command: ["--config=/etc/signoz/config.yaml"]
+    volumes:
+      - ./infra/observability/signoz-config.yaml:/etc/signoz/config.yaml:ro
+    networks:
+      - fsm-dev
+    depends_on:
+      fsm-signoz-clickhouse:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider --quiet http://localhost:8080/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # fsm-signoz-frontend — SigNoz UI (B.1.14, FR-IN-008)
+  # Only externally-exposed observability service. Browser entrypoint.
+  # ---------------------------------------------------------------------------
+  fsm-signoz-frontend:
+    image: signoz/frontend:0.55.1
+    ports:
+      - "3301:3301"
+    networks:
+      - fsm-dev
+    depends_on:
+      fsm-signoz-query:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider --quiet http://localhost:3301/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+# =============================================================================
+# Networks — single named network; default bridge is FORBIDDEN per standard
+# =============================================================================
+networks:
+  fsm-dev:
+    driver: bridge
+    name: fsm-dev
+
+# =============================================================================
+# Volumes — named volumes for persistence between `task dev` invocations
+# =============================================================================
+volumes:
+  fsm-db-data:
+  signoz-clickhouse-data:

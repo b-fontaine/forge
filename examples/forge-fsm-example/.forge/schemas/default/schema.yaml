@@ -1,0 +1,50 @@
+# Forge Default Schema
+name: default
+version: "1.0.0"
+description: Standard spec-driven development workflow
+
+tdd_enforced: true
+bdd_required_for_user_facing: true
+coverage_threshold: 80
+
+phases:
+  - id: proposal
+    artifact: proposal.md
+    template: templates/proposal.md
+    gate: constitution_compliance
+    next: specs
+
+  - id: specs
+    artifact: specs.md
+    template: templates/spec.md
+    agent: Clio
+    gate: anti_hallucination_check
+    next: design
+
+  - id: design
+    artifact: design.md
+    template: templates/design.md
+    agent: auto_route  # Athena/Ferris/Atlas based on content
+    gate: constitution_compliance
+    next: tasks
+
+  - id: tasks
+    artifact: tasks.md
+    template: templates/tasks.md
+    gate: per_task_constitution_check
+    next: implementation
+
+  - id: implementation
+    artifact: source_code
+    protocol: tdd_cycle  # RED → GREEN → REFACTOR
+    agent: auto_route  # Hera/Vulcan/Atlas based on content
+    next: review
+
+  - id: review
+    agent: quality_guardians  # Nemesis + Tribune + Aegis
+    gate: quality_gate
+    next: archive
+
+  - id: archive
+    merges: specs.md into .forge/specs/
+    updates: .forge.yaml status to archived

@@ -1,0 +1,71 @@
+# Forge TDD-Flutter Schema
+name: tdd-flutter
+version: "1.0.0"
+description: Flutter development with enforced TDD and BDD workflows
+extends: default
+
+tdd_enforced: true
+bdd_required: true  # Required for ALL features, not just user-facing
+coverage_threshold: 80
+test_command: flutter test --coverage
+golden_tests_required: true  # For all custom widgets
+
+phases:
+  - id: proposal
+    artifact: proposal.md
+    template: templates/proposal.md
+    gate: constitution_compliance
+
+  - id: specs
+    artifact: specs.md
+    template: templates/spec.md
+    agent: Clio
+
+  - id: features  # ADDED: BDD feature files before design
+    artifact: "test/features/*.feature"
+    description: Gherkin feature files written before implementation
+    agent: Spartan
+    gate: scenarios_cover_all_fr
+    next: design
+
+  - id: design
+    artifact: design.md
+    template: templates/design.md
+    agent: Athena
+    gate: constitution_compliance_flutter
+
+  - id: tasks
+    artifact: tasks.md
+    tdd_order_enforced: true  # Tasks must follow RED→GREEN→REFACTOR order
+    agent: Athena
+
+  - id: implementation
+    protocol: tdd_cycle
+    agent: Hera
+    team:
+      - Spartan  # Tests
+      - Athena   # Architecture
+      - Hephaestus  # Widgets
+      - Apollo   # UX/UI
+
+  - id: review
+    agents: [Nemesis, Aegis]
+    checks:
+      - coverage_flutter
+      - golden_tests
+      - accessibility
+      - i18n_completeness
+
+  - id: archive
+    merges: specs.md into .forge/specs/
+
+flutter_specifics:
+  state_management: flutter_bloc
+  di: get_it + injectable
+  networking: retrofit + dio
+  testing:
+    unit: flutter_test + mocktail
+    widget: flutter_test + bloc_test
+    bdd: bdd_widget_test
+    golden: golden_toolkit
+    integration: flutter_driver
