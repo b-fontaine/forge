@@ -191,7 +191,7 @@ PY
 # matched by `owned:` patterns and not matched by `excluded:`.
 _a7_resolve_owned_paths() {
   local root="$1"
-  local yml="$root/cli/assets/framework-owned-paths.yml"
+  local yml="$root/.forge/framework-owned-paths.yml"
   [ -f "$yml" ] || { echo "framework-owned-paths.yml not found at $yml" >&2; return 4; }
   python3 - "$yml" "$root" <<'PY'
 import sys, os, glob, fnmatch, yaml
@@ -276,7 +276,7 @@ import yaml; print(yaml.safe_load(open('$manifest')).get('archetype', ''))")
 
   # Recover BASE via snapshot ; degrade to 2-way if missing.
   local base_dir=""
-  local snap="$FORGE_REPO_ROOT/cli/assets/scaffold-snapshots/$archetype/$from_version.tar.gz"
+  local snap="$FORGE_REPO_ROOT/.forge/scaffold-snapshots/$archetype/$from_version.tar.gz"
   if [ -f "$snap" ]; then
     base_dir=$(mktemp -d -t forge-up-base-XXXXXX)
     # shellcheck disable=SC2064

@@ -51,14 +51,14 @@ HARNESS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="$(cd "$HARNESS_DIR/.." && pwd)"
 FORGE_ROOT_REAL="$(cd "$SCRIPTS_DIR/../.." && pwd)"
 
-OWNED_YML="$FORGE_ROOT_REAL/cli/assets/framework-owned-paths.yml"
+OWNED_YML="$FORGE_ROOT_REAL/.forge/framework-owned-paths.yml"
 UPGRADE_SH="$FORGE_ROOT_REAL/bin/forge-upgrade.sh"
 SNAPSHOT_SH="$FORGE_ROOT_REAL/bin/forge-snapshot.sh"
 STD_UPGRADE="$FORGE_ROOT_REAL/.forge/standards/global/upgrade-policy.md"
 INDEX_YML="$FORGE_ROOT_REAL/.forge/standards/index.yml"
 GITIGNORE="$FORGE_ROOT_REAL/.gitignore"
 FEATURE_FILE="$FORGE_ROOT_REAL/.forge/changes/a7-forge-upgrade/features/upgrade.feature"
-SNAPSHOT_TARBALL="$FORGE_ROOT_REAL/cli/assets/scaffold-snapshots/full-stack-monorepo/1.0.0.tar.gz"
+SNAPSHOT_TARBALL="$FORGE_ROOT_REAL/.forge/scaffold-snapshots/full-stack-monorepo/1.0.0.tar.gz"
 UPGRADE_TS="$FORGE_ROOT_REAL/cli/src/commands/upgrade.ts"
 SPEC_UPGRADE="$FORGE_ROOT_REAL/.forge/specs/upgrade.md"
 A7_FORGE_YAML="$FORGE_ROOT_REAL/.forge/changes/a7-forge-upgrade/.forge.yaml"
@@ -661,9 +661,33 @@ test_base_recovery_via_snapshot() {
   done
 }
 
-# ─── Phase 3 placeholders ──────────────────────────────────────
+# ─── Phase 3 — TS CLI layer ────────────────────────────────────
 
-test_upgrade_cli_flags_parse()               { echo "    not yet implemented (Phase 3 GREEN)" >&2; return 1; }
+# FR-UP-001 — upgrade.ts declares the canonical option set and
+# wires through to the shell driver. Static text-grep on the source.
+test_upgrade_cli_flags_parse() {
+  if [ ! -f "$UPGRADE_TS" ]; then
+    echo "    missing: $UPGRADE_TS" >&2; return 1
+  fi
+  local needle
+  for needle in 'targetDir' 'dryRun' 'force' 'verbose' \
+                'shellDriverPath' 'readManifest' 'resolveFrameworkVersion'; do
+    if ! grep -q "$needle" "$UPGRADE_TS"; then
+      echo "    upgrade.ts missing required identifier: $needle" >&2
+      return 1
+    fi
+  done
+  # cli.ts wires the upgrade subcommand
+  local cli_ts="$FORGE_ROOT_REAL/cli/src/cli.ts"
+  if ! grep -q '\.command("upgrade")' "$cli_ts"; then
+    echo "    cli.ts does not register the upgrade subcommand" >&2
+    return 1
+  fi
+  if ! grep -q 'upgradeCommand' "$cli_ts"; then
+    echo "    cli.ts does not import upgradeCommand" >&2
+    return 1
+  fi
+}
 test_l3_end_to_end_against_example() {
   if [ "$REQUIRE_EXTERNAL_TOOLS" != "1" ]; then
     echo "    skipped (set --require-external-tools to enable)" >&2; return 0

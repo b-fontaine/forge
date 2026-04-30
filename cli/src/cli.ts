@@ -5,6 +5,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Command } from "commander";
 import { initCommand } from "./commands/init.js";
+import { upgradeCommand } from "./commands/upgrade.js";
 import { verifyCommand } from "./commands/verify.js";
 import { versionCommand } from "./commands/version.js";
 
@@ -90,6 +91,83 @@ export async function runCli(io: CliIo): Promise<number> {
         exitCode = 1;
       }
     });
+
+  program
+    .command("upgrade")
+    .description(
+      "non-destructive 3-way merge of framework updates into a scaffolded project",
+    )
+    .option("--target <dir>", "target project directory", io.cwd)
+    .option("--dry-run", "print the plan without writing", false)
+    .option("--force", "let conflicts land in-place (requires clean Git tree)", false)
+    .option("--verbose", "print progress and BASE-recovery diagnostics", false)
+    .action(
+      async (opts: {
+        target: string;
+        dryRun: boolean;
+        force: boolean;
+        verbose: boolean;
+      }) => {
+        const assets = assetsRoot();
+        const rc = await upgradeCommand({
+          options: {
+            targetDir: opts.target,
+            dryRun: opts.dryRun,
+            force: opts.force,
+            verbose: opts.verbose,
+          },
+          runner: ({ script, args, cwd }) =>
+            new Promise((res, rej) => {
+              const child = spawn("bash", [script, ...args], {
+                cwd,
+                stdio: ["ignore", "inherit", "inherit"],
+              });
+              child.on("error", rej);
+              child.on("close", (code) => res({ exitCode: code ?? 1 }));
+            }),
+          readManifest: async (manifestPath) => {
+            try {
+              const content = await readFile(manifestPath, "utf8");
+              const m: Record<string, unknown> = {};
+              for (const line of content.split("\n")) {
+                const match = line.match(/^([a-z_]+):\s*"?([^"\n]*?)"?\s*$/);
+                if (match) m[match[1]] = match[2];
+              }
+              if (
+                typeof m.archetype !== "string" ||
+                typeof m.archetype_version !== "string"
+              ) {
+                return null;
+              }
+              return {
+                archetype: m.archetype,
+                archetype_version: m.archetype_version,
+              };
+            } catch {
+              return null;
+            }
+          },
+          resolveFrameworkVersion: async (archetype) => {
+            const schemaPath = resolve(
+              assets,
+              ".forge/schemas",
+              archetype,
+              "schema.yaml",
+            );
+            const content = await readFile(schemaPath, "utf8");
+            const match = content.match(/^version:\s*"?([^"\n]+?)"?\s*$/m);
+            if (!match) {
+              throw new Error(`schema.yaml has no version field`);
+            }
+            return match[1];
+          },
+          shellDriverPath: resolve(assets, "bin/forge-upgrade.sh"),
+          writeLine: writeLine(io.stdout),
+          writeError: writeLine(io.stderr),
+        });
+        exitCode = rc;
+      },
+    );
 
   program
     .command("verify")

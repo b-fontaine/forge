@@ -1,0 +1,48 @@
+# <!-- Audit: A.7 (a7-forge-upgrade) -->
+#
+# Authoritative declaration of the paths managed by the Forge
+# framework. Consumed by `bin/forge-upgrade.sh` to drive the 3-way
+# merge surface. Adopters MUST NOT hand-edit this file ; framework
+# changes that touch the surface declare a delta on FR-UP-002 and
+# bump this file via the standard pipeline.
+#
+# Two sections :
+#  - owned:    framework manages every match (3-way merge participant)
+#  - excluded: framework never touches (project content, runtime state)
+#
+# Globs use shell-style ** for "any depth". They are matched against
+# project paths relative to the project root (i.e. the target of
+# `forge upgrade`).
+
+owned:
+  - ".forge/constitution.md"
+  - ".forge/standards/**"
+  - ".forge/templates/**"
+  - ".forge/schemas/**"
+  - ".forge/scripts/**"
+  - ".claude/agents/**"
+  - ".claude/commands/**"
+  - ".claude/skills/**"
+  - ".claude/settings.json"
+  - ".mcp.json"
+  - "bin/forge-install.sh"
+  - "bin/forge-lint"
+  - "bin/forge-upgrade.sh"
+  - "bin/forge-snapshot.sh"
+  - "docs/GUIDE.md"
+  - "docs/ARCHITECTURE.md"
+  - "docs/VERSIONING.md"
+  - "docs/CONTRIBUTING.md"
+  - "CLAUDE.md"
+  - "LICENSE"
+  - "NOTICE"
+
+excluded:
+  - ".claude/settings.local.json"
+  - ".forge/changes/**"
+  - ".forge/specs/**"
+  - ".forge/product/**"
+  - ".forge/scaffold-manifest.yaml"
+  - ".forge/framework-owned-paths.yml"
+  - ".forge/scaffold-snapshots/**"
+  - ".omc/**"

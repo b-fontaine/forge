@@ -3,9 +3,9 @@
 # <!-- Audit: A.7 (a7-forge-upgrade, FR-UP-008) -->
 #
 # Builds a versioned snapshot tarball capturing the framework's
-# `owned:` paths (per cli/assets/framework-owned-paths.yml) at the
+# `owned:` paths (per .forge/framework-owned-paths.yml) at the
 # current state. Output goes to
-# cli/assets/scaffold-snapshots/<archetype>/<version>.tar.gz.
+# .forge/scaffold-snapshots/<archetype>/<version>.tar.gz.
 #
 # Usage :
 #   bin/forge-snapshot.sh build <archetype> <version>
@@ -30,8 +30,8 @@ set -euo pipefail
 # Paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FORGE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-OWNED_YML="$FORGE_ROOT/cli/assets/framework-owned-paths.yml"
-SNAP_BASE_DIR="$FORGE_ROOT/cli/assets/scaffold-snapshots"
+OWNED_YML="$FORGE_ROOT/.forge/framework-owned-paths.yml"
+SNAP_BASE_DIR="$FORGE_ROOT/.forge/scaffold-snapshots"
 
 # Helpers
 err() { echo "forge-snapshot.sh: $*" >&2; }
