@@ -12,6 +12,10 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+_No unreleased changes._
+
+## [0.3.0] — 2026-05-01
+
 **Module B.1 + G.1 + C.1 + A.7 + B.5.1 + D.5 + B.4 + F.1 + F.2 + F.4
 closed.** Thirteen changes accumulated since v0.2.1 (`b1-foundations` →
 `b1-scaffolder` → `b1-workflow` → `b1-delivery` → `g1-forge-ci` →
