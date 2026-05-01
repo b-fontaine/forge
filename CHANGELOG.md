@@ -12,24 +12,79 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
-**Module B.1 + G.1 + C.1 + A.7 + B.5.1 + D.5 + B.4 + F.1 + F.2 closed.**
-Twelve changes accumulated since v0.2.1 (`b1-foundations` →
+**Module B.1 + G.1 + C.1 + A.7 + B.5.1 + D.5 + B.4 + F.1 + F.2 + F.4
+closed.** Thirteen changes accumulated since v0.2.1 (`b1-foundations` →
 `b1-scaffolder` → `b1-workflow` → `b1-delivery` → `g1-forge-ci` →
 `c1-reference-project` → `a7-forge-upgrade` → `b5-1-init-wizard` →
 `d5-governance` → `b4-mobile-only` → `f1-open-questions` →
-`f2-yaml-schema`).
+`f2-yaml-schema` → `f4-linter-extension`).
 
-269/269 test scenarios PASS across 12 harnesses (foundations 21,
+292/292 test scenarios PASS across 13 harnesses (foundations 21,
 scaffolder L1+L2 21, workflow L1+L2 16, delivery 24, g1 14, c1 30,
-**a7 29**, **b5 17**, **d5 15**, **b4 47**, **f1 17**, **f2 18**) ;
-verify.sh 101 PASS / 0 FAIL / 1 WARN ; constitution-linter PASS 5 /
-FAIL 0 / N/A 6 OVERALL PASS ; Vitest 56/56.
+**a7 29**, **b5 17**, **d5 15**, **b4 47**, **f1 17**, **f2 18**,
+**f4 23**) ; verify.sh 108 PASS / 0 FAIL / 1 WARN ; constitution-
+linter 18 PASS / 0 FAIL / 9 N/A — OVERALL PASS (1.97s ≤ 3s budget) ;
+Vitest 56/56.
 
 **Constitution bumped v1.0.0 → v1.1.0** via amendment #1 (add Article
-XII — Governance ; ratified 2026-04-30). **T2 P1 + T2 P2 closed ;
-T3 robustness in progress (F.1 + F.2 done, F.4 still pending).**
-Guard-rail "no PR optim → main, no v0.3.x release" is now liftable
-at user discretion.
+XII — Governance ; ratified 2026-04-30). **T2 P1 + T2 P2 + T3
+robustness all closed** (F.1 + F.2 + F.4 delivered). Guard-rail
+"no PR optim → main, no v0.3.x release" is now liftable at user
+discretion. The framework is technically ready for v0.3.0.
+
+### Added — `f4-linter-extension` (2026-05-01)
+
+Extends `constitution-linter.sh` to cover four constitutional
+articles previously not enforced statically. Closes Audit Module
+F.4 (T3 robustness, third and final item). Constitution coverage
+estimated ~70% → ~85%.
+
+- **Article V.1 — Task ↔ FR Linkage** : for each change with
+  `status` ∈ {planned, implemented, archived}, `tasks.md` MUST
+  contain ≥ 1 `[Story: FR-` reference. Proves the audit trail
+  exists. V.2 / V.3 (runtime violation handling and escalation)
+  remain runtime-only — not statically checkable.
+- **Article X.3 — Public API Documentation** : ratio of public
+  Dart/Rust symbols carrying `///` doc comments must be ≥ 80%
+  (default ; configurable via `FORGE_LINTER_X3_THRESHOLD`). Lists
+  the first 5 missing-doc symbols on FAIL. Walks back through
+  blank lines and `@`/`#[...]` attributes to detect `///` correctly.
+  `not_applicable` when no source dirs found (Forge framework
+  itself).
+- **Article XI.3 — Generative UI** : heuristic warning (NOT fail)
+  when AI imports (`anthropic|openai|gpt-|claude|@google/genai|llm|langchain`)
+  + UI rendering (`Widget|render`) coexist without a referenced
+  `*.schema.json`. Static linting cannot prove a XI.3 violation
+  ; the warning prompts manual audit.
+- **Article XI.5 — Mandatory Fallback Tested** : name-based pair
+  `lib/**/*[fF]allback*.dart` ↔ `test/**/*[fF]allback*_test*.dart`
+  (or `tests/` for Rust). FAIL on missing pair. Special case :
+  `schema: ai-first` without any `*fallback*` file → FAIL
+  "Article XI.5 requires a fallback implementation".
+- **Per-rule opt-out env vars** : `FORGE_LINTER_SKIP_V_1`,
+  `_X_3`, `_XI_3`, `_XI_5`. Plus `FORGE_LINTER_X3_THRESHOLD` to
+  override the X.3 default.
+- **New `warn` helper** in `constitution-linter.sh` + `WARN`
+  counter (used by Article XI.3 only — warnings don't affect exit
+  code).
+- **Standard** — `.forge/standards/global/linting-rules.md` (6 H2 :
+  Purpose, Article V.1, Article X.3, Article XI.3, Article XI.5,
+  Opt-Out Mechanism). Documents heuristics, limitations, opt-outs,
+  and the procedure for adding a new rule (Article XII amendment
+  process). Indexed in `standards/index.yml`.
+- **Documentation** — `docs/LINTING.md` (~140 lines) walks
+  contributors through running the linter, reading FAIL messages,
+  fixing common errors, opting out, heuristic limitations.
+- **Harness `f4.test.sh`** — manifest pattern, 16 L1 + 7 L2
+  fixture-based tests. L2 covers : V.1 fail, V.1 pass, X.3 fail,
+  X.3 threshold env override, XI.3 warn, XI.5 fail, opt-out env
+  var. Registered in `forge-ci.yml`.
+- **Bug fix discovered along the way** — the X.3 Python heredoc
+  initially conflicted with stdin (heredoc + pipe both targeting
+  python3 stdin). Fixed by passing files as argv instead of
+  reading sys.stdin.
+- **Spec consolidated** at `.forge/specs/linter-extension.md`
+  (FR-LE-001..022 + NFR-LE-001..004 + 6 BDD scenarios).
 
 ### Added — `f2-yaml-schema` (2026-05-01)
 

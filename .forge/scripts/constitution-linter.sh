@@ -36,10 +36,12 @@ find_excluding_examples() {
 PASS=0
 FAIL=0
 NA=0
+WARN=0
 
 pass()    { PASS=$((PASS + 1)); echo "  PASS  $1"; }
 fail()    { FAIL=$((FAIL + 1)); echo "  FAIL  $1"; }
 not_applicable() { NA=$((NA + 1)); echo "  N/A   $1"; }
+warn()    { WARN=$((WARN + 1)); echo "  WARN  $1"; }
 
 has_flutter() { [ -f "$FORGE_ROOT/pubspec.yaml" ]; }
 has_rust()    { [ -f "$FORGE_ROOT/Cargo.toml" ]; }
@@ -424,6 +426,240 @@ if [ "$schema" = "ai-first" ]; then
   fi
 else
   not_applicable "  Schema is '$schema', not ai-first"
+fi
+
+# ── Article V (Constitutional Compliance Gate) — F.4 ────────────
+# FR-LE-001..003. Static checkable subset of Article V : `tasks.md`
+# of any change with status >= planned MUST contain at least one
+# `[Story: FR-` reference (audit trail). V.2 / V.3 are runtime, not
+# static.
+echo ""
+echo "Article V (Constitutional Compliance Gate):"
+
+if [ "${FORGE_LINTER_SKIP_V_1:-0}" = "1" ]; then
+  not_applicable "  skipped via FORGE_LINTER_SKIP_V_1"
+elif [ -d "$CHANGES_DIR" ]; then
+  for change_dir in "$CHANGES_DIR"/*/; do
+    [ -d "$change_dir" ] || continue
+    [ "$FORGE_REPO_DETECTED" = "1" ] && case "$change_dir" in "$FORGE_ROOT/examples"/*) continue ;; esac
+    name="$(basename "$change_dir")"
+    yaml="$change_dir.forge.yaml"
+    [ -f "$yaml" ] || continue
+    status_v1="$(grep -E '^status:' "$yaml" | head -1 | awk '{print $2}' | tr -d '"')"
+    case "$status_v1" in
+      planned|implemented|archived) ;;
+      *) continue ;;
+    esac
+    tasks_md="$change_dir/tasks.md"
+    [ -f "$tasks_md" ] || continue
+    if grep -qE '\[Story: FR-' "$tasks_md"; then
+      pass "  $name: tasks.md has [Story: FR-XXX] audit trail"
+    else
+      fail "  $name: tasks.md missing [Story: FR-XXX] audit trail"
+    fi
+  done
+fi
+
+# ── Article X.3 (Public API Documentation) — F.4 ──────────────
+# FR-LE-004..009. Ratio of public symbols carrying /// doc comments
+# must be ≥ FORGE_LINTER_X3_THRESHOLD (default 80).
+echo ""
+echo "Article X.3 (Public API Documentation):"
+
+if [ "${FORGE_LINTER_SKIP_X_3:-0}" = "1" ]; then
+  not_applicable "  skipped via FORGE_LINTER_SKIP_X_3"
+else
+  X3_THRESHOLD="${FORGE_LINTER_X3_THRESHOLD:-80}"
+  dart_files=$(find "$FORGE_ROOT/lib" -type f -name '*.dart' 2>/dev/null | head -200 || true)
+  rust_files=$(find "$FORGE_ROOT/src" -type f -name '*.rs' 2>/dev/null | head -200 || true)
+  sources_list=$(printf '%s\n%s' "$dart_files" "$rust_files" | grep -v '^$' || true)
+  if [ -z "$sources_list" ]; then
+    not_applicable "  No source directories found (lib/ or src/)"
+  else
+    # Files passed via argv (a heredoc on stdin would conflict with sys.stdin).
+    # shellcheck disable=SC2086
+    x3_result=$(python3 - "$X3_THRESHOLD" $sources_list <<'PY'
+import re, sys
+threshold = int(sys.argv[1])
+files = [a for a in sys.argv[2:] if a.strip()]
+
+dart_pat = re.compile(r'^(?:abstract\s+)?(class|enum|mixin)\s+[A-Z]')
+dart_func_pat = re.compile(r'^[A-Z][A-Za-z0-9_<>?]*\s+[a-z][A-Za-z0-9_]*\s*\(')
+rust_pat = re.compile(r'^pub\s+(fn|struct|enum|trait|const|static|type|impl)\b')
+doc_pat_dart = re.compile(r'^\s*///')
+doc_pat_rust = re.compile(r'^\s*(///|//!)')
+attr_pat = re.compile(r'^\s*(@|#\[)')
+
+total = 0
+documented = 0
+missing = []
+
+for f in files:
+    if not f:
+        continue
+    try:
+        with open(f, encoding='utf-8', errors='replace') as fh:
+            lines = fh.readlines()
+    except OSError:
+        continue
+    is_rust = f.endswith('.rs')
+    doc_pat = doc_pat_rust if is_rust else doc_pat_dart
+    for i, line in enumerate(lines):
+        matched = False
+        if is_rust:
+            if rust_pat.match(line):
+                matched = True
+        else:
+            if dart_pat.match(line) or dart_func_pat.match(line):
+                matched = True
+        if not matched:
+            continue
+        total += 1
+        j = i - 1
+        while j >= 0 and (lines[j].strip() == '' or attr_pat.match(lines[j])):
+            j -= 1
+        if j >= 0 and doc_pat.match(lines[j]):
+            documented += 1
+        else:
+            if len(missing) < 5:
+                missing.append((f, i + 1, line.rstrip()))
+
+if total == 0:
+    print("NOTAPP")
+else:
+    ratio = (documented * 100) // total
+    if ratio >= threshold:
+        print(f"PASS {ratio} {documented}/{total}")
+    else:
+        print(f"FAIL {ratio} {documented}/{total}")
+        for m in missing:
+            print(f"MISS {m[0]}:{m[1]}:{m[2][:80]}")
+PY
+)
+    head_line=$(printf '%s\n' "$x3_result" | head -1)
+    case "$head_line" in
+      NOTAPP)
+        not_applicable "  No public symbols detected"
+        ;;
+      PASS\ *)
+        ratio_v=$(echo "$head_line" | awk '{print $2}')
+        counts=$(echo "$head_line" | awk '{print $3}')
+        pass "  doc ratio ${ratio_v}% ($counts) >= threshold ${X3_THRESHOLD}%"
+        ;;
+      FAIL\ *)
+        ratio_v=$(echo "$head_line" | awk '{print $2}')
+        counts=$(echo "$head_line" | awk '{print $3}')
+        fail "  doc ratio ${ratio_v}% ($counts) below threshold ${X3_THRESHOLD}%"
+        printf '%s\n' "$x3_result" | grep '^MISS' | sed 's/^MISS /      missing /'
+        ;;
+      *)
+        warn "  unexpected python output: $head_line"
+        ;;
+    esac
+  fi
+fi
+
+# ── Article XI.3 (Generative UI — schema-driven) — F.4 ──────────
+# FR-LE-010..013. Heuristic warning (not fail) when AI features +
+# UI rendering coexist without a referenced *.schema.json.
+# Detection patterns include : anthropic, openai, gpt-, claude, llm, langchain.
+echo ""
+echo "Article XI.3 (Generative UI):"
+
+if [ "${FORGE_LINTER_SKIP_XI_3:-0}" = "1" ]; then
+  not_applicable "  skipped via FORGE_LINTER_SKIP_XI_3"
+else
+  ai_detected=0
+  if [ -f "$FORGE_ROOT/.forge.yaml" ]; then
+    if grep -qE '^schema:[[:space:]]+ai-first' "$FORGE_ROOT/.forge.yaml"; then
+      ai_detected=1
+    fi
+  fi
+  if [ "$ai_detected" -eq 0 ]; then
+    if grep -rEq 'anthropic|openai|gpt-|claude|@google/genai|llm|langchain' \
+        "$FORGE_ROOT/lib" "$FORGE_ROOT/src" "$FORGE_ROOT/pubspec.yaml" \
+        "$FORGE_ROOT/Cargo.toml" "$FORGE_ROOT/package.json" 2>/dev/null; then
+      ai_detected=1
+    fi
+  fi
+  if [ "$ai_detected" -eq 0 ]; then
+    not_applicable "  No AI features detected"
+  else
+    has_ui=0
+    if grep -rEq 'class .*Widget|extends Widget|render *\(' \
+        "$FORGE_ROOT/lib" "$FORGE_ROOT/src" 2>/dev/null; then
+      has_ui=1
+    fi
+    if [ "$has_ui" -eq 0 ]; then
+      pass "  AI features present but no UI rendering — no XI.3 surface"
+    else
+      has_schema=0
+      if find "$FORGE_ROOT/lib" "$FORGE_ROOT/src" -type f -name '*.schema.json' 2>/dev/null | grep -q .; then
+        has_schema=1
+      fi
+      if grep -rEq '\.schema\.json' "$FORGE_ROOT/lib" "$FORGE_ROOT/src" 2>/dev/null; then
+        has_schema=1
+      fi
+      if [ "$has_schema" -eq 1 ]; then
+        pass "  AI features + UI + *.schema.json reference detected"
+      else
+        warn "  XI.3 heuristic warning: AI features + UI rendering detected without coexisting *.schema.json reference. Manual audit recommended."
+      fi
+    fi
+  fi
+fi
+
+# ── Article XI.5 (Mandatory Fallback Tested) — F.4 ──────────────
+# FR-LE-014..017. Name-based pair: lib/**/*[fF]allback*.dart MUST
+# have a corresponding test/**/*[fF]allback*_test*.dart pair.
+echo ""
+echo "Article XI.5 (Mandatory Fallback Tested):"
+
+if [ "${FORGE_LINTER_SKIP_XI_5:-0}" = "1" ]; then
+  not_applicable "  skipped via FORGE_LINTER_SKIP_XI_5"
+else
+  fb_dart=$(find "$FORGE_ROOT/lib" -type f -iname '*fallback*.dart' 2>/dev/null || true)
+  fb_rust=$(find "$FORGE_ROOT/src" -type f -iname '*fallback*.rs' 2>/dev/null || true)
+  is_ai_first=0
+  if [ -f "$FORGE_ROOT/.forge.yaml" ]; then
+    if grep -qE '^schema:[[:space:]]+ai-first' "$FORGE_ROOT/.forge.yaml"; then
+      is_ai_first=1
+    fi
+  fi
+  if [ -z "$fb_dart" ] && [ -z "$fb_rust" ]; then
+    if [ "$is_ai_first" -eq 1 ]; then
+      fail "  Article XI.5 requires a fallback implementation in ai-first projects"
+    else
+      not_applicable "  No fallback files and not an AI-first project"
+    fi
+  else
+    for src in $fb_dart $fb_rust; do
+      [ -n "$src" ] || continue
+      base=$(basename "$src")
+      stem="${base%.*}"
+      paired=0
+      if find "$FORGE_ROOT/test" -type f \( -iname "${stem}*test*.dart" -o -iname "*${stem}*test*.dart" -o -iname "${stem}_test.dart" \) 2>/dev/null | grep -q .; then
+        paired=1
+      fi
+      if [ "$paired" -eq 0 ]; then
+        if find "$FORGE_ROOT/test" -type f -iname '*fallback*test*' 2>/dev/null | grep -q .; then
+          paired=1
+        fi
+      fi
+      if [ "$paired" -eq 0 ] && [[ "$src" == *.rs ]]; then
+        if grep -qE '#\[cfg\(test\)\]|#\[test\]' "$src"; then
+          paired=1
+        elif find "$FORGE_ROOT/tests" -type f -iname '*fallback*' 2>/dev/null | grep -q .; then
+          paired=1
+        fi
+      fi
+      if [ "$paired" -eq 1 ]; then
+        pass "  fallback ${src#$FORGE_ROOT/} has matching test pair"
+      else
+        fail "  ${src#$FORGE_ROOT/} has no matching *fallback*_test* in test/ or tests/"
+      fi
+    done
+  fi
 fi
 
 # ── Article III.4: No NEEDS CLARIFICATION inline in implemented/archived ───

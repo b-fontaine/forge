@@ -321,3 +321,9 @@ standards:
     triggers: ["change.yaml", ".forge.yaml", "schema validation", "JSON Schema", "status enum", "timeline coherence", validate-change-yaml]
     scope: all
     priority: high
+
+  - id: global/linting-rules
+    path: standards/global/linting-rules.md
+    triggers: [linting, constitution-linter, linter rules, public API doc, fallback test, GenUI schema, audit trail, FORGE_LINTER_SKIP, FORGE_LINTER_X3_THRESHOLD]
+    scope: all
+    priority: high
