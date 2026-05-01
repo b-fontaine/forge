@@ -309,3 +309,9 @@ standards:
     triggers: [flutter mobile, mobile-only, ios, android, oidc, flutter_appauth, flutter_secure_storage, local_auth, biometric, app attest, play integrity, fastlane, "minSdk", "MinimumOSVersion", FlutterFragmentActivity, "lib/", "ios/", "android/"]
     scope: app
     priority: high
+
+  - id: global/open-questions
+    path: standards/global/open-questions.md
+    triggers: [open-questions, open questions, NEEDS CLARIFICATION, "Q-001", clarification, anti-hallucination, "Article III.4", forge-questions.sh]
+    scope: all
+    priority: high

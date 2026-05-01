@@ -426,6 +426,57 @@ else
   not_applicable "  Schema is '$schema', not ai-first"
 fi
 
+# ── Article III.4: No NEEDS CLARIFICATION inline in implemented/archived ───
+# F.1 (f1-open-questions, FR-OQ-013, FR-OQ-014). Once a change reaches
+# `implemented` or `archived` status, every `[NEEDS CLARIFICATION:`
+# marker MUST be resolved (replaced inline) and tracked instead in
+# `open-questions.md` (which is the legitimate location for the question
+# audit trail).
+echo ""
+echo "Article III.4 (Anti-Hallucination — no NEEDS CLARIFICATION inline):"
+
+iii4_violations=0
+if [ -d "$CHANGES_DIR" ]; then
+  for change_dir in "$CHANGES_DIR"/*/; do
+    [ -d "$change_dir" ] || continue
+    [ "$FORGE_REPO_DETECTED" = "1" ] && case "$change_dir" in "$FORGE_ROOT/examples"/*) continue ;; esac
+    name="$(basename "$change_dir")"
+    yaml="$change_dir.forge.yaml"
+    [ -f "$yaml" ] || continue
+    status="$(grep -E '^status:' "$yaml" | head -1 | awk '{print $2}' | tr -d '"')"
+    case "$status" in
+      implemented|archived) ;;
+      *) continue ;;
+    esac
+    for f in proposal.md specs.md design.md tasks.md; do
+      file="$change_dir$f"
+      [ -f "$file" ] || continue
+      # Detect REAL unresolved markers, excluding documentary contexts :
+      #   1. Inside backticks `[NEEDS CLARIFICATION: ...]`
+      #   2. Inside HTML comments <!-- ... -->
+      #   3. Inside fenced code blocks ```...```  (Mermaid diagrams, code samples)
+      # awk tracks code-fence state across lines.
+      while IFS=: read -r line_no _; do
+        [ -z "$line_no" ] && continue
+        fail "  $name:$f:$line_no: NEEDS CLARIFICATION inline detected"
+        iii4_violations=$((iii4_violations + 1))
+      done < <(awk '
+        /^```/ { in_fence = !in_fence; next }
+        in_fence { next }
+        /<!--/ && /-->/ { next }
+        /\[NEEDS CLARIFICATION:/ {
+          # Skip when the marker is wrapped in backticks (documentary).
+          if (index($0, "`[NEEDS CLARIFICATION") > 0) next
+          print NR ":"
+        }
+      ' "$file" 2>/dev/null)
+    done
+  done
+fi
+if [ "$iii4_violations" -eq 0 ]; then
+  pass "  No [NEEDS CLARIFICATION:] inline in implemented/archived changes"
+fi
+
 # ── Summary ───────────────────────────────────────────────────
 echo ""
 echo "========================"

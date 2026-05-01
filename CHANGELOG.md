@@ -12,21 +12,83 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
-**Module B.1 + G.1 + C.1 + A.7 + B.5.1 + D.5 + B.4 closed.** Ten changes
-accumulated since v0.2.1 (`b1-foundations` → `b1-scaffolder` →
-`b1-workflow` → `b1-delivery` → `g1-forge-ci` →
+**Module B.1 + G.1 + C.1 + A.7 + B.5.1 + D.5 + B.4 + F.1 closed.**
+Eleven changes accumulated since v0.2.1 (`b1-foundations` →
+`b1-scaffolder` → `b1-workflow` → `b1-delivery` → `g1-forge-ci` →
 `c1-reference-project` → `a7-forge-upgrade` → `b5-1-init-wizard` →
-`d5-governance` → `b4-mobile-only`).
+`d5-governance` → `b4-mobile-only` → `f1-open-questions`).
 
-234/234 test scenarios PASS across 10 harnesses (foundations 21,
+251/251 test scenarios PASS across 11 harnesses (foundations 21,
 scaffolder L1+L2 21, workflow L1+L2 16, delivery 24, g1 14, c1 30,
-**a7 29**, **b5 17**, **d5 15**, **b4 47**) ; verify.sh 79 PASS /
-0 FAIL / 1 WARN ; Vitest 56/56.
+**a7 29**, **b5 17**, **d5 15**, **b4 47**, **f1 17**) ; verify.sh
+84 PASS / 0 FAIL / 1 WARN ; constitution-linter PASS 5 / FAIL 0 /
+N/A 6 OVERALL PASS ; Vitest 56/56.
 
-**Constitution bumped v1.0.0 → v1.1.0** via amendment #1 (add Article XII —
-Governance ; ratified 2026-04-30). **T2 P1 (Priority-1 facilitators) +
-T2 P2 (second archetype) both closed.** Guard-rail "no PR optim → main,
-no v0.3.x release" is now liftable at user discretion.
+**Constitution bumped v1.0.0 → v1.1.0** via amendment #1 (add Article
+XII — Governance ; ratified 2026-04-30). **T2 P1 (Priority-1
+facilitators) + T2 P2 (second archetype) closed ; T3 robustness in
+progress (F.1 done, F.2 + F.4 pending).** Guard-rail "no PR optim →
+main, no v0.3.x release" is now liftable at user discretion.
+
+### Added — `f1-open-questions` (2026-05-01)
+
+Mechanisation of Article III.4 (Anti-Hallucination Protocol). Adds
+the per-change `open-questions.md` convention with `Q-NNN` sequential
+identifiers, status enum (`open` / `answered` / `wontfix`), resolution
+block; new `verify.sh` Open Questions Gate that blocks archive on
+lingering open questions; new `constitution-linter.sh` rule that
+blocks `[NEEDS CLARIFICATION:` inline in `implemented` or `archived`
+changes (with smart exclusions for documentary mentions inside
+backticks / HTML comments / fenced code blocks); new
+`bin/forge-questions.sh` aggregator script with `--change` and
+`--status` filters. Closes Audit Module F.1 (T3 robustness). First
+T3 change ; F.2 + F.4 still pending.
+
+- **Standard** — `.forge/standards/global/open-questions.md`
+  (8 H2 sections : Purpose, File Location and Lifecycle, Question
+  Schema, Status Enum, Resolution Block, Verify Gate, Linter Rule,
+  Discovery + 3 Interdictions: no modify answered, no reuse Q-NNN,
+  no inline marker in implemented/archived). Indexed in
+  `standards/index.yml`.
+- **Template** — `.forge/templates/open-questions.md.tmpl` with
+  documentation header explaining the schema. New changes are
+  expected to start with this stub at `/forge:propose` time.
+- **`verify.sh` Open Questions Gate** — new section
+  `── Open Questions Gate ──` ; for each change with
+  `status: archived` and `open-questions.md` present,
+  `grep -cE '^- \*\*Status\*\*: open$'` ; FAIL if count > 0.
+  Skip-guard `examples/` honoured. Backwards-compatible : absent
+  file = SKIP (no FAIL).
+- **`constitution-linter.sh` rule** — new "Article III.4
+  (Anti-Hallucination — no NEEDS CLARIFICATION inline)" check
+  scoped to `implemented` and `archived` changes only. Uses awk
+  with code-fence state tracking (\`\`\`...\`\`\`) + HTML comment
+  exclusion (`<!-- ... -->`) + backtick-wrapped marker exclusion
+  (`\`[NEEDS CLARIFICATION...\``). Avoids false positives on
+  documentary uses of the marker.
+- **`bin/forge-questions.sh`** — bash + awk aggregator (no new
+  dep). Default lists every `Status: open` question across
+  `.forge/changes/*/open-questions.md`, sorted by `Raised on`
+  asc. `--change <name>` filters to one change ;
+  `--status <enum>` filters by status (`open`, `answered`,
+  `wontfix`). Output : `<change>:Q-NNN  <title>  (raised
+  <date> by <handle>)`.
+- **Harness `f1.test.sh`** — manifest pattern, 12 L1 +
+  5 L2 fixture-based (the L2 tests build temp `.forge/`
+  trees, scope `FORGE_ROOT` to the tmpdir, exercise the gate
+  / linter / aggregator end-to-end). Registered in
+  `forge-ci.yml` job `harness` after `b4.test.sh`.
+- **Backwards compatibility verified** — 10 pre-F.1 archived
+  changes (b1-*, g1, c1, a7, b5-1, d5, b4) untouched and stay
+  green : verify.sh 84/0, constitution-linter OVERALL PASS,
+  a7.test.sh 29/29 (NFR-OQ-007 — forge upgrade unaffected).
+- **Documentation** — `docs/OPEN_QUESTIONS.md` (~110 lines)
+  walks contributors through raising / resolving / aggregating
+  questions, with concrete examples and the in-flight emergence
+  workflow ("if a question surfaces while implemented, demote
+  status back to planned, resolve, re-promote").
+- **Spec consolidated** at `.forge/specs/open-questions.md`
+  (FR-OQ-001..022 + NFR-OQ-001..004 + 6 BDD scenarios).
 
 ### Added — `b4-mobile-only` (2026-04-30)
 

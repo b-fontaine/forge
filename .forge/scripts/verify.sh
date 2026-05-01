@@ -518,6 +518,41 @@ if [ "$target_schema" = "full-stack-monorepo" ]; then
   fi
 fi
 
+# ─── 9. Open Questions Gate — f1-open-questions ────────────────
+# For each change with status: archived, fail if open-questions.md
+# contains at least one question with `Status: open`. Skip when the
+# file is absent (backwards-compatible with pre-F.1 archived
+# changes, FR-OQ-007 / NFR-OQ-003). Skip-guard examples/ trees
+# (FR-GL-026 cohérent).
+
+section "Open Questions Gate"
+
+if [ -d "$CHANGES_DIR" ]; then
+  for change_dir in "$CHANGES_DIR"/*/; do
+    [ -d "$change_dir" ] || continue
+    is_under_examples "$change_dir" && continue
+    name="$(basename "$change_dir")"
+    yaml="$change_dir.forge.yaml"
+    [ -f "$yaml" ] || continue
+
+    # Read status without invoking python (faster).
+    status="$(grep -E '^status:' "$yaml" | head -1 | awk '{print $2}' | tr -d '"')"
+    if [ "$status" != "archived" ]; then continue; fi
+
+    oq="$change_dir/open-questions.md"
+    if [ ! -f "$oq" ]; then
+      # Absence = no questions = OK (FR-OQ-007).
+      continue
+    fi
+    open_count=$(grep -cE '^- \*\*Status\*\*: open$' "$oq" 2>/dev/null || true)
+    if [ "$open_count" -gt 0 ]; then
+      fail "$name has $open_count open question(s) but is archived"
+    else
+      pass "$name has no open questions"
+    fi
+  done
+fi
+
 # ─── Summary ───────────────────────────────────────────────────
 
 section "Summary"
