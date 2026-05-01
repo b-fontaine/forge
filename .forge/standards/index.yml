@@ -315,3 +315,9 @@ standards:
     triggers: [open-questions, open questions, NEEDS CLARIFICATION, "Q-001", clarification, anti-hallucination, "Article III.4", forge-questions.sh]
     scope: all
     priority: high
+
+  - id: global/change-yaml-schema
+    path: standards/global/change-yaml-schema.md
+    triggers: ["change.yaml", ".forge.yaml", "schema validation", "JSON Schema", "status enum", "timeline coherence", validate-change-yaml]
+    scope: all
+    priority: high

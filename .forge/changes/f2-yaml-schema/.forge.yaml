@@ -1,0 +1,12 @@
+name: f2-yaml-schema
+status: archived
+created: 2026-05-01
+schema: default
+constitution_version: "1.1.0"
+timeline:
+  proposed: 2026-05-01
+  specified: 2026-05-01
+  designed: 2026-05-01
+  planned: 2026-05-01
+  implemented: 2026-05-01
+  archived: 2026-05-01

@@ -518,6 +518,32 @@ if [ "$target_schema" = "full-stack-monorepo" ]; then
   fi
 fi
 
+# ─── 10. Change YAML Schema — f2-yaml-schema ───────────────────
+# For each change, invoke validate-change-yaml.sh to check
+# .forge.yaml shape against .forge/schemas/change.schema.json plus
+# timeline coherence rules. Skip-guard examples/ honored.
+
+section "Change YAML Schema"
+
+VALIDATOR_F2="$FORGE_ROOT/.forge/scripts/validate-change-yaml.sh"
+if [ -x "$VALIDATOR_F2" ] && [ -d "$CHANGES_DIR" ]; then
+  for change_dir in "$CHANGES_DIR"/*/; do
+    [ -d "$change_dir" ] || continue
+    is_under_examples "$change_dir" && continue
+    yaml="$change_dir.forge.yaml"
+    [ -f "$yaml" ] || continue
+    name="$(basename "$change_dir")"
+    if bash "$VALIDATOR_F2" "$yaml" >/dev/null 2>&1; then
+      pass "$name/.forge.yaml validates against schema"
+    else
+      fail "$name/.forge.yaml schema validation failed"
+      bash "$VALIDATOR_F2" "$yaml" 2>&1 | sed 's/^/      /'
+    fi
+  done
+elif [ ! -x "$VALIDATOR_F2" ]; then
+  warn "validate-change-yaml.sh missing or not executable — skipping schema gate"
+fi
+
 # ─── 9. Open Questions Gate — f1-open-questions ────────────────
 # For each change with status: archived, fail if open-questions.md
 # contains at least one question with `Status: open`. Skip when the

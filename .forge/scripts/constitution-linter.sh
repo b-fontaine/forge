@@ -465,7 +465,14 @@ if [ -d "$CHANGES_DIR" ]; then
         in_fence { next }
         /<!--/ && /-->/ { next }
         /\[NEEDS CLARIFICATION:/ {
-          # Skip when the marker is wrapped in backticks (documentary).
+          # Determine if the marker is inside an inline code span (`...`).
+          # Walk the line: count backticks BEFORE the marker. If odd, the
+          # marker sits between an opening and closing backtick = code span.
+          # Also tolerate the older direct-prefix case (`[NEEDS CLARIFICATION).
+          marker_pos = index($0, "[NEEDS CLARIFICATION")
+          prefix = substr($0, 1, marker_pos - 1)
+          n_backticks = gsub(/`/, "`", prefix)
+          if (n_backticks % 2 == 1) next
           if (index($0, "`[NEEDS CLARIFICATION") > 0) next
           print NR ":"
         }

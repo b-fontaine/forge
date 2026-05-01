@@ -12,23 +12,82 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
-**Module B.1 + G.1 + C.1 + A.7 + B.5.1 + D.5 + B.4 + F.1 closed.**
-Eleven changes accumulated since v0.2.1 (`b1-foundations` →
+**Module B.1 + G.1 + C.1 + A.7 + B.5.1 + D.5 + B.4 + F.1 + F.2 closed.**
+Twelve changes accumulated since v0.2.1 (`b1-foundations` →
 `b1-scaffolder` → `b1-workflow` → `b1-delivery` → `g1-forge-ci` →
 `c1-reference-project` → `a7-forge-upgrade` → `b5-1-init-wizard` →
-`d5-governance` → `b4-mobile-only` → `f1-open-questions`).
+`d5-governance` → `b4-mobile-only` → `f1-open-questions` →
+`f2-yaml-schema`).
 
-251/251 test scenarios PASS across 11 harnesses (foundations 21,
+269/269 test scenarios PASS across 12 harnesses (foundations 21,
 scaffolder L1+L2 21, workflow L1+L2 16, delivery 24, g1 14, c1 30,
-**a7 29**, **b5 17**, **d5 15**, **b4 47**, **f1 17**) ; verify.sh
-84 PASS / 0 FAIL / 1 WARN ; constitution-linter PASS 5 / FAIL 0 /
-N/A 6 OVERALL PASS ; Vitest 56/56.
+**a7 29**, **b5 17**, **d5 15**, **b4 47**, **f1 17**, **f2 18**) ;
+verify.sh 101 PASS / 0 FAIL / 1 WARN ; constitution-linter PASS 5 /
+FAIL 0 / N/A 6 OVERALL PASS ; Vitest 56/56.
 
 **Constitution bumped v1.0.0 → v1.1.0** via amendment #1 (add Article
-XII — Governance ; ratified 2026-04-30). **T2 P1 (Priority-1
-facilitators) + T2 P2 (second archetype) closed ; T3 robustness in
-progress (F.1 done, F.2 + F.4 pending).** Guard-rail "no PR optim →
-main, no v0.3.x release" is now liftable at user discretion.
+XII — Governance ; ratified 2026-04-30). **T2 P1 + T2 P2 closed ;
+T3 robustness in progress (F.1 + F.2 done, F.4 still pending).**
+Guard-rail "no PR optim → main, no v0.3.x release" is now liftable
+at user discretion.
+
+### Added — `f2-yaml-schema` (2026-05-01)
+
+Formal JSON Schema for per-change `.forge.yaml` + standalone
+validator + `verify.sh` gate. Closes Audit Module F.2 (T3
+robustness). Second F-cluster delivery on optim.
+
+- **Schema** — `.forge/schemas/change.schema.json` (JSON Schema
+  Draft 2020-12). Required : `name` (slug pattern), `status` (6-value
+  enum), `created` (ISO 8601), `schema` (archetype enum),
+  `constitution_version` (semver). Optional : `timeline` (per-phase
+  ISO dates), b1-workflow extensions (`layers`, `designs_per_layer`,
+  `tasks_per_layer`), historical extended fields (`parent_audit_items`,
+  `depends_on`, `archived_to`, `schema_promotion`, `promotes_schema`)
+  for backward-compatibility with pre-F.2 archived changes.
+- **Validator** — `.forge/scripts/validate-change-yaml.sh` standalone
+  bash + Python 3 inline (PyYAML stdlib only ; no `jsonschema`
+  dependency, decision Q-001). Phase 1 = schema validation (required,
+  enum, pattern, type, additionalProperties). Phase 2 = timeline
+  coherence (FR-YS-008/009 : `status >= phase` requires
+  `timeline.<phase>` ; `archived` requires the full timeline).
+  Date coercion : unquoted YAML dates (parsed as `datetime.date`) are
+  stringified before pattern check.
+- **`verify.sh` Open Questions Gate** — new section `── Change YAML
+  Schema ──` iterates over `.forge/changes/*/.forge.yaml` and invokes
+  the validator. Skip-guard `examples/` honored.
+- **Backward-compat audit** (ADR-007 — critical step) — validator
+  was run against the 11 pre-F.2 archived changes BEFORE wiring the
+  gate. Initial run flagged 2 systemic issues : (1) PyYAML parses
+  unquoted dates as `datetime.date` not `string` — fixed via
+  date-coercion in the validator ; (2) historical extended fields
+  not in schema — fixed by adding optional schema entries that
+  document these legacy fields. Final result : 11/11 PASS.
+- **Standard** — `.forge/standards/global/change-yaml-schema.md`
+  (5 H2 sections : Purpose, Schema Reference, Required Fields,
+  Timeline Coherence Rules, Extending the Schema). Indexed in
+  `standards/index.yml` with triggers `change.yaml`, `.forge.yaml`,
+  `schema validation`, `JSON Schema`, `status enum`,
+  `timeline coherence`.
+- **Documentation** — `docs/SCHEMA.md` (~95 lines) — required shape,
+  manual validation, common errors with fix recipes, how to add a
+  new archetype to the enum, how to add a new status (Constitution
+  amendment workflow per Article XII).
+- **Harness `f2.test.sh`** — manifest pattern, 13 L1 + 5 L2
+  fixture-based. L2 covers : valid YAML PASS, invalid name (uppercase)
+  FAIL, invalid status (`closed`) FAIL, archived without
+  `timeline.archived` FAIL, all 11 archived changes PASS (NFR-YS-001
+  audit). Drift detector test (`_test_f2_006`) catches schema enum
+  drift when a new archetype is added without a schema bump.
+  Registered in `forge-ci.yml` job `harness` after `f1.test.sh`.
+- **Constitution-linter robustness fix** — improved the "Article
+  III.4 — no NEEDS CLARIFICATION inline" rule to detect markers
+  inside any inline-code-span (\`...\`) on the same line, not only
+  immediately backtick-prefixed. Awk-based backtick parity counter
+  before the marker position. Fixes a documentary false-positive in
+  `f1-open-questions/design.md` line 353.
+- **Spec consolidated** at `.forge/specs/change-yaml-schema.md`
+  (FR-YS-001..022 + NFR-YS-001..004 + 5 BDD scenarios).
 
 ### Added — `f1-open-questions` (2026-05-01)
 
