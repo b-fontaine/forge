@@ -136,8 +136,8 @@ _test_f1_009() {
   # Accept either: a skill file mentions open-questions.md, OR the standard
   # documents the manual creation step.
   local skill_match=0
-  if find "$FORGE_ROOT_REAL/.claude" -name '*.md' -type f 2>/dev/null \
-       | xargs grep -lF 'open-questions.md' 2>/dev/null | head -1 | grep -q .; then
+  if find "$FORGE_ROOT_REAL/.claude" -name '*.md' -type f -print0 2>/dev/null \
+       | xargs -0 grep -lF 'open-questions.md' 2>/dev/null | head -1 | grep -q .; then
     skill_match=1
   fi
   local doc_match=0

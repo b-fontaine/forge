@@ -38,6 +38,12 @@ dependencies:
   # demo-002-greeting-screen — Cubit-based state management
   flutter_bloc: ^9.0.0
 
+  # Article VI dependency injection — get_it is the canonical
+  # Flutter DI registry used across Forge demos. Presence satisfies
+  # the constitution-linter scoped check (`get_it/injectable
+  # declared`).
+  get_it: ^7.7.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

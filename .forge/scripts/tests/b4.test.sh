@@ -23,7 +23,7 @@ for arg in "$@"; do
     --level) shift; ;;
     --level=*) LEVEL="${arg#*=}" ;;
     --require-flutter) REQUIRE_FLUTTER=1 ;;
-    1|2|"1,2"|"1") LEVEL="$arg" ;;
+    1|2|"1,2") LEVEL="$arg" ;;
     *) ;;
   esac
 done

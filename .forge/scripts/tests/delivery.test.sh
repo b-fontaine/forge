@@ -869,12 +869,17 @@ test_env_dev_files_export_otel_defaults() {
 }
 
 test_overlay_diff_size_under_4kb() {
-  # NFR-017 — only meaningful when kustomize is on PATH (L2). At L1
-  # the .tmpl files are pre-substitution and a textual diff is not
-  # equivalent to the rendered diff. SKIP cleanly when kustomize
-  # is missing, marked PASS-with-skip-message.
+  # NFR-017 — only meaningful when kustomize is on PATH AND the
+  # templates have been substituted (i.e. real `kustomization.yaml`
+  # exists, not just `.tmpl`). Framework repo runs against templates
+  # only ; SKIP cleanly. Adopter project (substituted) runs the
+  # diff. (v0.3.0 fix-up.)
   if ! have_kustomize; then
     echo "    SKIP : kustomize not on PATH (test runs in L2 only)" >&2
+    return 0
+  fi
+  if [ ! -f "$K8S_DIR/base/kustomization.yaml" ]; then
+    echo "    SKIP : templates not substituted (framework repo only has .tmpl)" >&2
     return 0
   fi
   local dev_out prod_out

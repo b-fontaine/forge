@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Forge — Shared Test Helpers
 # <!-- Audit: B.1 (b1-scaffolder — extracted from b1-foundations foundations.test.sh) -->
 #
