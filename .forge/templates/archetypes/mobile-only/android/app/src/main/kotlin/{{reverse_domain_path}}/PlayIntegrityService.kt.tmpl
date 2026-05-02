@@ -1,0 +1,49 @@
+package {{reverse_domain}}
+
+// <!-- Audit: B.4 (b4-mobile-only, FR-MO-016) -->
+// Bridges Dart (DeviceAttestor) to Google Play Integrity API. Registers
+// MethodChannel "forge.attestation/play_integrity".
+
+import com.google.android.play.core.integrity.IntegrityManager
+import com.google.android.play.core.integrity.IntegrityManagerFactory
+import com.google.android.play.core.integrity.IntegrityTokenRequest
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodChannel
+
+class PlayIntegrityService(engine: FlutterEngine, applicationContext: android.content.Context) {
+    companion object {
+        const val CHANNEL_NAME = "forge.attestation/play_integrity"
+    }
+
+    private val integrityManager: IntegrityManager =
+        IntegrityManagerFactory.create(applicationContext)
+
+    init {
+        val channel = MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL_NAME)
+        channel.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "isSupported" -> result.success(true)
+                "requestIntegrityToken" -> {
+                    val nonce = call.argument<String>("nonce")
+                    if (nonce == null) {
+                        result.error("BAD_ARGS", "missing nonce", null)
+                        return@setMethodCallHandler
+                    }
+                    requestToken(nonce, result)
+                }
+                else -> result.notImplemented()
+            }
+        }
+    }
+
+    private fun requestToken(nonce: String, result: MethodChannel.Result) {
+        val request = IntegrityTokenRequest.builder()
+            .setNonce(nonce)
+            .build()
+        integrityManager.requestIntegrityToken(request)
+            .addOnSuccessListener { response -> result.success(response.token()) }
+            .addOnFailureListener { e ->
+                result.error("INTEGRITY_FAILED", e.message, null)
+            }
+    }
+}

@@ -1,0 +1,33 @@
+// <!-- Audit: B.4 (b4-mobile-only, FR-MO-010) -->
+// Entry point. Wires global initialisations BEFORE runApp:
+//   1. Flutter binding
+//   2. BlocObserver (transitions logged at debug only)
+//   3. OpenTelemetry SDK init (Article IX)
+//   4. SecureStorageAdapter availability check
+//
+// All business logic lives in lib/app.dart (DI graph + widget root).
+
+import 'dart:async';
+import 'dart:developer' as dev;
+
+import 'package:flutter/widgets.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'app.dart';
+import 'observability/otel_init.dart';
+
+class _LoggingBlocObserver extends BlocObserver {
+  @override
+  void onChange(BlocBase<dynamic> bloc, Change<dynamic> change) {
+    super.onChange(bloc, change);
+    dev.log('${bloc.runtimeType}: ${change.nextState.runtimeType}',
+        name: 'bloc');
+  }
+}
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  Bloc.observer = _LoggingBlocObserver();
+  await initOtel();
+  runApp(const App());
+}

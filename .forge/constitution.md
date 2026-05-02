@@ -1,8 +1,8 @@
 # Forge Constitution
 
-**Version**: v1.0.0  
+**Version**: v1.1.0  
 **Status**: Ratified  
-**Effective**: 2026-04-08
+**Effective**: 2026-04-08 (v1.0.0), 2026-04-30 (v1.1.0)
 
 ---
 
@@ -432,11 +432,45 @@ AI features MUST NOT send personally identifiable information (PII) to external 
 
 ---
 
+## Article XII — Governance
+
+The operational governance of the Forge project — including who serves as
+maintainer, how amendments to this Constitution are ratified, how releases
+are published, and how the Code of Conduct is enforced — is defined in
+[`GOVERNANCE.md`](../GOVERNANCE.md) at the repository root.
+
+`GOVERNANCE.md` is the **single source of truth** for the project's
+operational rules. This Article delegates authority to it on the following
+specific points:
+
+- The Process Gates of Article V are franchies by the roles defined in
+  `GOVERNANCE.md` (BDFL or maintainer committee, depending on the active
+  governance phase).
+- Constitution amendments MUST follow the formal process documented in
+  `GOVERNANCE.md` § "Amendment Process", including the minimum 7-day
+  public discussion window.
+- Any structural evolution of the governance model itself (e.g.
+  transitioning from BDFL to maintainer committee, adjusting the discussion
+  window, changing the veto rules) MUST go through the same Amendment
+  Process and MUST be recorded in this Constitution's `## Amendments`
+  table.
+- Operational evolutions that do **not** alter governance principles
+  (appointing a new co-maintainer, updating contact channels, refining the
+  release checklist) can land via a regular PR to `GOVERNANCE.md` without
+  a Constitution amendment.
+
+This Article preserves the long-standing rule that the Constitution defines
+**principles** while `GOVERNANCE.md` defines **procedures**. A future
+maintainer cannot dilute Constitutional guarantees by routing them through
+`GOVERNANCE.md` updates.
+
+---
+
 ## Amendments
 
 | Amendment | Date | Description | Ratified By |
 |-----------|------|-------------|-------------|
-| — | — | No amendments yet | — |
+| 1 | 2026-04-30 | Add Article XII — Governance. Establish GOVERNANCE.md and CODE_OF_CONDUCT.md (Contributor Covenant v2.1). | Benoit Fontaine (BDFL) |
 
 ---
 

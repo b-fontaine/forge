@@ -1,0 +1,25 @@
+# Forge — shellcheck configuration
+# <!-- Audit: v0.3.0 release prep — CI fix-up. -->
+#
+# Disabled rules and their rationale :
+#
+# SC2034 (variable appears unused) :
+#   Test harnesses (.forge/scripts/tests/*.test.sh) define counters
+#   like PASS, FAIL, FAIL_NAMES that are populated by sourced helpers
+#   (`_helpers.sh`). Shellcheck cannot follow the source-time
+#   relationship and flags them as unused. Other state vars (e.g.
+#   FORGE_ROOT_REAL, TARGET_DIR) are used by helper functions defined
+#   later or by external sourcing.
+#
+# SC2064 (use single quotes for trap) :
+#   Many tests use `trap "rm -rf '$tmp'" RETURN` where the early
+#   expansion of $tmp is INTENTIONAL — the trap captures the value
+#   at trap-set time, before the local var goes out of scope. Single
+#   quotes would defer expansion until trap-fire time, by which point
+#   $tmp is unbound. The current pattern is correct ; shellcheck's
+#   default warning is a false positive here.
+#
+# Both rules can be re-enabled in the future via a follow-up F.5+
+# change after a systematic audit / per-file disable= directives.
+
+disable=SC2034,SC2064

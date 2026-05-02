@@ -1,0 +1,30 @@
+# <!-- Audit: B.1.12 (b1-delivery, FR-IN-006) -->
+# Dev overlay — single replica, lowest resource budget, image
+# pulled from local registry stub. Standard:
+# .forge/standards/infra/k8s-overlays.md
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: <project-name>-dev
+
+resources:
+  - ../../base
+
+images:
+  - name: <project-name>-backend
+    newTag: dev-latest
+
+replicas:
+  - name: <project-name>-backend
+    count: 1
+
+commonAnnotations:
+  forge.io/managed-by: forge
+  forge.io/overlay: dev
+  forge.io/project: <project-name>
+
+configMapGenerator:
+  - name: backend-env
+    literals:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector.<project-name>-dev.svc.cluster.local:4317
+      - APP_ENV=dev

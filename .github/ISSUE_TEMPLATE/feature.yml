@@ -1,0 +1,86 @@
+name: Feature request
+description: Propose a new capability for Forge (new command, agent, standard, template, archetype, etc.).
+title: "[feat] "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Forge is built by its own pipeline. Feature proposals translate into
+        an eventual `.forge/changes/<name>/proposal.md`. The fields below
+        mirror the proposal template so triage is fast.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user pain or framework gap does this address? Why does it matter now?
+      placeholder: |
+        Current situation: ...
+        Pain point: ...
+        Cost of not solving: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: High-level description. One paragraph. No implementation details yet.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface area
+      multiple: true
+      options:
+        - New slash command
+        - New agent
+        - New standard
+        - New schema
+        - New template
+        - New archetype
+        - CLI enhancement
+        - Installer enhancement
+        - Docker image enhancement
+        - Constitution amendment
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What simpler paths did you rule out, and why?
+
+  - type: textarea
+    id: constitution
+    attributes:
+      label: Constitution impact
+      description: |
+        Does this feature require amending the Constitution? If yes, which articles?
+        (See `.forge/constitution.md` for the current text.)
+      placeholder: "No amendment needed / Article X requires clarification / Article XI needs new clause ..."
+
+  - type: textarea
+    id: success
+    attributes:
+      label: Success criteria
+      description: How will we know the feature is correctly delivered? Prefer observable, testable outcomes.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+
+  - type: checkboxes
+    id: precheck
+    attributes:
+      label: Pre-submission checklist
+      options:
+        - label: I searched existing issues and roadmap items and did not find a duplicate.
+          required: true
+        - label: I have read `docs/VERSIONING.md` and understand this may require a MAJOR/MINOR bump.
+          required: true

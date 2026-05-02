@@ -1,0 +1,19 @@
+name: a7-forge-upgrade
+status: archived
+created: 2026-04-30
+schema: default
+constitution_version: 1.0.0
+parent_audit_items:
+- A.7
+depends_on:
+- b1-foundations
+- b1-scaffolder
+- b1-delivery
+- c1-reference-project
+timeline:
+  proposed: 2026-04-30
+  specified: 2026-04-30
+  designed: 2026-04-30
+  planned: 2026-04-30
+  implemented: '2026-04-30'
+  archived: '2026-04-30'

@@ -1,0 +1,107 @@
+name: Bug report
+description: Something in the Forge framework or its tooling is behaving incorrectly.
+title: "[bug] "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug.
+
+        Before filing, please confirm the bug is in **Forge itself**, not in a
+        project that happens to use Forge. If in doubt, check by reproducing
+        against a fresh `/forge:init`.
+
+        For security issues, **do not open a public issue** — use the private
+        channel described in [SECURITY.md](../../SECURITY.md).
+
+  - type: input
+    id: version
+    attributes:
+      label: Forge version
+      description: Contents of the `VERSION` file (or `npx @sdd-forge/cli version`).
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected component
+      multiple: true
+      options:
+        - CLI (@sdd-forge/cli)
+        - Installer (bin/forge-install.sh)
+        - Docker image (forge/linter)
+        - Deterministic script (verify.sh)
+        - Deterministic script (constitution-linter.sh)
+        - Slash command (.claude/commands/forge/*)
+        - Agent prompt (.claude/agents/**)
+        - Standard (.forge/standards/**)
+        - Schema (.forge/schemas/**)
+        - Template (.forge/templates/**)
+        - Constitution (.forge/constitution.md)
+        - Documentation (docs/**, README.md)
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Minimal, deterministic reproduction. Include exact commands.
+      placeholder: |
+        1. Run `...`
+        2. Observe that `...`
+        3. Expected `...`, got `...`
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include relevant output, stack traces, or logs (redact secrets).
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "macOS 14.5 / Ubuntu 22.04 / Windows 11"
+    validations:
+      required: true
+
+  - type: input
+    id: node
+    attributes:
+      label: Node.js version (if CLI-related)
+      placeholder: "v20.12.0"
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Anything else that might help — links to related issues, screenshots, workarounds already attempted.
+
+  - type: checkboxes
+    id: precheck
+    attributes:
+      label: Pre-submission checklist
+      options:
+        - label: I searched existing issues and did not find a duplicate.
+          required: true
+        - label: This is a bug in Forge itself, not in my project's code.
+          required: true
+        - label: This is not a security vulnerability (security issues go through [SECURITY.md](../../SECURITY.md)).
+          required: true

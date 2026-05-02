@@ -1,0 +1,17 @@
+// <!-- Audit: B.4 (b4-mobile-only) -->
+// Phase A skeleton — Phase B will register AppAttestService MethodChannel.
+
+import UIKit
+import Flutter
+
+@main
+@objc class AppDelegate: FlutterAppDelegate {
+  override func application(
+    _ application: UIApplication,
+    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+  ) -> Bool {
+    GeneratedPluginRegistrant.register(with: self)
+    // Phase B: AppAttestService.register(controller: window?.rootViewController as! FlutterViewController)
+    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+}

@@ -1,0 +1,40 @@
+# <!-- Audit: B.4 (b4-mobile-only, FR-MO-038, ADR-014) -->
+#
+# Per-archetype overlay of `framework-owned-paths.yml`. This file is
+# scaffolded into the adopter project and supplements the framework-side
+# defaults inherited from `.forge/framework-owned-paths.yml` of the
+# Forge repo. The `forge upgrade` 3-way merge consumes the union of
+# both files at the project root.
+#
+# What lives under "owned" here are paths SPECIFIC to the mobile-only
+# archetype that the framework manages on behalf of the adopter (i.e.
+# template upgrades will 3-way-merge these files). Adopter customizations
+# in these files are preserved by the merge but new framework-side
+# changes propagate through.
+
+owned:
+  # OIDC config — adopter customizes the issuer/clientId/redirectUri,
+  # but framework-side schema (class shape, defaultConfig presence) is
+  # owned and merged.
+  - "lib/infrastructure/auth/oidc_config.dart"
+  # Observability — OTel init template ; adopter overrides endpoint at
+  # runtime via env. The init shape itself is framework-owned.
+  - "lib/observability/otel_init.dart"
+  # Native bridges — adopter rarely touches these ; framework owns the
+  # MethodChannel contract.
+  - "ios/Runner/AppAttestService.swift"
+  - "android/app/src/main/kotlin/**/PlayIntegrityService.kt"
+  # Fastlane skeleton — lanes are owned ; secrets stay in ENV (gitignored).
+  - "ios/fastlane/Fastfile"
+  - "ios/fastlane/Matchfile"
+  - "android/fastlane/Fastfile"
+  # CI workflow.
+  - ".github/workflows/mobile-ci.yml"
+
+excluded:
+  # Adopter-specific config that the framework MUST never overwrite.
+  - "ios/fastlane/Appfile"
+  - "android/fastlane/Appfile"
+  - ".envrc"
+  - "ios/Runner/Info.plist"  # adopter-tuned bundle metadata after first scaffold
+  - "android/app/src/main/AndroidManifest.xml"  # adopter adds permissions

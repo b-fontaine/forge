@@ -1,0 +1,56 @@
+# <!-- Audit: B.4 (b4-mobile-only, FR-MO-030, FR-MO-031, FR-MO-032) -->
+# Fastlane lanes for {{project_name}} (iOS).
+# All secrets MUST flow through ENV[...] — see .envrc.example at repo root.
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Build & upload to TestFlight"
+  lane :beta do
+    setup_ci if ENV["CI"]
+    match(
+      type: "appstore",
+      readonly: true,
+      git_basic_authorization: ENV["MATCH_GIT_BASIC_AUTHORIZATION"],
+      keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"],
+    )
+    build_app(
+      scheme: "Runner",
+      export_method: "app-store",
+      output_directory: "build/ios",
+    )
+    upload_to_testflight(
+      api_key_path: ENV["APP_STORE_CONNECT_API_KEY_PATH"],
+      skip_waiting_for_build_processing: true,
+    )
+  end
+
+  desc "Build & upload to App Store (manual release)"
+  lane :release do
+    setup_ci if ENV["CI"]
+    match(type: "appstore", readonly: true)
+    build_app(
+      scheme: "Runner",
+      export_method: "app-store",
+      output_directory: "build/ios",
+    )
+    upload_to_app_store(
+      api_key_path: ENV["APP_STORE_CONNECT_API_KEY_PATH"],
+      submit_for_review: false,
+      automatic_release: false,
+      skip_screenshots: true,
+      skip_metadata: true,
+    )
+  end
+
+  desc "Generate App Store screenshots via snapshot"
+  lane :screenshots do
+    snapshot
+  end
+
+  desc "Initial setup of `match` repo (run once per machine)"
+  lane :match_setup do
+    match(type: "development", readonly: false)
+    match(type: "appstore", readonly: false)
+  end
+end

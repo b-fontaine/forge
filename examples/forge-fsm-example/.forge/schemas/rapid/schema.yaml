@@ -1,0 +1,39 @@
+# Forge Rapid Schema
+name: rapid
+version: "1.0.0"
+description: Minimal workflow for quick iterations and prototypes (TDD still enforced)
+
+tdd_enforced: true  # TDD is ALWAYS enforced, even in rapid mode
+bdd_required_for_user_facing: true  # Still required for user-facing features
+coverage_threshold: 80  # Still enforced
+
+phases:
+  - id: proposal
+    artifact: proposal.md
+    format: minimal  # Shorter format: problem + solution + scope only
+    gate: constitution_compliance
+
+  - id: tasks  # SKIPPED: specs and design combined into tasks directly
+    artifact: tasks.md
+    format: minimal_tdd  # Tasks include inline acceptance criteria
+    gate: tdd_order_check
+
+  - id: implementation
+    protocol: tdd_cycle  # Unchanged — still RED→GREEN→REFACTOR
+    agent: auto_route
+
+  - id: review
+    agents: [Nemesis, Tribune]  # Aegis skipped for speed (add for production)
+    checks:
+      - coverage
+      - clippy_or_analyze
+      - basic_architecture
+
+  - id: archive
+    merges: tasks.md notes into .forge/specs/rapid-decisions.md
+
+warnings:
+  - "Rapid schema skips formal spec/design phases. Technical debt risk is higher."
+  - "Use for: prototypes, internal tools, time-boxed spikes."
+  - "Do NOT use for: production features, security-sensitive code, multi-team work."
+  - "TDD is NEVER optional, even in rapid mode."

@@ -1,0 +1,112 @@
+// <!-- Audit: B.4 (b4-mobile-only, FR-MO-018) -->
+import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'package:{{project_name}}/domain/auth/auth_repository.dart';
+import 'package:{{project_name}}/domain/auth/auth_token.dart';
+
+// ─── Events ─────────────────────────────────────────────────────────────
+
+abstract class AuthEvent extends Equatable {
+  const AuthEvent();
+  @override
+  List<Object?> get props => [];
+}
+
+class AuthLoginRequested extends AuthEvent {
+  const AuthLoginRequested();
+}
+
+class AuthLogoutRequested extends AuthEvent {
+  const AuthLogoutRequested();
+}
+
+class AuthTokenRefreshRequested extends AuthEvent {
+  const AuthTokenRefreshRequested();
+}
+
+class AuthBiometricUnlockRequested extends AuthEvent {
+  const AuthBiometricUnlockRequested();
+}
+
+// ─── States ─────────────────────────────────────────────────────────────
+
+abstract class AuthState extends Equatable {
+  const AuthState();
+  @override
+  List<Object?> get props => [];
+}
+
+class AuthInitial extends AuthState {
+  const AuthInitial();
+}
+
+class AuthLoading extends AuthState {
+  const AuthLoading();
+}
+
+class AuthAuthenticated extends AuthState {
+  final AuthToken token;
+  const AuthAuthenticated(this.token);
+  @override
+  List<Object?> get props => [token];
+}
+
+class AuthUnauthenticated extends AuthState {
+  const AuthUnauthenticated();
+}
+
+class AuthError extends AuthState {
+  final String message;
+  const AuthError(this.message);
+  @override
+  List<Object?> get props => [message];
+}
+
+// ─── Bloc ───────────────────────────────────────────────────────────────
+
+class AuthBloc extends Bloc<AuthEvent, AuthState> {
+  final AuthRepository _repository;
+
+  AuthBloc({required AuthRepository repository})
+      : _repository = repository,
+        super(const AuthInitial()) {
+    on<AuthLoginRequested>(_onLogin);
+    on<AuthLogoutRequested>(_onLogout);
+    on<AuthTokenRefreshRequested>(_onRefresh);
+    on<AuthBiometricUnlockRequested>(_onBiometricUnlock);
+  }
+
+  Future<void> _onLogin(AuthLoginRequested event, Emitter<AuthState> emit) async {
+    emit(const AuthLoading());
+    try {
+      final token = await _repository.login();
+      emit(AuthAuthenticated(token));
+    } catch (e) {
+      emit(AuthError('Login failed: ${e.runtimeType}'));
+    }
+  }
+
+  Future<void> _onLogout(AuthLogoutRequested event, Emitter<AuthState> emit) async {
+    await _repository.logout();
+    emit(const AuthUnauthenticated());
+  }
+
+  Future<void> _onRefresh(AuthTokenRefreshRequested event, Emitter<AuthState> emit) async {
+    final current = await _repository.getCurrentToken();
+    if (current == null) {
+      emit(const AuthUnauthenticated());
+    } else {
+      emit(AuthAuthenticated(current));
+    }
+  }
+
+  Future<void> _onBiometricUnlock(
+    AuthBiometricUnlockRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    // Biometric outcome is observed by BiometricLockWidget; the bloc
+    // simply re-validates the persisted session afterwards.
+    add(const AuthTokenRefreshRequested());
+  }
+}

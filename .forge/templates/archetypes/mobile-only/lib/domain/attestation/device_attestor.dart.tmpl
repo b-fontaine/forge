@@ -1,0 +1,16 @@
+// <!-- Audit: B.4 (b4-mobile-only, FR-MO-025) -->
+// Cross-platform device-attestation contract. Implementations live in
+// lib/infrastructure/attestation/ — iOS App Attest, Android Play Integrity,
+// or a deterministic fake for tests.
+
+abstract class DeviceAttestor {
+  /// True iff the platform supports attestation.
+  /// iOS: requires iOS 14+ (DCAppAttestService.isSupported).
+  /// Android: requires Google Play Services + Play Integrity API.
+  Future<bool> isSupported();
+
+  /// Request a fresh attestation token for the given nonce. The nonce
+  /// MUST be supplied by the backend (or a fresh random value) to bind
+  /// the token to a specific request.
+  Future<String> requestAttestationToken({required String nonce});
+}

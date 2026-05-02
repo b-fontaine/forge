@@ -1,0 +1,30 @@
+// <!-- Audit: B.4 (b4-mobile-only, FR-MO-027) -->
+// Android Play Integrity implementation. Communicates with
+// android/.../PlayIntegrityService.kt via the MethodChannel
+// `forge.attestation/play_integrity`.
+
+import 'package:flutter/services.dart';
+
+import 'package:{{project_name}}/domain/attestation/device_attestor.dart';
+
+class AndroidPlayIntegrityAttestor implements DeviceAttestor {
+  static const _channel = MethodChannel('forge.attestation/play_integrity');
+
+  @override
+  Future<bool> isSupported() async {
+    final r = await _channel.invokeMethod<bool>('isSupported');
+    return r ?? false;
+  }
+
+  @override
+  Future<String> requestAttestationToken({required String nonce}) async {
+    final r = await _channel.invokeMethod<String>(
+      'requestIntegrityToken',
+      {'nonce': nonce},
+    );
+    if (r == null) {
+      throw StateError('Play Integrity returned null token');
+    }
+    return r;
+  }
+}

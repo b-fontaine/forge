@@ -1,0 +1,2 @@
+# Domain layer — entities, repository interfaces, use cases.
+# Phase B will populate auth/, attestation/, biometric/.

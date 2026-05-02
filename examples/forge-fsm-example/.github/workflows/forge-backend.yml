@@ -1,0 +1,83 @@
+# <!-- Audit: B.1.9 (b1-delivery, FR-IN-002) -->
+# Reference per-layer backend CI workflow for the full-stack-monorepo
+# archetype. Standard: .forge/standards/infra/ci-workflows.md
+#
+# Triggers on `pull_request` and `push` to the default branch.
+# Uses dorny/paths-filter@v3 to scope to backend/** + shared/protos/**.
+# Step ordering: cargo fmt → clippy → test → verify.sh → linter.sh.
+# Failure of any step fails the workflow (no continue-on-error).
+
+name: forge-backend
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: forge-backend-forge-fsm-example-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  filter:
+    name: Detect backend changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.changes.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - 'shared/protos/**'
+
+  build:
+    name: Backend build + gates
+    needs: filter
+    if: needs.filter.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache cargo registry + git + target
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            backend/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('backend/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: cargo fmt --check
+        run: cargo fmt --all -- --check
+
+      - name: cargo clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: cargo test
+        run: cargo test --workspace
+
+      - name: verify.sh
+        working-directory: ${{ github.workspace }}
+        run: bash .forge/scripts/verify.sh
+
+      - name: constitution-linter.sh
+        working-directory: ${{ github.workspace }}
+        run: bash .forge/scripts/constitution-linter.sh

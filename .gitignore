@@ -1,0 +1,24 @@
+# OMC runtime state — per-session journals + working state, never committed
+.omc/sessions/
+.omc/state/
+
+# Local Claude settings overrides
+.claude/settings.local.json
+
+# OS
+.DS_Store
+
+# c1-reference-project — example tree build artefacts (FR-GL-028).
+# Each example tree under examples/* ships its own per-language
+# .gitignore for fine-grained ignores ; these patterns guarantee no
+# build output ever reaches the Forge repo.
+examples/*/build/
+examples/*/target/
+examples/*/cli/
+examples/*/node_modules/
+examples/*/.dart_tool/
+examples/*/.cargo/
+examples/*/coverage/
+
+# a7-forge-upgrade — session-only conflict listing, never committed (FR-UP-012)
+.merge-conflicts

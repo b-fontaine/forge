@@ -1,0 +1,11 @@
+# <!-- Audit: B.1.2 (part of b1-scaffolder, rust-toolchain pin) -->
+#
+# Pins the Rust stable channel for this workspace. No patch version is
+# pinned so `rustup update` keeps flowing bug fixes. Adopters MAY change
+# this to a specific pin (e.g. "1.82") or switch to nightly if they need
+# unstable features — document the change in backend/CLAUDE.md.
+
+[toolchain]
+channel = "stable"
+components = ["rustfmt", "clippy"]
+profile = "minimal"

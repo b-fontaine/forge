@@ -1,0 +1,20 @@
+name: c1-reference-project
+status: archived
+created: 2026-04-29
+schema: default
+constitution_version: "1.0.0"
+parent_audit_items:
+  - C.1  # First public reference project scaffolded via /forge:init --archetype full-stack-monorepo, with 3-5 archived changes demonstrating the full pipeline
+depends_on:
+  - b1-foundations  # archived 2026-04-21
+  - b1-scaffolder   # archived 2026-04-22
+  - b1-workflow     # archived 2026-04-23
+  - b1-delivery     # archived 2026-04-29 — schema STABLE 1.0.0
+  - g1-forge-ci     # archived 2026-04-29 — adopters expect Forge to dog-food its own CI
+timeline:
+  proposed: 2026-04-29
+  specified: 2026-04-29
+  designed: 2026-04-29
+  planned: 2026-04-30
+  implemented: 2026-04-30
+  archived: 2026-04-30

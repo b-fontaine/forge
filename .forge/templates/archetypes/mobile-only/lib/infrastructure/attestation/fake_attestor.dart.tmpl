@@ -1,0 +1,17 @@
+// <!-- Audit: B.4 (b4-mobile-only, FR-MO-026, FR-MO-027) -->
+// Test-friendly fake. Returns a deterministic token derived from the nonce.
+// Use it via DI in unit tests, integration tests, and emulator runs without
+// Play Services. NEVER inject this in production builds — log a warning if
+// you do.
+
+import 'package:{{project_name}}/domain/attestation/device_attestor.dart';
+
+class FakeAttestor implements DeviceAttestor {
+  @override
+  Future<bool> isSupported() async => true;
+
+  @override
+  Future<String> requestAttestationToken({required String nonce}) async {
+    return 'fake-attestation-token::$nonce';
+  }
+}

@@ -1,0 +1,133 @@
+# <!-- Audit: B.4 (b4-mobile-only, FR-MO-033, FR-MO-034, FR-MO-035) -->
+# CI workflow for {{project_name}} mobile-only Flutter app.
+# Adopter MAY tune Flutter version + cache strategy ; the structural
+# contract (ios + android + summary + opt-in e2e) MUST be preserved.
+
+name: mobile-ci
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "lib/**"
+      - "ios/**"
+      - "android/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - ".github/workflows/mobile-ci.yml"
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      run-e2e:
+        description: "Run integration_test on Android emulator"
+        required: false
+        default: "false"
+
+concurrency:
+  group: mobile-ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  ios:
+    name: iOS — analyze + test + build (no codesign)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Cache pub
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            pub-${{ runner.os }}-
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test --no-pub
+      - run: flutter build ios --no-codesign --release
+
+  android:
+    name: Android — analyze + test (coverage 70%) + build apk
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Cache pub
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            pub-${{ runner.os }}-
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test --coverage --no-pub
+      - name: Coverage threshold (70%)
+        run: |
+          THRESHOLD=70
+          if ! command -v lcov >/dev/null 2>&1; then
+            sudo apt-get update -qq && sudo apt-get install -y lcov
+          fi
+          coverage_pct=$(lcov --summary coverage/lcov.info 2>/dev/null \
+            | awk '/lines\.\.\.\.\.\.\.\.\.\./ {gsub("%",""); print $2}')
+          echo "Lines coverage: ${coverage_pct}%"
+          awk -v c="$coverage_pct" -v t="$THRESHOLD" 'BEGIN {exit (c+0 >= t) ? 0 : 1}'
+      - run: flutter build apk --debug
+
+  e2e-android:
+    name: E2E — integration_test on Android emulator (opt-in)
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.run-e2e == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Run integration tests on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          script: flutter test integration_test --no-pub
+
+  summary:
+    name: mobile-ci summary (required check)
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [ios, android]
+    steps:
+      - name: Aggregate results
+        env:
+          IOS_RESULT: ${{ needs.ios.result }}
+          ANDROID_RESULT: ${{ needs.android.result }}
+        run: |
+          set -e
+          declare -A results
+          results[ios]="$IOS_RESULT"
+          results[android]="$ANDROID_RESULT"
+          fail=0
+          for k in "${!results[@]}"; do
+            r="${results[$k]}"
+            echo "  $k: $r"
+            if [ "$r" != "success" ] && [ "$r" != "skipped" ]; then
+              fail=1
+            fi
+          done
+          exit $fail

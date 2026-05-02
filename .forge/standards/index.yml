@@ -79,7 +79,7 @@ standards:
 
   - id: flutter/dependency-injection
     path: standards/flutter/dependency-injection.md
-    triggers: [get_it, injectable, di, dependency injection, @injectable, @singleton, @lazySingleton, getIt, locator]
+    triggers: [get_it, injectable, di, dependency injection, "@injectable", "@singleton", "@lazySingleton", getIt, locator]
     scope: flutter
     priority: high
 
@@ -240,5 +240,90 @@ standards:
   - id: global/test-strategy
     path: standards/global/test-strategy.md
     triggers: [test strategy, test pyramid, mutation testing, flaky test, test data, contract testing, load testing, test environment, coverage analysis]
+    scope: all
+    priority: high
+
+  # Monorepo Standards (full-stack-monorepo archetype — b1-foundations)
+  - id: global/monorepo-layout
+    path: standards/global/monorepo-layout.md
+    triggers: [monorepo, full-stack, full-stack-monorepo, layers, multi-layer, nested CLAUDE.md, FR-BE-, FR-FE-, FR-IN-, FR-GL-]
+    scope: monorepo
+    priority: high
+
+  - id: global/proto-contracts
+    path: standards/global/proto-contracts.md
+    triggers: [proto, protos, buf, grpc, protobuf, tonic-build, protoc_plugin, buf.yaml, contract, breaking change, shared/protos]
+    scope: protos
+    priority: high
+
+  - id: infra/docker-compose
+    path: standards/infra/docker-compose.md
+    triggers: [docker-compose, docker-compose.dev.yml, local-dev, compose, fsm-, healthcheck, .env.example, fsm-dev]
+    scope: infra
+    priority: medium
+
+  - id: infra/ci-workflows
+    path: standards/infra/ci-workflows.md
+    triggers: [ci, github actions, workflow, paths-filter, dorny, gate, integration, nightly, forge-backend, forge-frontend, forge-infra, forge-integration]
+    scope: infra
+    priority: high
+
+  - id: infra/k8s-overlays
+    path: standards/infra/k8s-overlays.md
+    triggers: [kustomize, overlay, kubernetes, k8s, deployment, namespace, replicas, hpa, ingress, base, dev, staging, prod, kubeconform]
+    scope: infra
+    priority: high
+
+  - id: infra/observability-local
+    path: standards/infra/observability-local.md
+    triggers: [observability, otel, opentelemetry, signoz, traces, metrics, logs, otlp, collector, clickhouse, fsm-otel-collector, fsm-signoz]
+    scope: infra
+    priority: high
+
+  - id: global/multi-layer-workflow
+    path: standards/global/multi-layer-workflow.md
+    triggers: [multi-layer, janus, cross-layer, "layers:", layers count, designs_per_layer, tasks_per_layer, cross-layer contract, multi-root verify]
+    scope: monorepo
+    priority: high
+
+  - id: global/forge-self-ci
+    path: standards/global/forge-self-ci.md
+    triggers: [forge-ci, self-ci, branch protection, dog-fooding, summary status, ludeeus, shellcheck, forge-ci.yml, .nvmrc]
+    scope: meta
+    priority: medium
+
+  - id: global/upgrade-policy
+    path: standards/global/upgrade-policy.md
+    triggers: [upgrade, forge upgrade, merge, framework-owned, archetype_version, upgrade_history, scaffold-snapshot, three-way merge, NEEDS MIGRATION]
+    scope: all
+    priority: high
+
+  - id: global/scaffolding
+    path: standards/global/scaffolding.md
+    triggers: [init, forge init, wizard, archetype, dispatch-table, --auto, --wizard, NEEDS DECISION, scaffolder ABI]
+    scope: all
+    priority: high
+
+  - id: global/flutter-mobile
+    path: standards/global/flutter-mobile.md
+    triggers: [flutter mobile, mobile-only, ios, android, oidc, flutter_appauth, flutter_secure_storage, local_auth, biometric, app attest, play integrity, fastlane, "minSdk", "MinimumOSVersion", FlutterFragmentActivity, "lib/", "ios/", "android/"]
+    scope: app
+    priority: high
+
+  - id: global/open-questions
+    path: standards/global/open-questions.md
+    triggers: [open-questions, open questions, NEEDS CLARIFICATION, "Q-001", clarification, anti-hallucination, "Article III.4", forge-questions.sh]
+    scope: all
+    priority: high
+
+  - id: global/change-yaml-schema
+    path: standards/global/change-yaml-schema.md
+    triggers: ["change.yaml", ".forge.yaml", "schema validation", "JSON Schema", "status enum", "timeline coherence", validate-change-yaml]
+    scope: all
+    priority: high
+
+  - id: global/linting-rules
+    path: standards/global/linting-rules.md
+    triggers: [linting, constitution-linter, linter rules, public API doc, fallback test, GenUI schema, audit trail, FORGE_LINTER_SKIP, FORGE_LINTER_X3_THRESHOLD]
     scope: all
     priority: high

@@ -1,0 +1,19 @@
+name: b1-foundations
+status: archived
+created: 2026-04-21
+schema: default
+constitution_version: "1.0.0"
+parent_audit_items:
+  - B.1.1  # schema full-stack-monorepo
+  - B.1.5  # new standards (monorepo-layout, proto-contracts, docker-compose)
+  - B.1.10 # Conventional Commits scoped (git-workflow enrichment)
+  - B.1.11 # versioning strategy (release-train vs per-package)
+archived_to:
+  - .forge/specs/full-stack-monorepo.md  # 8 ADDED requirements (FR-GL-001..008) + 4 NFRs
+timeline:
+  proposed: 2026-04-21
+  specified: 2026-04-21
+  designed: 2026-04-21
+  planned: 2026-04-21
+  implemented: 2026-04-21
+  archived: 2026-04-21

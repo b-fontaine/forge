@@ -1,0 +1,16 @@
+# <!-- Audit: B.4 (b4-mobile-only) -->
+# Forge Root Configuration for {{project_name}}.
+# This file configures the Forge framework for the current project.
+# See .forge/schemas/mobile-only/schema.yaml for the archetype contract.
+
+schema: mobile-only
+schema_version: "1.0.0"
+constitution_version: "1.1.0"
+
+# Single-layer archetype: the project root IS the Flutter app.
+layers:
+  - id: app
+    path: .
+
+# Versioning: per-package by default (mobile apps version their store releases independently).
+versioning_model: per-package

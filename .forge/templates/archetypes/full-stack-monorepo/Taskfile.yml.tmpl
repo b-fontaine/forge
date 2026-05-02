@@ -1,0 +1,127 @@
+# <!-- Audit: B.1.13 (part of b1-scaffolder, Taskfile canonical) -->
+
+version: '3'
+
+vars:
+  PROJECT_NAME: <project-name>
+  COMPOSE_DEV: docker-compose.dev.yml
+  COMPOSE_E2E: docker-compose.e2e.yml
+  PROTO_DIR: shared/protos
+
+# ── Dev ──────────────────────────────────────────────────────────────────────
+
+tasks:
+  dev:
+    desc: "Start local dev stack (compose)"
+    cmds:
+      - docker-compose -f {{.COMPOSE_DEV}} up -d
+
+  dev:up:
+    desc: "Start local dev stack (compose) — alias of dev"
+    cmds:
+      - docker-compose -f {{.COMPOSE_DEV}} up -d
+
+  dev:down:
+    desc: "Stop local dev stack"
+    cmds:
+      - docker-compose -f {{.COMPOSE_DEV}} down
+
+# ── Observability ────────────────────────────────────────────────────────────
+# <!-- Audit: B.1.14 (b1-delivery, FR-IN-008) -->
+
+  observe:
+    desc: "Open the local SigNoz UI (assumes `task dev` is up)"
+    cmds:
+      - |
+        if command -v open >/dev/null 2>&1; then
+          open http://localhost:3301
+        elif command -v xdg-open >/dev/null 2>&1; then
+          xdg-open http://localhost:3301
+        else
+          echo "Neither 'open' (macOS) nor 'xdg-open' (Linux) found. Browse to http://localhost:3301 manually."
+        fi
+    silent: true
+
+# ── Tests ────────────────────────────────────────────────────────────────────
+
+  test:
+    desc: "Run all tests"
+    deps:
+      - test:backend
+      - test:frontend
+      - test:infra
+
+  test:backend:
+    desc: "Run Rust backend tests (all features)"
+    cmds:
+      - cd backend && cargo test --all-features
+
+  test:frontend:
+    desc: "Run Flutter frontend tests"
+    cmds:
+      - cd frontend && flutter test
+
+  test:infra:
+    desc: "Validate compose/kong/k8s configs"
+    cmds:
+      - echo "infra tests: delegated to b1-delivery workflows"
+
+# ── Lint ─────────────────────────────────────────────────────────────────────
+
+  lint:
+    desc: "Run all linters (backend, frontend, infra, proto)"
+    deps:
+      - lint:backend
+      - lint:frontend
+      - lint:infra
+      - lint:proto
+
+  lint:backend:
+    desc: "Run Rust clippy and fmt check"
+    cmds:
+      - cd backend && cargo clippy --all-targets -- -D warnings && cargo fmt --check
+
+  lint:frontend:
+    desc: "Run Flutter analyze and dart format check"
+    cmds:
+      - cd frontend && flutter analyze && dart format --set-exit-if-changed --output=none .
+
+  lint:infra:
+    desc: "Validate infra configs (delegated to b1-delivery)"
+    silent: true
+    cmds:
+      - echo "infra lint: delegated to b1-delivery"
+
+  lint:proto:
+    desc: "Lint and format-check proto files with buf"
+    cmds:
+      - cd {{.PROTO_DIR}} && buf lint && buf format --diff --exit-code
+
+# ── Proto ────────────────────────────────────────────────────────────────────
+
+  proto:
+    desc: "Regenerate proto stubs (Rust via tonic-build, Dart via protoc_plugin)"
+    cmds:
+      # Step 1 — buf generate drives tonic-build (Rust) + protoc_plugin (Dart)
+      # via buf.gen.yaml; outputs land in OUT_DIR (Rust) and
+      # frontend/lib/generated/protos/ (Dart).
+      - cd {{.PROTO_DIR}} && buf generate
+      # Step 2 — Dart: rebuild generated code via build_runner (uses build.yaml
+      # that wires protoc_plugin). Uncomment if your project uses build_runner:
+      # - cd frontend && dart run build_runner build --delete-conflicting-outputs
+      # Alternative (direct protoc invocation, no build_runner):
+      # - protoc --dart_out=grpc:frontend/lib/generated/protos
+      #     -I shared/protos shared/protos/v1/**/*.proto
+
+  proto:check:
+    desc: "Lint and breaking-change check for all protos"
+    cmds:
+      - cd {{.PROTO_DIR}} && buf lint && buf breaking --against '.git#branch=main'
+
+# ── Release ──────────────────────────────────────────────────────────────────
+
+  release:
+    desc: "Release train stub — see docs/VERSIONING.md"
+    silent: true
+    cmds:
+      - echo "Release train workflow — see docs/VERSIONING.md (Forge framework)"

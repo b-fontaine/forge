@@ -1,0 +1,19 @@
+name: demo-004-user-onboarding
+status: specified
+created: 2026-04-30
+schema: full-stack-monorepo
+constitution_version: "1.0.0"
+parent_audit_items:
+  - C.1  # In-flight specified demo demonstrating [NEEDS CLARIFICATION]
+# Single-layer (backend) for this demo. The intent is to illustrate
+# Article III.4 (anti-hallucination protocol) at status: specified —
+# `[NEEDS CLARIFICATION:]` markers in specs.md await user resolution
+# before the change advances. Multi-layer orchestration is demonstrated
+# separately by demo-003-rate-limit (backend + infra at archived).
+timeline:
+  proposed: 2026-04-30
+  specified: 2026-04-30
+  # designed:    <!-- intentionally not advanced — demo stays at specified -->
+  # planned:
+  # implemented:
+  # archived:

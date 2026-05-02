@@ -1,0 +1,229 @@
+# <!-- Audit: G.1 (g1-forge-ci) -->
+# Forge's own CI workflow. Standard:
+# .forge/standards/global/forge-self-ci.md
+#
+# Runs the four shell test harnesses, the two deterministic gates,
+# the CLI Vitest suite, and shellcheck on every PR + push to main.
+# Aggregates the four worker jobs into a single required status
+# `forge-ci / summary` for branch protection.
+#
+# Asymmetric concurrency (ADR-002): PR runs cancel in-progress to
+# save CPU, but push:main runs do NOT cancel — partial main results
+# matter, the next push will retrigger naturally.
+
+name: forge-ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Single source of truth for cancel semantics: PRs cancel, main doesn't.
+concurrency:
+  group: forge-ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Minimum permission set (Aegis hygiene, NFR-CI-005). No write access.
+permissions:
+  contents: read
+
+jobs:
+  # ─── harness ── 4 shell test harnesses (L1+L2 only) ────────────
+  harness:
+    name: Test harnesses (foundations + scaffolder + workflow + delivery)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install PyYAML
+        run: pip install pyyaml
+      # b5.test.sh's Phase 2 tests exec node cli/dist/index.js — build it.
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: cli/.nvmrc
+          cache: npm
+          cache-dependency-path: cli/package-lock.json
+      - name: cli npm ci
+        working-directory: cli
+        run: npm ci
+      - name: cli npm run build
+        working-directory: cli
+        run: npm run build
+      - name: foundations.test.sh
+        run: bash .forge/scripts/tests/foundations.test.sh
+      - name: scaffolder.test.sh (L1+L2)
+        run: bash .forge/scripts/tests/scaffolder.test.sh --level 1,2
+      - name: workflow.test.sh (L1+L2)
+        run: bash .forge/scripts/tests/workflow.test.sh --level 1,2
+      - name: delivery.test.sh
+        run: bash .forge/scripts/tests/delivery.test.sh
+      - name: g1.test.sh
+        run: bash .forge/scripts/tests/g1.test.sh
+      - name: c1.test.sh
+        run: bash .forge/scripts/tests/c1.test.sh
+      - name: a7.test.sh
+        run: bash .forge/scripts/tests/a7.test.sh
+      - name: b5.test.sh
+        run: bash .forge/scripts/tests/b5.test.sh
+      - name: d5.test.sh
+        run: bash .forge/scripts/tests/d5.test.sh
+      - name: b4.test.sh
+        run: bash .forge/scripts/tests/b4.test.sh --level 1,2
+      - name: f1.test.sh
+        run: bash .forge/scripts/tests/f1.test.sh --level 1,2
+      - name: f2.test.sh
+        run: bash .forge/scripts/tests/f2.test.sh --level 1,2
+      - name: f4.test.sh
+        run: bash .forge/scripts/tests/f4.test.sh --level 1,2
+
+  # ─── gates ── verify.sh + constitution-linter.sh ───────────────
+  gates:
+    name: Forge gates (verify + constitution-linter)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install PyYAML
+        run: pip install pyyaml
+      - name: verify.sh
+        run: bash .forge/scripts/verify.sh
+      - name: constitution-linter.sh
+        run: bash .forge/scripts/constitution-linter.sh
+
+  # ─── cli ── Vitest + lint + bundle ─────────────────────────────
+  cli:
+    name: CLI (npm test + bundle)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cli
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: cli/.nvmrc
+          cache: npm
+          cache-dependency-path: cli/package-lock.json
+      - name: npm ci
+        run: npm ci
+      - name: npm run lint
+        run: npm run lint
+      - name: npm run bundle
+        run: npm run bundle
+      - name: npm test
+        run: npm test
+
+  # ─── lint ── shellcheck on Forge shell scripts ─────────────────
+  lint:
+    name: Shell lint (shellcheck)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck on .forge/scripts
+        uses: ludeeus/action-shellcheck@2.0.0
+        with:
+          severity: warning
+          scandir: ./.forge/scripts
+      - name: shellcheck on bin
+        uses: ludeeus/action-shellcheck@2.0.0
+        with:
+          severity: warning
+          scandir: ./bin
+
+  # ─── example ── validate examples/forge-fsm-example/ on touch ─
+  # Added by c1-reference-project (FR-CI-012). Conditional on the
+  # examples/** paths-filter ; on a miss, the job emits 'skipped'
+  # which the summary treats as success (paths-filter mismatch is
+  # not a failure).
+  example:
+    name: Example tree (examples/** paths-filter)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - id: examples-filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            examples:
+              - 'examples/**'
+      - uses: actions/setup-python@v5
+        if: steps.examples-filter.outputs.examples == 'true'
+        with:
+          python-version: "3.11"
+      - name: Install PyYAML
+        if: steps.examples-filter.outputs.examples == 'true'
+        run: pip install pyyaml
+      - name: example verify.sh
+        if: steps.examples-filter.outputs.examples == 'true'
+        run: |
+          cd examples/forge-fsm-example
+          bash .forge/scripts/verify.sh
+      - name: example constitution-linter.sh
+        if: steps.examples-filter.outputs.examples == 'true'
+        run: |
+          cd examples/forge-fsm-example
+          bash .forge/scripts/constitution-linter.sh
+      - name: parse archetype workflow templates (yaml.safe_load)
+        if: steps.examples-filter.outputs.examples == 'true'
+        run: |
+          python3 - <<'PY'
+          import glob, sys, yaml
+          paths = glob.glob('examples/forge-fsm-example/.forge/templates/archetypes/full-stack-monorepo/.github/workflows/*.yml.tmpl')
+          if not paths:
+              print('no archetype workflow templates found', file=sys.stderr); sys.exit(1)
+          for p in paths:
+              try:
+                  yaml.safe_load(open(p).read())
+              except Exception as e:
+                  print(f'parse failed: {p}: {e}', file=sys.stderr); sys.exit(1)
+              print(f'parsed: {p}')
+          PY
+
+  # ─── summary ── aggregator → single required status ───────────
+  summary:
+    name: Summary (required status)
+    runs-on: ubuntu-latest
+    needs: [harness, gates, cli, lint, example]
+    if: always()
+    steps:
+      - name: Aggregate job results
+        env:
+          HARNESS_RESULT: ${{ needs.harness.result }}
+          GATES_RESULT: ${{ needs.gates.result }}
+          CLI_RESULT: ${{ needs.cli.result }}
+          LINT_RESULT: ${{ needs.lint.result }}
+          EXAMPLE_RESULT: ${{ needs.example.result }}
+        run: |
+          set -eu
+          declare -A results
+          results[harness]="$HARNESS_RESULT"
+          results[gates]="$GATES_RESULT"
+          results[cli]="$CLI_RESULT"
+          results[lint]="$LINT_RESULT"
+          results[example]="$EXAMPLE_RESULT"
+
+          # The four core jobs MUST be exactly 'success'. The example
+          # job MAY be 'success' OR 'skipped' (paths-filter miss is
+          # not a failure). Any other value on any job → fail.
+          failed=()
+          for job in harness gates cli lint; do
+            if [ "${results[$job]}" != "success" ]; then
+              failed+=("$job=${results[$job]}")
+            fi
+          done
+          if [ "${results[example]}" != "success" ] && [ "${results[example]}" != "skipped" ]; then
+            failed+=("example=${results[example]}")
+          fi
+
+          if [ "${#failed[@]}" -gt 0 ]; then
+            echo "::error::forge-ci: ${failed[*]} FAILED"
+            exit 1
+          fi
+          echo "::notice::forge-ci: 5/5 jobs PASS"

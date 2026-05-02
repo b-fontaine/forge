@@ -1,0 +1,49 @@
+Forge Framework
+Copyright 2026 Benoit Fontaine
+
+This product includes software and design patterns derived from the
+following third-party projects. Each is used in compliance with its
+original license (all MIT at the time of verification — see URLs below
+for the authoritative upstream license).
+
+--------------------------------------------------------------------
+BMAD Method
+  Pattern borrowed: agent personas with name, role, style
+  Upstream:  https://github.com/bmad-code-org/BMAD-METHOD
+  License:   MIT
+--------------------------------------------------------------------
+GitHub SpecKit
+  Pattern borrowed: blocking constitutional gates in the spec pipeline
+  Upstream:  https://github.com/github/spec-kit
+  License:   MIT
+--------------------------------------------------------------------
+OpenSpec
+  Pattern borrowed: semantic delta format (ADDED / MODIFIED / REMOVED)
+  Upstream:  https://github.com/Fission-AI/OpenSpec
+  License:   MIT
+--------------------------------------------------------------------
+Agent OS v3
+  Pattern borrowed: standards index with just-in-time trigger-based
+  injection (index.yml)
+  Upstream:  https://github.com/buildermethods/agent-os
+  License:   MIT
+--------------------------------------------------------------------
+Superpowers
+  Pattern borrowed: TDD anti-rationalization discipline (the 12-excuses
+  table)
+  Upstream:  https://github.com/obra/superpowers
+  License:   MIT
+--------------------------------------------------------------------
+oh-my-claudecode
+  Pattern borrowed: natural-language keywords dispatching to agent
+  orchestration modes
+  Upstream:  https://github.com/Yeachan-Heo/oh-my-claudecode
+  License:   MIT
+--------------------------------------------------------------------
+Context7
+  Integration: MCP server for live documentation resolution
+  Upstream:  https://github.com/upstash/context7
+  License:   MIT
+--------------------------------------------------------------------
+
+This NOTICE file is informational and does not modify the License.

@@ -1,0 +1,24 @@
+name: b1-delivery
+status: archived
+created: 2026-04-29
+schema: default
+constitution_version: "1.0.0"
+parent_audit_items:
+  - B.1.9   # GitHub Actions workflows with dorny/paths-filter (per-layer + integration)
+  - B.1.12  # Kustomize overlays dev/staging/prod under infra/k8s/overlays/
+  - B.1.14  # OTel collector + SigNoz wired into docker-compose.dev.yml
+depends_on:
+  - b1-foundations  # archived 2026-04-21 — schema declares the infra layer this change instantiates
+  - b1-scaffolder   # archived 2026-04-22 — scaffolder writes infra/ and .github/ trees this change populates
+  - b1-workflow     # archived 2026-04-23 — multi-root verify.sh expects to find these files when present
+promotes_schema:
+  from: "candidate / 1.0.0-rc.1"
+  to: "stable / 1.0.0"
+  rationale: "Final B.1 delivery — once archived, the full-stack-monorepo archetype contract is fully realised end-to-end (CI + deployment overlays + local observability)."
+timeline:
+  proposed: 2026-04-29
+  specified: 2026-04-29
+  designed: 2026-04-29
+  planned: 2026-04-29
+  implemented: 2026-04-29
+  archived: 2026-04-29

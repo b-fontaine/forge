@@ -1,0 +1,20 @@
+Feature: OIDC login (PKCE) happy path
+  As a user of {{project_name}}
+  I want to authenticate via the configured OIDC provider
+  So that I can access protected screens of the app
+
+  Scenario: User signs in successfully
+    Given the user is on the login screen
+    When the user taps "Sign in"
+    And the user authenticates against the OIDC provider in the external browser
+    Then the app receives an access token
+    And the access token is persisted in secure storage
+    And the user is redirected to the home screen
+
+  Scenario: Authentication fails (network error)
+    Given the user is on the login screen
+    And the device is offline
+    When the user taps "Sign in"
+    Then the app shows an error message
+    And the auth_bloc emits AuthError
+    And no token is persisted

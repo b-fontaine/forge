@@ -1,0 +1,20 @@
+// <!-- Audit: B.4 (b4-mobile-only, FR-MO-028) -->
+// Article IX — Observability. Initializes the OpenTelemetry SDK with an
+// OTLP/HTTP exporter. Default endpoint http://localhost:4318 (dev mode);
+// override via env or runtime config in production.
+
+import 'package:opentelemetry_api/opentelemetry_api.dart' as api;
+import 'package:opentelemetry_sdk/opentelemetry_sdk.dart' as sdk;
+
+late api.Tracer rootTracer;
+
+Future<void> initOtel({String endpoint = 'http://localhost:4318'}) async {
+  // OTLP exporter: in production, the adopter MUST set [endpoint] to their
+  // collector URL (e.g. https://otel.your-domain.com).
+  final exporter = sdk.OtlpHttpSpanExporter(uri: Uri.parse(endpoint));
+  final provider = sdk.TracerProviderBase(
+    processors: [sdk.BatchSpanProcessor(exporter)],
+  );
+  api.globalTracerProvider = provider;
+  rootTracer = api.globalTracerProvider.getTracer('{{project_name}}');
+}

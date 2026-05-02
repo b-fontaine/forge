@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forge.bfontaine.fr/schemas/change.schema.json",
+  "title": "Forge change .forge.yaml",
+  "description": "Per-change metadata declared in .forge/changes/<name>/.forge.yaml. Validated by .forge/scripts/validate-change-yaml.sh and the verify.sh 'Change YAML Schema' gate (F.2).",
+  "type": "object",
+  "required": ["name", "status", "created", "schema", "constitution_version"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9.-]*$",
+      "description": "Change name slug. Starts with lowercase letter; lowercase letters / digits / dots / dashes only. No underscores, no uppercase."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["proposed", "specified", "designed", "planned", "implemented", "archived"],
+      "description": "Change pipeline phase. Each phase has a corresponding /forge:<verb> command."
+    },
+    "created": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "description": "ISO 8601 date when the change was opened (matches timeline.proposed)."
+    },
+    "schema": {
+      "type": "string",
+      "enum": ["default", "full-stack-monorepo", "mobile-only", "ai-first", "rapid", "tdd-flutter", "tdd-rust"],
+      "description": "Archetype this change targets. Drift detector in f2.test.sh ensures this enum stays in sync with .forge/schemas/*/schema.yaml on disk."
+    },
+    "constitution_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Constitution version under which this change was ratified. Stays at the version current at proposal time, even if the change creates a later version (ADR-006 of d5-governance)."
+    },
+    "timeline": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Per-phase timestamps. Coherence with status is enforced by validate-change-yaml.sh post-schema rules (FR-YS-008, FR-YS-009).",
+      "properties": {
+        "proposed": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+        "specified": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+        "designed": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+        "planned": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+        "implemented": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+        "archived": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"}
+      }
+    },
+    "layers": {
+      "type": "array",
+      "description": "b1-workflow extension: declares the layers this change spans (full-stack-monorepo only). Shape-only validation; cross-layer semantic checks live in validate-foundations.sh.",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {"type": "string"},
+          "path": {"type": "string"}
+        }
+      }
+    },
+    "designs_per_layer": {
+      "type": "object",
+      "description": "b1-workflow extension: maps layer-id to design filename when the change spans multiple layers.",
+      "additionalProperties": {"type": "string"}
+    },
+    "tasks_per_layer": {
+      "type": "object",
+      "description": "b1-workflow extension: maps layer-id to tasks filename when the change spans multiple layers.",
+      "additionalProperties": {"type": "string"}
+    },
+    "parent_audit_items": {
+      "type": "array",
+      "description": "Historical extended field (b1-* / g1 / c1 / a7 / b5 changes): list of audit roadmap items this change addresses (e.g. ['B.1', 'G.1']).",
+      "items": {"type": "string"}
+    },
+    "depends_on": {
+      "type": "array",
+      "description": "Historical extended field: list of prior change names this one depends on (informational).",
+      "items": {"type": "string"}
+    },
+    "archived_to": {
+      "type": "array",
+      "description": "Historical extended field (b1-foundations/scaffolder/workflow): list of destination paths (typically `.forge/specs/<name>.md`) where the change's delta requirements were merged at archive time.",
+      "items": {"type": "string"}
+    },
+    "schema_promotion": {
+      "type": "object",
+      "description": "Historical extended field (b1-scaffolder): records a schema_version promotion at archive time.",
+      "additionalProperties": true
+    },
+    "promotes_schema": {
+      "type": "object",
+      "description": "Historical extended field (b1-delivery): variant of schema_promotion.",
+      "additionalProperties": true
+    }
+  }
+}

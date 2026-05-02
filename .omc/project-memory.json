@@ -1,0 +1,242 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1777536340813,
+  "projectRoot": "/Users/bfontaine/git/github/forge",
+  "techStack": {
+    "languages": [],
+    "frameworks": [],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "bin",
+      "docs",
+      "examples"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "bin": {
+      "path": "bin",
+      "purpose": "Executable scripts",
+      "fileCount": 2,
+      "lastAccessed": 1777536340728,
+      "keyFiles": [
+        "forge-install.sh",
+        "forge-lint"
+      ]
+    },
+    "cli": {
+      "path": "cli",
+      "purpose": null,
+      "fileCount": 8,
+      "lastAccessed": 1777536340730,
+      "keyFiles": [
+        "README.md",
+        "VERSION",
+        "package-lock.json",
+        "package.json",
+        "tsconfig.json"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 4,
+      "lastAccessed": 1777536340731,
+      "keyFiles": [
+        "ARCHITECTURE.md",
+        "CONTRIBUTING.md",
+        "GUIDE.md",
+        "VERSIONING.md"
+      ]
+    },
+    "examples": {
+      "path": "examples",
+      "purpose": "Example code",
+      "fileCount": 1,
+      "lastAccessed": 1777536340732,
+      "keyFiles": [
+        "README.md"
+      ]
+    },
+    "cli/assets": {
+      "path": "cli/assets",
+      "purpose": "Static assets",
+      "fileCount": 12,
+      "lastAccessed": 1777536340734,
+      "keyFiles": [
+        "CHANGELOG.md",
+        "CLAUDE.md",
+        "CODE_OF_CONDUCT.md"
+      ]
+    },
+    "cli/dist": {
+      "path": "cli/dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 6,
+      "lastAccessed": 1777536340735,
+      "keyFiles": [
+        "cli.d.ts",
+        "cli.js",
+        "cli.js.map"
+      ]
+    },
+    "cli/node_modules": {
+      "path": "cli/node_modules",
+      "purpose": "Dependencies",
+      "fileCount": 1,
+      "lastAccessed": 1777536340739,
+      "keyFiles": []
+    }
+  },
+  "hotPaths": [
+    {
+      "path": ".forge/specs/full-stack-monorepo.md",
+      "accessCount": 8,
+      "lastAccessed": 1777538086647,
+      "type": "file"
+    },
+    {
+      "path": ".forge/specs/forge-ci.md",
+      "accessCount": 8,
+      "lastAccessed": 1777538196033,
+      "type": "file"
+    },
+    {
+      "path": ".forge/changes/a7-forge-upgrade/.forge.yaml",
+      "accessCount": 7,
+      "lastAccessed": 1777545990829,
+      "type": "file"
+    },
+    {
+      "path": ".forge/scripts/tests/a7.test.sh",
+      "accessCount": 6,
+      "lastAccessed": 1777550796504,
+      "type": "file"
+    },
+    {
+      "path": ".forge/changes/c1-reference-project/.forge.yaml",
+      "accessCount": 4,
+      "lastAccessed": 1777538318904,
+      "type": "file"
+    },
+    {
+      "path": ".forge/product/roadmap.md",
+      "accessCount": 3,
+      "lastAccessed": 1777538831659,
+      "type": "file"
+    },
+    {
+      "path": "bin/forge-snapshot.sh",
+      "accessCount": 3,
+      "lastAccessed": 1777550339004,
+      "type": "file"
+    },
+    {
+      "path": ".forge/changes/a7-forge-upgrade/specs.md",
+      "accessCount": 3,
+      "lastAccessed": 1777550438627,
+      "type": "file"
+    },
+    {
+      "path": ".forge/standards/infra/ci-workflows.md",
+      "accessCount": 2,
+      "lastAccessed": 1777536744030,
+      "type": "file"
+    },
+    {
+      "path": ".forge/standards/infra/observability-local.md",
+      "accessCount": 2,
+      "lastAccessed": 1777536752948,
+      "type": "file"
+    },
+    {
+      "path": ".forge/standards/infra/k8s-overlays.md",
+      "accessCount": 2,
+      "lastAccessed": 1777536764110,
+      "type": "file"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "accessCount": 2,
+      "lastAccessed": 1777538417742,
+      "type": "file"
+    },
+    {
+      "path": "bin/forge-upgrade.sh",
+      "accessCount": 2,
+      "lastAccessed": 1777550719727,
+      "type": "file"
+    },
+    {
+      "path": ".forge/specs/example-reference.md",
+      "accessCount": 1,
+      "lastAccessed": 1777538303185,
+      "type": "file"
+    },
+    {
+      "path": ".forge/changes/a7-forge-upgrade/proposal.md",
+      "accessCount": 1,
+      "lastAccessed": 1777539650642,
+      "type": "file"
+    },
+    {
+      "path": ".forge/changes/a7-forge-upgrade/design.md",
+      "accessCount": 1,
+      "lastAccessed": 1777541032180,
+      "type": "file"
+    },
+    {
+      "path": ".forge/changes/a7-forge-upgrade/tasks.md",
+      "accessCount": 1,
+      "lastAccessed": 1777545974420,
+      "type": "file"
+    },
+    {
+      "path": "cli/assets/framework-owned-paths.yml",
+      "accessCount": 1,
+      "lastAccessed": 1777550163424,
+      "type": "file"
+    },
+    {
+      "path": ".forge/standards/global/upgrade-policy.md",
+      "accessCount": 1,
+      "lastAccessed": 1777550208004,
+      "type": "file"
+    },
+    {
+      "path": ".forge/changes/a7-forge-upgrade/features/upgrade.feature",
+      "accessCount": 1,
+      "lastAccessed": 1777550222458,
+      "type": "file"
+    },
+    {
+      "path": ".forge/standards/index.yml",
+      "accessCount": 1,
+      "lastAccessed": 1777550291675,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

@@ -1,0 +1,22 @@
+# <!-- Audit: B.1.12 (b1-delivery, FR-IN-006) -->
+apiVersion: v1
+kind: Service
+metadata:
+  name: forge-fsm-example-backend
+  labels:
+    app.kubernetes.io/name: forge-fsm-example
+    app.kubernetes.io/component: backend
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: forge-fsm-example
+    app.kubernetes.io/component: backend
+  ports:
+    - name: grpc
+      port: 50051
+      targetPort: grpc
+      protocol: TCP
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP

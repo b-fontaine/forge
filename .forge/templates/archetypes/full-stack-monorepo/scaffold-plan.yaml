@@ -1,0 +1,197 @@
+# Forge Archetype — full-stack-monorepo scaffold plan
+# <!-- Audit: B.1.2 (part of b1-scaffolder) -->
+#
+# Single source of truth for the `/forge:init --archetype
+# full-stack-monorepo` slash command. The overlay renderer + the init
+# script both consume this manifest. Contributors add a template by
+# editing TWO files: the template itself and one entry here.
+#
+# Schema (validated by scaffolder.test.sh L1):
+#   archetype             : string — must equal "full-stack-monorepo"
+#   version               : SemVer string
+#   official_scaffolders  : list of {cmd: str, required?: bool}
+#   templates             : list of {source: str, target: str, substitute?: bool}
+#   post_steps            : list of {action: str, ...}
+#
+# Placeholders available in `substitute: true` templates:
+#   <project-name>    — scaffolded project name (regex ^[a-z][a-z0-9_-]{0,39}$)
+#   <reverse-domain>  — reverse DNS (regex ^[a-zA-Z][a-zA-Z0-9]*(\.[...])+$)
+#   <root-module>     — derived module name for code gen
+#
+# Ordering convention (ADR refactor): sources are grouped by layer for
+# reviewability — root → frontend → backend → infra → shared/protos →
+# .github. Within a group, alphabetical.
+
+archetype: full-stack-monorepo
+# Aligned with the archetype schema (.forge/schemas/full-stack-monorepo/
+# schema.yaml). Promoted from 0.1.0 → 1.0.0 in c1-reference-project,
+# tracking b1-delivery's schema promotion to stable / 1.0.0.
+version: "1.0.0"
+
+# ─── Official scaffolders ─────────────────────────────────────────
+# Run BEFORE template overlay (non-negotiable per audit rule B.5.6).
+# Each cmd has <placeholders> substituted by init.sh at scaffold time.
+official_scaffolders:
+  - cmd: "flutter create frontend --org <reverse-domain> --platforms android,ios,web --project-name <project_name_snake>_frontend"
+    required: true
+  - cmd: "mkdir -p backend/crates"
+    required: true
+  # backend/Cargo.toml is an OVERLAY (ADR-002) written before cargo new
+  # so each `cargo new --lib` auto-joins the workspace.
+  - cmd: "cd backend && cargo new --lib crates/domain --vcs none"
+    required: true
+  - cmd: "cd backend && cargo new --lib crates/application --vcs none"
+    required: true
+  - cmd: "cd backend && cargo new --lib crates/grpc-api --vcs none"
+    required: true
+  - cmd: "cd backend && cargo new --lib crates/infrastructure --vcs none"
+    required: true
+  - cmd: "cd backend && cargo new bin-server --vcs none"
+    required: true
+
+# ─── Templates ────────────────────────────────────────────────────
+# source: path inside this archetype directory
+# target: path inside the scaffolded project
+# substitute: true → sed replaces <project-name>, <reverse-domain>, <root-module>
+templates:
+  # ── Root ────────────────────────────────────────────────────────
+  - source: CLAUDE.md.tmpl
+    target: CLAUDE.md
+    substitute: true
+  - source: Taskfile.yml.tmpl
+    target: Taskfile.yml
+    substitute: true
+  - source: docker-compose.dev.yml.tmpl
+    target: docker-compose.dev.yml
+    substitute: true
+  - source: .env.example.tmpl
+    target: .env.example
+    substitute: true
+  - source: .gitignore.tmpl
+    target: .gitignore
+    substitute: false
+  - source: .forge.yaml.tmpl
+    target: .forge.yaml
+    substitute: true
+  - source: README.md.tmpl
+    target: README.md
+    substitute: true
+
+  # ── Frontend (overlay on `flutter create` output) ───────────────
+  - source: frontend/CLAUDE.md.tmpl
+    target: frontend/CLAUDE.md
+    substitute: true
+  - source: frontend/lib_core.gitkeep
+    target: frontend/lib/core/.gitkeep
+    substitute: false
+  - source: frontend/lib_shared.gitkeep
+    target: frontend/lib/shared/.gitkeep
+    substitute: false
+  - source: frontend/lib_features.gitkeep
+    target: frontend/lib/features/.gitkeep
+    substitute: false
+  - source: frontend/lib_generated_protos.gitkeep
+    target: frontend/lib/generated/protos/.gitkeep
+    substitute: false
+  - source: frontend/.env.dev.tmpl
+    target: frontend/.env.dev
+    substitute: true
+
+  # ── Backend (Cargo workspace — Cargo.toml is an explicit overlay, ADR-002) ──
+  - source: backend/CLAUDE.md.tmpl
+    target: backend/CLAUDE.md
+    substitute: true
+  - source: backend/Cargo.toml.tmpl
+    target: backend/Cargo.toml
+    substitute: true
+  - source: backend/rust-toolchain.toml.tmpl
+    target: backend/rust-toolchain.toml
+    substitute: false
+  - source: backend/.env.dev.tmpl
+    target: backend/.env.dev
+    substitute: true
+
+  # ── Infra ───────────────────────────────────────────────────────
+  - source: infra/CLAUDE.md.tmpl
+    target: infra/CLAUDE.md
+    substitute: true
+  - source: infra/kong/kong.yml.example.tmpl
+    target: infra/kong/kong.yml.example
+    substitute: true
+  - source: infra/docker/Dockerfile.backend.example.tmpl
+    target: infra/docker/Dockerfile.backend.example
+    substitute: false
+
+  # ── Infra k8s base + overlays (b1-delivery, FR-IN-006) ──────────
+  - source: infra/k8s/base/kustomization.yaml.tmpl
+    target: infra/k8s/base/kustomization.yaml
+    substitute: true
+  - source: infra/k8s/base/deployment.yaml.tmpl
+    target: infra/k8s/base/deployment.yaml
+    substitute: true
+  - source: infra/k8s/base/service.yaml.tmpl
+    target: infra/k8s/base/service.yaml
+    substitute: true
+  - source: infra/k8s/base/serviceaccount.yaml.tmpl
+    target: infra/k8s/base/serviceaccount.yaml
+    substitute: true
+  - source: infra/k8s/base/ingress.yaml.tmpl
+    target: infra/k8s/base/ingress.yaml
+    substitute: true
+  - source: infra/k8s/base/README.md.tmpl
+    target: infra/k8s/base/README.md
+    substitute: true
+  - source: infra/k8s/overlays/dev/kustomization.yaml.tmpl
+    target: infra/k8s/overlays/dev/kustomization.yaml
+    substitute: true
+  - source: infra/k8s/overlays/staging/kustomization.yaml.tmpl
+    target: infra/k8s/overlays/staging/kustomization.yaml
+    substitute: true
+  - source: infra/k8s/overlays/prod/kustomization.yaml.tmpl
+    target: infra/k8s/overlays/prod/kustomization.yaml
+    substitute: true
+  - source: infra/k8s/overlays/prod/hpa.yaml.tmpl
+    target: infra/k8s/overlays/prod/hpa.yaml
+    substitute: true
+
+  # ── Infra observability (b1-delivery, FR-IN-007 + FR-IN-008) ────
+  - source: infra/observability/otel-collector-config.yaml.tmpl
+    target: infra/observability/otel-collector-config.yaml
+    substitute: false
+  - source: infra/observability/signoz-config.yaml.tmpl
+    target: infra/observability/signoz-config.yaml
+    substitute: false
+
+  # ── shared/protos ───────────────────────────────────────────────
+  - source: shared/protos/buf.yaml.tmpl
+    target: shared/protos/buf.yaml
+    substitute: false
+  - source: shared/protos/buf.gen.yaml.tmpl
+    target: shared/protos/buf.gen.yaml
+    substitute: false
+  - source: shared/protos/v1/example/example.proto.tmpl
+    target: shared/protos/v1/example/example.proto
+    substitute: false
+
+  # ── .github reference workflows (b1-delivery, FR-IN-002..005) ───
+  - source: .github/workflows/forge-backend.yml.tmpl
+    target: .github/workflows/forge-backend.yml
+    substitute: true
+  - source: .github/workflows/forge-frontend.yml.tmpl
+    target: .github/workflows/forge-frontend.yml
+    substitute: true
+  - source: .github/workflows/forge-infra.yml.tmpl
+    target: .github/workflows/forge-infra.yml
+    substitute: true
+  - source: .github/workflows/forge-integration.yml.tmpl
+    target: .github/workflows/forge-integration.yml
+    substitute: true
+
+# ─── Post-scaffold steps (non-negotiable final actions) ──────────
+
+post_steps:
+  - action: write_scaffold_manifest
+    target: .forge/scaffold-manifest.yaml
+  - action: run_validate_foundations
+    target: .forge/scripts/validate-foundations.sh
+    require_pass: true

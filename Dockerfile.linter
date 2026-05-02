@@ -1,0 +1,70 @@
+# syntax=docker/dockerfile:1.7
+# Forge deterministic linter image — bundles verify.sh and constitution-linter.sh
+# for use in CI pipelines without needing a full Forge checkout.
+#
+# Usage (in CI):
+#   docker run --rm -v "$PWD:/workspace" -w /workspace forge/linter:latest
+#
+# Or run a single script:
+#   docker run --rm -v "$PWD:/workspace" -w /workspace \
+#     --entrypoint /usr/local/bin/constitution-linter forge/linter:latest
+#
+# Exit codes mirror the underlying scripts: 0 = all pass, 1 = at least one failure.
+#
+# Article VIII.3 compliance: multi-stage build, minimal runtime image (alpine).
+
+# ─── Stage 1 — builder ─────────────────────────────────────────
+# Prepares and syntax-checks the shell scripts before they land in the
+# runtime image. Keeps build-time tools (bash for `bash -n`) out of the
+# final layer.
+FROM alpine:3.20 AS builder
+
+RUN apk add --no-cache bash
+
+WORKDIR /build
+
+COPY .forge/scripts/verify.sh              ./verify
+COPY .forge/scripts/constitution-linter.sh ./constitution-linter
+COPY bin/forge-lint                        ./forge-lint
+
+# Fail fast on syntax errors in the scripts we're about to ship.
+RUN bash -n ./verify && \
+    bash -n ./constitution-linter && \
+    bash -n ./forge-lint && \
+    chmod 0555 ./verify ./constitution-linter ./forge-lint
+
+# ─── Stage 2 — runtime ─────────────────────────────────────────
+# Minimal Alpine image with just the GNU tools the scripts rely on.
+# We pull the full GNU versions (grep, awk, sed, coreutils, findutils) so
+# the scripts behave identically to a developer's macOS/Linux machine —
+# busybox defaults subtly differ on `grep -P`, `awk`, and `find` flags.
+FROM alpine:3.20 AS runtime
+
+RUN apk add --no-cache \
+        bash \
+        grep \
+        gawk \
+        sed \
+        coreutils \
+        findutils \
+        ripgrep \
+        git \
+    && addgroup -S forge \
+    && adduser -S -G forge -h /home/forge forge
+
+WORKDIR /workspace
+
+COPY --from=builder /build/verify              /usr/local/bin/verify
+COPY --from=builder /build/constitution-linter /usr/local/bin/constitution-linter
+COPY --from=builder /build/forge-lint          /usr/local/bin/forge-lint
+
+USER forge
+
+ENTRYPOINT ["/usr/local/bin/forge-lint"]
+
+ARG FORGE_VERSION=dev
+LABEL org.opencontainers.image.title="forge-linter" \
+      org.opencontainers.image.description="Deterministic Forge constitutional and verification linter." \
+      org.opencontainers.image.source="https://github.com/bfontaine/forge" \
+      org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.version="${FORGE_VERSION}"

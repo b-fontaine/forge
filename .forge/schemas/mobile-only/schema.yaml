@@ -1,0 +1,56 @@
+# <!-- Audit: B.4 (b4-mobile-only) -->
+# Forge archetype contract for `mobile-only`.
+#
+# Target audience: mobile-native teams (Flutter iOS + Android, no
+# web/desktop), with their own backend on a separate stack, using
+# an external OIDC provider (Auth0 / Keycloak / Okta / AWS Cognito).
+# No BaaS — distinct from the future `flutter-firebase` (B.2).
+#
+# Single-layer archetype: the project IS a Flutter app at the root
+# of the project tree. No multi-layer Janus orchestration.
+
+archetype: mobile-only
+schema_version: "1.0.0"
+description: >
+  Flutter iOS + Android app archetype with OIDC via flutter_appauth,
+  secure token storage (Keychain / Keystore + StrongBox), biometric
+  lock, App Attest + Play Integrity attestation, and Fastlane store
+  pipelines. No backend, no infrastructure, no BaaS.
+
+# Single-layer: the project root IS the Flutter app.
+layers:
+  - id: app
+    path: .
+
+# Constitution articles this archetype actively binds to.
+# Articles VII (Rust), VIII (Infra), XI (AI-First) are explicitly
+# Not Applicable for this archetype's core contract — adopters can
+# still apply them in their own modules, but the archetype itself
+# does not scaffold them.
+constitution_articles_bound:
+  - I    # TDD non-negotiable
+  - II   # BDD via cucumber-flutter
+  - III  # Specs Before Code
+  - IV   # Delta-based change management
+  - V    # Constitutional Compliance Gate
+  - VI   # Flutter Architecture (flutter_bloc + clean arch + cucumber)
+  - IX   # Observability (OTel client SDK)
+  - X    # Code Quality (lints, no secrets, coverage)
+  - XII  # Governance (constitution_version 1.1.0+)
+
+# Minimum platforms per ADR proposal Q1 (resolved 2026-04-30).
+platforms:
+  ios:
+    deployment_target: "15.0"
+  android:
+    min_sdk: 26
+    target_sdk: 34
+    compile_sdk: 34
+
+# Adopter can override these defaults in their .forge.yaml after scaffold.
+defaults:
+  state_management: flutter_bloc
+  oidc_library: flutter_appauth
+  secure_storage_library: flutter_secure_storage
+  biometric_library: local_auth
+  observability: opentelemetry_sdk

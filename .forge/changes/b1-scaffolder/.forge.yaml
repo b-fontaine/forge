@@ -1,0 +1,25 @@
+name: b1-scaffolder
+status: archived
+created: 2026-04-21
+schema: default
+constitution_version: "1.0.0"
+parent_audit_items:
+  - B.1.2  # Scaffolder /forge:init --archetype full-stack-monorepo
+  - B.1.3  # Nested CLAUDE.md templates (frontend / backend / infra)
+  - B.1.4  # Protos as source of truth — buf.yaml + buf.gen.yaml + tonic-build + protoc_plugin
+  - B.1.13 # Canonical Taskfile.yml (task dev / test / lint / proto / release)
+depends_on:
+  - b1-foundations  # archived 2026-04-21 — contract (schema + standards) is prerequisite
+archived_to:
+  - .forge/specs/full-stack-monorepo.md  # 9 ADDED FRs (FR-GL-009..014 + FR-BE-001 + FR-FE-001 + FR-IN-001) + 4 NFRs (NFR-005..008)
+schema_promotion:
+  from: "draft / 0.1.0"
+  to:   "candidate / 1.0.0-rc.1"
+  reason: "b1-scaffolder successfully consumed the schema end-to-end (21/21 test scenarios + manual smoke) — promotion trigger from b1-foundations ADR-004"
+timeline:
+  proposed: 2026-04-21
+  specified: 2026-04-21
+  designed: 2026-04-21
+  planned: 2026-04-21
+  implemented: 2026-04-22
+  archived: 2026-04-22

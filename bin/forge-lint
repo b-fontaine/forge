@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# forge-lint — run Forge's deterministic checks against the current working
+# directory. Designed as the default entrypoint of the forge/linter Docker
+# image, but also usable directly from a local checkout.
+#
+# Exit code: 0 if both scripts pass, 1 if either reports a failure.
+
+set -uo pipefail
+
+# Locate scripts. The Docker image installs them in /usr/local/bin.
+# A local checkout keeps them under .forge/scripts/.
+VERIFY="${FORGE_VERIFY_BIN:-}"
+LINTER="${FORGE_LINTER_BIN:-}"
+
+if [ -z "$VERIFY" ]; then
+  if command -v verify >/dev/null 2>&1; then
+    VERIFY="$(command -v verify)"
+  elif [ -x ".forge/scripts/verify.sh" ]; then
+    VERIFY=".forge/scripts/verify.sh"
+  else
+    printf 'forge-lint: cannot locate verify script\n' >&2
+    exit 2
+  fi
+fi
+
+if [ -z "$LINTER" ]; then
+  if command -v constitution-linter >/dev/null 2>&1; then
+    LINTER="$(command -v constitution-linter)"
+  elif [ -x ".forge/scripts/constitution-linter.sh" ]; then
+    LINTER=".forge/scripts/constitution-linter.sh"
+  else
+    printf 'forge-lint: cannot locate constitution-linter script\n' >&2
+    exit 2
+  fi
+fi
+
+rc=0
+
+printf '══════════════════════════════════════════════\n'
+printf '  verify.sh\n'
+printf '══════════════════════════════════════════════\n'
+"$VERIFY" || rc=1
+
+printf '\n══════════════════════════════════════════════\n'
+printf '  constitution-linter.sh\n'
+printf '══════════════════════════════════════════════\n'
+"$LINTER" || rc=1
+
+printf '\n'
+if [ $rc -eq 0 ]; then
+  printf '✓ forge-lint: all checks passed\n'
+else
+  printf '✗ forge-lint: at least one check failed\n'
+fi
+exit $rc

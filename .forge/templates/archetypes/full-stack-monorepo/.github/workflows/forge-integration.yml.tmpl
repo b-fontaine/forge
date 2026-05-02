@@ -1,0 +1,82 @@
+# <!-- Audit: B.1.9 (b1-delivery, FR-IN-005) -->
+# Cross-layer integration workflow. Standard:
+# .forge/standards/infra/ci-workflows.md
+#
+# Triggers ONLY on `push: main`, nightly cron, and manual dispatch.
+# NEVER triggers on `pull_request` (NFR-014 budget protection — this
+# workflow is allowed up to 30 minutes wall-clock and would otherwise
+# bottleneck PR turnaround).
+#
+# Boots the local stack via `docker compose up -d --wait` (ADR-012),
+# runs cargo integration tests + Patrol Android E2E, teardown
+# guarded by `if: always()` so failures do not leak Docker resources.
+
+name: forge-integration
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: forge-integration-<project-name>-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  integration:
+    name: Cross-layer integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            backend/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('backend/Cargo.lock') }}
+
+      - name: docker compose up -d --wait
+        run: |
+          docker compose -f docker-compose.dev.yml up -d --wait
+
+      - name: cargo test --features integration
+        working-directory: backend
+        run: cargo test --features integration --workspace
+
+      - name: Run Patrol E2E on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          script: |
+            cd frontend
+            flutter pub global activate patrol_cli
+            patrol test --target integration_test/
+
+      - name: Comment on tracking issue (failure only, opt-in)
+        if: failure() && env.FORGE_INTEGRATION_TRACKING_ISSUE != ''
+        env:
+          FORGE_INTEGRATION_TRACKING_ISSUE: ${{ secrets.FORGE_INTEGRATION_TRACKING_ISSUE }}
+        run: |
+          gh issue comment "$FORGE_INTEGRATION_TRACKING_ISSUE" \
+            --body "Integration run failed on $(date -u +%Y-%m-%dT%H:%M:%SZ). Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: docker compose down -v
+        if: always()
+        run: docker compose -f docker-compose.dev.yml down -v

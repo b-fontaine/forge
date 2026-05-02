@@ -1,0 +1,55 @@
+// <!-- Audit: B.4 (b4-mobile-only, FR-MO-020) -->
+// Wraps flutter_secure_storage with platform-tuned options:
+//   • iOS — Keychain accessibility = first_unlock_this_device
+//   • Android — EncryptedSharedPreferences + StrongBox when available
+
+import 'dart:convert';
+
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import 'package:{{project_name}}/domain/auth/auth_token.dart';
+
+class SecureStorageAdapter {
+  static const _kTokenKey = 'auth_token_v1';
+
+  final FlutterSecureStorage _storage;
+
+  SecureStorageAdapter()
+      : _storage = const FlutterSecureStorage(
+          iOptions: IOSOptions(
+            accessibility: KeychainAccessibility.first_unlock_this_device,
+            synchronizable: false,
+          ),
+          aOptions: AndroidOptions(
+            encryptedSharedPreferences: true,
+            // StrongBox enclave preferred when device supports it (API 28+).
+            // The library falls back gracefully when StrongBox is unavailable.
+          ),
+        );
+
+  Future<void> writeToken(AuthToken token) async {
+    final payload = jsonEncode({
+      'access_token': token.accessToken,
+      'refresh_token': token.refreshToken,
+      'expires_at': token.expiresAt.toIso8601String(),
+      'token_type': token.tokenType,
+    });
+    await _storage.write(key: _kTokenKey, value: payload);
+  }
+
+  Future<AuthToken?> readToken() async {
+    final raw = await _storage.read(key: _kTokenKey);
+    if (raw == null) return null;
+    final m = jsonDecode(raw) as Map<String, dynamic>;
+    return AuthToken(
+      accessToken: m['access_token'] as String,
+      refreshToken: m['refresh_token'] as String,
+      expiresAt: DateTime.parse(m['expires_at'] as String),
+      tokenType: m['token_type'] as String? ?? 'Bearer',
+    );
+  }
+
+  Future<void> clear() async {
+    await _storage.delete(key: _kTokenKey);
+  }
+}

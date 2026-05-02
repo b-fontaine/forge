@@ -1,0 +1,19 @@
+name: b5-1-init-wizard
+status: archived
+created: 2026-04-30
+schema: default
+constitution_version: 1.0.0
+parent_audit_items:
+- B.5.1
+depends_on:
+- b1-scaffolder
+- b1-delivery
+- c1-reference-project
+- a7-forge-upgrade
+timeline:
+  proposed: 2026-04-30
+  specified: 2026-04-30
+  designed: 2026-04-30
+  planned: 2026-04-30
+  implemented: '2026-04-30'
+  archived: '2026-04-30'

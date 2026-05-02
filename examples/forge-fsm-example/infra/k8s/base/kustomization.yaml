@@ -1,0 +1,22 @@
+# <!-- Audit: B.1.12 (b1-delivery, FR-IN-006) -->
+# Base Kustomization for the full-stack-monorepo backend service.
+# Standard: .forge/standards/infra/k8s-overlays.md
+#
+# This base declares the shape of the deployed Kubernetes objects.
+# Per-environment overlays (overlays/dev, overlays/staging,
+# overlays/prod) patch namespace, image tag, replicas, and resources.
+# NEVER hand-edit the rendered output of `kustomize build` (ADR-004).
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - deployment.yaml
+  - service.yaml
+  - serviceaccount.yaml
+  - ingress.yaml
+
+commonLabels:
+  app.kubernetes.io/name: forge-fsm-example
+  app.kubernetes.io/component: backend
+  app.kubernetes.io/part-of: forge-fsm-example

@@ -1,0 +1,49 @@
+name: {{project_name}}
+description: A mobile-only Flutter app scaffolded with Forge mobile-only archetype.
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.16.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management — Article VI.4 (NON-NEGOTIABLE).
+  flutter_bloc: ^8.1.6
+  equatable: ^2.0.5
+
+  # OIDC + secure token storage (FR-MO-017..021).
+  flutter_appauth: ^7.0.0
+  flutter_secure_storage: ^9.2.2
+
+  # Biometric lock (FR-MO-022..024).
+  local_auth: ^2.3.0
+
+  # Observability — Article IX (FR-MO-028, FR-MO-029).
+  opentelemetry_api: ^0.18.0
+  opentelemetry_sdk: ^0.18.0
+
+  # Localization (lightweight; ARB scaffold left to adopter).
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+
+  # Test discipline — Article I.
+  bloc_test: ^9.1.7
+  mocktail: ^1.0.4
+
+  # BDD — Article II + Article VI.7.
+  gherkin: ^3.1.0
+
+  # Linting — Article X.
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true

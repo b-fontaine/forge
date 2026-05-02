@@ -1,0 +1,12 @@
+archetype: full-stack-monorepo
+archetype_version: 1.0.0
+project_name: forge-fsm-example
+reverse_domain: io.forge.example
+root_module: forge_fsm_example
+scaffold_date: '2026-04-30T07:06:25.022197+00:00'
+scaffold_plan_sha: c5e7fb277fd718d1a8584b22c4769c84d90336b806e335ca7c564ad57a156f16
+template_set_sha: f0a75b0cdeff5a7612b816cd6c2645eacb0b66c3ef319b8817b7372e932ee00f
+tools:
+  buf: 1.68.4
+  cargo: 1.91.0
+  flutter: 3.41.7

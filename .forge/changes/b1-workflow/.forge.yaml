@@ -1,0 +1,21 @@
+name: b1-workflow
+status: archived
+created: 2026-04-22
+schema: default
+constitution_version: "1.0.0"
+parent_audit_items:
+  - B.1.6  # multi-layer change workflow (layers: in .forge.yaml + per-layer designs + per-layer tasks)
+  - B.1.7  # Janus agent — cross-layer orchestrator (routes when layers_count >= 2)
+  - B.1.8  # multi-root verify.sh + constitution-linter.sh (walk frontend/, backend/, infra/)
+depends_on:
+  - b1-foundations  # archived 2026-04-21 — schema references Janus by name
+  - b1-scaffolder   # archived 2026-04-22 — scaffolded projects consume the new workflow
+archived_to:
+  - .forge/specs/full-stack-monorepo.md  # 11 ADDED FRs (FR-GL-015..023 + FR-BE-002 + FR-FE-002) + 4 NFRs (NFR-009..012) + MODIFIED FR-GL-008
+timeline:
+  proposed: 2026-04-22
+  specified: 2026-04-22
+  designed: 2026-04-22
+  planned: 2026-04-22
+  implemented: 2026-04-22
+  archived: 2026-04-23

@@ -6,20 +6,37 @@
 
 ## Quickstart
 
-**Step 1** — Clone or copy Forge to your project root:
+Pick whichever channel fits your workflow.
+
+**A — `curl | sh` (no Node required)**
 
 ```bash
-cp -r forge/ /path/to/your/project/
+curl -fsSL https://raw.githubusercontent.com/bfontaine/forge/main/bin/forge-install.sh | bash
 ```
 
-**Step 2** — Open Claude Code and run:
+**B — `@sdd-forge/cli` (npm)**
 
-```
-/forge
+```bash
+npx @sdd-forge/cli init
+# or install globally
+npm install -g @sdd-forge/cli && forge init
 ```
 
-**Step 3** — Follow the auto-detected flow. Forge reads your project state and routes you to the right phase
-automatically.
+**C — Docker (CI)**
+
+```bash
+docker run --rm -v "$PWD:/workspace" -w /workspace forge/linter:latest
+```
+
+**Then**, open Claude Code in the project directory and run `/forge`. It
+auto-detects state and routes you to the right phase.
+
+Installation guarantees (shared by A and B):
+
+- Idempotent — re-runs never clobber your edits without `--force`.
+- `.forge/product/*` is always scaffolded from templates, so your mission
+  and roadmap are yours, not Forge's.
+- Private Claude Code state (`.claude/settings.local.json`) is never copied.
 
 ---
 
@@ -133,4 +150,14 @@ then `query-docs` to fetch up-to-date docs rather than relying on training data.
 
 ## License
 
-Copyright (c) 2026 The AI-First Company. All rights reserved. See [LICENSE](LICENSE) for details.
+Apache License 2.0. See [LICENSE](LICENSE) for the full terms and
+[NOTICE](NOTICE) for upstream attributions (BMAD Method, GitHub SpecKit,
+OpenSpec, Agent OS v3, Superpowers, oh-my-claudecode, Context7).
+
+## Governance
+
+- [Governance model](GOVERNANCE.md) — maintainers, decision making, amendment process, release process
+- [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md)
+- [Security policy](SECURITY.md) — private disclosure channels
+- [Changelog](CHANGELOG.md) — Keep a Changelog format
+- [Versioning policy](docs/VERSIONING.md) — SemVer, coupled to the Constitution

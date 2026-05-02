@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package greeting.v1;
+
+// GreeterService — minimal demonstration RPC for the c1
+// reference project's demo-001-greeting-service. See the demo's
+// proposal.md / specs.md / design.md for the full context.
+service GreeterService {
+  rpc Greet(GreetRequest) returns (GreetResponse);
+}
+
+message GreetRequest {
+  // The audience to greet. Empty falls back to "world".
+  string name = 1;
+}
+
+message GreetResponse {
+  // The rendered greeting message ("Hello, {name}!" or
+  // "Hello, world!" when the request name is empty).
+  string message = 1;
+}
