@@ -40,6 +40,18 @@ jobs:
           python-version: "3.11"
       - name: Install PyYAML
         run: pip install pyyaml
+      # b5.test.sh's Phase 2 tests exec node cli/dist/index.js — build it.
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: cli/.nvmrc
+          cache: npm
+          cache-dependency-path: cli/package-lock.json
+      - name: cli npm ci
+        working-directory: cli
+        run: npm ci
+      - name: cli npm run build
+        working-directory: cli
+        run: npm run build
       - name: foundations.test.sh
         run: bash .forge/scripts/tests/foundations.test.sh
       - name: scaffolder.test.sh (L1+L2)

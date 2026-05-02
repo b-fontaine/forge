@@ -101,7 +101,8 @@ resolve_source() {
   # If this script lives inside a Forge checkout, prefer that.
   local script_dir
   script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  local maybe_root="$(dirname "$script_dir")"
+  local maybe_root
+  maybe_root="$(dirname "$script_dir")"
   if [ -f "$maybe_root/.forge/constitution.md" ] && [ -f "$maybe_root/VERSION" ]; then
     SOURCE_DIR="$maybe_root"
     info "Using local source (detected checkout): $SOURCE_DIR"
