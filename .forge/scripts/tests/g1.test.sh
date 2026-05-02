@@ -202,9 +202,12 @@ else:
         errors.append(f"setup-node cache must be 'npm'; got {w.get('cache')!r}")
     if w.get("cache-dependency-path") != "cli/package-lock.json":
         errors.append(f"setup-node cache-dependency-path must be 'cli/package-lock.json'; got {w.get('cache-dependency-path')!r}")
-# Run sequence: npm ci → npm run lint → npm test → npm run bundle
+# Run sequence: npm ci → npm run lint → npm run bundle → npm test.
+# Bundle MUST run before test because the e2e suite (test/e2e/cli.test.ts)
+# spawns the built CLI from cli/dist/index.js — without a fresh bundle
+# the e2e tests fail with ERR_MODULE_NOT_FOUND. (v0.3.0 fix-up.)
 runs = "\n".join(s.get("run", "") for s in steps if isinstance(s, dict))
-expected = ["npm ci", "npm run lint", "npm test", "npm run bundle"]
+expected = ["npm ci", "npm run lint", "npm run bundle", "npm test"]
 positions = [(n, runs.find(n)) for n in expected]
 for n, p in positions:
     if p < 0:

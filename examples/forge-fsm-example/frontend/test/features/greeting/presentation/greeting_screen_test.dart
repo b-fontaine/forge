@@ -16,16 +16,19 @@ Widget _wrap() {
 
 void main() {
   group('GreetingScreen', () {
-    testWidgets('renders the audience field and submit button on initial state',
-        (tester) async {
-      await tester.pumpWidget(_wrap());
-      expect(find.byType(TextField), findsOneWidget);
-      expect(find.text('Say hello'), findsOneWidget);
-      expect(find.byKey(const Key('greeting-message')), findsNothing);
-    });
+    testWidgets(
+      'renders the audience field and submit button on initial state',
+      (tester) async {
+        await tester.pumpWidget(_wrap());
+        expect(find.byType(TextField), findsOneWidget);
+        expect(find.text('Say hello'), findsOneWidget);
+        expect(find.byKey(const Key('greeting-message')), findsNothing);
+      },
+    );
 
-    testWidgets('tapping Say hello with a name displays the greeting',
-        (tester) async {
+    testWidgets('tapping Say hello with a name displays the greeting', (
+      tester,
+    ) async {
       await tester.pumpWidget(_wrap());
       await tester.enterText(find.byType(TextField), 'Alice');
       await tester.tap(find.text('Say hello'));
@@ -33,8 +36,9 @@ void main() {
       expect(find.text('Hello, Alice!'), findsOneWidget);
     });
 
-    testWidgets('tapping Say hello with empty name falls back to world',
-        (tester) async {
+    testWidgets('tapping Say hello with empty name falls back to world', (
+      tester,
+    ) async {
       await tester.pumpWidget(_wrap());
       await tester.tap(find.text('Say hello'));
       await tester.pumpAndSettle();

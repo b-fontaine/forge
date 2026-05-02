@@ -134,6 +134,23 @@ else
       specified)            needs_proposal=true ;;
     esac
 
+    # b1-workflow multi-layer support : when `.forge.yaml` declares
+    # `layers:` with ≥ 2 entries AND `designs_per_layer:` /
+    # `tasks_per_layer:` maps, the design.md / tasks.md monolith is
+    # REPLACED by per-layer files (cf. global/multi-layer-workflow.md).
+    # Detect the multi-layer mode and check the per-layer files instead.
+    # (v0.3.0 fix-up : pre-existing gap surfaced by example/ verify CI.)
+    is_multi_layer=0
+    if python3 - "$forge_yaml" 2>/dev/null <<'PY'
+import sys, yaml
+d = yaml.safe_load(open(sys.argv[1])) or {}
+layers = d.get("layers") or []
+sys.exit(0 if isinstance(layers, list) and len(layers) >= 2 else 1)
+PY
+    then
+      is_multi_layer=1
+    fi
+
     if $needs_proposal; then
       [ -f "$change_dir/proposal.md" ] && pass "$change_name: proposal.md exists" || fail "$change_name: missing proposal.md (required at status=$status)"
     fi
@@ -141,10 +158,64 @@ else
       [ -f "$change_dir/specs.md" ] && pass "$change_name: specs.md exists" || fail "$change_name: missing specs.md (required at status=$status)"
     fi
     if $needs_design; then
-      [ -f "$change_dir/design.md" ] && pass "$change_name: design.md exists" || fail "$change_name: missing design.md (required at status=$status)"
+      if [ "$is_multi_layer" = "1" ]; then
+        ml_check_out=$(python3 - "$forge_yaml" "$change_dir" <<'PY'
+import os, sys, yaml
+yaml_path, change_dir = sys.argv[1], sys.argv[2]
+d = yaml.safe_load(open(yaml_path)) or {}
+mapping = d.get("designs_per_layer") or {}
+if not mapping:
+    print("missing designs_per_layer map for multi-layer change")
+    sys.exit(1)
+missing = []
+for layer, fname in mapping.items():
+    if not os.path.isfile(os.path.join(change_dir, fname)):
+        missing.append(f"{layer}={fname}")
+if missing:
+    print("missing per-layer design files: " + ", ".join(missing))
+    sys.exit(1)
+print(f"{len(mapping)} per-layer design file(s) present")
+PY
+)
+        ml_check_rc=$?
+        if [ "$ml_check_rc" -eq 0 ]; then
+          pass "$change_name: $ml_check_out"
+        else
+          fail "$change_name: $ml_check_out (required at status=$status)"
+        fi
+      else
+        [ -f "$change_dir/design.md" ] && pass "$change_name: design.md exists" || fail "$change_name: missing design.md (required at status=$status)"
+      fi
     fi
     if $needs_tasks; then
-      [ -f "$change_dir/tasks.md" ] && pass "$change_name: tasks.md exists" || fail "$change_name: missing tasks.md (required at status=$status)"
+      if [ "$is_multi_layer" = "1" ]; then
+        ml_check_out=$(python3 - "$forge_yaml" "$change_dir" <<'PY'
+import os, sys, yaml
+yaml_path, change_dir = sys.argv[1], sys.argv[2]
+d = yaml.safe_load(open(yaml_path)) or {}
+mapping = d.get("tasks_per_layer") or {}
+if not mapping:
+    print("missing tasks_per_layer map for multi-layer change")
+    sys.exit(1)
+missing = []
+for layer, fname in mapping.items():
+    if not os.path.isfile(os.path.join(change_dir, fname)):
+        missing.append(f"{layer}={fname}")
+if missing:
+    print("missing per-layer tasks files: " + ", ".join(missing))
+    sys.exit(1)
+print(f"{len(mapping)} per-layer tasks file(s) present")
+PY
+)
+        ml_check_rc=$?
+        if [ "$ml_check_rc" -eq 0 ]; then
+          pass "$change_name: $ml_check_out"
+        else
+          fail "$change_name: $ml_check_out (required at status=$status)"
+        fi
+      else
+        [ -f "$change_dir/tasks.md" ] && pass "$change_name: tasks.md exists" || fail "$change_name: missing tasks.md (required at status=$status)"
+      fi
     fi
   done
 fi
@@ -169,8 +240,11 @@ if [ -f "$FORGE_ROOT/pubspec.yaml" ]; then
       fail "dart format: unformatted files found"
     fi
 
-    # Tests + coverage
-    if flutter test --coverage "$FORGE_ROOT" 2>/dev/null; then
+    # Tests + coverage. `flutter test` requires its CWD to be the
+    # Flutter project root (where pubspec.yaml lives) — passing the
+    # path as positional arg interprets it as a test directory and
+    # then fails because cwd has no pubspec.yaml.
+    if (cd "$FORGE_ROOT" && flutter test --coverage) >/dev/null 2>&1; then
       pass "flutter test: all tests pass"
 
       # Coverage threshold
@@ -446,7 +520,9 @@ if [ "$target_schema" = "full-stack-monorepo" ]; then
       else
         fail_scoped frontend "dart format: unformatted files"
       fi
-      if flutter test --coverage "$FORGE_ROOT/$frontend_path" 2>/dev/null; then
+      # `flutter test` must run from the Flutter project root (cwd
+      # with pubspec.yaml). Subshell to scope the cd.
+      if (cd "$FORGE_ROOT/$frontend_path" && flutter test --coverage) >/dev/null 2>&1; then
         pass_scoped frontend "flutter test: all pass"
       else
         fail_scoped frontend "flutter test: failures"
@@ -490,10 +566,25 @@ if [ "$target_schema" = "full-stack-monorepo" ]; then
   if [ -f "$compose_dev" ]; then
     section "Infra (scoped)"
     if command -v docker &>/dev/null && docker compose version &>/dev/null; then
-      if docker compose -f "$compose_dev" config &>/dev/null; then
-        pass_scoped infra "docker-compose.dev.yml: syntax OK"
+      # Compose v2 hard-fails when an `env_file:` reference points to
+      # a missing path. The full-stack-monorepo template documents that
+      # adopters MUST `cp .env.example .env` before `task dev:up` (the
+      # .env file is gitignored). When `.env` is absent, the compose
+      # check is informational only — fall back to a YAML structural
+      # parse via python (which validates the file's shape without
+      # requiring the env file).
+      if [ -f "$FORGE_ROOT/.env" ]; then
+        if docker compose -f "$compose_dev" config &>/dev/null; then
+          pass_scoped infra "docker-compose.dev.yml: syntax OK"
+        else
+          fail_scoped infra "docker-compose.dev.yml: syntax error"
+        fi
       else
-        fail_scoped infra "docker-compose.dev.yml: syntax error"
+        if python3 -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]))" "$compose_dev" 2>/dev/null; then
+          pass_scoped infra "docker-compose.dev.yml: parses as YAML (.env absent — full compose validation requires .env per template documentation)"
+        else
+          fail_scoped infra "docker-compose.dev.yml: YAML parse error"
+        fi
       fi
     else
       warn_scoped infra "docker compose not found — skipping compose validation"

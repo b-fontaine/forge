@@ -50,9 +50,9 @@ class _GreetingScreenState extends State<GreetingScreen> {
                   child: ElevatedButton(
                     onPressed: isLoading
                         ? null
-                        : () => context
-                            .read<GreetingCubit>()
-                            .sayHello(_nameController.text),
+                        : () => context.read<GreetingCubit>().sayHello(
+                            _nameController.text,
+                          ),
                     child: const Text('Say hello'),
                   ),
                 ),

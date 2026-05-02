@@ -5,14 +5,11 @@ schema: full-stack-monorepo
 constitution_version: "1.0.0"
 parent_audit_items:
   - C.1  # In-flight specified demo demonstrating [NEEDS CLARIFICATION]
-layers:
-  - backend
-  - frontend
-  - protos
-# designs_per_layer + tasks_per_layer intentionally absent — this demo
-# stays at status: specified to illustrate Article III.4 (anti-hallucination
-# protocol). Adopters reading this directory see what an in-flight spec
-# looks like before the design phase begins.
+# Single-layer (backend) for this demo. The intent is to illustrate
+# Article III.4 (anti-hallucination protocol) at status: specified —
+# `[NEEDS CLARIFICATION:]` markers in specs.md await user resolution
+# before the change advances. Multi-layer orchestration is demonstrated
+# separately by demo-003-rate-limit (backend + infra at archived).
 timeline:
   proposed: 2026-04-30
   specified: 2026-04-30

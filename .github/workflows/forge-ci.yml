@@ -101,10 +101,10 @@ jobs:
         run: npm ci
       - name: npm run lint
         run: npm run lint
-      - name: npm test
-        run: npm test
       - name: npm run bundle
         run: npm run bundle
+      - name: npm test
+        run: npm test
 
   # ─── lint ── shellcheck on Forge shell scripts ─────────────────
   lint:

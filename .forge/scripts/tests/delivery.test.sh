@@ -348,8 +348,14 @@ for e in errors:
     print(f"    {e}", file=sys.stderr)
 sys.exit(1 if errors else 0)
 PY
-  # Optional L2 augmentation: real kustomize build + kubeconform
-  if have_kustomize; then
+  # Optional L2 augmentation: real kustomize build + kubeconform.
+  # Only attempted when the templates have been substituted (i.e.
+  # kustomization.yaml exists, not just kustomization.yaml.tmpl).
+  # When run on the framework repo (templates only), the substituted
+  # files are absent — skip silently. Adopter projects that scaffolded
+  # via the FSM init.sh have the substituted files and exercise this
+  # path. (Pre-existing CI gap fixed in v0.3.0.)
+  if have_kustomize && [ -f "$K8S_DIR/base/kustomization.yaml" ]; then
     local out
     out=$(kustomize build "$K8S_DIR/overlays/$env" 2>&1) || {
       echo "    kustomize build overlays/$env failed:" >&2
@@ -419,7 +425,10 @@ for e in errors:
     print(f"    {e}", file=sys.stderr)
 sys.exit(1 if errors else 0)
 PY
-  if have_kustomize; then
+  # L2: real kustomize build only when templates are substituted
+  # (kustomization.yaml exists). On framework repo (templates only),
+  # skip silently. (Pre-existing CI gap fixed in v0.3.0.)
+  if have_kustomize && [ -f "$K8S_DIR/base/kustomization.yaml" ]; then
     kustomize build "$K8S_DIR/base" >/dev/null 2>&1 || {
       echo "    kustomize build base failed" >&2; return 1; }
   fi
