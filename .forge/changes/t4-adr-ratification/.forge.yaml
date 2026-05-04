@@ -1,0 +1,14 @@
+name: t4-adr-ratification
+status: archived
+created: 2026-05-04
+schema: default
+constitution_version: "1.1.0"
+timeline:
+  proposed: 2026-05-04
+  specified: 2026-05-04
+  designed: 2026-05-04
+  planned: 2026-05-04
+  implemented: 2026-05-04
+  archived: 2026-05-04
+archived_to:
+  - .forge/specs/adr-ratification.md  # 35 ADDED FRs (FR-T4-ADR-001..010 + FR-T4-STD-001..006 + FR-T4-LC-001..005 + FR-T4-SCH-001..002 + FR-T4-LNT-001..002 + FR-T4-TST-001..005 + FR-T4-IDX-001..002 + FR-T4-DSP-001 + FR-T4-DOC-001..003) + 8 NFRs (NFR-T4-001..008) + MODIFIED archetype.schema.json (v1 → v2 — 5-archetype enum + mobile-only legacy alias)

@@ -1,0 +1,25 @@
+# Forge Standard — Identity / IdP
+# Audit: T.4 (t4-adr-ratification, 2026-05-04)
+# Ratifies: ADR-007 from docs/ARCHITECTURE-TARGET.md
+
+version: "1.0.0"
+last_reviewed: 2026-05-04
+expires_at: 2027-05-04
+exception_constitutional: false
+linter_rule: null
+enforcement:
+  ci_blocking: false
+  pre_commit_hook: false
+forbidden:
+  - firebase-auth      # cloud-act-non-eu / schrems-ii-disqualified
+  - auth0-saas-us      # cloud-act-non-eu
+rationale: |
+  ADR-007. Schrems II + CLOUD Act make any US-based managed IdP unfit for
+  EU-strict tiers. Zitadel (Go, AGPL, multi-tenant native) becomes default.
+  Keycloak / Authentik are alternatives for org constraints.
+
+default: zitadel
+alternatives:
+  - keycloak
+  - authentik
+compliance_tier_aware: true       # T3 requires self-host

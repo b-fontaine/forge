@@ -12,7 +12,77 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
-_No unreleased changes._
+### Added — T.4 ratification (`t4-adr-ratification`)
+
+- Six versioned standards under `.forge/standards/*.yaml` ratifying the
+  10 ADRs of `docs/ARCHITECTURE-TARGET.md` (sha256 pinned, drift gate
+  active in `t4.test.sh`) :
+  - `transport.yaml` (Connect-RPC + buf + tonic — structural exception)
+  - `state-management.yaml` (flutter_bloc + 8-entry forbidden list — structural exception)
+  - `observability.yaml` (OTel + OBI eBPF + Coroot + SigNoz)
+  - `orchestration.yaml` (DBOS default + Temporal fallback trigger)
+  - `identity.yaml` (Zitadel default + Firebase Auth / Auth0-SaaS-US forbidden)
+  - `persistence.yaml` (Postgres 17 + pgvector 0.8 + Citus + DynamoDB / Firestore / Cosmos forbidden in T2/T3 strict)
+- Two new JSON schemas :
+  - `.forge/schemas/compliance-tier.schema.json` (T1/T2/T3 enum)
+  - `.forge/schemas/archetype.schema.json` (5 canonical archetypes + `mobile-only` legacy alias ; `flutter-firebase` REMOVED)
+- `.forge/standards/REVIEW.md` ledger (append-only review log) seeded
+  with 6 entries (one per standard).
+- `.forge/standards/global/standards-lifecycle.md` documenting the
+  12-month review cycle + structural-exception escape.
+- `.forge/standards/global/source-document-pinning.md` documenting the
+  sha256 + rehash convention used to detect drift in external documents
+  ratified by Forge changes.
+- `bin/forge-rehash-architecture-doc.sh` escape hatch script for
+  trivial doc edits (typo fix / formatting).
+- New constitution-linter section "ADR-006 (State Management
+  Discipline — no-state-management-alternatives)" — **WARN-only** at
+  this stage ; transition to FAIL planned for B.8 (T6 — flagship
+  migration). Opt-out : `FORGE_LINTER_SKIP_NSMA=1`.
+- New test harness `t4.test.sh` (25 L1 + 5 L2 = 30 tests, ≤ 3 s wall-clock).
+  Total CI harness count : 14 (was 13).
+- Public `docs/STANDARDS-LIFECYCLE.md` for adopter-facing summary of
+  the lifecycle policy.
+
+### Changed
+
+- `.forge/standards/index.yml` registers 8 new standards (6 YAML + 2
+  global markdown).
+- `.forge/scaffolding/dispatch-table.yml` annotates `mobile-only` as
+  a legacy alias for the upcoming `mobile-pwa-first` archetype
+  (full rename ships with B.9 in T8).
+- `.forge/framework-owned-paths.yml` claims
+  `bin/forge-rehash-architecture-doc.sh`,
+  `docs/ARCHITECTURE-TARGET.md`, and
+  `docs/STANDARDS-LIFECYCLE.md`.
+- `constitution-linter.sh` summary line now includes a `WARN: <n>`
+  counter alongside `PASS / FAIL / N/A`.
+
+### Removed (taxonomy)
+
+- **Archetype `flutter-firebase`** is REMOVED from the roadmap per
+  ADR-007 (Schrems II + CLOUD Act incompatible with Forge's EU/premium
+  positioning). The dispatch-table slot is annotated
+  `status: removed_from_roadmap` to preserve `forge upgrade` history.
+  Adopters who insist on Firebase keep the `default` archetype as a
+  starting point. See `docs/ARCHETYPES.md` and
+  `docs/new-archetypes-plan.md` §3.2.
+
+### Notes
+
+- **Constitution v1.1.0 unchanged.** This change ratifies decisions
+  taken in `docs/ARCHITECTURE-TARGET.md` (sha256
+  `cd8fef37ed01de981c8779a79d40234a70a4411387235dd990a86b705f3de925`)
+  under the existing Article XII delegation — no Constitution
+  amendment required.
+- **Zero runtime code touched.** No edit under `cli/src/`, `frontend/`,
+  `backend/`, `infra/`, `examples/forge-fsm-example/`. Methodology
+  change only.
+- **Linter rule activation timing.** `no-state-management-alternatives`
+  ships in WARN mode now ; transitions to ERROR with B.8 (T6 — flagship
+  migration). Adopters using forbidden state-management libraries
+  (Riverpod / Provider / GetX / MobX / states_rebuilder) will see WARN
+  lines in `verify.sh` from this release onwards but are not blocked.
 
 ## [0.3.0] — 2026-05-01
 

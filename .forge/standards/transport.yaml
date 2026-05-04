@@ -1,0 +1,41 @@
+# Forge Standard — Transport contracts
+# Audit: T.4 (t4-adr-ratification, 2026-05-04)
+# Ratifies: ADR-003 + ADR-009 from docs/ARCHITECTURE-TARGET.md
+# Structural exception per Article XII : not subject to 12-month review.
+
+version: "1.0.0"
+last_reviewed: 2026-05-04
+expires_at: never
+exception_constitutional: true
+linter_rule: null
+enforcement:
+  ci_blocking: false
+  pre_commit_hook: false
+forbidden: []
+rationale: |
+  Transport contracts (proto + Connect) are structural to Forge's spec→code
+  pipeline. ADR-009 (buf single source of truth + Connect codegen) and
+  ADR-003 (Connect over REST-bridge) jointly establish this. Subject only
+  to Constitution amendment (Article XII process).
+
+protocol: connect-rpc
+fallback: grpc-web
+http_versions: [http/1.1, http/2, http/3-experimental]
+
+server_runtime:
+  language: rust
+  versions:
+    tonic: ^0.14
+    axum: ^0.8
+
+codegen:
+  source_of_truth: protobuf
+  tools:
+    - buf
+    - protoc-gen-connect-go
+    - protoc-gen-connect-es
+    - protoc-gen-connect-dart-community
+    - tonic-build
+  derived_outputs: [openapi-3.1, asyncapi-3.1]
+
+breaking_change_check: "buf breaking --against '.git#branch=main'"

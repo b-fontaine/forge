@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forge.bfontaine.fr/schemas/archetype.schema.json",
+  "title": "Forge canonical archetype",
+  "version": "2.0.0",
+  "description": "Canonical taxonomy of archetypes accepted as the value of `forge init --archetype <name>`. Per docs/ARCHITECTURE-TARGET.md §3 and docs/new-archetypes-plan.md §3.7, the taxonomy was revised from 4 to 5 archetypes : `flutter-firebase` was removed (Schrems II + CLOUD Act, ADR-007) ; `mobile-only` was renamed to `mobile-pwa-first` (PWA Qwik + native iOS fallback) and is kept here as a deprecated legacy alias for v0.3.0 adopters until B.9 in T8.",
+  "type": "string",
+  "enum": [
+    "full-stack-monorepo",
+    "mobile-pwa-first",
+    "event-driven-eu",
+    "ai-native-rag",
+    "rust-cli-tui",
+    "mobile-only"
+  ],
+  "x-archetype-descriptions": {
+    "full-stack-monorepo": "Premium SaaS flagship — Flutter + Rust + Envoy Gateway + DBOS + Connect-RPC + Postgres+pgvector + SigNoz/OBI/Coroot.",
+    "mobile-pwa-first":    "Public-app archetype — Qwik PWA default + Flutter native iOS fallback when push critical.",
+    "event-driven-eu":     "EDA archetype — NATS JetStream + Temporal + AsyncAPI 3.1 + Postgres event store ; NIS2/DORA-aware.",
+    "ai-native-rag":       "AI-first archetype — pgvector 0.8 + LLM gateway (Mistral-EU / vLLM) + MCP servers + Qwik streaming UI.",
+    "rust-cli-tui":        "Devtools archetype — clap + ratatui + cargo-dist signed releases ; multi-channel distribution.",
+    "mobile-only":         "DEPRECATED — alias for mobile-pwa-first ; legacy compat for v0.3.0 (B.4) adopters only ; superseded by B.9 in T8."
+  },
+  "x-removed-from-taxonomy": {
+    "flutter-firebase": "REMOVED 2026-05-04 via t4-adr-ratification per ADR-007. Schrems II + CLOUD Act incompatible with Forge EU/premium positioning. See .forge/scaffolding/dispatch-table.yml + CHANGELOG.md."
+  }
+}

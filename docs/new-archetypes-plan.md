@@ -1,0 +1,687 @@
+# Forge — Nouveau plan d'archétypes (post-`ARCHITECTURE-TARGET.md`)
+
+> **Auteur** : architecte solution senior (mode *ruthless mentor*)
+> **Cible** : Benoît Fontaine, créateur de Forge — branche `optim` après v0.3.0
+> **Date de production** : 2026-05-04
+> **Origine** : remise à plat du plan `il-s-agit-l-d-un-noble-gem.md` (modules d'audit) à la
+> lumière de `docs/ARCHITECTURE-TARGET.md` (rapport architectural cible Forge 2026).
+> **Tonalité** : sans complaisance. Toute décision soit sourcée du document d'architecture,
+> soit explicitement marquée `(opinion d'architecte)`.
+>
+> Ce document **remplace** la priorisation T3/T4 + le module B (archétypes) du plan
+> d'origine. Les modules A, D, E, F, G, H restent en l'état sauf mentions explicites.
+> Les sections « Modules livrés » reprennent verbatim les états du plan d'origine pour
+> garder un seul plan de référence post-v0.3.0.
+
+---
+
+## 0. Executive Summary (1 page)
+
+À la sortie de **v0.3.0** (2026-05-02), Forge a clos T0, T1, T2 P1, T2 P2 et T3 robustesse :
+**13 changes archivés**, **292/292 tests** sur 13 harnesses, Constitution v1.1.0,
+deux archétypes scaffoldables (`full-stack-monorepo` 1.0.0 et `mobile-only` 1.0.0),
+`forge upgrade` non-destructif, `forge init` canonical entry point, gouvernance
+BDFL-with-fallback en place, GitHub Discussions ouvert.
+
+`docs/ARCHITECTURE-TARGET.md` (production 2026-04-29, révision v1.1) introduit **trois
+décisions structurelles** qui invalident une partie du plan d'origine :
+
+1. **Taxonomie passée de 4 à 5 archétypes** — `flutter-firebase` retiré (Schrems II +
+   CLOUD Act), `mobile-only` renommé `mobile-pwa-first` (PWA Qwik + fallback iOS natif),
+   deux nouveaux archétypes `event-driven-eu` et `ai-native-rag`.
+2. **8 ADR techniques** sur le flagship — Kong → Envoy Gateway, Temporal → DBOS,
+   REST/JSON → Connect-RPC, Firebase → Zitadel, Flutter Web public → Qwik, Postgres 17 +
+   pgvector universel, SigNoz + OBI + Coroot, flutter_bloc consacré standard unique
+   non-négociable.
+3. **Compliance EU graduée T1/T2/T3** comme nouvelle dimension de classification par
+   composant et par archétype.
+
+**Verdict global** : `full-stack-monorepo / 1.0.0` shippé en v0.3.0 reste valide pour
+ses adopters actuels mais devient une **`legacy compat` baseline** ; un schéma `2.0.0`
+le remplace en T6 (point de non-retour). Le module B.2 `flutter-firebase` du plan
+d'origine est **annulé**. Le module B.4 `mobile-only / 1.0.0` est **renommé** en
+`mobile-pwa-first` et étendu avec un canal PWA Qwik. Deux nouveaux modules B.6 et B.7
+sont créés. Cinq nouveaux agents Forge sont introduits. Plan de migration **4 phases sur
+~6 mois** avec point de non-retour à la phase 2 (Envoy/DBOS/Connect sur la flagship).
+
+> **Mentor note** : tu as livré 13 changes en 11 jours et la moitié du plan d'audit. Le
+> risque maintenant n'est pas de manquer d'exécution, c'est de **figer un flagship dont
+> les briques internes (Kong/Temporal/REST-bridge) ne survivront pas 18 mois** dans les
+> mains de tes adopters EU. Le plan ci-dessous oppose deux options à arbitrer : migration
+> additive (legacy compat) vs migration breaking (schema bump 1.0.0 → 2.0.0).
+
+---
+
+## 1. Contexte — état post-v0.3.0
+
+### 1.1 Acquis
+
+| Domaine                       | État                | Référence                                  |
+|-------------------------------|---------------------|--------------------------------------------|
+| OSS Apache 2.0 + npm + Docker | ✅ T0/T1            | A1, A2, A3, A4, A5, A6                    |
+| `forge init` 3 modes          | ✅ T2 P1 (B.5.1)    | `.forge/scaffolding/dispatch-table.yml`   |
+| `forge upgrade` 3-way merge   | ✅ T2 P1 (A.7)      | `bin/forge-upgrade.sh` + snapshot tarballs|
+| Archétype `full-stack-monorepo / 1.0.0` | ✅ T2 P1 (B.1)      | 4 changes archivés, schema stable      |
+| Archétype `mobile-only / 1.0.0` | ✅ T2 P2 (B.4)      | `b4-mobile-only` 47/47 tests              |
+| Reference project + 4 demos   | ✅ T2 P1 (C.1)      | `examples/forge-fsm-example/`             |
+| CI Forge dog-fooded           | ✅ T2 P1 (G.1)      | `forge-ci.yml` 6 jobs                     |
+| Governance BDFL-with-fallback | ✅ T2 P1 (D.5)      | `GOVERNANCE.md` + Article XII             |
+| GitHub Discussions ouvert     | ✅ T2 P1 (D.6)      | community channel actif                   |
+| Open questions tracking       | ✅ T3 (F.1)         | `f1-open-questions`                       |
+| YAML schema validation        | ✅ T3 (F.2)         | `f2-yaml-schema`                          |
+| Linter étendu V/X.3/XI.3/XI.5 | ✅ T3 (F.4)         | `f4-linter-extension`                     |
+| Release v0.3.0 publiée        | ✅ 2026-05-02       | tag `v0.3.0`, npm `@sdd-forge/cli@0.3.0` |
+
+### 1.2 Décisions ratifiées par `docs/ARCHITECTURE-TARGET.md`
+
+| ADR    | Décision                                                                                      | Statut                              |
+|--------|-----------------------------------------------------------------------------------------------|-------------------------------------|
+| ADR-001 | REPLACE Kong → Envoy Gateway sur tous les archétypes serveur                                  | À planifier (T6)                    |
+| ADR-002 | Temporal → DBOS par défaut, Temporal réservé `event-driven-eu`                                | À planifier (T6)                    |
+| ADR-003 | REPLACE REST/JSON Kong-bridge → Connect-RPC                                                   | À planifier (T6)                    |
+| ADR-004 | KEEP Rust + tonic 0.14 + axum 0.8                                                             | Acquis                              |
+| ADR-005 | KEEP Flutter mobile + desktop, REPLACE Flutter Web public → Qwik                              | À planifier (T7)                    |
+| ADR-006 | flutter_bloc seul state management autorisé, hors fenêtre 12 mois                             | Inscrit dans templates B.1 + B.4    |
+| ADR-007 | REPLACE Firebase → Zitadel (ou Keycloak/Authentik en alternative)                             | Annule B.2 du plan d'origine        |
+| ADR-008 | KEEP-WITH-CHANGES SigNoz + OBI eBPF + Coroot service map                                      | À planifier (T7)                    |
+| ADR-009 | KEEP buf+proto + ADD Connect codegen + AsyncAPI 3.1 dérivé                                    | À planifier (T6)                    |
+| ADR-010 | Postgres 17 + pgvector 0.8 comme défaut universel                                             | À planifier (T6)                    |
+
+### 1.3 Modules du plan d'origine **annulés ou renommés**
+
+| Module d'origine                              | Verdict                                              |
+|-----------------------------------------------|------------------------------------------------------|
+| **B.2 `flutter-firebase`**                    | **ANNULÉ** — Schrems II + CLOUD Act incompatibles    |
+| **B.4 `mobile-only`** (déjà livré 1.0.0)     | **RENOMMÉ** → `mobile-pwa-first` ; schema `2.0.0`    |
+| Roadmap `Phase 3 / mobile-only`               | **OBSOLÈTE** (déjà livré sous l'ancien nom)          |
+| Roadmap `Phase 3 / flutter-firebase`          | **DEPRIORITIZED** ou retiré                          |
+
+### 1.4 Modules **nouveaux** introduits par ce plan
+
+| Code  | Nom                          | Source                          | Effort      |
+|-------|------------------------------|---------------------------------|-------------|
+| B.6   | `event-driven-eu`            | ARCHITECTURE-TARGET §3.3        | `XL`        |
+| B.7   | `ai-native-rag`              | ARCHITECTURE-TARGET §3.3        | `XL`        |
+| B.8   | Migration flagship 1.0.0 → 2.0.0 (Envoy/DBOS/Connect/Zitadel) | ARCHITECTURE-TARGET §11 | `XL` |
+| B.9   | Migration `mobile-only / 1.0.0` → `mobile-pwa-first / 2.0.0` (PWA Qwik + Bloc renforcé) | ARCHITECTURE-TARGET §6.3 | `L` |
+| I.1–I.5 | Compliance EU graduée T1/T2/T3 | ARCHITECTURE-TARGET §10        | `L`         |
+| J.1–J.5 | Standards versionnés `.forge/standards/*.yaml` | ARCHITECTURE-TARGET §12.1 | `M` |
+| K.1–K.5 | Cinq nouveaux agents (Hermes-Async, Pythia, Demeter, Iris-Web, Themis) | ARCHITECTURE-TARGET §9.2 | `L` |
+
+---
+
+## 2. Pré-requis méthodologiques (avant T4)
+
+Ces items sont des **gates** : aucun module B.6/B.7/B.8/B.9 ne démarre sans eux.
+
+### 2.1 P-1 — Capture publique des décisions ARCHITECTURE-TARGET
+
+- Convertir les **10 ADR** du document d'architecture en `.forge/changes/<adr-N>/` avec
+  `proposal.md` + `specs.md` + `design.md` + ratification trace dans
+  `.forge.yaml` (status `archived` car la décision est déjà prise par le document).
+- Ce dog-fooding inversé met les ADR sous Constitution v1.1.0 et permet à
+  `forge upgrade` d'instancier la migration plus tard. Effort : `M`.
+
+### 2.2 P-2 — Standards versionnés `.forge/standards/*.yaml`
+
+Six fichiers YAML à créer/migrer **avant** d'éditer un seul template :
+
+- `transport.yaml` — Connect-RPC, buf, proto pinning, derived OpenAPI 3.1 + AsyncAPI 3.1
+- `state-management.yaml` — flutter_bloc + interdiction Riverpod/Provider/GetX/MobX/states_rebuilder + linter `no-state-management-alternatives` bloquant
+- `observability.yaml` — OTel SDK + OBI eBPF + Coroot + SigNoz + sampler `parentbased_traceidratio`
+- `orchestration.yaml` — DBOS default, Temporal fallback (`workflow_volume_per_day_gt_10000 OR cross_service_count_gt_10`)
+- `identity.yaml` — Zitadel default, Keycloak/Authentik alternatives, Firebase Auth interdit
+- `persistence.yaml` — Postgres 17 + pgvector + extensions, Citus pour sharding,
+  DynamoDB/Firestore/Cosmos interdits en T2/T3 strict
+
+Le linter `constitution-linter.sh` est étendu pour vérifier les `forbidden:` listées.
+Effort : `M` (J.1-J.5 du tableau §1.4).
+
+### 2.3 P-3 — Cycle de réévaluation 12 mois
+
+- `.forge/standards/REVIEW.md` : chaque entrée standard porte une **date d'expiration**
+  par défaut 12 mois.
+- Agent **Themis** (nouveau, K.5) exécute `forge review-standards` mensuel et signale
+  les standards à revisiter.
+- **Exception explicite** : `state-management.yaml` (flutter_bloc) et `transport.yaml`
+  (proto/Connect) sont des décisions **structurelles** non soumises à la fenêtre
+  12 mois ; ne peuvent être amendées que par procédure constitutionnelle (Article XII).
+- Inscrit dans le standard `global/standards-lifecycle.md` (nouveau). Effort : `S`.
+
+### 2.4 P-4 — Schéma de classification compliance
+
+- `.forge/schemas/compliance-tier.schema.json` : enum `[T1, T2, T3]`.
+- `.forge/schemas/archetype.schema.json` v2 : ajout enum
+  `[full-stack-monorepo, mobile-pwa-first, event-driven-eu, ai-native-rag, rust-cli-tui]`.
+  La valeur `mobile-only` reste reconnue comme alias rétro-compatible jusqu'à T7.
+- Effort : `S` (I.1).
+
+### 2.5 P-5 — Refactor Hera 9 → 5 sub-agents *(opinion d'architecte non sourcée)*
+
+- Audit `.claude/agents/flutter/*.md` : Hera + 9 sub-agents (Athena, Spartan, Apollo,
+  Hephaestus, Hermes, Iris, Argus, Prometheus, Nemesis).
+- Verdict ARCHITECTURE-TARGET : multiplier les sub-agents donne l'illusion de coverage
+  et multiplie les conflits de prompts. Cible : **5 max** (UI builder, State Bloc,
+  Animation, Test BDD, OTel client).
+- **Décision utilisateur requise** avant exécution : c'est un changement breaking pour
+  toute orchestration `/forge:implement` qui invoque les agents nommément.
+- Effort : `M`.
+
+---
+
+## 3. Module B révisé — taxonomie 5 archétypes
+
+### 3.1 B.1 `full-stack-monorepo` — `KEEP-WITH-CHANGES`
+
+- **`full-stack-monorepo / 1.0.0`** (livré v0.3.0) : Kong + Temporal + REST-bridge,
+  reste supporté en `legacy compat` jusqu'à T8 (≈ 6 mois après bascule 2.0.0).
+- **`full-stack-monorepo / 2.0.0`** (B.8 nouveau) : Envoy Gateway + DBOS + Connect-RPC
+  + Zitadel + Postgres+pgvector + SigNoz+OBI+Coroot + Qwik public web (back-office
+  Flutter Web conservé).
+- Migration via `forge upgrade` (A.7) + script dédié `bin/forge-migrate-flagship.sh`.
+- Voir §4 pour le détail B.8.
+
+### 3.2 B.2 `flutter-firebase` — `REMOVE`
+
+- **Annulé** (Schrems II + CLOUD Act + brand premium EU).
+- Tous les items B.2.1–B.2.12 du plan d'origine sont retirés du backlog.
+- L'archétype actuel `default` (file-copy minimal) reste l'option pour les utilisateurs
+  hors EU qui veulent Firebase ; ils peuvent l'ajouter eux-mêmes.
+- Si la demande émerge d'une cible EU → considérer un archétype futur
+  `flutter-baas-eu` (Supabase EU self-host ou Appwrite). **Pas committé**.
+- Effort : `S` (juste retirer la ligne placeholder de `dispatch-table.yml`,
+  marquer la décision dans CHANGELOG + `docs/ARCHETYPES.md`).
+
+### 3.3 B.3 `rust-cli-tui` — `KEEP`
+
+- Inchangé du plan d'origine (B.3.1 → B.3.14).
+- Effort : `XL`. Reste à livrer.
+
+### 3.4 B.4 → renommé `mobile-pwa-first` — `KEEP-WITH-CHANGES`
+
+- **`mobile-only / 1.0.0`** (livré v0.3.0) reste supporté comme schéma legacy.
+- **`mobile-pwa-first / 2.0.0`** (B.9 nouveau) : ajout d'un canal PWA Qwik en plus
+  de Flutter iOS+Android, avec décideur par défaut PWA + fallback natif iOS si push
+  critique. flutter_bloc reste seul state management côté natif. Voir §5.
+- Effort : `L`.
+
+### 3.5 B.6 `event-driven-eu` — `NEW`
+
+- Stack : Rust (axum + async-nats) + NATS JetStream + Temporal (justifié ici par
+  cardinality cross-service) + AsyncAPI 3.1 + Postgres event store + Postgres+DBOS pour
+  workflows monorepo.
+- Cibles : RGPD + NIS2 + DORA + CRA. Profil compliance `T2/T3` recommandé.
+- Voir §6.1 pour le détail des items B.6.1–B.6.14.
+- Effort : `XL`.
+
+### 3.6 B.7 `ai-native-rag` — `NEW`
+
+- Stack : Rust (axum + DBOS) + LLM gateway (Mistral on Scaleway / vLLM EU
+  self-host pour T3, OpenAI proxy en T1) + Postgres + pgvector 0.8 + MCP servers +
+  Qwik streaming UI + Flutter optionnel.
+- Cibles : RGPD + AI Act + DORA si finance. Profil compliance `T2/T3`.
+- Voir §6.2 pour le détail des items B.7.1–B.7.14.
+- Effort : `XL`.
+
+### 3.7 Matrice cible × workload × profil d'équipe (cible 2026)
+
+| Archétype             | Web                   | Mobile                       | Desktop          | Workload              | Profil équipe min                  |
+|-----------------------|-----------------------|------------------------------|------------------|------------------------|------------------------------------|
+| `full-stack-monorepo` | ✅ Flutter+Qwik       | ✅ Flutter                   | ✅ Flutter/Tauri | CRUD sync premium      | 4–6 dev (1 Rust, 2 Flutter, 1 SRE) |
+| `mobile-pwa-first`    | ✅ PWA Qwik           | ✅ PWA + native fallback iOS | ⚠️ PWA installable | App grand public     | 2–3 dev fullstack                  |
+| `event-driven-eu`     | ⚠️ admin Qwik         | ❌                            | ❌               | Pub/sub, sagas, audit  | 3–5 dev backend Rust               |
+| `ai-native-rag`       | ✅ Qwik streaming     | ⚠️ Flutter optionnel          | ❌               | LLM+RAG+agentic        | 2–4 dev (1 ML, 2 Rust)             |
+| `rust-cli-tui`        | ❌                    | ❌                            | ✅ binary natif  | Devtools               | 1–2 dev Rust                       |
+
+---
+
+## 4. Module B.8 — Migration flagship 1.0.0 → 2.0.0
+
+Module pivot. Le plus risqué de tout le plan post-v0.3.0. **Point de non-retour** à la
+fin de B.8.
+
+### 4.1 Stratégie
+
+Migration **additive d'abord, breaking ensuite** :
+1. Ajouter Envoy Gateway en parallèle de Kong (canary par route).
+2. Ajouter DBOS embedded library en parallèle de Temporal.
+3. Ajouter Connect-RPC handlers en parallèle de REST-bridge.
+4. Ajouter Zitadel auth en parallèle de l'auth implicite actuelle (s'il y en a).
+5. Migrer les 4 demos de `examples/forge-fsm-example/` une par une.
+6. Une fois validé, **bump schema 1.0.0 → 2.0.0** + retirer Kong/Temporal/REST-bridge.
+7. `forge upgrade` propose la migration via `[NEEDS MIGRATION:]` (mécanisme A.7 déjà
+   en place). Adopters legacy peuvent rester sur 1.0.0 jusqu'à T8 (deprecation).
+
+### 4.2 Items B.8.x
+
+- **B.8.1.** Audit `examples/forge-fsm-example/` : capturer baseline p95/p99 (latence
+  end-to-end Flutter → Kong → Rust → Postgres), couverture trace W3C, MTBF Temporal
+  workers. Effort : `S`.
+- **B.8.2.** Snapshot tarball `full-stack-monorepo/1.0.0.tar.gz` archivé définitivement
+  dans `.forge/scaffold-snapshots/legacy/` pour garantir `forge upgrade` reverse.
+  Effort : `S`.
+- **B.8.3.** Schema `.forge/schemas/full-stack-monorepo/2.0.0.yaml` (status `candidate`
+  jusqu'à validation). Effort : `M`.
+- **B.8.4.** Templates Helm Envoy Gateway sous `templates/full-stack-monorepo/2.0.0/infra/k8s/envoy-gateway/`
+  avec `Gateway`, `HTTPRoute`, `BackendTLSPolicy` Gateway API natifs. Helm chart
+  Atlas-fourni. Effort : `M`.
+- **B.8.5.** Templates DBOS embedded — `Cargo.toml` ajout `dbos = "0.x"` (épingler
+  version au commit du standard `orchestration.yaml`), boilerplate Rust pour
+  `DBOSContext`, init Postgres state tables. Effort : `M`.
+- **B.8.6.** Templates Connect-RPC : `buf.gen.yaml` étendu avec
+  `protoc-gen-connect-go`, `protoc-gen-connect-es`, `protoc-gen-connect-dart-community`.
+  `tonic-build` continue côté serveur Rust (compat native). Effort : `M`.
+- **B.8.7.** Templates Zitadel : Helm chart self-host EU + script de bootstrap
+  (création tenant root, OIDC client app, JWT signing key rotation). Documentation
+  pour T1 (Zitadel Cloud SaaS) vs T2/T3 (self-host EU strict). Effort : `M`.
+- **B.8.8.** Templates SigNoz + OBI + Coroot dans
+  `docker-compose.dev.yml` + Helm overlays K8s prod. Sampler 100% staging /
+  10% prod. Audit Aegis sur le DaemonSet privilégié OBI requis. Effort : `M`.
+- **B.8.9.** Templates Qwik public web sous
+  `templates/full-stack-monorepo/2.0.0/web-public/` avec Connect-ES client + Connect codegen.
+  Flutter Web reste en `web-backoffice/`. Janus arbitre les deux. Effort : `L`.
+- **B.8.10.** Migration scripts `bin/forge-migrate-flagship.sh` orchestrant les 4 phases
+  ARCHITECTURE-TARGET §11 (Phase 0 audit, Phase 1 obs+contrats, Phase 2 bascule
+  Envoy/DBOS/Bloc, Phase 3 nouveaux archétypes, Phase 4 deprecation). Hooks dans
+  `forge upgrade`. Effort : `L`.
+- **B.8.11.** Linter `no-state-management-alternatives` (Hera) — refuse tout import
+  Flutter de `flutter_riverpod`, `riverpod`, `provider`, `get`, `getx`, `mobx`,
+  `flutter_mobx`, `states_rebuilder`. Échec CI bloquant. Pre-commit hook. Effort : `S`.
+- **B.8.12.** Tests E2E migration : `c1-reference-project` migré vers 2.0.0, captures
+  p95/p99 avant/après, 0 régression sur les 4 demos. Effort : `M`.
+- **B.8.13.** Critères de rollback documentés (ARCHITECTURE-TARGET §11.3) :
+  - p99 augmente > 20 % après Envoy → rollback Kong.
+  - Erreurs traceparent > 1 % → rollback OTel SDK seul.
+  - DBOS Postgres saturé > 70 % CPU → fallback Temporal pour workflows lourds.
+  Effort : `S`.
+- **B.8.14.** Bump schema `1.0.0` → `2.0.0` + amendement Constitution si nécessaire
+  (Article XII). Annoncer la deprecation 1.0.0 à T+6 mois (CHANGELOG + `GOVERNANCE.md`
+  release process). Effort : `S`.
+
+**Total B.8 : `XL`**, ~10–12 semaines pour 1 dev senior + revues Atlas/Aegis.
+
+---
+
+## 5. Module B.9 — `mobile-only / 1.0.0` → `mobile-pwa-first / 2.0.0`
+
+### 5.1 Stratégie
+
+`mobile-only / 1.0.0` (livré T2 P2) couvre déjà OIDC + flutter_appauth + Keychain/
+Keystore + biometric + App Attest + Play Integrity. Il manque le **canal PWA Qwik**
+prescrit par ARCHITECTURE-TARGET §6.3 : PWA installable Android + desktop + iOS
+fallback natif si push critique.
+
+### 5.2 Items B.9.x
+
+- **B.9.1.** Schema `.forge/schemas/mobile-pwa-first/2.0.0.yaml` (`mobile-only / 1.0.0`
+  reste comme alias). Effort : `S`.
+- **B.9.2.** Sous-dossier `web-pwa/` ajouté à l'arborescence — Qwik City + Service
+  Worker + Web Push (VAPID) + manifest.json + icons + offline shell. Effort : `M`.
+- **B.9.3.** Templates partagés OIDC : le `AuthGateway` actuel (Flutter) est doublé
+  d'un client TypeScript Connect-ES (Qwik) qui parle au même provider OIDC via
+  `authorization_code + PKCE`. Effort : `M`.
+- **B.9.4.** Décideur par défaut documenté : si plateforme `Web|Android` → PWA Qwik ;
+  si plateforme `iOS` ET push critique → fallback Flutter natif iOS. Documenté dans
+  `docs/ARCHETYPES.md` avec arbre de décision. Effort : `S`.
+- **B.9.5.** flutter_bloc renforcé : générateurs Hera produisent
+  `Event`/`State`/`Bloc` + `bloc_test` à partir des proto messages. Effort : `S`.
+- **B.9.6.** Linter `no-state-management-alternatives` activé sur ce schéma (cohérent
+  avec B.8.11). Effort : déjà fait par B.8.11.
+- **B.9.7.** Workflows CI Fastlane (existants) + ajout d'un job `pwa-deploy` ciblant
+  un canal de preview Cloudflare Pages / Vercel / OVH-managed (au choix). Effort : `M`.
+- **B.9.8.** Snapshot tarball `mobile-pwa-first/2.0.0.tar.gz`. Effort : `S`.
+- **B.9.9.** Migration script `bin/forge-migrate-mobile-pwa.sh` qui prend une install
+  `mobile-only / 1.0.0` et ajoute `web-pwa/` sans toucher au natif existant.
+  Effort : `S`.
+- **B.9.10.** Documentation : `docs/MIGRATION-PATHS.md` enrichi avec
+  `mobile-only → mobile-pwa-first` (contrairement au plan d'origine qui listait
+  cette migration comme `M`, c'est ici trivialisée par B.9.9). Effort : `S`.
+- **B.9.11.** Harness `b9.test.sh` : 25–30 tests L1 + 5 L2 fixture. Effort : `S`.
+
+**Total B.9 : `L`**, ~3–4 semaines.
+
+---
+
+## 6. Modules B.6 + B.7 — nouveaux archétypes
+
+### 6.1 B.6 `event-driven-eu` (NATS + Temporal + AsyncAPI)
+
+- **B.6.1.** Schema `.forge/schemas/event-driven-eu/1.0.0.yaml` étend `tdd-rust`
+  avec phases `event-design` (specs AsyncAPI 3.1 avant design) et
+  `saga-orchestration` (workflows Temporal). Effort : `S`.
+- **B.6.2.** Scaffolder `/forge:init --archetype event-driven-eu` : workspace Rust
+  (axum + async-nats + tonic + Temporal Go SDK via FFI ou client REST), NATS JetStream
+  cluster Helm chart, AsyncAPI 3.1 in `shared/asyncapi/`, Postgres event store, Temporal
+  cluster optionnel. Effort : `L`.
+- **B.6.3.** Standards :
+  - `standards/global/event-driven.md` — patterns saga / process manager / outbox /
+    inbox, idempotency keys, event versioning.
+  - `standards/global/asyncapi-contracts.md` — versioning AsyncAPI 3.1, validation buf
+    breaking equivalent (TBD : `asyncapi-cli` validate).
+  - `standards/infra/nats-jetstream.md` — clustering, RAFT, persistence,
+    consumer groups.
+  Effort : `M`.
+- **B.6.4.** Nouvel agent **Hermes-Async** (K.1) : maintient AsyncAPI specs, génère
+  bindings NATS/Kafka, pose les idempotency keys. Effort : `M`.
+- **B.6.5.** Templates pipelines CI : workflows par layer
+  (`forge-events.yml`, `forge-workflows.yml`, `forge-infra.yml`). Effort : `M`.
+- **B.6.6.** Templates Helm Temporal cluster (history/matching/frontend/worker) avec
+  Postgres backing. Documentation T2/T3 (self-host EU). Effort : `M`.
+- **B.6.7.** Snapshot tarball + harness `b6.test.sh` (≥ 35 tests). Effort : `M`.
+- **B.6.8.** Reference project `examples/forge-eda-example/` avec 3 demos :
+  ingestion HTTP → NATS, projection event store → read model, saga 3-steps. Effort : `L`.
+- **B.6.9.** Compliance hooks : SBOM CycloneDX auto-generation, NIS2 incident reporting
+  template, DORA RoI submission helper. Effort : `M`.
+- **B.6.10.** Standard interdiction : pas de Kafka SaaS US (Confluent Cloud), Redpanda
+  acceptable (Cloud Native Computing Foundation, EU deployable). Effort : `S`.
+
+**Total B.6 : `XL`**, ~10 semaines.
+
+### 6.2 B.7 `ai-native-rag` (pgvector + LLM gateway + MCP)
+
+- **B.7.1.** Schema `.forge/schemas/ai-native-rag/1.0.0.yaml` étend `ai-first` avec
+  phases `embeddings-pipeline` (specs pipeline avant design) et
+  `prompt-audit` (gates). Effort : `S`.
+- **B.7.2.** Scaffolder `/forge:init --archetype ai-native-rag` : workspace Rust
+  (axum + DBOS), Postgres + pgvector 0.8 + HNSW indexes pré-câblés, LLM gateway proxy
+  (Mistral on Scaleway / vLLM EU / OpenAI fallback), MCP servers stub
+  (`db`, `file`, `search`), Qwik streaming UI (SSE / WebTransport). Effort : `XL`.
+- **B.7.3.** Standards :
+  - `standards/global/rag-patterns.md` — chunking, embeddings, retrieval (BM25 + vector),
+    re-ranking, context window management.
+  - `standards/global/llm-gateway.md` — proxy patterns, prompt audit logs, BYOK,
+    tenant-scoped budgets, kill switch.
+  - `standards/global/mcp-servers.md` — protocole, sécurité (sandboxing), versioning,
+    auth.
+  Effort : `M`.
+- **B.7.4.** Nouvel agent **Pythia** (K.2) : pilote embeddings pipeline, tune pgvector
+  (HNSW `ef_search`), MCP servers, prompt audit. Effort : `M`.
+- **B.7.5.** Templates compliance AI Act : classification de risque, transparence
+  (model card jointe au build), évaluation biais (dataset cards), opt-out training.
+  Effort : `M`.
+- **B.7.6.** Snapshot tarball + harness `b7.test.sh` (≥ 35 tests). Effort : `M`.
+- **B.7.7.** Reference project `examples/forge-rag-example/` avec 3 demos :
+  RAG simple (retrieval + LLM), agentic loop (tool calls via MCP), streaming UI.
+  Effort : `L`.
+- **B.7.8.** Compliance hooks : DORA + AI Act artefacts (incident reporting < 24h,
+  SBOM, vuln handling, model evaluation reports). Effort : `M`.
+- **B.7.9.** Standard interdiction : pas de Vertex AI / Bedrock par défaut
+  (CLOUD Act). Mistral / Anthropic via gateway acceptable T1 ; Mistral on Scaleway
+  ou vLLM self-host requis pour T3. Effort : `S`.
+- **B.7.10.** Templates Qwik streaming patterns : SSE, WebTransport, cancel-on-unmount,
+  retry exponentiel. Effort : `M`.
+
+**Total B.7 : `XL`**, ~10–12 semaines.
+
+---
+
+## 7. Module I — Compliance EU graduée T1/T2/T3 *(nouveau)*
+
+Source : ARCHITECTURE-TARGET §10.
+
+### 7.1 Items I.x
+
+- **I.1.** Schémas JSON `compliance-tier.schema.json` et `archetype.schema.json` v2
+  (cf. P-4). Effort : `S`.
+- **I.2.** Standard `global/compliance-tiers.md` documente les définitions T1/T2/T3
+  (RGPD via DPA / self-hostable / EU strict SecNumCloud) et les composants éligibles
+  par tier (matrice §10.2). Effort : `M`.
+- **I.3.** Linter rule : refuser tout `.forge/changes/<name>/.forge.yaml` avec
+  `compliance_tier: T3` qui scaffolde un composant interdit T3 (Firebase, Datadog,
+  AWS managed services, OpenAI-direct sans gateway). Effort : `M`.
+- **I.4.** Nouvel agent **Demeter** (K.3) : data steward EU, classifie données T1/T2/T3,
+  valide DPA, détecte CLOUD Act risks dans dépendances `Cargo.toml` /
+  `pubspec.yaml` / `package.json`. Effort : `M`.
+- **I.5.** Templates `.github/workflows/forge-compliance.yml` qui exécute Demeter +
+  SBOM CycloneDX + scanners de licences sur chaque PR. Effort : `M`.
+- **I.6.** Échéances réglementaires inscrites dans `.forge/compliance/` :
+  - NIS2 reporting 24h/72h
+  - DORA RoI ESA submission 30 avr 2026
+  - CRA reporting 11 sept 2026, full requirements 11 déc 2027
+  - AI Act phases 2025–2027 par catégorie de risque
+  Documentation `docs/COMPLIANCE.md`. Effort : `M`.
+
+**Total I : `L`**, ~4–6 semaines.
+
+---
+
+## 8. Module J — Standards versionnés *(nouveau)*
+
+Cf. P-2. Six fichiers YAML versionnés avec metadata `version`, `last_reviewed`,
+`expires_at`, `forbidden:` lists, `linter_rule:`, `enforcement:` (pre-commit / CI),
+`exception_constitutional: true|false`.
+
+- **J.1.** `transport.yaml` (Connect-RPC). Effort : `S`.
+- **J.2.** `state-management.yaml` (flutter_bloc + interdictions). Effort : `S`.
+- **J.3.** `observability.yaml` (OTel + OBI + Coroot + SigNoz). Effort : `S`.
+- **J.4.** `orchestration.yaml` (DBOS + Temporal fallback). Effort : `S`.
+- **J.5.** `identity.yaml` (Zitadel + Keycloak + Authentik). Effort : `S`.
+- **J.6.** `persistence.yaml` (Postgres 17 + pgvector + Citus). Effort : `S`.
+- **J.7.** Linter `validate-standards-yaml.sh` (cohérent avec F.2). Effort : `M`.
+- **J.8.** Janus orchestrator règles (ARCHITECTURE-TARGET §12.5) : refuse
+  `flutter-firebase` avec message Schrems II, force self-host Zitadel/SigNoz si
+  `--eu-tier=T3`, force Mistral-EU ou vLLM si `ai-native-rag` + T3, génère SBOM
+  CycloneDX. Effort : `M`.
+
+**Total J : `M`**, ~2–3 semaines.
+
+---
+
+## 9. Module K — Cinq nouveaux agents *(nouveau)*
+
+Source : ARCHITECTURE-TARGET §9.2.
+
+| Code | Persona              | Responsabilités                                                                                | Archétype                          | Effort |
+|------|----------------------|------------------------------------------------------------------------------------------------|------------------------------------|--------|
+| K.1  | **Hermes-Async**     | AsyncAPI 3.1, NATS/Kafka bindings, idempotency keys                                            | `event-driven-eu`                  | `M`    |
+| K.2  | **Pythia**           | Embeddings, pgvector tuning (HNSW `ef_search`), MCP servers, prompt audit                      | `ai-native-rag`                    | `M`    |
+| K.3  | **Demeter**          | Data classification T1/T2/T3, DPA validation, CLOUD Act detection                              | tous                               | `M`    |
+| K.4  | **Iris-Web**         | Standards Qwik / SvelteKit, distinct de Hera (Flutter)                                         | `full-stack-monorepo`, `mobile-pwa-first` | `M` |
+| K.5  | **Themis**           | Compliance officer NIS2/DORA/CRA + cycle review-standards                                      | tous EU                            | `M`    |
+
+Modifications agents existants (ARCHITECTURE-TARGET §9.1) :
+- **Janus** : élevé (5 archétypes au lieu de 4, pipeline buf+Connect, interdiction Riverpod).
+- **Atlas** : très élevé (Helm Envoy, Zitadel, NATS, OBI DaemonSet).
+- **Hera** : faible (génération Bloc renforcée + suppression switch state-management).
+- **Apollo** : modéré (Connect-Dart codegen, retrofit retiré).
+- **Hephaestus** : modéré (Bloc skeletons + bloc_test depuis proto).
+- **Vulcan** : modéré (DBOS-rs intégration).
+- **Hermes-API** : élevé (Connect codegen + AsyncAPI + OpenAPI 3.1 dérivé).
+- **Argus / Sentinel** : faible (W3C propagation Connect, middleware tonic OTel).
+- **Panoptes** : élevé (Coroot + OBI configs).
+- **Aegis** : élevé (NIS2/DORA/CRA audits + Zitadel hardening).
+- **Heracles** : modéré (CI buf breaking, OVH/Scaleway providers, linter NSMA).
+
+**Total K : `L`**, ~5–6 semaines pour les 5 agents + edits cross-agents.
+
+---
+
+## 10. Plan de migration en 4 phases (cible 6 mois)
+
+Reprise de ARCHITECTURE-TARGET §11.
+
+### Phase 0 — Freeze + audit (2 semaines, T4)
+- Geler les choix actuels, instrumenter baseline p95/p99 sur l'exemple flagship.
+- Audit Aegis : OWASP ASVS L2 + NIS2 gap analysis.
+- Inventaire dépendances pour conformité CLOUD Act (Demeter, K.3).
+- Audit linter Hera : confirmer absence Riverpod/Provider/GetX/MobX.
+- **Risques** : aucun.
+- **Point de non-retour** : non.
+
+### Phase 1 — Observability + contrats (4 semaines, T5)
+- Migrer codegen vers buf + Connect (proto inchangé, ajout Connect protocol).
+- Déployer OTel Collector + OBI + Coroot en parallèle de SigNoz.
+- Validation traceparent end-to-end Flutter → Kong → Rust.
+- Convertir les 10 ADR en `.forge/changes/<adr-N>/` (P-1).
+- Créer les 6 standards versionnés (J.1–J.6).
+- **Risques** : faible. Connect-Dart non officiel, fallback Connect-Kotlin via FFI.
+- **Point de non-retour** : non. Réversible.
+
+### Phase 2 — Bascule structurelle (6 semaines, T6) — **POINT DE NON-RETOUR**
+- Remplacer Kong par Envoy Gateway (canary par route).
+- Migrer Temporal → DBOS pour workflows monorepo simples (cardinalité < 10k/jour).
+- Renforcer scaffolding flutter_bloc + bloc_test via mise à jour Hera (templates v2).
+- Codegen Connect-Dart remplace retrofit.
+- Activer linter `no-state-management-alternatives` en CI bloquant (B.8.11).
+- Déploiement Zitadel.
+- **Bump schéma flagship 1.0.0 → 2.0.0** (B.8.14).
+- **Risques élevés** : Envoy CRD complexity, DBOS Go SDK encore récent, Zitadel
+  migration auth.
+- **Point de non-retour** : oui, après bascule production de la flagship sur Envoy.
+- **Mitigations** : feature flag par route, blue-green Envoy/Kong, training équipe SRE.
+
+### Phase 3 — Nouveaux archétypes (8 semaines, T7)
+- Implémenter `event-driven-eu` (NATS JetStream + Temporal + AsyncAPI 3.1) → B.6.
+- Implémenter `ai-native-rag` (pgvector + LLM gateway + MCP) → B.7.
+- Mettre à jour Forge CLI `@sdd-forge/cli init --archetype event-driven-eu|ai-native-rag`.
+- Créer agents Pythia, Hermes-Async, Demeter, Iris-Web, Themis (K.1–K.5).
+- **Risques** : maturité DBOS pour AI agents, MCP encore en évolution.
+
+### Phase 4 — Deprecation (4 semaines, T8)
+- Supprimer `flutter-firebase` du backlog (B.2 du plan d'origine).
+- Renommer `mobile-only` → `mobile-pwa-first`, ajouter Qwik PWA template (B.9).
+- Préparer T3 SecNumCloud (Outscale OKS) pour clients souverains.
+- Déprécier Flutter Web public (back-office only).
+- Annoncer EOL `full-stack-monorepo / 1.0.0` (legacy compat).
+
+### Critères de rollback (ARCHITECTURE-TARGET §11.3)
+- p99 augmente > 20 % après Envoy → rollback Kong.
+- Erreurs traceparent > 1 % → rollback OTel SDK seul (sans OBI).
+- DBOS Postgres saturé > 70 % CPU → fallback Temporal pour workflows lourds.
+
+---
+
+## 11. Priorisation recommandée — T4 → T8 (post-v0.3.0)
+
+| Trimestre | Modules                                                        | Rationale                                                                                                   |
+|-----------|----------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------|
+| **T4**    | **P-1, P-2, P-3, P-4, I.1**                                    | Méthodologie : ADR capturés, 6 standards YAML, cycle 12 mois, schémas compliance. Pré-requis non négociable. |
+| **T5**    | **Phase 1 ARCHITECTURE-TARGET, J.7, J.8, K.3 (Demeter), I.2–I.6** | Observabilité + Connect contrats + standards linter + compliance graduée. Réversible.                       |
+| **T6**    | **B.8 (flagship 1.0.0 → 2.0.0), Phase 2 ARCHITECTURE-TARGET, P-5** | Migration breaking flagship + refactor Hera 9→5. **Point de non-retour**.                                   |
+| **T7**    | **B.6 (event-driven-eu), B.7 (ai-native-rag), K.1, K.2, K.4, K.5** | Deux nouveaux archétypes + 4 nouveaux agents.                                                               |
+| **T8**    | **B.9 (mobile-pwa-first / 2.0.0), B.3 (rust-cli-tui), pédagogie C.2-C.5** | Renommage mobile + dernier archétype premium + walkthrough/anti-patterns/comparison/migration.            |
+| **T9+**   | **G.* (Forge Guardian, VSCode, pre-commit), H.* (multi-tenant, télémétrie, compliance reports)** | Outillage périphérique et enterprise après que les 5 archétypes soient stables.                            |
+
+### Alternative « adoption lente, qualité maximale »
+
+Si tu priorises **profondeur** plutôt que largeur (i.e. flagship parfait avant
+nouveaux archétypes), inverse T6 et T7 : livre B.6 et B.7 sur le schéma flagship 1.0.0
+existant, puis fais B.8 en T8. Le coût : flagship reste sur Kong/Temporal pendant
+6 mois supplémentaires (acceptable si tu n'as aucun adopter EU strict en cours).
+
+---
+
+## 12. Risques transverses *(post ARCHITECTURE-TARGET)*
+
+| Risque                                                                | Probabilité | Impact | Mitigation                                                                                                                  |
+|-----------------------------------------------------------------------|-------------|--------|-----------------------------------------------------------------------------------------------------------------------------|
+| Connect-Dart encore community-only                                    | Moyenne     | Moyen  | Forker, contribuer upstream, sinon Kotlin FFI                                                                               |
+| DBOS Go SDK breaking changes < 1 an de prod                           | Moyenne     | Élevé  | Wrapper interne Forge, épingler version, garder Temporal en option pour workflows critiques                                 |
+| Envoy Gateway CRD courbe                                              | Élevée      | Moyen  | Documentation Atlas + templates Helm + runbooks                                                                             |
+| Maintenir 9 sub-agents Hera (sans P-5)                                | Élevée      | Élevé  | Refactor en 5 sub-agents en T6                                                                                              |
+| OBI nécessite kernel ≥ 5.8                                            | Moyenne     | Faible | Documenter prérequis nodes ; opt-in via flag                                                                                |
+| Drift specs ↔ code (problème SDD générique)                           | Élevée      | Élevé  | Adopter "living specs" pattern (Augment Intent)                                                                             |
+| Friction recrutement si marché Flutter bascule Riverpod-majoritaire   | Moyenne     | Moyen  | Assumé comme coût de positionnement premium ; rationale Bloc dans README de chaque archétype                                |
+| Migration flagship 1.0.0 → 2.0.0 casse les adopters early-bird        | Moyenne     | Élevé  | `forge upgrade` 3-way merge + legacy compat 6 mois + migration script + canary par route                                    |
+| Schrems II / CLOUD Act réinterprétés en 2027 (assouplis ?)            | Faible      | Moyen  | Si décision change, ajouter `flutter-baas-eu` ou similaire ; ne pas réintroduire Firebase                                   |
+| AI Act phases 2026–2027 ne sont pas finalisées                        | Moyenne     | Moyen  | Templates B.7 conçus extensibles ; agent Themis (K.5) suit l'évolution réglementaire                                        |
+| Déclassement `mobile-only / 1.0.0` casse les adopters T2 P2           | Moyenne     | Moyen  | Alias rétro-compatible jusqu'à T8 (≥ 6 mois) + `forge upgrade` mobile-only → mobile-pwa-first via B.9.9                     |
+
+---
+
+## 13. Caveats & limites
+
+> Section critique. Lis-la deux fois.
+
+1. **`full-stack-monorepo / 1.0.0` shippé en v0.3.0 reste fonctionnel** et restera
+   supporté en `legacy compat` jusqu'à T8. Aucun adopter n'est obligé de migrer.
+   Mais aucun **nouveau** projet ne devrait être scaffoldé sur 1.0.0 après T6 (les
+   5 ADR techniques font de 1.0.0 une stack obsolète sur les 3 critères pondérés
+   latence/observabilité/scalabilité).
+2. **Connect-Dart non-officiel** : risque #1 de B.8. Si trop fragile au moment de T6,
+   garder gRPC-Web standard via Envoy Gateway et accepter l'overhead JSON↔binary
+   translation. Ne pas bloquer toute la migration sur ce seul point.
+3. **DBOS-rs maturity** : avril 2026, écosystème < 1 an. Si tu construis une
+   plateforme à 5 ans, **garde Temporal en option** pour les workflows critiques
+   (l'archétype `event-driven-eu` le justifie déjà).
+4. **OBI / Coroot eBPF** : kernel récent + privileged DaemonSet. Audit Aegis
+   obligatoire avant prod. Certains clusters managés EU restreignent.
+5. **Refactor Hera 9 → 5 (P-5)** est une `opinion d'architecte non sourcée`.
+   À débattre publiquement avant exécution (Article XII.1 amendment process si la
+   liste des sub-agents est codifiée dans Constitution).
+6. **flutter-firebase REMOVE** est une décision de positionnement, pas technique.
+   Defendable mais **à assumer publiquement** dans `docs/ARCHETYPES.md` et
+   `CHANGELOG.md` pour ne pas surprendre les adopters qui auraient extrapolé du plan
+   d'origine.
+7. **`event-driven-eu` n'est pas un cas d'usage prouvé chez Forge** au moment de la
+   décision — c'est une lecture d'industrie (kai-waehner.de, ARCHITECTURE-TARGET §3.3).
+   Mesurer la demande avant T7 (issues GitHub Discussions, sondage early-adopters).
+8. **`ai-native-rag` est un cible mouvante** — MCP, agents, RAG patterns évoluent
+   tous les 3 mois. Templates B.7 doivent être versionnés agressivement avec
+   fenêtre 12 mois sans exception structurelle.
+9. **`opinion d'architecte non sourcée`** sur les points suivants :
+   - Refactor Hera 9 → 5 sub-agents (P-5).
+   - Rejet GraphQL Federation par défaut.
+   - Recommandation `mobile-pwa-first` PWA-by-default (le marché est partagé).
+   - Postgres comme défaut universel pour `ai-native-rag` (Qdrant > 50M vecteurs).
+10. **Pas d'archétype `data-intensive`** proposé (volontairement écarté faute de
+    demande explicite — manque potentiel à 18 mois).
+
+---
+
+## 14. Fichiers critiques à modifier (delta vs plan d'origine)
+
+| Module | Fichiers nouveaux                                                                                                           |
+|--------|------------------------------------------------------------------------------------------------------------------------------|
+| P-1    | `.forge/changes/adr-001..adr-010/` (10 nouveaux changes archived avec proposal/specs/design)                                |
+| P-2 / J | `.forge/standards/{transport,state-management,observability,orchestration,identity,persistence}.yaml`                       |
+| P-3    | `.forge/standards/REVIEW.md`, `.forge/standards/global/standards-lifecycle.md`                                              |
+| P-4 / I | `.forge/schemas/compliance-tier.schema.json`, `.forge/schemas/archetype.schema.json` v2                                    |
+| P-5    | `.claude/agents/flutter/*` (5 sub-agents au lieu de 9 — supprime 4 fichiers, fusionne en 5)                                  |
+| B.6    | `.forge/schemas/event-driven-eu/1.0.0.yaml`, `.forge/templates/event-driven-eu/*`, `.claude/agents/hermes-async.md`, `.forge/standards/{global/event-driven,global/asyncapi-contracts,infra/nats-jetstream}.md`, `examples/forge-eda-example/`, `bin/forge-init-event-driven-eu.sh` |
+| B.7    | `.forge/schemas/ai-native-rag/1.0.0.yaml`, `.forge/templates/ai-native-rag/*`, `.claude/agents/pythia.md`, `.forge/standards/{global/rag-patterns,global/llm-gateway,global/mcp-servers}.md`, `examples/forge-rag-example/`, `bin/forge-init-ai-native-rag.sh` |
+| B.8    | `.forge/schemas/full-stack-monorepo/2.0.0.yaml`, `.forge/templates/full-stack-monorepo/2.0.0/*` (Envoy/DBOS/Connect/Zitadel/Postgres+pgvector/SigNoz+OBI+Coroot/Qwik), `bin/forge-migrate-flagship.sh`, `.forge/scaffold-snapshots/full-stack-monorepo/2.0.0.tar.gz` |
+| B.9    | `.forge/schemas/mobile-pwa-first/2.0.0.yaml`, `.forge/templates/mobile-pwa-first/2.0.0/web-pwa/*`, `bin/forge-migrate-mobile-pwa.sh`, `.forge/scaffold-snapshots/mobile-pwa-first/2.0.0.tar.gz` |
+| I      | `.forge/standards/global/compliance-tiers.md`, `.claude/agents/demeter.md`, `.github/workflows/forge-compliance.yml`, `docs/COMPLIANCE.md`, `.forge/compliance/{nis2,dora,cra,ai-act}/*` |
+| J      | `.forge/scripts/validate-standards-yaml.sh`, `.claude/agents/janus.md` (élargir règles)                                     |
+| K      | `.claude/agents/{hermes-async,pythia,demeter,iris-web,themis}.md`                                                            |
+| Docs   | `docs/ARCHETYPES.md` (5 lignes au lieu de 4), `docs/MIGRATION-PATHS.md` (enrichi B.8 + B.9), `docs/COMPLIANCE.md`, `CHANGELOG.md`, `.forge/product/roadmap.md` |
+
+---
+
+## 15. Conclusion — message direct
+
+Tu as livré v0.3.0 le 2026-05-02 avec une exécution irréprochable : 13 changes,
+292 tests, gouvernance posée, deux archétypes scaffoldables. Mais le document
+`docs/ARCHITECTURE-TARGET.md` que tu as commandité est **un acte de remise à plat
+volontaire** : il dit que `full-stack-monorepo / 1.0.0` est défendable mais pas
+optimal, et que la taxonomie d'archétypes confond cible technique (full-stack vs
+mobile-only) et contraintes business (souveraineté, événementiel, AI).
+
+Les **trois critères pondérés** (latence p95/p99, observabilité déterministe,
+scalabilité sans SPOF) **conduisent tous au même verdict** :
+
+- Envoy Gateway > Kong → B.8.
+- DBOS > Temporal (par défaut) → B.8.
+- Connect-RPC > REST-bridge → B.8.
+- OTel + eBPF (OBI/Coroot) > OTel SDK seul → B.8.
+- Postgres+pgvector > zoo de bases → B.8.
+
+Le module B.8 est le **point de non-retour**. Tu peux retarder, tu ne peux pas
+contourner sans abandonner le positionnement EU/premium/SDD. Les modules B.6
+(`event-driven-eu`) et B.7 (`ai-native-rag`) sont les **deux nouveaux territoires**
+ouverts par la révision taxonomique : sans eux, Forge reste un framework SDD générique.
+Avec eux, Forge devient le seul framework SDD qui propose nativement event-driven-eu
+et AI-native souverain.
+
+**Prochaines actions concrètes (T4)** :
+
+1. Convertir les 10 ADR en `.forge/changes/` (P-1) — 1 semaine.
+2. Créer les 6 standards YAML (P-2 / J.1–J.6) — 1 semaine.
+3. Inscrire le cycle de réévaluation 12 mois (P-3) — 2 jours.
+4. Schémas JSON compliance (P-4 / I.1) — 2 jours.
+5. Décider P-5 (refactor Hera 9 → 5) ou le repousser — décision utilisateur.
+
+Tout le reste découle.
+
+— *Fin du nouveau plan.*
