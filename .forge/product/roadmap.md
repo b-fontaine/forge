@@ -3,20 +3,31 @@
 This roadmap is a living document. Dates are approximate and may shift as
 discovery reveals complexity. Items may move between phases. Ownership:
 project maintainer reviews monthly; community input via GitHub Discussions
-once opened (Module D.6 in the source audit roadmap).
+(Module D.6, opened 2026-04-30).
+
+> **Source documents** : the audit roadmap
+> (`/Users/bfontaine/.claude/plans/il-s-agit-l-d-un-noble-gem.md` — internal)
+> establishes the original modular plan ; `docs/ARCHITECTURE-TARGET.md`
+> (2026-04-29 rev v1.1) ratifies 10 ADRs that revise the archetype taxonomy
+> (4 → 5) and the flagship's technical stack ; `docs/new-archetypes-plan.md`
+> (2026-05-04) consolidates both into the post-v0.3.0 plan reflected below.
 
 ## Vision (6–12 Months)
 
 By 2027-Q1, any Flutter or Rust team can bootstrap a Forge project in under
-five minutes via an official installer, pick one of three production-grade
-**archetypes** (`full-stack-monorepo`, `flutter-firebase`, `rust-cli-tui`),
-and start a spec → implementation cycle the same day. The framework is
-distributed under Apache License 2.0 and is actively dog-fooded — Forge is
-developed *through* Forge, its own `.forge/changes/` directory documenting
-every amendment to the Constitution and every new capability. Two public
-reference projects demonstrate the pipeline end-to-end. The deterministic
-linters run in CI on every contributor's PR, blocking constitutional
-violations before review.
+five minutes via an official installer, pick one of **five production-grade
+archetypes** (`full-stack-monorepo`, `mobile-pwa-first`, `event-driven-eu`,
+`ai-native-rag`, `rust-cli-tui`) and start a spec → implementation cycle the
+same day. The framework is distributed under Apache License 2.0 and is
+actively dog-fooded — Forge is developed *through* Forge, its own
+`.forge/changes/` directory documenting every amendment to the Constitution
+and every new capability. Public reference projects demonstrate each
+archetype end-to-end. The deterministic linters run in CI on every
+contributor's PR, blocking constitutional violations before review.
+EU-friendly by design: the flagship stack defaults to Envoy Gateway,
+DBOS-backed durable execution on Postgres, Connect-RPC, Zitadel identity,
+and SigNoz + OBI eBPF + Coroot observability — with a graded compliance
+profile (T1 RGPD-via-DPA, T2 self-hostable, T3 SecNumCloud / EUCS High).
 
 ## MVP (Now — 2026-Q2) — **Complete as of 2026-04-21 (v0.2.1)**
 
@@ -93,50 +104,143 @@ start of **T3**.
 | **Done** | **JSON Schema validating `.forge.yaml` per change, enforced by `verify.sh`. Delivered 2026-05-01 via `f2-yaml-schema`** : new `.forge/schemas/change.schema.json` (Draft 2020-12) with required name/status/created/schema/constitution_version, status enum (6 values), schema enum dynamique with drift detector test, semver pattern, timeline shape + coherence rules. New `.forge/scripts/validate-change-yaml.sh` (bash + Python 3 inline, no jsonschema lib). New `verify.sh` section "Change YAML Schema" iterates over `.forge/changes/*/.forge.yaml`. New standard `global/change-yaml-schema.md`, doc `docs/SCHEMA.md`, harness `f2.test.sh` 18/18 PASS. **All 11 archived pre-F.2 changes validated** (NFR-YS-001 backward compat) — schema accommodates historical extended fields (`parent_audit_items`, `depends_on`, `archived_to`, `schema_promotion`, `promotes_schema`). PyYAML date coercion implemented (unquoted ISO dates parsed as `datetime.date` are converted to strings before pattern check). 12 harnesses now run in CI. New consolidated spec `.forge/specs/change-yaml-schema.md`. | Audit Module F.2 — robustness; F.4 still pending in T3 |
 | **Done** | **`constitution-linter.sh` extended to cover Articles V, X.3, XI.3, XI.5 (previously not enforced). Delivered 2026-05-01 via `f4-linter-extension`** : 4 new sections in the linter — Article V.1 (task ↔ FR linkage in tasks.md), Article X.3 (public API doc ratio ≥ 80% Dart/Rust with first-5-missing list), Article XI.3 (GenUI schema-driven heuristic warning, NOT fail), Article XI.5 (fallback test pair `*fallback*` ↔ `*fallback*_test*`). Opt-out env vars per rule (`FORGE_LINTER_SKIP_V_1`, `_X_3`, `_XI_3`, `_XI_5`) + threshold override (`FORGE_LINTER_X3_THRESHOLD`). New `warn` helper + WARN counter. New standard `global/linting-rules.md` (6 H2 + opt-out matrix), doc `docs/LINTING.md` (~140 lignes). Harness 23/23 PASS (16 L1 + 7 L2 fixture-based). 13 harnesses now run in CI. Linter perf 1.97s ≤ 3s budget. Constitution coverage estimated ~70% → ~85%. **T3 robustness 100% delivered** (F.1 + F.2 + F.4). | Audit Module F.4 — DONE; T3 robustness complete |
 | **Done** | **Governance model (`GOVERNANCE.md`) — amendment process, release ownership, BDFL vs. committee decision. Delivered 2026-04-30 via `d5-governance`** : `GOVERNANCE.md` at repo root (BDFL-with-fallback model — current phase Benoit Fontaine `@bfontaine` ; mature phase committee 3-7 members behind future amendment), `CODE_OF_CONDUCT.md` at repo root (Contributor Covenant v2.1 verbatim, contact `contact@benoitfontaine.fr`), Constitution amended v1.0.0 → v1.1.0 (new **Article XII — Governance** delegating operational rules to `GOVERNANCE.md`, first row in `## Amendments` table), templates bumped (`change.yaml` × 2 + archetype `.forge.yaml.tmpl`), README `## Governance` section now links both files. ADR-006 establishes the canonical precedent : a change-amendment ratified UNDER version N stays at N in its `.forge.yaml` and CREATES N+1 (no circular reference). 15/15 tests PASS in `d5.test.sh` ; 9 harnesses now run in CI (`b5.test.sh` + `d5.test.sh` newly registered). New consolidated spec `.forge/specs/governance.md`. | Audit Module D.5 — closes T2 P1 (last facilitator) and unblocks the second-archetype work in T3 P2 |
-| **Done** | **Archetype `mobile-only` (Flutter iOS + Android, OIDC via `flutter_appauth`, no BaaS) — second archetype premium. Delivered 2026-04-30 via `b4-mobile-only` in 3 phases**: Phase A (core scaffold structure, schema + wrapper bash + dispatch entry + Flutter/iOS/Android skeleton + snapshot 436 KB), Phase B (runtime modules: oidc_config + auth_repository + auth_bloc + secure_storage_adapter + biometric_service + biometric_lock_widget + DeviceAttestor + 3 impls iOS App Attest / Android Play Integrity / Fake + Swift bridge AppAttestService + Kotlin bridge PlayIntegrityService + OTel init + flutter-mobile.md standard 7 H2 + 3 Interdictions), Phase C (Fastlane per-platform with secrets via ENV exclusively + mobile-ci.yml.tmpl iOS macos-latest + Android ubuntu-latest + e2e opt-in + ARCHETYPES.md row + framework-owned-paths.yml.tmpl per-archetype). 47/47 tests PASS in `b4.test.sh` (42 L1 + 5 L2). 10 harnesses now run in CI ; total ≥ 234 tests on `optim`. Snapshot 465 KB gzipped (23 % of NFR-MO-001 budget 2 MB). New consolidated spec `.forge/specs/mobile-only.md`. **First validation of B.5.1 dispatcher ABI**: zero TypeScript edit, adding mobile-only = 1 dispatch-table.yml entry + 1 `bin/forge-init-mobile-only.sh` wrapper. **First change ratified under Constitution v1.1.0** (post-D.5). | Audit Module B.4 — closes T2 P2 (second-archetype gate) ; **guard-rail PR optim → main + v0.3.x release now liftable at user discretion** |
+| **Done** | **Archetype `mobile-only` (Flutter iOS + Android, OIDC via `flutter_appauth`, no BaaS) — second archetype premium. Delivered 2026-04-30 via `b4-mobile-only` in 3 phases**: Phase A (core scaffold structure, schema + wrapper bash + dispatch entry + Flutter/iOS/Android skeleton + snapshot 436 KB), Phase B (runtime modules: oidc_config + auth_repository + auth_bloc + secure_storage_adapter + biometric_service + biometric_lock_widget + DeviceAttestor + 3 impls iOS App Attest / Android Play Integrity / Fake + Swift bridge AppAttestService + Kotlin bridge PlayIntegrityService + OTel init + flutter-mobile.md standard 7 H2 + 3 Interdictions), Phase C (Fastlane per-platform with secrets via ENV exclusively + mobile-ci.yml.tmpl iOS macos-latest + Android ubuntu-latest + e2e opt-in + ARCHETYPES.md row + framework-owned-paths.yml.tmpl per-archetype). 47/47 tests PASS in `b4.test.sh` (42 L1 + 5 L2). 10 harnesses now run in CI ; total ≥ 234 tests on `optim`. Snapshot 465 KB gzipped (23 % of NFR-MO-001 budget 2 MB). New consolidated spec `.forge/specs/mobile-only.md`. **First validation of B.5.1 dispatcher ABI**: zero TypeScript edit, adding mobile-only = 1 dispatch-table.yml entry + 1 `bin/forge-init-mobile-only.sh` wrapper. **First change ratified under Constitution v1.1.0** (post-D.5). **Note 2026-05-04**: schema `mobile-only / 1.0.0` becomes a legacy compat alias for the renamed `mobile-pwa-first` archetype (see Phase 3 below). | Audit Module B.4 — closes T2 P2 (second-archetype gate) ; **guard-rail PR optim → main + v0.3.x release now liftable at user discretion** |
 
-## Phase 3 (Later — 2026-Q4 and beyond)
+### v0.3.0 Release (2026-05-02)
+
+PR #1 merged (`47f8232`), tag `v0.3.0` (`dc0e1ce`) pushed, npm
+`@sdd-forge/cli@0.3.0` published. **13 changes archived** on `optim`,
+**292/292 tests** PASS across **13 harnesses**, **`verify.sh`** 108 PASS / 0 FAIL,
+**`constitution-linter.sh`** OVERALL PASS, Constitution **v1.1.0**. Three
+rounds of CI fix-ups required (`c29c9ce` + `f4626e6` + `a22d8c0` + `5cea6c3`)
+because `forge-ci.yml` only ran on PR-to-main, never on push-to-optim. GH
+release pending manual creation (gh CLI absent on maintainer's machine).
+Bug detected in `scripts/release-v0.3.0.sh` (cumulative `cd` via `eval`,
+2FA OTP not handled) — to fix post-release in module F.3.
+
+## Phase 3 (Post-v0.3.0 — 2026-Q3 to 2026-Q4) — Flagship migration + new archetypes
+
+This phase ratifies the **ten ADRs** of `docs/ARCHITECTURE-TARGET.md`
+(2026-04-29, rev v1.1) and reorganises the archetype taxonomy from 4 to 5.
+The full plan lives in `docs/new-archetypes-plan.md`. Headline shifts:
+
+- **Taxonomy reshuffled** : `flutter-firebase` is **removed** (Schrems II +
+  CLOUD Act), `mobile-only` is **renamed** `mobile-pwa-first` (PWA Qwik +
+  iOS native fallback), two new archetypes added — `event-driven-eu`
+  (NATS + Temporal + AsyncAPI) and `ai-native-rag` (pgvector + LLM gateway
+  + MCP). `full-stack-monorepo` and `rust-cli-tui` kept.
+- **Flagship technical migration** : Kong → Envoy Gateway, Temporal → DBOS
+  (Postgres-backed durable execution), REST/JSON Kong-bridge → Connect-RPC,
+  Firebase implicit → Zitadel, Flutter Web public → Qwik (back-office
+  Flutter Web kept), Postgres 17 + pgvector universal default, SigNoz +
+  OBI eBPF + Coroot triplet observability. Schema bumps `1.0.0 → 2.0.0`.
+- **flutter_bloc consecrated** as the only allowed Flutter state-management
+  standard. Riverpod / Provider / GetX / MobX / states_rebuilder are
+  **forbidden** by a CI-blocking linter rule (`no-state-management-alternatives`).
+- **Compliance EU graded T1/T2/T3** introduced as a first-class dimension
+  (T1 RGPD via DPA acceptable, T2 self-hostable, T3 SecNumCloud / EUCS
+  High strict EU jurisdiction).
+- **Five new agents** : Hermes-Async (event-driven), Pythia (AI/RAG),
+  Demeter (data steward EU), Iris-Web (Qwik / SvelteKit), Themis (compliance
+  officer NIS2 / DORA / CRA).
+
+### Phase 3 Items — overview by quarter
+
+| Quarter | Modules                                                                                              | Effort  | Risk     |
+|---------|------------------------------------------------------------------------------------------------------|---------|----------|
+| **T4** (2026-Q3 early) | P-1 (10 ADRs as `.forge/changes/`) ; P-2 / J.1–J.6 (six versioned `.forge/standards/*.yaml`) ; P-3 (12-month review cycle) ; P-4 / I.1 (compliance-tier + archetype JSON schemas) | `M` | Low — methodology only, no breaking changes |
+| **T5** (2026-Q3) | Phase 1 ARCHITECTURE-TARGET (OTel + OBI + Coroot + buf + Connect codegen alongside REST) ; J.7 / J.8 (linter for forbidden lists + Janus rules) ; K.3 (Demeter agent) ; I.2–I.6 (compliance docs + workflow + AI Act / NIS2 / DORA / CRA artefacts) | `L` | Low — additive only, fully reversible |
+| **T6** (2026-Q4 early) | **B.8 — flagship migration `1.0.0 → 2.0.0`** (Envoy Gateway, DBOS, Connect-RPC, Zitadel, Postgres+pgvector, SigNoz+OBI+Coroot) ; Phase 2 ARCHITECTURE-TARGET ; P-5 (refactor Hera 9 → 5 sub-agents — *requires user decision*) | `XL` | **High — point of no return.** Canary by route, blue-green Envoy/Kong, Temporal/DBOS dual-run during migration |
+| **T7** (2026-Q4) | **B.6 `event-driven-eu`** (NATS JetStream + Temporal + AsyncAPI 3.1) ; **B.7 `ai-native-rag`** (pgvector + LLM gateway + MCP servers + Qwik streaming) ; K.1 / K.2 / K.4 / K.5 (Hermes-Async, Pythia, Iris-Web, Themis agents) | `XL` | Medium — DBOS-rs maturity, MCP evolving, Connect-Dart still community-only |
+| **T8** (2027-Q1) | **B.9 `mobile-only` → `mobile-pwa-first`** (web-pwa Qwik subfolder + Bloc reinforcement + decision tree) ; **B.3 `rust-cli-tui`** (cargo-dist signed releases, multi-channel distribution) ; pedagogy C.2–C.5 (walkthrough, anti-patterns, comparison matrix, migration guide) ; F.3 (release script subshell isolation + 2FA OTP) | `L` to `XL` | Low |
+| **T9+** | G.* (Forge Guardian GitHub App, VSCode extension, pre-commit hook, Linear/Jira sync, generic CLI wrapper) ; H.* (multi-level constitution, opt-in telemetry, compliance reports OWASP ASVS / ISO 27001 / SOC 2, multi-tenant Claude Code, dashboard) ; E.3 / E.4 (retroactive dog-fooding) | `XL` | — |
+
+### Phase 3 Items — detail
+
+| Module | Capability                                                                                                                                                                                                  | Source                          | Effort |
+|--------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------|--------|
+| P-1    | Convert the 10 ADRs of `docs/ARCHITECTURE-TARGET.md` into archived `.forge/changes/<adr-N>/` so they ratify under Constitution v1.1.0 and become reachable via `forge upgrade`                              | ARCH §5                         | `M`    |
+| P-2 / J.1–J.6 | Six versioned `.forge/standards/*.yaml` (transport, state-management, observability, orchestration, identity, persistence) with `forbidden:` lists, `linter_rule:`, `enforcement:`, `expires_at:`     | ARCH §12.1                      | `M`    |
+| P-3    | 12-month standards review cycle ; structural standards (state-management, transport) exempted by Article XII                                                                                                | ARCH §12.6                      | `S`    |
+| P-4 / I.1 | `.forge/schemas/compliance-tier.schema.json` + `.forge/schemas/archetype.schema.json` v2 (5-archetype enum + `mobile-only` legacy alias)                                                                | ARCH §10                        | `S`    |
+| P-5    | Refactor Hera 9 → 5 sub-agents (UI builder, State Bloc, Animation, Test BDD, OTel client). **Requires user decision.** *(opinion d'architecte non sourcée)*                                                | ARCH §9.3                       | `M`    |
+| B.8    | **Flagship migration `full-stack-monorepo / 1.0.0` → `2.0.0`**: Envoy Gateway / DBOS / Connect-RPC / Zitadel / Postgres+pgvector / SigNoz+OBI+Coroot / Qwik public web. **Point of no return.** Schema bump | ARCH §11 + §6.1                 | `XL`   |
+| B.9    | **`mobile-only` → `mobile-pwa-first`**: add `web-pwa/` Qwik subfolder + service worker + web push, default decision tree (PWA Android+desktop, native iOS fallback if push critical)                       | ARCH §6.3                       | `L`    |
+| B.6    | **New archetype `event-driven-eu`**: Rust + NATS JetStream + Temporal (justified here) + AsyncAPI 3.1 + Postgres event store ; reference project `examples/forge-eda-example/`                              | ARCH §3.3 + §6.4                | `XL`   |
+| B.7    | **New archetype `ai-native-rag`**: Rust + Postgres+pgvector 0.8 + LLM gateway (Mistral-EU / vLLM self-host T3) + MCP servers + Qwik streaming UI ; reference project `examples/forge-rag-example/`           | ARCH §3.3 + §6.5                | `XL`   |
+| B.3    | Archetype `rust-cli-tui` with `cargo-dist`, signed releases (codesign macOS / Authenticode Windows / gpg), SBOM SPDX, multi-channel distribution (Homebrew / Scoop / cargo binstall / AUR / Nix flake)       | Audit Module B.3 (kept)         | `XL`   |
+| K.1–K.5 | Five new agents (Hermes-Async, Pythia, Demeter, Iris-Web, Themis) + edits cross-agents (Janus / Atlas / Apollo / Vulcan / Hermes-API / Argus / Sentinel / Panoptes / Aegis / Heracles)                     | ARCH §9.1 + §9.2                | `L`    |
+| I.1–I.6 | Compliance EU graded T1/T2/T3: schemas, `global/compliance-tiers.md`, linter rule (T3 forbids US managed services), `forge-compliance.yml` workflow, `.forge/compliance/` (NIS2 / DORA / CRA / AI Act)        | ARCH §10                        | `L`    |
+| C.2–C.5 | Pedagogy: walkthrough "first 30 minutes", anti-patterns gallery, comparison matrix vs BMAD/SpecKit/Agent OS V3/Superpowers, migration guide                                                                  | Audit Module C (carry-over)     | `M`    |
+| F.3    | Fix `scripts/release-v0.3.0.sh` (subshell isolation + 2FA OTP handling)                                                                                                                                      | v0.3.0 release post-mortem      | `S`    |
+| G.1–G.7 | GitHub Actions for downstream projects, `forge-hooks` pre-commit, Forge Guardian GitHub App, Linear/Jira sync, OpenAPI export, generic CLI wrapper, VSCode extension                                       | Audit Module G                  | `L` to `XL` |
+| H.1–H.6 | Multi-level constitution, registry of standards, opt-in telemetry, compliance reports, multi-tenant Claude Code teams, web dashboard                                                                          | Audit Module H                  | `XL`   |
+
+> **Migration safety net** : `forge upgrade` (A.7) already ships the BASE
+> recovery via committed snapshot tarballs. The legacy
+> `full-stack-monorepo / 1.0.0` snapshot stays in
+> `.forge/scaffold-snapshots/` so existing adopters can stay on Kong + Temporal +
+> REST-bridge until **2027-Q1** (T8) at the earliest, when the legacy compat is
+> formally deprecated.
+
+## Phase 4 (Later — 2027-Q2 and beyond)
 
 Longer-horizon ideas, not committed. These exist to capture direction and
-ensure MVP architecture does not foreclose on them.
+ensure Phase 3 architecture does not foreclose on them.
 
-### Phase 3 Ideas
+### Phase 4 Ideas
 
-| Idea                                                                                                                                                                            | Why It Matters                                                                                                                              | Why It's Later                                                                 |
-|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------|
-| Archetype `flutter-firebase` (frontend + BaaS) with security-rules harness and preview channels CI                                                                              | Covers the largest segment of consumer-app teams without backend capacity                                                                   | Audit Module B.2 — depends on B.1 scaffolder infrastructure being proven       |
-| ~~Archetype `mobile-only`~~ — **Done in T2 P2 (2026-04-30 via `b4-mobile-only`).** See Phase 2 row above for full details. | — | Audit Module B.4 — DONE |
-| Archetype `rust-cli-tui` with `cargo-dist`, signed releases, man pages, completions, multi-channel distribution                                                                 | Dev-tools audience: outsized influence-per-user                                                                                             | Audit Module B.3 — release-engineering surface is large and distinct           |
-| `forge-cli` provider-neutral wrapper usable from Cursor, Aider, Continue                                                                                                        | Unlocks audiences locked out of Claude Code                                                                                                 | Audit Module G.6 — requires stable internal contracts first                    |
-| GitHub App "Forge Guardian" that posts constitutional-compliance status on PRs                                                                                                  | Automates the gate without requiring contributor installation                                                                               | Audit Module G.3 — depends on a stable `constitution-linter.sh` coverage (F.4) |
-| VSCode extension with FR-ID autocomplete and spec-delta previews                                                                                                                | Reduces friction for contributors who never touch the CLI                                                                                   | Audit Module G.7                                                               |
-| Linear / Jira plugin bidirectional sync                                                                                                                                         | Bridges Forge artifacts to enterprise PM stacks                                                                                             | Audit Module G.4                                                               |
-| Multi-level constitution (org + project + team amendments)                                                                                                                      | Blocks enterprise adoption until delivered                                                                                                  | Audit Module H.1                                                               |
-| Opt-in telemetry to understand which gates block most and which agents fire                                                                                                     | Can't improve a framework whose usage is invisible                                                                                          | Audit Module H.3 — requires privacy review and opt-in UX                       |
-| Compliance reports mapping constitutional articles to OWASP ASVS / ISO 27001 / SOC 2                                                                                            | Unlocks regulated-industry procurement                                                                                                      | Audit Module H.4                                                               |
-| Retroactive `.forge/changes/001-initial-scaffolding/` documenting the framework's own construction                                                                              | Dog-fooding proof + pedagogy                                                                                                                | Audit Module E.3 — low urgency vs. external adoption blockers                  |
+| Idea                                                                                                | Why It Matters                                                                                                | Why It's Later                                                                 |
+|-----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------|
+| Archetype `data-intensive` (ClickHouse / Citus sharded / time-series + analytic workloads)         | Covers a niche left open by `full-stack-monorepo` — analytic-first products                                    | Volontairement écarté en Phase 3 faute de demande explicite (ARCH §14 caveat 9)|
+| Archetype Compose Multiplatform (Kotlin) as parallel to Flutter                                    | Tech Radar Vol 33 places Compose Multiplatform on the rise (Netflix, McDonald's prod)                         | ARCH §14 caveat 5 — Forge cible 2027-2028                                       |
+| `forge-cli` provider-neutral wrapper usable from Cursor, Aider, Continue                            | Unlocks audiences locked out of Claude Code                                                                   | Audit Module G.6 — requires stable internal contracts first                    |
+| GitHub App "Forge Guardian" that posts constitutional-compliance status on PRs                      | Automates the gate without requiring contributor installation                                                  | Audit Module G.3 — depends on stable `constitution-linter.sh` coverage         |
+| VSCode extension with FR-ID autocomplete and spec-delta previews                                    | Reduces friction for contributors who never touch the CLI                                                      | Audit Module G.7                                                               |
+| Linear / Jira plugin bidirectional sync                                                             | Bridges Forge artifacts to enterprise PM stacks                                                                | Audit Module G.4                                                               |
+| Multi-level constitution (org + project + team amendments)                                          | Blocks enterprise adoption until delivered                                                                     | Audit Module H.1                                                               |
+| Opt-in telemetry to understand which gates block most and which agents fire                        | Can't improve a framework whose usage is invisible                                                             | Audit Module H.3 — requires privacy review and opt-in UX                       |
+| Compliance reports mapping constitutional articles to OWASP ASVS / ISO 27001 / SOC 2                | Unlocks regulated-industry procurement                                                                          | Audit Module H.4                                                               |
+| Retroactive `.forge/changes/001-initial-scaffolding/` documenting the framework's own construction  | Dog-fooding proof + pedagogy                                                                                  | Audit Module E.3 — low urgency vs. external adoption blockers                  |
 
 ## Key Milestones
 
-| Milestone                                   | Target Date | Success Criteria                                                                                                                                          | Status                        |
-|---------------------------------------------|-------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------|
-| Alpha: OSS release + Forge dog-foods itself | 2026-06-30  | Apache 2.0 LICENSE + NOTICE; mission + roadmap filled; settings.json cleaned; shell installer on macOS + Linux; `@sdd-forge/cli` on npm; Docker image     | Complete (2026-04-21, v0.2.1) |
-| Beta: flagship archetype shipped            | 2026-09-30  | `full-stack-monorepo` archetype scaffoldable via `/forge:init`; first public reference project; GitHub Actions reference workflow live                    | Not Started                   |
-| v1.0: Four archetypes + adoption            | 2026-12-31  | `flutter-firebase`, `mobile-only`, and `rust-cli-tui` archetypes delivered; 10+ projects using Forge publicly; constitution-linter covers all 11 articles | Not Started                   |
+| Milestone                                                  | Target Date | Success Criteria                                                                                                                                                                                                                                                  | Status                        |
+|------------------------------------------------------------|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------|
+| Alpha: OSS release + Forge dog-foods itself                | 2026-06-30  | Apache 2.0 LICENSE + NOTICE; mission + roadmap filled; settings.json cleaned; shell installer on macOS + Linux; `@sdd-forge/cli` on npm; Docker image                                                                                                              | Complete (2026-04-21, v0.2.1) |
+| Beta: flagship + second archetype + reference + governance | 2026-09-30  | `full-stack-monorepo / 1.0.0` + `mobile-only / 1.0.0` archetypes scaffoldable via `/forge:init` ; reference project `examples/forge-fsm-example/` ; `forge-ci.yml` live ; `forge upgrade` ; governance BDFL-with-fallback ; T3 robustness (F.1+F.2+F.4) all closed | Complete (2026-05-02, v0.3.0) |
+| **ADR ratification (architecture target)**                 | 2026-09-30  | 10 ADRs of `docs/ARCHITECTURE-TARGET.md` archived as `.forge/changes/` ; six versioned `.forge/standards/*.yaml` ; compliance T1/T2/T3 schemas ; Demeter agent ; Phase 1 ARCH (OTel+Connect additive) shipped                                                       | Not Started (T4–T5)           |
+| **v0.4.0: flagship 2.0.0 — point of no return**            | 2026-12-31  | `full-stack-monorepo / 2.0.0` (Envoy + DBOS + Connect + Zitadel + Postgres+pgvector + SigNoz+OBI+Coroot + Qwik public web) ; `forge upgrade` migrates 1.0.0 → 2.0.0 ; CI rollback runbook documented ; legacy 1.0.0 still supported as compat                       | Not Started (T6)              |
+| **v0.5.0: five archetypes + EU compliance**                | 2027-Q1     | `event-driven-eu`, `ai-native-rag`, `mobile-pwa-first`, `rust-cli-tui` all delivered ; pedagogy C.2–C.5 shipped ; constitution-linter coverage ≥ 90 % articles ; 5+ projects using Forge publicly ; T3 SecNumCloud profile validated on at least one archetype     | Not Started (T7–T8)           |
+| **v1.0: enterprise readiness**                             | 2027-Q3     | Forge Guardian GitHub App ; multi-level constitution ; opt-in telemetry ; compliance reports OWASP ASVS / ISO 27001 / SOC 2 ; 20+ projects using Forge publicly                                                                                                    | Not Started (T9+)             |
 
 ## Deprioritized / Parked
 
+- **Archetype `flutter-firebase`** (originally Audit Module B.2). **Removed
+  from the roadmap** as of 2026-05-04 following `docs/ARCHITECTURE-TARGET.md`
+  ADR-007: Schrems II + CLOUD Act make Firebase incompatible with Forge's
+  EU/premium positioning. Adopters who insist on Firebase keep the `default`
+  file-copy archetype as a starting point and add Firebase themselves. A
+  potential future `flutter-baas-eu` archetype (Supabase EU self-host or
+  Appwrite) is not committed and waits on demonstrated demand.
 - **Language extension to TypeScript / Node / Python / Go / Java / Swift**.
   Deliberately set aside. Forge targets Flutter and Rust as a premium
-  positioning — three archetypes pushed to the state of the art beat seven
+  positioning — **five archetypes** pushed to the state of the art beat seven
   archetypes held at mediocrity. Revisit only if a credible maintainer for
   a new language-arch emerges from the community.
 - **Visual spec editor (web UI)**. File-based markdown is faster to ship,
   easier to diff, and sufficient for the target audience. Parked pending
   clear demand from a contributor population that refuses the CLI workflow.
 - **Forge Cloud (hosted spec history, dashboards)**. Would require a
-  commercial structure Forge does not currently have. Parked until the
-  governance model (Module D.5) is resolved.
+  commercial structure Forge does not currently have. Parked indefinitely;
+  governance model (D.5) is now in place but commercial mandate is not.
 - **Auto-generation of feature code from specs**. Contrary to the core
   premise — Forge enforces process, not output. Parked permanently unless
   the positioning changes.
+- **GraphQL Federation** as a default transport. Rejected by ARCH ADR-009
+  for monorepo scale ; acceptable only if a polyglot non-Connect client
+  forces it (`opinion d'architecte non sourcée`).
+- **Datadog / AWS Secrets Manager / Firebase Auth / Vertex AI / Bedrock**
+  as default integrations. Rejected by ARCH §10.2 (CLOUD Act) for EU-strict
+  archetypes. Adopters in the US can substitute manually but no Forge
+  template ships them as default.

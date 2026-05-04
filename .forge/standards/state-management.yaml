@@ -1,0 +1,38 @@
+# Forge Standard — Flutter state management
+# Audit: T.4 (t4-adr-ratification, 2026-05-04)
+# Ratifies: ADR-006 from docs/ARCHITECTURE-TARGET.md
+# Structural exception per Article XII : not subject to 12-month review.
+
+version: "1.0.0"
+last_reviewed: 2026-05-04
+expires_at: never
+exception_constitutional: true
+linter_rule: no-state-management-alternatives
+enforcement:
+  ci_blocking: false              # Q-001 Option A — warn-only at v0.4.0-rc.1
+  pre_commit_hook: false
+  activation_planned: "B.8 (T6)"  # planned warn → error transition
+forbidden:
+  - flutter_riverpod
+  - riverpod
+  - provider
+  - get
+  - getx
+  - mobx
+  - flutter_mobx
+  - states_rebuilder
+rationale: |
+  flutter_bloc imposes an event-driven discipline (Event → Bloc → State) that
+  natively aligns with Forge's SDD principles (deterministic specs → typed
+  events). Per ADR-006, alternatives are not a quality judgment but a
+  deliberate single-cadre choice that signals premium positioning : one
+  canonical pattern, no menu of options. Structural exception — Article XII
+  is the only path to amend.
+
+flutter:
+  standard: flutter_bloc
+  version_pinned: ^9.0.0
+  companions:
+    - bloc_test
+    - hydrated_bloc
+    - replay_bloc

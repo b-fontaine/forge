@@ -1,0 +1,30 @@
+# Forge Standard — Persistence layer
+# Audit: T.4 (t4-adr-ratification, 2026-05-04)
+# Ratifies: ADR-010 from docs/ARCHITECTURE-TARGET.md
+
+version: "1.0.0"
+last_reviewed: 2026-05-04
+expires_at: 2027-05-04
+exception_constitutional: false
+linter_rule: null
+enforcement:
+  ci_blocking: false
+  pre_commit_hook: false
+forbidden_for_eu_strict:
+  - dynamodb           # cloud-act-non-eu
+  - firestore          # cloud-act-non-eu
+  - cosmosdb           # cloud-act-non-eu
+forbidden: []
+rationale: |
+  ADR-010. Postgres 17 + pgvector 0.8 covers relational + JSON + vector
+  + time-series + geo in one operable system. Sharding via Citus when
+  > ~5 TB. Vector p99 still < Qdrant on > 50M-vector pure-vector loads
+  (acceptable trade-off for one-system operability ; see ai-native-rag
+  archetype B.7 for high-volume vector workloads).
+
+default: postgres-17
+extensions:
+  - pgvector-0.8
+  - postgis
+  - timescaledb
+sharding: citus

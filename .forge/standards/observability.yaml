@@ -1,0 +1,34 @@
+# Forge Standard — Observability stack
+# Audit: T.4 (t4-adr-ratification, 2026-05-04)
+# Ratifies: ADR-008 from docs/ARCHITECTURE-TARGET.md
+
+version: "1.0.0"
+last_reviewed: 2026-05-04
+expires_at: 2027-05-04
+exception_constitutional: false
+linter_rule: null
+enforcement:
+  ci_blocking: false
+  pre_commit_hook: false
+forbidden:
+  - datadog            # cloud-act-non-eu
+rationale: |
+  ADR-008. SigNoz remains the main backend ; OBI eBPF + Coroot complete
+  coverage without app instrumentation overhead. Privileged DaemonSet —
+  Aegis review required at deployment time.
+
+sdk: opentelemetry
+ebpf_complement: opentelemetry-obi
+service_map: coroot
+backend: signoz
+
+sampler: parentbased_traceidratio
+ratios:
+  prod: 0.1
+  staging: 1.0
+  dev: 1.0
+
+kernel_min: "5.8"
+deployment_constraints:
+  privileged_daemonset_required: true
+  aegis_audit_required_for_prod: true

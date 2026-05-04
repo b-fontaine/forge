@@ -148,7 +148,13 @@ root = sys.argv[2]
 errs = []
 for name, entry in (d.get("archetypes") or {}).items():
     s = entry.get("scaffolder", "")
-    if s == "<built-in>":
+    # Skip built-in (no on-disk script) and entries explicitly removed
+    # from the roadmap (annotated by t4-adr-ratification per ADR-007 ;
+    # the slot is preserved for forge upgrade history but the scaffolder
+    # path is intentionally "<removed>").
+    if s in ("<built-in>", "<removed>"):
+        continue
+    if entry.get("status") == "removed_from_roadmap":
         continue
     p = os.path.join(root, s)
     if not os.path.isfile(p):

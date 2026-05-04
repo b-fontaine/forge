@@ -4,13 +4,18 @@
 
 ## Vue d'Ensemble
 
-Forge est une collection de fichiers Markdown exécutés par un LLM. Il n'y a pas de runtime, pas de binaire, pas de package à installer. Le "runtime" est Claude Code + le LLM Claude.
+Forge est une collection de fichiers Markdown exécutés par un LLM. Il n'y a pas de runtime, pas de binaire, pas de
+package à installer. Le "runtime" est Claude Code + le LLM Claude.
 
 **L'insight fondamental : le Markdown EST le code.**
 
-Les définitions d'agents, les commandes slash, les standards techniques et les skills sont tous des fichiers Markdown qui façonnent le comportement du LLM. Quand Claude Code charge `.claude/agents/flutter/hera.md`, Hera existe. Quand le fichier n'est pas chargé, Hera n'existe pas. Il n'y a pas de magie — juste du contexte injecté de façon contrôlée.
+Les définitions d'agents, les commandes slash, les standards techniques et les skills sont tous des fichiers Markdown
+qui façonnent le comportement du LLM. Quand Claude Code charge `.claude/agents/flutter/hera.md`, Hera existe. Quand le
+fichier n'est pas chargé, Hera n'existe pas. Il n'y a pas de magie — juste du contexte injecté de façon contrôlée.
 
-Ce modèle a une implication importante : **la qualité du Markdown détermine la qualité du comportement**. Un agent mal défini produit un comportement imprévisible. Une commande ambiguë produit des résultats incohérents. Forge traite ses fichiers Markdown avec le même soin qu'un codebase de production.
+Ce modèle a une implication importante : **la qualité du Markdown détermine la qualité du comportement**. Un agent mal
+défini produit un comportement imprévisible. Une commande ambiguë produit des résultats incohérents. Forge traite ses
+fichiers Markdown avec le même soin qu'un codebase de production.
 
 ---
 
@@ -158,21 +163,23 @@ Archive → .forge/specs/
   (specs delta fusionnées, état = DONE)
 ```
 
-La Constitution est vérifiée à chaque transition de phase. Un agent ne peut pas produire un design qui viole l'Article I (tests obligatoires) ou continuer une implémentation qui ne respecte pas les standards injectés. Le gate est bloquant, pas advisory.
+La Constitution est vérifiée à chaque transition de phase. Un agent ne peut pas produire un design qui viole l'Article
+I (tests obligatoires) ou continuer une implémentation qui ne respecte pas les standards injectés. Le gate est bloquant,
+pas advisory.
 
 ---
 
 ## Patterns Empruntés
 
-| Pattern | Source | Usage dans Forge |
-|---------|--------|-----------------|
-| Agents-personas | BMAD Method | Chaque agent a un nom, rôle, style persistant |
-| Gates bloquants | GitHub SpecKit | Constitution check bloque si violation |
-| Deltas sémantiques | OpenSpec | ADDED/MODIFIED/REMOVED au lieu de réécriture |
-| Standards injection | Agent OS v3 | index.yml avec triggers pour injection JIT |
-| Table anti-rationalisation | Superpowers | 12 excuses TDD avec réfutations |
-| Keywords naturels | oh-my-claudecode | autopilot, ulw, team déclenchent comportements |
-| Docs temps réel | Context7 | MCP server pour APIs externes à jour |
+| Pattern                    | Source           | Usage dans Forge                               |
+|----------------------------|------------------|------------------------------------------------|
+| Agents-personas            | BMAD Method      | Chaque agent a un nom, rôle, style persistant  |
+| Gates bloquants            | GitHub SpecKit   | Constitution check bloque si violation         |
+| Deltas sémantiques         | OpenSpec         | ADDED/MODIFIED/REMOVED au lieu de réécriture   |
+| Standards injection        | Agent OS v3      | index.yml avec triggers pour injection JIT     |
+| Table anti-rationalisation | Superpowers      | 12 excuses TDD avec réfutations                |
+| Keywords naturels          | oh-my-claudecode | autopilot, ulw, team déclenchent comportements |
+| Docs temps réel            | Context7         | MCP server pour APIs externes à jour           |
 
 ---
 
@@ -182,9 +189,12 @@ La fenêtre de contexte d'un LLM est une ressource limitée. Forge adopte 4 stra
 
 ### 1. index.yml — Injection JIT des Standards
 
-Les standards ne sont PAS tous chargés en même temps. `index.yml` définit des triggers (mots-clés, patterns de fichiers, phases) qui déclenchent le chargement d'un standard précis. Si vous travaillez sur un composant Flutter, seuls les standards Flutter pertinents sont injectés — pas les standards Rust, pas les standards infra.
+Les standards ne sont PAS tous chargés en même temps. `index.yml` définit des triggers (mots-clés, patterns de fichiers,
+phases) qui déclenchent le chargement d'un standard précis. Si vous travaillez sur un composant Flutter, seuls les
+standards Flutter pertinents sont injectés — pas les standards Rust, pas les standards infra.
 
 Exemple d'entrée dans `index.yml` :
+
 ```yaml
 - id: flutter-clean-architecture
   path: standards/flutter/clean-architecture.md
@@ -201,15 +211,21 @@ Cela évite la saturation de la fenêtre de contexte par des règles non-pertine
 
 ### 2. Micro-fichiers
 
-Chaque agent, commande et standard est un fichier séparé. Seul ce qui est nécessaire pour la tâche en cours est chargé. Un fichier monolithique de 50 000 tokens serait chargé en entier à chaque invocation — les micro-fichiers permettent une sélection chirurgicale.
+Chaque agent, commande et standard est un fichier séparé. Seul ce qui est nécessaire pour la tâche en cours est chargé.
+Un fichier monolithique de 50 000 tokens serait chargé en entier à chaque invocation — les micro-fichiers permettent une
+sélection chirurgicale.
 
 ### 3. Subagents Isolés
 
-Déléguer à un sous-agent (Spartan, Athena, etc.) crée un contexte isolé pour ce spécialiste. Spartan n'a pas besoin de connaître l'historique de la vision produit pour enforcer TDD. Cette isolation évite la contamination croisée et permet à chaque agent de rester concentré sur sa mission.
+Déléguer à un sous-agent (Spartan, Athena, etc.) crée un contexte isolé pour ce spécialiste. Spartan n'a pas besoin de
+connaître l'historique de la vision produit pour enforcer TDD. Cette isolation évite la contamination croisée et permet
+à chaque agent de rester concentré sur sa mission.
 
 ### 4. Context7 Séparé
 
-La documentation des bibliothèques externes est récupérée à la demande via le serveur MCP, pas stockée dans le framework. Stocker la doc de Flutter SDK dans Forge serait : (a) volumineux, (b) obsolète rapidement, (c) chargé même quand non-nécessaire. Context7 résout les trois problèmes.
+La documentation des bibliothèques externes est récupérée à la demande via le serveur MCP, pas stockée dans le
+framework. Stocker la doc de Flutter SDK dans Forge serait : (a) volumineux, (b) obsolète rapidement, (c) chargé même
+quand non-nécessaire. Context7 résout les trois problèmes.
 
 ---
 
@@ -220,28 +236,38 @@ La documentation des bibliothèques externes est récupérée à la demande via 
 1. Créer `.forge/standards/<domaine>/<nom>.md` avec le format requis (Scope, Rules, Anti-patterns)
 2. Ajouter une entrée dans `.forge/standards/index.yml` avec des triggers précis
 
-Les triggers doivent être suffisamment spécifiques pour ne pas déclencher le standard dans des contextes non-pertinents. Préférer des termes techniques précis à des mots généraux.
+Les triggers doivent être suffisamment spécifiques pour ne pas déclencher le standard dans des contextes non-pertinents.
+Préférer des termes techniques précis à des mots généraux.
 
 ### Axe 2 — Nouveaux Agents
 
 1. Créer `.claude/agents/<équipe>/<nom>.md` avec : Persona (Name, Role, Style), Purpose, Expertise, Workflow, Rules
-2. Référencer le nouvel agent depuis l'orchestrateur approprié : Hera pour Flutter, Vulcan pour Rust, Forge pour transversal
+2. Référencer le nouvel agent depuis l'orchestrateur approprié : Hera pour Flutter, Vulcan pour Rust, Forge pour
+   transversal
 
 Convention de nommage : mythologie grecque pour Flutter, latin/romain pour Rust, mixte pour transversal.
 
 ### Axe 3 — Nouveaux Schemas
 
-1. Créer `.forge/schemas/<nom>/schema.yaml` avec la définition des phases, conditions de gate, et configurations d'outils
+1. Créer `.forge/schemas/<nom>/schema.yaml` avec la définition des phases, conditions de gate, et configurations
+   d'outils
 2. Tester le schema avec un projet réel du début à la fin
 
-Un schema peut supprimer des phases optionnelles (exploration, design détaillé) mais ne peut jamais rendre le TDD optionnel — c'est une violation de la constitution.
+Un schema peut supprimer des phases optionnelles (exploration, design détaillé) mais ne peut jamais rendre le TDD
+optionnel — c'est une violation de la constitution.
 
 ---
 
 ## Limitations Connues
 
-**Fenêtre de contexte** — Charger trop de standards simultanément peut saturer la fenêtre de contexte de Claude. Les triggers dans `index.yml` doivent être calibrés avec soin. Pour les projets complexes avec beaucoup de standards, surveiller les signes de dégradation de qualité qui indiqueraient une saturation.
+**Fenêtre de contexte** — Charger trop de standards simultanément peut saturer la fenêtre de contexte de Claude. Les
+triggers dans `index.yml` doivent être calibrés avec soin. Pour les projets complexes avec beaucoup de standards,
+surveiller les signes de dégradation de qualité qui indiqueraient une saturation.
 
-**Non-déterminisme** — Des exécutions différentes peuvent produire des outputs différents. Les standards et la constitution réduisent la variance mais ne l'éliminent pas. Pour les décisions architecturales critiques, une revue humaine est recommandée en plus de la review par Nemesis/Tribune.
+**Non-déterminisme** — Des exécutions différentes peuvent produire des outputs différents. Les standards et la
+constitution réduisent la variance mais ne l'éliminent pas. Pour les décisions architecturales critiques, une revue
+humaine est recommandée en plus de la review par Nemesis/Tribune.
 
-**Pas de CI réel** — Les quality gates sont évalués par le LLM, pas par des outils automatisés. "La constitution est respectée" est un jugement de l'agent, pas un test unitaire qui passe ou échoue. Pour les projets critiques, combiner les gates Forge avec une vraie CI (GitHub Actions, etc.) qui exécute les vrais tests.
+**Pas de CI réel** — Les quality gates sont évalués par le LLM, pas par des outils automatisés. "La constitution est
+respectée" est un jugement de l'agent, pas un test unitaire qui passe ou échoue. Pour les projets critiques, combiner
+les gates Forge avec une vraie CI (GitHub Actions, etc.) qui exécute les vrais tests.

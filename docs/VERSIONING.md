@@ -117,11 +117,13 @@ Sample root-level `CHANGELOG.md` entry spanning all layers:
 ## [1.4.0] — 2026-04-21
 
 ### Added
+
 - **backend**: gRPC endpoint for user preferences (crate `svc-preferences`)
 - **frontend**: Preferences screen wired to the new gRPC endpoint
 - **protos**: `UserPreferences` message and `PreferencesService` definition
 
 ### Fixed
+
 - **backend**: Panic on empty JWT claim in auth middleware
 - **frontend**: Bottom nav bar overlap on notched devices
 ```
@@ -158,15 +160,15 @@ Sample `release-please-manifest.json` shape:
 
 ### Decision Matrix
 
-| Criterion | Release-train | Per-package |
-|---|---|---|
-| Team size | ≤ 15 contributors | ≥ 15 |
-| Layer coupling | tight (deploy together) | loose (independent cadence) |
-| Release cadence | lockstep | asynchronous per layer |
-| CHANGELOG authoring | centralized, manual | automated per package |
-| Contract (protos) evolution | folded into release train | separate cadence, safer for API stability |
-| Compliance (audit trail) | single release artifact | per-package artifacts, finer granularity |
-| Initial setup cost | near zero | moderate (release-please + manifest + per-package CHANGELOG bootstrap) |
+| Criterion                   | Release-train             | Per-package                                                            |
+|-----------------------------|---------------------------|------------------------------------------------------------------------|
+| Team size                   | ≤ 15 contributors         | ≥ 15                                                                   |
+| Layer coupling              | tight (deploy together)   | loose (independent cadence)                                            |
+| Release cadence             | lockstep                  | asynchronous per layer                                                 |
+| CHANGELOG authoring         | centralized, manual       | automated per package                                                  |
+| Contract (protos) evolution | folded into release train | separate cadence, safer for API stability                              |
+| Compliance (audit trail)    | single release artifact   | per-package artifacts, finer granularity                               |
+| Initial setup cost          | near zero                 | moderate (release-please + manifest + per-package CHANGELOG bootstrap) |
 
 Teams can start with release-train and migrate to per-package later as the
 team grows or coupling decreases. The reverse migration — from per-package back

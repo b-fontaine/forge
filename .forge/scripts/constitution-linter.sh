@@ -662,6 +662,73 @@ else
   fi
 fi
 
+# ── ADR-006: State Management Discipline (no-state-management-alternatives) — T.4 ──
+# Ratified by t4-adr-ratification (2026-05-04). Reads
+# .forge/standards/state-management.yaml for the forbidden: list and the
+# enforcement.ci_blocking flag. WARN-only by default per Q-001 Option A ;
+# planned transition to FAIL with B.8 (T6 — flagship migration).
+# Opt-out via FORGE_LINTER_SKIP_NSMA=1.
+echo ""
+echo "ADR-006 (State Management Discipline — no-state-management-alternatives):"
+
+if [ "${FORGE_LINTER_SKIP_NSMA:-0}" = "1" ]; then
+  not_applicable "  skipped via FORGE_LINTER_SKIP_NSMA"
+else
+  nsma_yaml="$FORGE_ROOT/.forge/standards/state-management.yaml"
+  if [ ! -f "$nsma_yaml" ]; then
+    not_applicable "  state-management.yaml not present (rule disabled)"
+  else
+    nsma_search_root="${FORGE_LINTER_FIXTURE_ROOT:-$FORGE_ROOT}"
+    nsma_blocking=0
+    if grep -qE '^[[:space:]]+ci_blocking:[[:space:]]+true' "$nsma_yaml"; then
+      nsma_blocking=1
+    fi
+    nsma_forbidden_pkgs=$(awk '
+      /^forbidden:/ { in_block=1; next }
+      in_block {
+        if ($0 ~ /^[[:alpha:]_]/) { in_block=0; next }
+        if ($0 ~ /^[[:space:]]+-[[:space:]]+/) {
+          gsub(/^[[:space:]]+-[[:space:]]+/, "")
+          gsub(/[[:space:]].*$/, "")
+          if (length($0) > 0) print $0
+        }
+      }
+    ' "$nsma_yaml")
+
+    if [ -z "$nsma_forbidden_pkgs" ]; then
+      not_applicable "  no forbidden packages declared in state-management.yaml"
+    else
+      nsma_pubspecs=$(find "$nsma_search_root" -type f -name pubspec.yaml 2>/dev/null \
+        | grep -v "/.forge/" \
+        | grep -v "/examples/" \
+        | grep -v "/.dart_tool/" \
+        || true)
+      if [ -z "$nsma_pubspecs" ]; then
+        not_applicable "  no Flutter pubspec.yaml found under $nsma_search_root"
+      else
+        nsma_violations=0
+        nsma_files_scanned=0
+        for pubspec in $nsma_pubspecs; do
+          nsma_files_scanned=$((nsma_files_scanned + 1))
+          for pkg in $nsma_forbidden_pkgs; do
+            if grep -qE "^[[:space:]]+${pkg}:" "$pubspec"; then
+              if [ "$nsma_blocking" = "1" ]; then
+                fail "  forbidden state-mgmt dep '${pkg}' in ${pubspec#$FORGE_ROOT/} (no-state-management-alternatives, ci_blocking=true)"
+              else
+                warn "  forbidden state-mgmt dep '${pkg}' in ${pubspec#$FORGE_ROOT/} (no-state-management-alternatives, warn-only ; ci_blocking flips at B.8/T6)"
+              fi
+              nsma_violations=$((nsma_violations + 1))
+            fi
+          done
+        done
+        if [ "$nsma_violations" = "0" ]; then
+          pass "  no forbidden state-mgmt deps detected across $nsma_files_scanned pubspec.yaml file(s)"
+        fi
+      fi
+    fi
+  fi
+fi
+
 # ── Article III.4: No NEEDS CLARIFICATION inline in implemented/archived ───
 # F.1 (f1-open-questions, FR-OQ-013, FR-OQ-014). Once a change reaches
 # `implemented` or `archived` status, every `[NEEDS CLARIFICATION:`
@@ -723,7 +790,7 @@ fi
 # ── Summary ───────────────────────────────────────────────────
 echo ""
 echo "========================"
-echo "PASS: $PASS | FAIL: $FAIL | N/A: $NA"
+echo "PASS: $PASS | FAIL: $FAIL | WARN: $WARN | N/A: $NA"
 
 if [ "$FAIL" -gt 0 ]; then
   echo "OVERALL: FAIL ($FAIL violations)"

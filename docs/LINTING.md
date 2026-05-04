@@ -15,6 +15,7 @@ bash .forge/scripts/constitution-linter.sh
 ```
 
 Exit codes :
+
 - `0` : OVERALL PASS (no FAIL emitted ; warnings tolerated).
 - `1` : OVERALL FAIL (one or more FAIL emitted).
 
@@ -25,23 +26,23 @@ so every PR passes through it.
 
 The linter currently enforces (post F.4) :
 
-| Article | Rule | Source change |
-| --- | --- | --- |
-| Article I (TDD) | partial — test files presence | foundations |
-| Article II (BDD) | partial — AC count in changes | foundations |
-| Article III (Specs Before Code) | artifact completeness | foundations |
-| Article III.4 (Anti-Hallucination) | no `[NEEDS CLARIFICATION:` inline in implemented/archived | F.1 |
-| Article IV (Delta Format) | ADDED/MODIFIED/REMOVED markers | foundations |
-| **Article V.1 (Compliance Gate)** | task ↔ FR linkage | **F.4** |
-| Article VI / VII (Flutter / Rust) | partial — module structure | foundations |
-| Article VIII (Infra) | Dockerfile multi-stage | foundations |
-| Article IX (Observability) | partial — OTel imports | foundations |
-| Article X.1 / X.2 (Modules + boundaries) | partial — heuristic | foundations |
-| **Article X.3 (Public API doc)** | ratio ≥ 80% (default) | **F.4** |
-| Article X.4 (No unresolved TODOs) | TODO format check | foundations |
-| Article X.5 (Static analysis) | analyze / clippy presence | foundations |
-| **Article XI.3 (GenUI)** | warning heuristic | **F.4** |
-| **Article XI.5 (Fallback tested)** | name-based pair | **F.4** |
+| Article                                  | Rule                                                      | Source change |
+|------------------------------------------|-----------------------------------------------------------|---------------|
+| Article I (TDD)                          | partial — test files presence                             | foundations   |
+| Article II (BDD)                         | partial — AC count in changes                             | foundations   |
+| Article III (Specs Before Code)          | artifact completeness                                     | foundations   |
+| Article III.4 (Anti-Hallucination)       | no `[NEEDS CLARIFICATION:` inline in implemented/archived | F.1           |
+| Article IV (Delta Format)                | ADDED/MODIFIED/REMOVED markers                            | foundations   |
+| **Article V.1 (Compliance Gate)**        | task ↔ FR linkage                                         | **F.4**       |
+| Article VI / VII (Flutter / Rust)        | partial — module structure                                | foundations   |
+| Article VIII (Infra)                     | Dockerfile multi-stage                                    | foundations   |
+| Article IX (Observability)               | partial — OTel imports                                    | foundations   |
+| Article X.1 / X.2 (Modules + boundaries) | partial — heuristic                                       | foundations   |
+| **Article X.3 (Public API doc)**         | ratio ≥ 80% (default)                                     | **F.4**       |
+| Article X.4 (No unresolved TODOs)        | TODO format check                                         | foundations   |
+| Article X.5 (Static analysis)            | analyze / clippy presence                                 | foundations   |
+| **Article XI.3 (GenUI)**                 | warning heuristic                                         | **F.4**       |
+| **Article XI.5 (Fallback tested)**       | name-based pair                                           | **F.4**       |
 
 ## Common errors
 
@@ -69,7 +70,9 @@ comments above each :
 
 ```dart
 /// Validates the user input and returns true if valid.
-bool validate(String input) { ... }
+bool validate(String input) {
+  ...
+}
 ```
 
 ```rust
@@ -115,12 +118,12 @@ FORGE_LINTER_SKIP_XI_5=1 bash .forge/scripts/constitution-linter.sh
 
 ## Opt-out env vars
 
-| Env var | Effect |
-| --- | --- |
-| `FORGE_LINTER_SKIP_V_1=1` | Skip Article V.1 |
-| `FORGE_LINTER_SKIP_X_3=1` | Skip Article X.3 |
-| `FORGE_LINTER_SKIP_XI_3=1` | Skip Article XI.3 |
-| `FORGE_LINTER_SKIP_XI_5=1` | Skip Article XI.5 |
+| Env var                         | Effect                                |
+|---------------------------------|---------------------------------------|
+| `FORGE_LINTER_SKIP_V_1=1`       | Skip Article V.1                      |
+| `FORGE_LINTER_SKIP_X_3=1`       | Skip Article X.3                      |
+| `FORGE_LINTER_SKIP_XI_3=1`      | Skip Article XI.3                     |
+| `FORGE_LINTER_SKIP_XI_5=1`      | Skip Article XI.5                     |
 | `FORGE_LINTER_X3_THRESHOLD=<n>` | Override X.3 ratio threshold (0..100) |
 
 These are intended for **incremental migration** or **non-applicable

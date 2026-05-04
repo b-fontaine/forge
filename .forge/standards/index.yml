@@ -327,3 +327,53 @@ standards:
     triggers: [linting, constitution-linter, linter rules, public API doc, fallback test, GenUI schema, audit trail, FORGE_LINTER_SKIP, FORGE_LINTER_X3_THRESHOLD]
     scope: all
     priority: high
+
+  # ─── T.4 ratifications (t4-adr-ratification, 2026-05-04) ────────
+
+  - id: standards/transport
+    path: standards/transport.yaml
+    triggers: [transport, connect-rpc, connect, grpc, grpc-web, buf, protobuf, codegen, asyncapi, openapi, http/2, http/3, "ADR-003", "ADR-009"]
+    scope: all
+    priority: critical
+
+  - id: standards/state-management
+    path: standards/state-management.yaml
+    triggers: [state management, flutter_bloc, bloc, riverpod, provider, getx, mobx, no-state-management-alternatives, "ADR-006"]
+    scope: flutter
+    priority: critical
+
+  - id: standards/observability
+    path: standards/observability.yaml
+    triggers: [observability, opentelemetry, otel, obi, ebpf, coroot, signoz, datadog, traceparent, sampler, "ADR-008"]
+    scope: all
+    priority: high
+
+  - id: standards/orchestration
+    path: standards/orchestration.yaml
+    triggers: [orchestration, dbos, temporal, durable execution, workflow, saga, "ADR-002"]
+    scope: all
+    priority: high
+
+  - id: standards/identity
+    path: standards/identity.yaml
+    triggers: [identity, idp, zitadel, keycloak, authentik, oidc, firebase-auth, auth0, schrems, cloud act, "ADR-007"]
+    scope: all
+    priority: high
+
+  - id: standards/persistence
+    path: standards/persistence.yaml
+    triggers: [persistence, postgres, postgresql, pgvector, citus, postgis, timescaledb, dynamodb, firestore, cosmosdb, "ADR-010"]
+    scope: all
+    priority: high
+
+  - id: global/standards-lifecycle
+    path: standards/global/standards-lifecycle.md
+    triggers: [standards lifecycle, expires_at, last_reviewed, exception_constitutional, REVIEW.md, themis, 12-month review, structural exception]
+    scope: all
+    priority: medium
+
+  - id: global/source-document-pinning
+    path: standards/global/source-document-pinning.md
+    triggers: [sha256 pin, source document, drift detector, ARCHITECTURE-TARGET, rehash, REHASH-LOG]
+    scope: all
+    priority: medium

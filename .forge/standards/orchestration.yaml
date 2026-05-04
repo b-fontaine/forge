@@ -1,0 +1,22 @@
+# Forge Standard — Workflow orchestration
+# Audit: T.4 (t4-adr-ratification, 2026-05-04)
+# Ratifies: ADR-002 from docs/ARCHITECTURE-TARGET.md
+
+version: "1.0.0"
+last_reviewed: 2026-05-04
+expires_at: 2027-05-04
+exception_constitutional: false
+linter_rule: null
+enforcement:
+  ci_blocking: false
+  pre_commit_hook: false
+forbidden:
+  - inngest            # saas-first eu-sovereignty-low
+rationale: |
+  ADR-002. DBOS by default removes one external control plane and yields
+  -50% TCO ops for monorepo workflows. Temporal is reserved for high
+  cross-service volume (event-driven-eu archetype, B.6).
+
+default: dbos
+fallback: temporal
+fallback_trigger: "workflow_volume_per_day_gt_10000 OR cross_service_count_gt_10"

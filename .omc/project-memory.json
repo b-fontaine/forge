@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1777536340813,
+  "lastScanned": 1777881730341,
   "projectRoot": "/Users/bfontaine/git/github/forge",
   "techStack": {
     "languages": [],
@@ -27,7 +27,8 @@
     "mainDirectories": [
       "bin",
       "docs",
-      "examples"
+      "examples",
+      "scripts"
     ],
     "gitBranches": {
       "defaultBranch": "main",
@@ -39,18 +40,21 @@
     "bin": {
       "path": "bin",
       "purpose": "Executable scripts",
-      "fileCount": 2,
-      "lastAccessed": 1777536340728,
+      "fileCount": 7,
+      "lastAccessed": 1777881730315,
       "keyFiles": [
+        "forge-init-fsm.sh",
+        "forge-init-mobile-only.sh",
         "forge-install.sh",
-        "forge-lint"
+        "forge-lint",
+        "forge-questions.sh"
       ]
     },
     "cli": {
       "path": "cli",
       "purpose": null,
       "fileCount": 8,
-      "lastAccessed": 1777536340730,
+      "lastAccessed": 1777881730315,
       "keyFiles": [
         "README.md",
         "VERSION",
@@ -62,29 +66,39 @@
     "docs": {
       "path": "docs",
       "purpose": "Documentation",
-      "fileCount": 4,
-      "lastAccessed": 1777536340731,
+      "fileCount": 9,
+      "lastAccessed": 1777881730316,
       "keyFiles": [
+        "ARCHETYPES.md",
+        "ARCHITECTURE-TARGET.md",
         "ARCHITECTURE.md",
         "CONTRIBUTING.md",
-        "GUIDE.md",
-        "VERSIONING.md"
+        "GUIDE.md"
       ]
     },
     "examples": {
       "path": "examples",
       "purpose": "Example code",
       "fileCount": 1,
-      "lastAccessed": 1777536340732,
+      "lastAccessed": 1777881730317,
       "keyFiles": [
         "README.md"
+      ]
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 1,
+      "lastAccessed": 1777881730317,
+      "keyFiles": [
+        "release-v0.3.0.sh"
       ]
     },
     "cli/assets": {
       "path": "cli/assets",
       "purpose": "Static assets",
-      "fileCount": 12,
-      "lastAccessed": 1777536340734,
+      "fileCount": 15,
+      "lastAccessed": 1777881730318,
       "keyFiles": [
         "CHANGELOG.md",
         "CLAUDE.md",
@@ -95,7 +109,7 @@
       "path": "cli/dist",
       "purpose": "Distribution/build output",
       "fileCount": 6,
-      "lastAccessed": 1777536340735,
+      "lastAccessed": 1777881730319,
       "keyFiles": [
         "cli.d.ts",
         "cli.js",
@@ -106,11 +120,17 @@
       "path": "cli/node_modules",
       "purpose": "Dependencies",
       "fileCount": 1,
-      "lastAccessed": 1777536340739,
+      "lastAccessed": 1777881730320,
       "keyFiles": []
     }
   },
   "hotPaths": [
+    {
+      "path": ".forge/changes/t4-adr-ratification/.forge.yaml",
+      "accessCount": 12,
+      "lastAccessed": 1777901232434,
+      "type": "file"
+    },
     {
       "path": ".forge/specs/full-stack-monorepo.md",
       "accessCount": 8,
@@ -121,6 +141,12 @@
       "path": ".forge/specs/forge-ci.md",
       "accessCount": 8,
       "lastAccessed": 1777538196033,
+      "type": "file"
+    },
+    {
+      "path": ".forge/product/roadmap.md",
+      "accessCount": 8,
+      "lastAccessed": 1777889565400,
       "type": "file"
     },
     {
@@ -136,15 +162,21 @@
       "type": "file"
     },
     {
+      "path": "CHANGELOG.md",
+      "accessCount": 5,
+      "lastAccessed": 1777900344640,
+      "type": "file"
+    },
+    {
       "path": ".forge/changes/c1-reference-project/.forge.yaml",
       "accessCount": 4,
       "lastAccessed": 1777538318904,
       "type": "file"
     },
     {
-      "path": ".forge/product/roadmap.md",
-      "accessCount": 3,
-      "lastAccessed": 1777538831659,
+      "path": ".forge/standards/index.yml",
+      "accessCount": 4,
+      "lastAccessed": 1777900286520,
       "type": "file"
     },
     {
@@ -157,6 +189,12 @@
       "path": ".forge/changes/a7-forge-upgrade/specs.md",
       "accessCount": 3,
       "lastAccessed": 1777550438627,
+      "type": "file"
+    },
+    {
+      "path": "docs/ARCHITECTURE-TARGET.md",
+      "accessCount": 3,
+      "lastAccessed": 1777882507757,
       "type": "file"
     },
     {
@@ -178,15 +216,45 @@
       "type": "file"
     },
     {
-      "path": "CHANGELOG.md",
-      "accessCount": 2,
-      "lastAccessed": 1777538417742,
-      "type": "file"
-    },
-    {
       "path": "bin/forge-upgrade.sh",
       "accessCount": 2,
       "lastAccessed": 1777550719727,
+      "type": "file"
+    },
+    {
+      "path": ".forge/changes/t4-adr-ratification/open-questions.md",
+      "accessCount": 2,
+      "lastAccessed": 1777888371075,
+      "type": "file"
+    },
+    {
+      "path": "docs/new-archetypes-plan.md",
+      "accessCount": 2,
+      "lastAccessed": 1777889568499,
+      "type": "file"
+    },
+    {
+      "path": ".forge/constitution.md",
+      "accessCount": 2,
+      "lastAccessed": 1777889589717,
+      "type": "file"
+    },
+    {
+      "path": "README.md",
+      "accessCount": 2,
+      "lastAccessed": 1777889752081,
+      "type": "file"
+    },
+    {
+      "path": ".forge/product/mission.md",
+      "accessCount": 2,
+      "lastAccessed": 1777889752242,
+      "type": "file"
+    },
+    {
+      "path": ".forge/changes/t4-adr-ratification/specs.md",
+      "accessCount": 2,
+      "lastAccessed": 1777900835475,
       "type": "file"
     },
     {
@@ -232,9 +300,129 @@
       "type": "file"
     },
     {
-      "path": ".forge/standards/index.yml",
+      "path": "scripts/release-v0.3.0.sh",
       "accessCount": 1,
-      "lastAccessed": 1777550291675,
+      "lastAccessed": 1777740261918,
+      "type": "file"
+    },
+    {
+      "path": ".forge/templates/proposal.md",
+      "accessCount": 1,
+      "lastAccessed": 1777886829879,
+      "type": "file"
+    },
+    {
+      "path": ".forge/templates/open-questions.md.tmpl",
+      "accessCount": 1,
+      "lastAccessed": 1777886836397,
+      "type": "file"
+    },
+    {
+      "path": ".forge/changes/t4-adr-ratification/proposal.md",
+      "accessCount": 1,
+      "lastAccessed": 1777886997713,
+      "type": "file"
+    },
+    {
+      "path": "docs/SCHEMA.md",
+      "accessCount": 1,
+      "lastAccessed": 1777889555773,
+      "type": "file"
+    },
+    {
+      "path": "docs/GUIDE.md",
+      "accessCount": 1,
+      "lastAccessed": 1777889555959,
+      "type": "file"
+    },
+    {
+      "path": "docs/CONTRIBUTING.md",
+      "accessCount": 1,
+      "lastAccessed": 1777889556041,
+      "type": "file"
+    },
+    {
+      "path": "docs/VERSIONING.md",
+      "accessCount": 1,
+      "lastAccessed": 1777889556233,
+      "type": "file"
+    },
+    {
+      "path": "docs/OPEN_QUESTIONS.md",
+      "accessCount": 1,
+      "lastAccessed": 1777889556334,
+      "type": "file"
+    },
+    {
+      "path": "docs/LINTING.md",
+      "accessCount": 1,
+      "lastAccessed": 1777889556405,
+      "type": "file"
+    },
+    {
+      "path": ".forge.yaml",
+      "accessCount": 1,
+      "lastAccessed": 1777889559432,
+      "type": "file"
+    },
+    {
+      "path": "CLAUDE.md",
+      "accessCount": 1,
+      "lastAccessed": 1777889559478,
+      "type": "file"
+    },
+    {
+      "path": "GOVERNANCE.md",
+      "accessCount": 1,
+      "lastAccessed": 1777889559572,
+      "type": "file"
+    },
+    {
+      "path": "CODE_OF_CONDUCT.md",
+      "accessCount": 1,
+      "lastAccessed": 1777889559702,
+      "type": "file"
+    },
+    {
+      "path": ".forge/standards/infra/docker.md",
+      "accessCount": 1,
+      "lastAccessed": 1777889564425,
+      "type": "file"
+    },
+    {
+      "path": ".forge/standards/rust/architecture.md",
+      "accessCount": 1,
+      "lastAccessed": 1777889564661,
+      "type": "file"
+    },
+    {
+      "path": ".forge/templates/change.yaml",
+      "accessCount": 1,
+      "lastAccessed": 1777889565176,
+      "type": "file"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "accessCount": 1,
+      "lastAccessed": 1777889567609,
+      "type": "file"
+    },
+    {
+      "path": "docs/ARCHETYPES.md",
+      "accessCount": 1,
+      "lastAccessed": 1777889568237,
+      "type": "file"
+    },
+    {
+      "path": "cli/package.json",
+      "accessCount": 1,
+      "lastAccessed": 1777889575411,
+      "type": "file"
+    },
+    {
+      "path": "cli/README.md",
+      "accessCount": 1,
+      "lastAccessed": 1777889575595,
       "type": "file"
     }
   ],

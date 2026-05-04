@@ -45,3 +45,32 @@ archetypes:
       - ios/Runner/Info.plist
       - android/app/build.gradle
     since: "1.2.0"
+    # T.4 (t4-adr-ratification, 2026-05-04) — RENAMED to mobile-pwa-first.
+    # `mobile-only / 1.0.0` becomes a legacy compat alias. The full rename
+    # + Qwik PWA channel ships in B.9 (T8). Until then, scaffolds initiated
+    # here continue to produce the v0.3.0 mobile-only tree byte-equivalent.
+    status: legacy_alias
+    target: mobile-pwa-first
+    migration: "B.9 (T8) — bin/forge-migrate-mobile-pwa.sh"
+
+  # ─── Removed from taxonomy (t4-adr-ratification, 2026-05-04) ────
+  # `flutter-firebase` was a placeholder slot for archetype B.2 in the
+  # original audit roadmap (`il-s-agit-l-d-un-noble-gem.md`). Per ADR-007
+  # of `docs/ARCHITECTURE-TARGET.md`, Schrems II + CLOUD Act make Firebase
+  # incompatible with Forge's EU/premium positioning. The archetype is
+  # REMOVED from the roadmap. Adopters who need Firebase keep the `default`
+  # archetype as a starting point. See CHANGELOG.md and
+  # `docs/ARCHETYPES.md` for the public communication.
+  #
+  # The placeholder is annotated here (NOT removed) to preserve the
+  # `forge upgrade` history slot for any adopter who may have previously
+  # invoked `forge init --archetype flutter-firebase` (no scaffold ever
+  # produced — the placeholder was inactive).
+  flutter-firebase:
+    name: flutter-firebase
+    scaffolder: "<removed>"
+    description: "REMOVED — Schrems II + CLOUD Act incompatible with Forge EU positioning (ADR-007)."
+    signals: []
+    since: "0.0.0"
+    status: removed_from_roadmap
+    reason: "Schrems II + CLOUD Act per ADR-007 (t4-adr-ratification, 2026-05-04)"

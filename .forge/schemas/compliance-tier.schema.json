@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forge.bfontaine.fr/schemas/compliance-tier.schema.json",
+  "title": "Forge Compliance Tier",
+  "version": "1.0.0",
+  "description": "Graded EU compliance dimension per docs/ARCHITECTURE-TARGET.md §10. Three tiers map to escalating sovereignty constraints. Used as the value of `compliance_tier` in archetype scaffold-manifest.yaml and per-change .forge.yaml when an archetype is compliance-tier-aware (e.g. identity.yaml standard's compliance_tier_aware: true flag).",
+  "type": "string",
+  "enum": ["T1", "T2", "T3"],
+  "x-tier-descriptions": {
+    "T1": "RGPD-compliant via DPA — SaaS hors EU acceptable si DPA + SCC + protections complémentaires (chiffrement, BYOK), assume risque résiduel CLOUD Act.",
+    "T2": "Self-hostable — déployable sur n'importe quel K8s EU, contrôle technique mais pas qualification sovereign.",
+    "T3": "Hébergement EU strict — SecNumCloud / HDS / EUCS High, 100% EU jurisdiction, immune CLOUD Act."
+  },
+  "x-component-eligibility-matrix-source": "docs/ARCHITECTURE-TARGET.md §10.2"
+}
