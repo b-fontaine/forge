@@ -1,133 +1,158 @@
-# Guide de Contribution — Forge
+# Contributing to Forge
 
 ---
 
-## Philosophie de Contribution
+## Contribution Philosophy
 
-Forge se développe selon ses propres principes. Ce n'est pas une ironie — c'est une nécessité. Un framework qui préconise les specs et le TDD mais qui accepte des contributions non-spécifiées et sans tests serait incohérent.
+Forge develops itself according to its own principles. This is not irony — it
+is a necessity. A framework that mandates specs and TDD but accepts
+unspecified, untested contributions would be incoherent.
 
-Toute contribution DOIT :
-- Passer par le pipeline Forge (Proposal → Specs → Design → Tasks → TDD)
-- Respecter la constitution (11 articles, sans exception)
-- Inclure des tests — même pour du Markdown, sous forme de scénarios de validation documentés et exécutés
+Every contribution MUST:
+- Go through the Forge pipeline (Proposal → Specs → Design → Tasks → TDD)
+- Comply with the Constitution (twelve articles, no exceptions)
+- Include tests — even for Markdown, in the form of documented and
+  executed validation scenarios
 
-Si vous contribuez à Forge, vous utilisez Forge pour contribuer à Forge. C'est le meilleur test d'intégration possible.
+If you contribute to Forge, you use Forge to contribute to Forge. That is
+the best integration test possible.
 
 ---
 
-## Ajouter un Standard
+## Adding a Standard
 
-Un standard est une règle technique injectée dynamiquement dans le contexte de l'agent approprié au moment opportun.
+A standard is a technical rule injected dynamically into the appropriate
+agent's context at the right moment.
 
-### Les 5 étapes
+### The 5 steps
 
-1. **Créer le fichier** — `.forge/standards/<domaine>/<nom>.md` avec le format requis (voir ci-dessous)
+1. **Create the file** — `.forge/standards/<domain>/<name>.md`, following
+   the required format (see below).
 
-2. **Enregistrer dans le catalogue** — Ajouter une entrée dans `.forge/standards/index.yml` :
+2. **Register in the catalog** — Add an entry to
+   `.forge/standards/index.yml`:
    ```yaml
-   - id: <domaine>-<nom>
-     path: standards/<domaine>/<nom>.md
+   - id: <domain>/<name>
+     path: standards/<domain>/<name>.md
      triggers:
-       - <mot-clé-1>
-       - <mot-clé-2>
+       - <keyword-1>
+       - <keyword-2>
      scope: <implementation|design|review|all>
      priority: <high|medium|low>
    ```
 
-3. **Choisir des triggers précis** — Les triggers doivent être suffisamment spécifiques. `flutter` est trop large. `riverpod`, `provider`, `bloc` sont précis. Des triggers trop généraux polluent le contexte avec des standards non-pertinents.
+3. **Pick precise triggers** — Triggers must be specific. `flutter` is too
+   broad. `riverpod`, `provider`, `bloc` are precise. Triggers that are too
+   general pollute the context with non-relevant standards.
 
-4. **Tester** — Créer un scénario de test : lancer `/forge:implement` dans un contexte qui devrait déclencher le standard, et vérifier que le standard est bien injecté et que l'agent s'y conforme.
+4. **Test it** — Write a test scenario: run `/forge:implement` in a context
+   that should fire the standard, and verify the standard is injected and
+   the agent complies.
 
-5. **Documenter** — Expliquer dans le fichier du standard : pourquoi cette règle existe, dans quel contexte elle s'applique, et ce qui se passe si on ne la respecte pas.
+5. **Document it** — Explain in the standard file: why the rule exists, in
+   which context it applies, and what happens if it is violated.
 
-### Format requis pour un standard
+### Required format for a standard
 
 ```markdown
-# Standard: [Nom]
+# Standard: [Name]
 
 ## Scope
-[À quoi s'applique ce standard — domaine, contexte, situations]
+[What this standard applies to — domain, context, situations]
 
 ## Rules
-[Règles avec exemples concrets de code ou de comportement attendu]
+[Rules with concrete code or behavior examples]
 
 ## Anti-patterns
-[Ce qu'il ne faut PAS faire — avec exemples et explication du problème]
+[What NOT to do — with examples and an explanation of the problem]
 ```
 
-La section "Anti-patterns" est fortement recommandée. Un LLM qui voit "ne pas faire X" est moins susceptible de faire X qu'un LLM qui voit seulement "faire Y".
+The "Anti-patterns" section is strongly recommended. An LLM that sees "do
+not do X" is less likely to do X than an LLM that only sees "do Y".
 
 ---
 
-## Ajouter un Agent
+## Adding an Agent
 
-Un agent est un persona persistant avec une expertise, un style de communication et des règles de comportement spécifiques.
+An agent is a persistent persona with a specific expertise, communication
+style, and behavior rules.
 
-### Les 4 étapes
+### The 4 steps
 
-1. **Créer le fichier** — `.claude/agents/<équipe>/<nom>.md`
+1. **Create the file** — `.claude/agents/<team>/<name>.md`.
 
-2. **Sections obligatoires** :
-   - `## Persona` — Name (mythologique), Role (titre), Style (comment il communique)
-   - `## Purpose` — Une phrase décrivant pourquoi cet agent existe
-   - `## Expertise` — Domaines de compétence
-   - `## Workflow` — Comment il approche les tâches (étapes)
-   - `## Rules` — Règles non-négociables (comportements interdits, comportements obligatoires)
+2. **Required sections**:
+   - `## Persona` — Name (mythological), Role (title), Style (how they
+     communicate)
+   - `## Purpose` — One sentence describing why this agent exists
+   - `## Expertise` — Areas of competence
+   - `## Workflow` — How they approach tasks (steps)
+   - `## Rules` — Non-negotiable rules (forbidden behaviors, mandatory
+     behaviors)
 
-3. **Référencer depuis l'orchestrateur** — L'agent doit être invocable :
-   - Équipe Flutter → référencer depuis `hera.md`
-   - Équipe Rust → référencer depuis `vulcan.md`
-   - Transversal → référencer depuis `forge.md`
+3. **Reference from the orchestrator** — The agent must be invocable:
+   - Flutter team → reference from `hera.md`
+   - Rust team → reference from `vulcan.md`
+   - Cross-cutting → reference from `forge-master.md`
 
-4. **Convention de nommage** :
-   - Flutter team → Mythologie grecque (Hera, Athena, Spartan, Apollo, Hephaestus...)
-   - Rust team → Latin/Romain (Vulcan, Ferris, Centurion, Tribune, Terminal...)
-   - Transversal → Mythologie grecque ou latine (Forge, Clio, Oracle, Atlas, Aegis, Panoptes...)
+4. **Naming convention**:
+   - Flutter team → Greek mythology (Hera, Athena, Spartan, Apollo,
+     Hephaestus...)
+   - Rust team → Latin/Roman (Vulcan, Ferris, Centurion, Tribune,
+     Terminal...)
+   - Cross-cutting → Greek or Latin (Forge, Clio, Oracle, Atlas, Aegis,
+     Panoptes...)
 
 ---
 
-## Ajouter une Commande
+## Adding a Command
 
-Une commande slash est un fichier Markdown dans `.claude/commands/forge/` que Claude Code expose via `/forge:<nom>`.
+A slash command is a Markdown file in `.claude/commands/forge/` that Claude
+Code surfaces via `/forge:<name>`.
 
-### Les 3 étapes
+### The 3 steps
 
-1. **Créer le fichier** — `.claude/commands/forge/<nom>.md`
+1. **Create the file** — `.claude/commands/forge/<name>.md`.
 
-   Format obligatoire :
+   Required format:
    ```markdown
-   # /forge:<nom> — Description courte
+   # /forge:<name> — Short description
 
    ## Purpose
-   [Pourquoi cette commande existe]
+   [Why this command exists]
 
    ## Process
-   1. [Première étape]
-   2. [Deuxième étape]
+   1. [First step]
+   2. [Second step]
    ...
 
    ## Output
-   [Ce que la commande produit]
+   [What the command produces]
    ```
 
-2. **Intégrer dans la détection d'état** — Si la commande fait partie du cycle principal, mettre à jour la logique de détection dans `forge.md` pour que `/forge` puisse router vers elle automatiquement.
+2. **Wire into state detection** — If the command is part of the main
+   cycle, update the routing logic in `forge-master.md` so `/forge` can
+   dispatch to it automatically.
 
-3. **Documenter** — Mettre à jour :
-   - `README.md` — tableau des commandes
-   - `docs/GUIDE.md` — section commandes et/ou cycle de développement
-   - `docs/ARCHITECTURE.md` — structure annotée si un nouveau fichier est ajouté
+3. **Document it** — Update:
+   - `README.md` — command table
+   - `docs/GUIDE.md` — commands section and/or development cycle
+   - `docs/ARCHITECTURE.md` — annotated structure if a new file is added
 
 ---
 
-## Ajouter un Schema
+## Adding a Schema
 
-Un schema définit un pipeline de phases personnalisé pour un type de projet.
+A schema (also called an *archetype* in the dispatch table) defines a
+custom phase pipeline for a project type. Forge currently ships seven
+schemas: `default`, `full-stack-monorepo`, `mobile-only`, `tdd-flutter`,
+`tdd-rust`, `ai-first`, and `rapid`.
 
-### Les 2 étapes
+### The 2 steps
 
-1. **Créer le fichier** — `.forge/schemas/<nom>/schema.yaml` :
+1. **Create the file** — `.forge/schemas/<name>/schema.yaml`:
    ```yaml
-   name: <nom>
+   name: <name>
    description: <description>
    phases:
      - id: vision
@@ -136,101 +161,133 @@ Un schema définit un pipeline de phases personnalisé pour un type de projet.
      - id: explore
        command: /forge:explore
        required: false
-     # ... autres phases
+     # ... other phases
    gates:
-     constitution: strict      # Ne jamais assouplir
-     tdd: mandatory            # Ne jamais rendre optionnel
+     constitution: strict      # Never relax
+     tdd: mandatory            # Never make optional
    tools:
-     # Configurations spécifiques (golden tests, clippy, etc.)
+     # Schema-specific configurations (golden tests, clippy, etc.)
    ```
 
-2. **Tester avec un projet réel** — Créer un projet de test depuis zéro, appliquer le schema, et parcourir l'intégralité du pipeline. Documenter les résultats dans la PR.
+   The schema MUST validate against `.forge/schemas/change.schema.json`
+   (JSON Schema Draft 2020-12, enforced by `verify.sh` via the
+   `f2-yaml-schema` gate).
 
-**Contrainte absolue** : Un schema ne peut pas rendre le TDD optionnel. `tdd: optional` est une violation de la constitution — la PR sera rejetée.
+2. **Test with a real project** — Create a test project from scratch,
+   apply the schema, and walk the entire pipeline. Document the results in
+   the PR.
+
+**Hard constraint**: A schema cannot make TDD optional. `tdd: optional` is
+a Constitution violation — the PR will be rejected.
 
 ---
 
-## Modifier la Constitution
+## Modifying the Constitution
 
-La constitution est la loi suprême de Forge. Elle contient 11 articles qui définissent les règles non-négociables du framework. La modifier est un acte grave.
+The Constitution is the supreme law of Forge. It contains twelve articles
+that define the framework's non-negotiable rules. Modifying it is a
+serious act.
 
-### Processus d'amendement
+### Amendment process
 
-1. **Justification documentée** — Rédiger un document explicite : quel article est concerné, pourquoi la règle actuelle pose problème, quelle modification est proposée, quel impact sur les projets existants.
+The full amendment workflow is defined in **`GOVERNANCE.md` § Amendment
+Process** (formalized in change `d5-governance`, ratified 2026-04-30).
+Summary:
 
-2. **Approbation humaine** — Le propriétaire du projet (mainteneur principal) doit approuver explicitement. Pas de merge automatique, pas de vote par agents.
+1. **Documented justification** — Open a Forge change proposal: which
+   article is affected, why the current rule is problematic, what
+   modification is proposed, and the impact on existing projects.
 
-3. **Entrée dans le registre d'amendements** — Ajouter l'amendement dans le tableau des amendements en bas de `constitution.md` avec date, auteur, justification résumée.
+2. **Maintainer approval** — The BDFL (or co-maintainer in the BDFL's
+   absence) must explicitly approve. No automated merges, no agent voting.
 
-4. **Revue d'impact** — Analyser toutes les specs existantes dans `.forge/specs/` pour identifier les violations potentielles induites par le changement.
+3. **Discussion window** — A minimum 7-day public discussion period
+   before ratification (Article XII).
 
-Ne pas modifier la constitution à la légère. La stabilité de la constitution est une fonctionnalité, pas une contrainte arbitraire.
+4. **Append to the amendment registry** — Record the amendment in the
+   table at the bottom of `constitution.md` with date, author, and a
+   summary justification. Bump `constitution_version` (semver).
+
+5. **Impact review** — Audit every existing spec under `.forge/specs/`
+   for violations induced by the change.
+
+Do not amend the Constitution lightly. Constitution stability is a
+feature, not an arbitrary constraint.
 
 ---
 
 ## Conventions
 
-### Nommage des Agents
+### Agent naming
 
-| Équipe | Panthéon | Exemples |
-|--------|----------|---------|
-| Flutter | Grec | Hera, Athena, Spartan, Apollo, Hephaestus, Hermes, Iris, Argus, Prometheus, Nemesis |
-| Rust | Latin/Romain | Vulcan, Ferris, Centurion, Tribune, Terminal, Sentinel |
-| Transversal | Grec ou Latin | Forge, Clio, Oracle, Socrates, Atlas, Panoptes, Aegis, Heracles |
+| Team           | Pantheon      | Examples |
+|----------------|---------------|----------|
+| Flutter        | Greek         | Hera, Athena, Spartan, Apollo, Hephaestus, Hermes, Iris, Argus, Prometheus, Nemesis |
+| Rust           | Latin/Roman   | Vulcan, Ferris, Centurion, Tribune, Terminal, Sentinel |
+| Cross-cutting  | Greek or Latin | Forge, Clio, Oracle, Socrates, Atlas, Panoptes, Aegis, Heracles, Janus |
 
-### Format des Standards
+### Standard format
 
-- Section "Scope" obligatoire — sans elle, les triggers sont impossibles à calibrer
-- Exemples de code concrets — les règles abstraites sont moins efficaces
-- Section "Anti-patterns" recommandée — les contre-exemples ancrent les règles
-- Pas de TODOs dans les standards livrés — un standard incomplet est pire qu'un standard inexistant
+- "Scope" section is mandatory — without it, triggers cannot be calibrated.
+- Concrete code examples — abstract rules are less effective.
+- "Anti-patterns" section is recommended — counter-examples anchor rules.
+- No TODOs in shipped standards — an incomplete standard is worse than no
+  standard at all.
 
-### Format des Commandes
+### Command format
 
-- Titre `# /forge:<nom> — Description` obligatoire
-- Sections : Purpose, Process (étapes numérotées), Output
-- Process toujours numéroté — les LLMs suivent mieux les étapes ordonnées explicitement
+- Title `# /forge:<name> — Description` is mandatory.
+- Sections: Purpose, Process (numbered steps), Output.
+- Always number the Process steps — LLMs follow ordered steps better than
+  unordered ones.
 
 ---
 
-## Tests du Framework
+## Framework Tests
 
-Avant de soumettre une contribution, exécuter les 5 scénarios de validation suivants et documenter les résultats dans la PR.
+Before submitting a contribution, run the five validation scenarios below
+and document the results in the PR.
 
-### Scénario 1 — Nouveau projet Flutter vide
+### Scenario 1 — Empty Flutter project
 
-1. Créer un répertoire vide
-2. Copier Forge
-3. Lancer `/forge:init`
-4. Lancer `/forge:vision`
-5. Lancer `/forge:new feature-test`
-6. **Vérifier** : la constitution est respectée à chaque étape, les fichiers appropriés sont créés dans `.forge/changes/feature-test/`
+1. Create an empty directory.
+2. Copy Forge into it.
+3. Run `/forge:init`.
+4. Run `/forge:vision`.
+5. Run `/forge:new feature-test`.
+6. **Verify**: the Constitution is respected at each step, and the
+   appropriate files are created under `.forge/changes/feature-test/`.
 
-### Scénario 2 — Projet Rust existant
+### Scenario 2 — Existing Rust project
 
-1. Utiliser un projet Rust existant avec du code
-2. Copier Forge
-3. Lancer `/forge:init`
-4. Lancer `/forge:discover`
-5. **Vérifier** : les conventions existantes sont capturées dans `.forge/standards/`, le fichier `index.yml` est mis à jour
+1. Use an existing Rust project with code.
+2. Copy Forge.
+3. Run `/forge:init`.
+4. Run `/forge:discover`.
+5. **Verify**: existing conventions are captured in `.forge/standards/`,
+   and `index.yml` is updated.
 
-### Scénario 3 — Cycle TDD complet
+### Scenario 3 — Full TDD cycle
 
-1. Depuis un état avec un plan de tâches (`tasks.md` existant)
-2. Lancer `/forge:implement <nom>`
-3. **Vérifier** : l'agent enforce RED (test écrit et échouant) avant GREEN, REFACTOR est proposé après GREEN, aucune étape n'est sautée
+1. Start from a state with a task plan (`tasks.md` exists).
+2. Run `/forge:implement <name>`.
+3. **Verify**: the agent enforces RED (failing test written first) before
+   GREEN, REFACTOR is offered after GREEN, and no step is skipped.
 
-### Scénario 4 — Violation de la constitution
+### Scenario 4 — Constitution violation
 
-1. Créer manuellement un fichier `design.md` qui viole un article de la constitution (ex : design sans tests prévus)
-2. Lancer `/forge:review <nom>`
-3. **Vérifier** : le gate BLOQUE explicitement, l'agent cite l'article violé, il refuse de continuer sans correction
+1. Manually create a `design.md` that violates an article (e.g., a design
+   without planned tests).
+2. Run `/forge:review <name>`.
+3. **Verify**: the gate explicitly BLOCKS, the agent cites the violated
+   article, and refuses to continue without correction.
 
-### Scénario 5 — Archive de delta specs
+### Scenario 5 — Delta-spec archive
 
-1. Depuis un état avec une review passée
-2. Lancer `/forge:archive <nom>`
-3. **Vérifier** : les specs delta sont fusionnées dans `.forge/specs/`, le dossier de changement est marqué DONE, un résumé apparaît dans le journal du projet
+1. Start from a state with a passed review.
+2. Run `/forge:archive <name>`.
+3. **Verify**: delta specs are merged into `.forge/specs/`, the change
+   directory is marked DONE, and a summary appears in the project journal.
 
 ---
 
@@ -238,56 +295,52 @@ Avant de soumettre une contribution, exécuter les 5 scénarios de validation su
 
 <!-- Audit: G.1 (g1-forge-ci, FR-CI-011) -->
 
-Forge runs its own gates in CI on every PR and every push to `main`
-via `.github/workflows/forge-ci.yml`. The workflow declares five
-jobs (`harness`, `gates`, `cli`, `lint`, `summary`) and aggregates
-the four worker jobs into a single status check **`forge-ci /
-summary`** that branch protection requires.
+Forge runs its own gates in CI on every PR and every push to `main` via
+`.github/workflows/forge-ci.yml`. The workflow declares six jobs
+(`harness`, `gates`, `cli`, `lint`, `example`, `summary`) and aggregates
+the five worker jobs into a single status check **`forge-ci / summary`**
+that branch protection requires.
 
 ### Branch protection (maintainer-only setup)
 
-The `main` branch protection rule MUST require **`forge-ci /
-summary`** to pass before merge. This rule is **configured manually
-by the maintainer** via the GitHub UI — it is **not automated** by
-Forge (principle of least privilege ; the workflow does not have
-write access to repository settings).
+The `main` branch protection rule MUST require **`forge-ci / summary`** to
+pass before merge. This rule is **configured manually by the maintainer**
+via the GitHub UI — it is **not automated** by Forge (principle of least
+privilege; the workflow does not have write access to repository
+settings).
 
-Setup steps (one-time, by repo owner) :
+Setup steps (one-time, by repo owner):
 
-1. Repository → **Settings** → **Branches** → **Branch protection
-   rules** → **Add rule** for `main`.
+1. Repository → **Settings** → **Branches** → **Branch protection rules**
+   → **Add rule** for `main`.
 2. Enable **Require status checks to pass before merging**.
-3. Search for and select **`forge-ci / summary`** as the required
-   check.
-4. Recommended additional protections (NOT mandates — chosen at
-   maintainer discretion) :
+3. Search for and select **`forge-ci / summary`** as the required check.
+4. Recommended additional protections (NOT mandates — at maintainer
+   discretion):
    - **Require linear history** (clean audit trail).
    - **Require signed commits** (supply-chain hygiene).
-   - **Dismiss stale pull request approvals when new commits are
-     pushed**.
+   - **Dismiss stale pull request approvals when new commits are pushed**.
 
-Full standard : `.forge/standards/global/forge-self-ci.md`.
+Full standard: `.forge/standards/global/forge-self-ci.md`.
 
 ---
 
-## Roadmap du Framework
+## Framework Roadmap
 
-### Court terme — Corrections et complétions
+The authoritative product roadmap lives at
+`.forge/product/roadmap.md` — refer to it for the current set of phases,
+shipped tiers (T0/T1/T2/T3), and outstanding audit items. Highlights of
+what is on the table, in roughly increasing time horizons:
 
-- Templates d'ADR pour les décisions d'internationalisation (i18n)
-- Runbooks d'observabilité par défaut (SigNoz, ELK, Prometheus)
-- Schema `mobile-only` optimisé pour Firebase sans backend custom
-
-### Moyen terme — Nouvelles fonctionnalités
-
-- Schema `microservices` pour projets multi-services avec gestion des contrats inter-services
-- Agent `DataEngineer` pour pipelines de données (ingestion, transformation, qualité)
-- Intégration Linear / Jira pour traçabilité bidirectionnelle entre tasks Forge et tickets
-- Schema `mobile-first` avec priorité iOS/Android et patterns de navigation natifs
-
-### Long terme — Évolution architecturale
-
-- Métriques de vélocité — cycle time par phase, identification des goulots d'étranglement
-- Dashboard de santé du projet — couverture de tests, dette technique, âge des specs
-- Export des specs vers formats standards (OpenAPI pour REST, AsyncAPI pour événements)
-- Support multi-LLM — différents agents sur différents modèles selon leurs forces respectives
+- **Short term** — i18n ADR templates; default observability runbooks
+  (SigNoz, ELK, Prometheus); finishing the `mobile-only` archetype
+  (Firebase, no custom backend) and the `flutter-firebase` archetype.
+- **Medium term** — `microservices` schema with inter-service contract
+  management; a `DataEngineer` agent for ingestion/transformation/quality
+  pipelines; bidirectional Linear/Jira traceability between Forge tasks
+  and tickets.
+- **Long term** — velocity metrics (cycle time per phase, bottleneck
+  identification); project health dashboard (test coverage, technical
+  debt, spec age); spec export to standard formats (OpenAPI for REST,
+  AsyncAPI for events); multi-LLM support (different agents on different
+  models, matched to their respective strengths).

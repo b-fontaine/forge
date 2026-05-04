@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"command -v gh; brew list gh 2>&1 | head -1; which gh 2>&1\",\"description\":\"Re-check gh CLI availability\"}",
+  "error": "Exit code 1\nError: No such keg: /opt/homebrew/Cellar/gh\ngh not found",
+  "timestamp": "2026-05-02T16:53:19.194Z",
+  "retry_count": 1
+}
