@@ -80,6 +80,8 @@ jobs:
         run: bash .forge/scripts/tests/f4.test.sh --level 1,2
       - name: t4.test.sh
         run: bash .forge/scripts/tests/t4.test.sh --level 1,2
+      - name: t5.test.sh
+        run: bash .forge/scripts/tests/t5.test.sh --level 1,2
 
   # ─── gates ── verify.sh + constitution-linter.sh ───────────────
   gates:

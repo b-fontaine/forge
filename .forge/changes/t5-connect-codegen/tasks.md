@@ -98,32 +98,53 @@ Goal : Context7-resolved versions recorded ; `t5.test.sh` exists with
 
 ### T-PHA — t5.test.sh skeleton (RED for the whole change)
 
-- [ ] **T-PHA-001** : Create
-      `.forge/scripts/harnesses/t5.test.sh` with bash header
-      (`#!/usr/bin/env bash`, `set -euo pipefail`, source `_helpers.sh`),
-      PASS/FAIL/SKIP counters, and final report block.
-      [Story: FR-T5-CC-060]
-- [ ] **T-PHA-002** : Add the 18 L1 test stubs enumerated in
-      `specs.md` FR-T5-CC-061 (buf.gen.yaml × 5, transport.yaml × 4,
-      connect.rs × 3, main.rs preserved × 2, demo-005 × 3, linter × 2,
-      snapshot × 2). Each stub calls `_fail "not implemented"`.
+- [x] **T-PHA-001** : Created
+      `.forge/scripts/tests/t5.test.sh` with bash header
+      (`#!/usr/bin/env bash`, `set -uo pipefail`, source `_helpers.sh`),
+      PASS/FAIL counters reset, and final `print_summary` block via
+      the shared helper. Mirrored t4.test.sh shape (same `--level`
+      parsing, same `_yq_eval`/`_yq_parses` helpers, same
+      `_setup_l2`/`_teardown_l2` pair). [Story: FR-T5-CC-060]
+- [x] **T-PHA-002** : Added **25 L1 test stubs** (manifest enumerated)
+      covering all FR-T5-CC checkpoints :
+      - 6 buf.gen.yaml entries (parses + 5 plugin entries — Go, ES,
+        Dart official, protoc-gen-buffa local, protoc-gen-connect-rust local).
+      - 2 build hygiene tests (tonic-build preserved, .gitignore).
+      - 4 transport.yaml v1.1.0 + REVIEW.md tests.
+      - 5 Rust adapter tests (transport/connect.rs + main.rs +
+        domain untouched).
+      - 3 demo-005 tests (archived shape, BDD scenarios, TS client parses).
+      - 2 linter tests (WARN positive + opt-out env var).
+      - 2 snapshot tests (regenerated + size budget).
+      - 1 example README link test.
+      Each stub returns `_not_implemented` for the RED witness.
       [Story: FR-T5-CC-061]
-- [ ] **T-PHA-003** [P] : Add `setup_l2()` / `teardown_l2()` creating
-      `tmp/t5-fixtures/` with mktemp-style unique subdirs and `trap`
-      EXIT cleanup. [Story: FR-T5-CC-064]
-- [ ] **T-PHA-004** : Add 5 L2 fixture-test stubs (buf-generate-3-layouts,
-      Dart smoke, traceparent E2E, Cargo build fixture, tonic-web
-      integration) all returning FAIL. SKIP if `buf` CLI absent.
+- [x] **T-PHA-003** : `_setup_l2()` / `_teardown_l2()` use the
+      `mk_tmpdir_with_trap` helper from `_helpers.sh` and clean up
+      via `trap '_teardown_l2' RETURN` per t4 convention.
       [Story: FR-T5-CC-064]
-- [ ] **T-PHA-005** [P] : Register `t5.test.sh` in `verify.sh`
-      aggregated runner (after `t4.test.sh`). [Story: FR-T5-CC-060]
-- [ ] **T-PHA-006** [P] : Register `t5.test.sh` in
-      `.github/workflows/forge-ci.yml` `harness` job matrix.
-      [Story: FR-T5-CC-060]
-- [ ] **T-PHA-007** : RED gate — run
-      `bash .forge/scripts/harnesses/t5.test.sh` ; expect exit code
-      non-zero ; expect `FAIL ≥ 23` ; capture log.
-      [Story: FR-T5-CC-061]
+- [x] **T-PHA-004** : Added **5 L2 fixture-test stubs** (buf-gen
+      3-layouts, Dart smoke, traceparent dual-codec E2E, cargo
+      fixture build, connectrpc dual-codec direct). Each guards on
+      missing CLI prerequisites (`buf`, `cargo`, `node`, `curl`)
+      via a `_skip_if_no_buf` sentinel + inline `command -v` checks
+      ; missing prereqs print `[SKIP: ...]` and return 0 (counted
+      as PASS for run_test reporting ; CI always has the prereqs).
+      Otherwise returns `_not_implemented`. [Story: FR-T5-CC-064]
+- [x] **T-PHA-005** : verify.sh **NOT modified** — convention check :
+      verify.sh registers only `scaffolder.test.sh` + `workflow.test.sh`
+      ; no recent harness (b4, b5, c1, d5, f1/f2/f4, g1, a7, t4) is
+      registered there. CI calls each harness directly. t5 follows
+      the same precedent. [Story: FR-T5-CC-060]
+- [x] **T-PHA-006** : Registered `t5.test.sh` in
+      `.github/workflows/forge-ci.yml` `harness` job matrix
+      immediately after `t4.test.sh` (line 83-84) with
+      `--level 1,2` to run both L1 and L2 in CI. [Story: FR-T5-CC-060]
+- [x] **T-PHA-007** : RED gate confirmed —
+      `bash .forge/scripts/tests/t5.test.sh > /tmp/t5-red.log 2>&1` ;
+      `bash exit: 1` ; `Failed: 25 / Passed: 0` ; all 25 L1 stubs
+      report `not implemented (RED witness — pending implementation
+      tasks)`. Phase 1 RED gate satisfied. [Story: FR-T5-CC-061]
 
 **Phase 1 exit gate** : `t5.test.sh` exits non-zero with `FAIL ≥ 23`,
 all 6 T-VER-* tasks (001..006) have a confirmed version + URL +

@@ -295,7 +295,7 @@ flowchart TD
     subgraph TSscripts[".forge/scripts/"]
         linter["constitution-linter.sh<br/>+ transport-codegen-coverage section ★MODIFIED"]
         verify["verify.sh<br/>+ t5 harness registration ★MODIFIED"]
-        harness["harnesses/t5.test.sh ★NEW"]
+        harness["tests/t5.test.sh ★NEW"]
     end
 
     subgraph TSexample["examples/forge-fsm-example/"]

@@ -236,7 +236,8 @@ additive ; no existing plugin entry is removed.
 #### Group 7 — Test harness `t5.test.sh` (FR-T5-CC-060 → 064)
 
 ##### FR-T5-CC-060: Harness file location
-- **MUST** be created at `.forge/scripts/harnesses/t5.test.sh`.
+- **MUST** be created at `.forge/scripts/tests/t5.test.sh` (matches the
+  actual project layout used by all 14 existing harnesses).
 - **MUST** be registered in `.github/workflows/forge-ci.yml` under the
   `harness` job matrix.
 - **MUST** be registered in `verify.sh` aggregated pass count.
