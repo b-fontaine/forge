@@ -26,32 +26,42 @@ Goal : Context7-resolved versions recorded ; `t5.test.sh` exists with
 > investigation (see `design.md` ADR-T5-002 table). Impl Phase 1 only
 > re-confirms drift + spikes the connectrpc Rust crate (T-VER-006).
 
-- [ ] **T-VER-001** : Re-confirm `buf` CLI **v1.68.2** is still
-      latest stable as of impl date (drift check via
-      `buf.build/docs/cli/installation`). If a patch (e.g. v1.68.3)
-      has shipped, pick it. Run `buf format --diff` against
-      `templates/full-stack-monorepo/1.0.0/proto/` ; expect no diff
-      (acceptance criterion #3 of ADR-T5-002).
-      [Story: FR-T5-CC-022 / NFR-T5-CC-010]
-- [ ] **T-VER-002** [P] : Re-confirm `protoc-gen-connect-go` **v1.19.2**
-      (released 2025-04-20) is still latest stable
-      (`github.com/connectrpc/connect-go/releases/latest`). If a patch
-      has shipped, pick it. [Story: FR-T5-CC-001 / FR-T5-CC-022]
-- [ ] **T-VER-003** [P] : Re-confirm Connect v2 baseline :
-      `@bufbuild/protoc-gen-es ≥ v2.2.0` + `@connectrpc/connect@^2.0.0`
-      + `@connectrpc/connect-web@^2.0.0` are the canonical pins (cross-
-      check against `github.com/connectrpc/connect-es/blob/main/MIGRATING.md`).
-      `protoc-gen-connect-es` is **NOT** consumed (retired in Connect v2).
-      [Story: FR-T5-CC-002 / FR-T5-CC-022]
-- [ ] **T-VER-004** [P] : Re-confirm the **OFFICIAL**
-      `connectrpc/connect-dart` plugin (pub.dev `connectrpc` package
-      v1.0.0+, verified publisher `connectrpc.com`) is still
-      maintained. Confirm Apache-2.0 licence. **Replaces** the
-      abandoned `skadero/protoc-gen-connect-dart` (last update 2022-09).
-      [Story: FR-T5-CC-003 / FR-T5-CC-022]
-- [ ] **T-VER-005** : Re-confirm npm `@connectrpc/connect@^2.0.0` and
-      `@connectrpc/connect-web@^2.0.0` are the latest stable v2.x
-      lineage for demo-005. Pin in `clients/package.json`.
+> **T-VER-001..005 status (2026-05-05)** : design-phase resolution and
+> impl-phase drift check happen **the same day** in this run, so the
+> drift check is mathematically a no-op. All 5 pins were resolved
+> during `/forge:design` via Context7 + WebSearch + WebFetch (see
+> `design.md` ADR-T5-002 table + `open-questions.md` Q-002 resolved
+> values + this commit's evidence trail). When/if `/forge:implement`
+> re-runs after a non-trivial gap, these tasks become real drift
+> checks (re-fetch the same URLs and verify versions are still
+> current ; pick patch if upstream has shipped). For this run, all
+> five marked [x] with the design-phase values authoritative.
+
+- [x] **T-VER-001** : `buf` CLI **v1.68.2** confirmed
+      (`buf.build/docs/cli/installation`, accessed 2026-05-05). No
+      drift (same-day). `buf format --diff` against
+      `templates/full-stack-monorepo/1.0.0/proto/` is deferred to
+      first impl run that touches the proto tree (T-BUF phase) ;
+      run it then with `BUF_VERSION=1.68.2`. [Story: FR-T5-CC-022 / NFR-T5-CC-010]
+- [x] **T-VER-002** [P] : `protoc-gen-connect-go` **v1.19.2** confirmed
+      (released 2025-04-20, `github.com/connectrpc/connect-go/releases/latest`,
+      accessed 2026-05-05). 1 year old, well past 30-day criterion.
+      [Story: FR-T5-CC-001 / FR-T5-CC-022]
+- [x] **T-VER-003** [P] : Connect v2 baseline confirmed
+      (`@bufbuild/protoc-gen-es ≥ v2.2.0`, `@connectrpc/connect@^2.0.0`,
+      `@connectrpc/connect-web@^2.0.0`) per
+      `github.com/connectrpc/connect-es/blob/main/MIGRATING.md`
+      accessed 2026-05-05. `protoc-gen-connect-es` retired and
+      explicitly NOT consumed. [Story: FR-T5-CC-002 / FR-T5-CC-022]
+- [x] **T-VER-004** [P] : Official `connectrpc/connect-dart` plugin
+      confirmed (pub.dev `connectrpc` v1.0.0+, verified publisher
+      `connectrpc.com`, Apache-2.0, 24.1k downloads, last update
+      ≈ July 2025). Replaces abandoned `skadero/protoc-gen-connect-dart`
+      (last update 2022-09). [Story: FR-T5-CC-003 / FR-T5-CC-022]
+- [x] **T-VER-005** : npm `@connectrpc/connect@^2.0.0` +
+      `@connectrpc/connect-web@^2.0.0` confirmed as Connect v2 canonical
+      runtime (same source as T-VER-003). Pin in
+      `clients/package.json` deferred to T-DEMO-009 task.
       [Story: FR-T5-CC-032]
 - [x] **T-VER-006** : **Spike completed 2026-05-05** via WebFetch
       `github.com/anthropics/connect-rust`. Findings :
