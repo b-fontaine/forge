@@ -250,10 +250,10 @@ flip GREEN ; L2 fixture tests still RED.
 
 ### T-RUST — Rust transport/connect.rs adapter (FR-T5-CC-010..014)
 
-- [ ] **T-RUST-001** : Verify
+- [x] **T-RUST-001** : Verify
       `test_transport_connect_rs_exists_and_mounts` is FAIL.
       [Story: FR-T5-CC-010]
-- [ ] **T-RUST-002** : Create the Rust Connect adapter +
+- [x] **T-RUST-002** : Create the Rust Connect adapter +
       build.rs codegen wiring per `design.md` §2.1 + Option 2 path :
       - **(a)** Add `build.rs` to
         `.forge/templates/archetypes/full-stack-monorepo/backend/crates/grpc-api/build.rs.tmpl`
@@ -288,16 +288,16 @@ flip GREEN ; L2 fixture tests still RED.
         add them (per upstream connectrpc generated-code dependency
         list).
       [Story: FR-T5-CC-010..013]
-- [ ] **T-RUST-003** : Wire `transport/connect.rs` into
+- [x] **T-RUST-003** : Wire `transport/connect.rs` into
       `templates/full-stack-monorepo/1.0.0/backend/src/main.rs` :
       register the module under `mod transport { pub mod connect; ... }`,
       mount `transport::connect::into_router(use_case.clone())` at
       `/connect` via `.merge()`. The existing tonic gRPC server bind
       (separate port) MUST be unchanged. [Story: FR-T5-CC-010 / FR-T5-CC-011]
-- [ ] **T-RUST-004** : Confirm domain layer untouched —
+- [x] **T-RUST-004** : Confirm domain layer untouched —
       `templates/full-stack-monorepo/1.0.0/backend/src/domain/`
       diff vs main = 0 lines. [Story: FR-T5-CC-012]
-- [ ] **T-RUST-005** : Run `t5.test.sh` ; expect 3 connect.rs L1 tests
+- [x] **T-RUST-005** : Run `t5.test.sh` ; expect 3 connect.rs L1 tests
       + 2 main.rs preservation tests PASS. [Story: FR-T5-CC-010..014]
 
 **Phase 2 exit gate** : `t5.test.sh` L1 PASS ≥ 12 (covering buf.gen.yaml
@@ -313,26 +313,26 @@ traceparent E2E) flip GREEN.
 
 ### T-DEMO — Reference demo `demo-005-connect-greeting` (FR-T5-CC-030..035)
 
-- [ ] **T-DEMO-001** : Verify `test_demo_005_archived` is FAIL.
+- [x] **T-DEMO-001** : Verify `test_demo_005_archived` is FAIL.
       [Story: FR-T5-CC-030]
-- [ ] **T-DEMO-002** : Create
+- [x] **T-DEMO-002** : Create
       `examples/forge-fsm-example/.forge/changes/demo-005-connect-greeting/`
       with `.forge.yaml` (`status: archived`, `schema: default`,
       created 2026-05-05, full timeline filled). [Story: FR-T5-CC-030]
-- [ ] **T-DEMO-003** [P] : Write `proposal.md` (1 page) explaining the
+- [x] **T-DEMO-003** [P] : Write `proposal.md` (1 page) explaining the
       demo's intent (Connect-RPC reference, single-layer backend).
       [Story: FR-T5-CC-030]
-- [ ] **T-DEMO-004** [P] : Write `specs.md` with FR-DEMO5-001..004 +
+- [x] **T-DEMO-004** [P] : Write `specs.md` with FR-DEMO5-001..004 +
       2 BDD scenarios (Connect-RPC happy path + traceparent E2E
       invariant). [Story: FR-T5-CC-031]
-- [ ] **T-DEMO-005** [P] : Write `design.md` showing the tonic-web
+- [x] **T-DEMO-005** [P] : Write `design.md` showing the tonic-web
       layer wiring (mirrors flagship template's design §2.1, scoped
       to the demo). [Story: FR-T5-CC-030]
-- [ ] **T-DEMO-006** [P] : Write `tasks.md` with 3 tasks (handler
+- [x] **T-DEMO-006** [P] : Write `tasks.md` with 3 tasks (handler
       adapter from flagship, TS client, E2E smoke). [Story: FR-T5-CC-030]
-- [ ] **T-DEMO-007** : Create `examples/forge-fsm-example/clients/`
+- [x] **T-DEMO-007** : Create `examples/forge-fsm-example/clients/`
       directory if missing. [Story: FR-T5-CC-032]
-- [ ] **T-DEMO-008** : Write `connect-client.ts` (~30–40 LOC) calling
+- [x] **T-DEMO-008** : Write `connect-client.ts` (~30–40 LOC) calling
       the Connect Greeter using `@connectrpc/connect@^2` runtime +
       `@connectrpc/connect-web@^2` transport. Default to
       `createConnectTransport({ baseUrl, httpVersion: "1.1" })` (full
@@ -341,16 +341,16 @@ traceparent E2E) flip GREEN.
       to exercise the gRPC-Web wire format on the same handler. Use
       `crypto.randomUUID()` to seed a W3C `traceparent` header for the
       smoke test. [Story: FR-T5-CC-032]
-- [ ] **T-DEMO-009** : Write minimal `clients/package.json` pinning
+- [x] **T-DEMO-009** : Write minimal `clients/package.json` pinning
       `@connectrpc/connect@^2.0.0` + `@connectrpc/connect-web@^2.0.0`
       + `@bufbuild/protobuf@^2.2.0` (for generated message types) per
       T-VER-005. No lockfile committed (CI generates fresh). Note in
       a header comment that these are Connect v2 ; v1 packages are
       retired and **MUST NOT** be pinned. [Story: FR-T5-CC-032]
-- [ ] **T-DEMO-010** [P] : Add a one-line note to
+- [x] **T-DEMO-010** [P] : Add a one-line note to
       `examples/forge-fsm-example/README.md` linking to demo-005.
       [Story: FR-T5-CC-035]
-- [ ] **T-DEMO-011** : Run `t5.test.sh` ; expect 3 demo-005 L1 tests
+- [x] **T-DEMO-011** : Run `t5.test.sh` ; expect 3 demo-005 L1 tests
       PASS (archived shape + BDD scenarios + TS client `node --check`).
       [Story: FR-T5-CC-030..032]
 
@@ -413,48 +413,48 @@ snapshot regenerated under budget ; docs updated.
 
 ### T-LNT — Linter `transport-codegen-coverage` (FR-T5-CC-040..041)
 
-- [ ] **T-LNT-001** : Verify
+- [x] **T-LNT-001** : Verify
       `test_transport_codegen_coverage_warn_positive_case` is FAIL.
       [Story: FR-T5-CC-040]
-- [ ] **T-LNT-002** : Add a new section to
+- [x] **T-LNT-002** : Add a new section to
       `.forge/scripts/constitution-linter.sh` :
       `transport-codegen-coverage` ; scans for any `proto/` directory
       excluding `examples/` (per F.4 conventions) ; if found and
       sibling `gen/connect/` is absent, emit one WARN line referring
       to `docs/MIGRATION-PATHS.md`. Use the existing `warn` helper
       (no new helper needed). [Story: FR-T5-CC-040]
-- [ ] **T-LNT-003** [P] : Honour `FORGE_LINTER_SKIP_TRANSPORT_CODEGEN=1`
+- [x] **T-LNT-003** [P] : Honour `FORGE_LINTER_SKIP_TRANSPORT_CODEGEN=1`
       env var to skip the rule. [Story: FR-T5-CC-041]
-- [ ] **T-LNT-004** [P] : Document the rule + opt-out in
+- [x] **T-LNT-004** [P] : Document the rule + opt-out in
       `.forge/standards/global/linting-rules.md` opt-out matrix.
       [Story: FR-T5-CC-041]
-- [ ] **T-LNT-005** : Run `t5.test.sh` ; expect 2 linter L1 tests PASS
+- [x] **T-LNT-005** : Run `t5.test.sh` ; expect 2 linter L1 tests PASS
       (positive WARN + negative case with opt-out env var set).
       [Story: FR-T5-CC-040..041]
 
 ### T-SNP — Snapshot tarball regeneration (FR-T5-CC-050..051)
 
-- [ ] **T-SNP-001** : Verify `test_snapshot_tarball_size_within_budget`
+- [x] **T-SNP-001** : Verify `test_snapshot_tarball_size_within_budget`
       is FAIL (the existing tarball doesn't yet contain
       `transport/connect.rs`). [Story: FR-T5-CC-050]
-- [ ] **T-SNP-002** : Run the existing snapshot regeneration script
+- [x] **T-SNP-002** : Run the existing snapshot regeneration script
       (`bin/forge-snapshot.sh full-stack-monorepo 1.0.0` or equivalent
       per project conventions) to refresh
       `.forge/scaffold-snapshots/full-stack-monorepo/1.0.0.tar.gz`.
       [Story: FR-T5-CC-050]
-- [ ] **T-SNP-003** : Verify size ≤ 500 KB gzipped (current 422 KB
+- [x] **T-SNP-003** : Verify size ≤ 500 KB gzipped (current 422 KB
       baseline ; budget delta ≤ 50 KB). Capture
       `du -h` output in this task's evidence trail.
       [Story: FR-T5-CC-051 / NFR-T5-CC-002]
-- [ ] **T-SNP-004** : Run `a7.test.sh` to confirm `forge upgrade` 3-way
+- [x] **T-SNP-004** : Run `a7.test.sh` to confirm `forge upgrade` 3-way
       merge still works against the regenerated snapshot. Expect no
       regression. [Story: NFR-T5-CC-005]
-- [ ] **T-SNP-005** : Run `t5.test.sh` ; expect 2 snapshot L1 tests
+- [x] **T-SNP-005** : Run `t5.test.sh` ; expect 2 snapshot L1 tests
       PASS. [Story: FR-T5-CC-050..051]
 
 ### T-DOC — Documentation (FR-T5-CC-070..072)
 
-- [ ] **T-DOC-001** [P] : Add "T5 — Connect codegen additive
+- [x] **T-DOC-001** [P] : Add "T5 — Connect codegen additive
       (v0.3.x → v0.4.0-rc.x)" section to `docs/MIGRATION-PATHS.md`
       covering : what `forge upgrade` adds (paths, buf.gen.yaml
       entries, transport/connect.rs module), what stays untouched
@@ -462,12 +462,12 @@ snapshot regenerated under budget ; docs updated.
       `FORGE_LINTER_SKIP_TRANSPORT_CODEGEN=1` opt-out. Include the
       `application/connect+json` HTTP/1.1 limitation note from
       ADR-T5-001. [Story: FR-T5-CC-070]
-- [ ] **T-DOC-002** [P] : Add a paragraph under the
+- [x] **T-DOC-002** [P] : Add a paragraph under the
       `full-stack-monorepo` row in `docs/ARCHETYPES.md` indicating
       Connect-RPC is the additive default transport from v0.4.0-rc.x
       onward, with REST-bridge retiring at B.8 (T6).
       [Story: FR-T5-CC-071]
-- [ ] **T-DOC-003** [P] : Add an entry under `## [Unreleased]` in
+- [x] **T-DOC-003** [P] : Add an entry under `## [Unreleased]` in
       `CHANGELOG.md` flagging : Connect codegen plugins added,
       Connect-RPC server route mounted alongside tonic gRPC,
       `transport.yaml` v1.0.0 → v1.1.0, demo-005 added, linter rule
@@ -476,14 +476,14 @@ snapshot regenerated under budget ; docs updated.
 
 ### T-CI — CI registration finalisation
 
-- [ ] **T-CI-001** : Confirm `t5.test.sh` is in the
+- [x] **T-CI-001** : Confirm `t5.test.sh` is in the
       `forge-ci.yml` `harness` job matrix (registered in T-PHA-006).
       [Story: FR-T5-CC-060]
-- [ ] **T-CI-002** : Run `verify.sh` locally ; expect aggregate
+- [x] **T-CI-002** : Run `verify.sh` locally ; expect aggregate
       counter to grow by ≥ 25 PASS (the new t5 tests) without any
       regression in the existing 108 PASS / 0 FAIL baseline.
       [Story: NFR-T5-CC-004]
-- [ ] **T-CI-003** : Run `constitution-linter.sh` ; expect OVERALL
+- [x] **T-CI-003** : Run `constitution-linter.sh` ; expect OVERALL
       PASS (with optionally one WARN from
       `transport-codegen-coverage` against the example tree —
       acceptable per ADR-T5-005). [Story: NFR-T5-CC-004]
