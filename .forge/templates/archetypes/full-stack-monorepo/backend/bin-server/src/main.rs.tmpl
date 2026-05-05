@@ -1,0 +1,57 @@
+//! `bin-server` — top-level entrypoint for <project-name>.
+//!
+//! Hosts two parallel transports :
+//!   - **tonic gRPC** server (port 50051) — preserved by ADR-004 KEEP.
+//!   - **Connect-RPC** adapter (port 8080) — Connect+JSON, Connect+proto,
+//!     gRPC, gRPC-Web all on the same axum handler under `/connect`
+//!     (ADR-T5-001 ; T.5 t5-connect-codegen).
+//!
+//! Audit: T.5 (t5-connect-codegen) ; FR-T5-CC-010 / FR-T5-CC-011.
+
+use std::net::SocketAddr;
+use std::sync::Arc;
+
+use axum::Router;
+use grpc_api::transport_connect;
+use tonic::transport::Server as TonicServer;
+use tower_http::trace::TraceLayer;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    // ── Tracing init ─────────────────────────────────────────────
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| "info".into()),
+        )
+        .init();
+
+    // ── Use case wiring (placeholder — adopter constructs domain) ─
+    // The Arc<()> is a stub until the adopter's domain types are
+    // injected into the Connect adapter and the tonic services.
+    let use_case: Arc<()> = Arc::new(());
+
+    // ── Connect-RPC adapter on axum (port 8080) ──────────────────
+    let connect_addr: SocketAddr = "0.0.0.0:8080".parse()?;
+    let otel_layer = TraceLayer::new_for_http();
+    let app: Router = Router::new()
+        .nest("/connect", transport_connect::into_router(use_case.clone(), otel_layer));
+
+    let listener = tokio::net::TcpListener::bind(connect_addr).await?;
+
+    // ── tonic gRPC server (port 50051) — ADR-004 KEEP ────────────
+    let grpc_addr: SocketAddr = "0.0.0.0:50051".parse()?;
+    let grpc_server = TonicServer::builder()
+        // Adopter's `.add_service(...)` calls go here. The seed
+        // template registers no service ; tonic refuses to serve an
+        // empty router so the bind below is configured only when at
+        // least one service is added.
+        .serve(grpc_addr);
+
+    // Run both servers concurrently ; either failing tears down the process.
+    tokio::select! {
+        r = grpc_server                                    => { r?; }
+        r = axum::serve(listener, app.into_make_service()) => { r?; }
+    }
+    Ok(())
+}

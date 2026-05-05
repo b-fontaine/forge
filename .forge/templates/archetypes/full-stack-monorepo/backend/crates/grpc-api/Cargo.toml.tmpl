@@ -1,0 +1,60 @@
+# <!-- Audit: T.5 (t5-connect-codegen) — grpc-api crate manifest overlay -->
+#
+# Rendered AFTER `cargo new --lib crates/grpc-api` by overlay.sh in the
+# `phase: post_cargo_new` pass (ADR-T5-006). The cargo-generated
+# Cargo.toml is overwritten by this template so the dependencies +
+# build-dependencies for Connect-RPC + tonic gRPC are pinned in
+# accordance with ADR-T5-001 + ADR-T5-002.
+#
+# Workspace-aware : every dep flagged `workspace = true` inherits its
+# version from backend/Cargo.toml [workspace.dependencies]. Direct
+# version pins below are local to this crate (Connect-RPC family).
+
+[package]
+name        = "grpc-api"
+version     = "0.1.0"
+edition     = "2021"
+publish     = false
+
+[dependencies]
+# ── tonic gRPC server / messages (ADR-004 KEEP) — workspace-pinned ──
+tonic       = { workspace = true }
+prost       = { workspace = true }
+
+# ── Connect-RPC family (ADR-T5-001) — exact pins, see transport.yaml v1.1.0 ──
+# WAIVER 2026-05-05 : 13-day age waiver justified in transport.yaml header.
+connectrpc  = "=0.3.3"
+buffa        = "=0.3.3"
+buffa-types  = "=0.3.3"
+
+# ── Async runtime + Tower middleware ──
+tokio       = { workspace = true }
+tower       = "0.5"
+tower-http  = { version = "0.6", features = ["trace"] }
+http        = "1"
+http-body   = "1"
+
+# ── Axum (Connect adapter target) ──
+axum        = { version = "0.8" }
+
+# ── Domain + application — workspace-internal ──
+domain      = { path = "../domain" }
+application = { path = "../application" }
+
+# ── Observability ──
+tracing                = { workspace = true }
+tracing-opentelemetry  = "0.27"
+
+# ── Error handling ──
+thiserror   = { workspace = true }
+anyhow      = { workspace = true }
+
+# ── Serialization (connectrpc generated code consumes serde_json on Connect+JSON path) ──
+serde       = { workspace = true }
+serde_json  = { workspace = true }
+
+[build-dependencies]
+# ── Connect codegen (ADR-T5-001 Path α / Option 2) ──
+# Replaces a buf-driven local plugin to preserve the codebase
+# convention "remote plugins only" in buf.gen.yaml.
+connectrpc-build = "=0.3.3"

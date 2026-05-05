@@ -1,0 +1,71 @@
+//! Connect-RPC transport adapter — parallel route to the tonic gRPC server.
+//!
+//! Audit: T.5 (t5-connect-codegen) ; ADR-T5-001 / FR-T5-CC-010..014.
+//!
+//! # Mount point
+//!
+//! Mounted under `/connect` on the bin-server's top-level axum router
+//! (see `bin-server/src/main.rs`). The single handler exposes the
+//! Connect+proto, Connect+JSON, gRPC, and gRPC-Web wire formats on the
+//! same routes (per the `connectrpc` crate's protocol multiplexing).
+//!
+//! # OTel layer ordering (FR-T5-CC-013)
+//!
+//! The OpenTelemetry tracing layer MUST be applied via Tower middleware
+//! on the **outer** `axum::Router` returned by `into_router`, NOT
+//! registered with `connectrpc::Router` directly. This guarantees the
+//! span lifecycle wraps the entire request (including the connectrpc
+//! codec dispatch) and that traceparent W3C propagation is preserved
+//! end-to-end (FR-T5-CC-014).
+//!
+//! # Hexagonal preservation (Article VII)
+//!
+//! This adapter takes an `Arc<application::GreeterUseCase>` (or any
+//! domain-side trait object) at construction. The Connect-generated
+//! service trait delegates to the use case ; no business logic lives
+//! in this module.
+
+use std::sync::Arc;
+
+use axum::Router;
+use tower::ServiceBuilder;
+use tower_http::trace::TraceLayer;
+
+// Stub : the real service descriptor binding is filled in by the
+// adopter once they wire their proto-defined services to a concrete
+// application use case. The include_generated! macro below pulls the
+// `connectrpc-build` output into scope as `pub mod _connectrpc { ... }`.
+connectrpc::include_generated!("_connectrpc.rs");
+
+/// Build the Connect adapter as a top-level `axum::Router`.
+///
+/// `use_case` is the domain entry point this adapter delegates to.
+/// `otel_layer` is the Tower trace layer that wraps every Connect call
+/// (applied **outside** the connectrpc service per FR-T5-CC-013).
+///
+/// The returned router is intended to be `.merge()`'d under `/connect`
+/// in the bin-server.
+pub fn into_router<U>(
+    _use_case: Arc<U>,
+    otel_layer: TraceLayer<tower_http::classify::SharedClassifier<tower_http::classify::ServerErrorsAsFailures>>,
+) -> Router
+where
+    U: Send + Sync + 'static,
+{
+    // 1) Build the connectrpc::Router and register service descriptors.
+    //    (Adopter fills .add_service(...) calls here, e.g.
+    //     `.add_service(GreeterServer::new(greeter_handler))`.)
+    let connect_router = connectrpc::Router::new();
+
+    // 2) Convert to an axum Service (this is the inline integration
+    //    point — there is NO separate connectrpc-axum crate per
+    //    T-VER-006 spike).
+    let connect_service = connect_router.into_axum_service();
+
+    // 3) Apply OTel + tower middleware OUTSIDE the connectrpc service.
+    let middleware = ServiceBuilder::new().layer(otel_layer);
+
+    Router::new()
+        .nest_service("/", connect_service)
+        .layer(middleware)
+}

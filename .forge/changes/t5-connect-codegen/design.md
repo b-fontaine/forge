@@ -42,21 +42,26 @@ phase.
   codecs to B.8 (T6). Subsequent investigation found the
   **`connectrpc` crate** ([crates.io/crates/connectrpc](https://crates.io/crates/connectrpc)
   ; [github.com/anthropics/connect-rust](https://github.com/anthropics/connect-rust))
-  open-sourced by Anthropic, Tower-based, framework-agnostic with an
-  Axum-native integration (`connectrpc-axum`), already in production at
-  Anthropic, passing the **~12 800 ConnectRPC server/client/TLS
-  conformance tests**. The companion zero-copy Protobuf crate
+  open-sourced by Anthropic, Tower-based, framework-agnostic with
+  inline Axum integration via `connectrpc::Router::into_axum_service()`
+  (**no separate `connectrpc-axum` crate** — confirmed by T-VER-006
+  spike 2026-05-05), already in production at Anthropic, passing the
+  **~12 800 ConnectRPC server/client/TLS conformance tests** (re-counted
+  to **6 558** post-spike : 3 600 server + 1 514 TLS + 1 444 client).
+  The companion zero-copy Protobuf crate
   (**`buffa`**) is also OSS. Article from March 2026 (Iain McGinniss,
   Medium) covers production usage. The pairing crate fits the
   flagship's existing tonic 0.14 + axum 0.8 stack as a **drop-in
   parallel adapter**, NOT a replacement.
 
-- **Decision** : Adopt **`connectrpc` + `connectrpc-axum`** (Anthropic
-  OSS, Tower-based, Axum-native) for the parallel Connect route. The
-  `transport/connect.rs` module exposes an `into_router(use_case:
+- **Decision** : Adopt **`connectrpc` + `buffa`** (Anthropic OSS,
+  Tower-based, Axum integration inline via `Router::into_axum_service()`
+  — no separate `connectrpc-axum` crate) for the parallel Connect route.
+  The `transport/connect.rs` module exposes an `into_router(use_case:
   Arc<GreeterUseCase>) -> axum::Router` that registers the Greeter
-  service descriptor with a `connectrpc::Server` builder, then
-  applies the OTel layer via Tower middleware (the standard fits the
+  service descriptor with a `connectrpc::Router` builder, calls
+  `.into_axum_service()`, then applies the OTel layer via Tower
+  middleware **outside** the connectrpc service (the standard fits the
   crate's middleware contract directly, FR-T5-CC-013). The router is
   mounted under `/connect` on the existing axum top-level router. The
   existing tonic gRPC server stays unchanged on its own port. Full
@@ -84,9 +89,10 @@ phase.
     is `exception_constitutional: true` so not subject to 12-month
     expiry, but the version pin still gets reviewed at any
     `transport.yaml` bump).
-  - ⚠️ Adds two new Rust dependencies (`connectrpc`, `buffa` — and
-    `connectrpc-axum` as a thin glue crate, if separate). All three
-    Apache-2.0/MIT and from the same Anthropic OSS tree.
+  - ⚠️ Adds two new Rust runtime dependencies (`connectrpc`, `buffa`,
+    `buffa-types`) + one build-dependency (`connectrpc-build`). All
+    Apache-2.0 and from the same Anthropic OSS tree (`anthropics/connect-rust`).
+    No separate `connectrpc-axum` crate — Axum integration is inline.
   - ⚠️ Codegen path : two viable options, **resolved at impl M1 spike
     (T-VER-006)** :
     - **Option α** : `connectrpc-build` invocation in `build.rs`,
@@ -272,6 +278,94 @@ phase.
 
 - **Constitution compliance** : Article V (gates) — non-blocking warn
   is acceptable per F.4 opt-out conventions.
+
+---
+
+### ADR-T5-006 — Introduce `phase: post_cargo_new` in scaffold-plan.yaml
+
+> Resolves : the `cargo new` collision blocker that surfaced when
+> implementing T-RUST-002 (the templates `crates/grpc-api/Cargo.toml`,
+> `build.rs`, `src/lib.rs`, `src/transport_connect.rs`, and
+> `bin-server/src/main.rs` must overwrite cargo-generated stubs).
+>
+> **New ADR introduced 2026-05-05 during impl** — was NOT in the
+> original design pass on 2026-05-05 morning, surfaced during the
+> Path α implementation. Captured here for audit trail (Article V).
+
+- **Context** : Until t5-connect-codegen, every Forge template entry
+  in `scaffold-plan.yaml` ran in a **single overlay pass before**
+  `cargo new` (Step 3 of `init.sh`). The `b1-scaffolder` ADR-002
+  established the pattern : the workspace `backend/Cargo.toml` is
+  rendered first, then `cargo new --lib crates/<X>` detects the parent
+  workspace and writes a workspace-aware Cargo.toml inside the crate
+  directory. No code lived inside the crates — adopters wrote their
+  own Rust.
+  <br>
+  T.5 changes that : the Connect adapter requires shipped templates
+  for `crates/grpc-api/Cargo.toml`, `build.rs`, `src/lib.rs`,
+  `src/transport_connect.rs`, and `bin-server/src/main.rs`. These
+  paths are produced by `cargo new` in Step 4. If we render them in
+  Step 3 (the existing overlay pass), `cargo new` then errors out
+  ("destination is not empty"). If we render them after Step 3 with
+  the existing overlay, `force=true` is required AND we must re-walk
+  the full templates list — but the manifest hashing logic would also
+  re-run unnecessarily.
+
+- **Decision** : Add an optional **`phase`** field to each entry of
+  `scaffold-plan.yaml::templates[]`. Allowed values :
+  `pre_cargo_new` (default ; legacy / b1-scaffolder semantics) and
+  `post_cargo_new` (T.5+ semantics). The overlay renderer
+  (`overlay.sh`) accepts a new `--phase` flag (default
+  `pre_cargo_new`) that filters the templates list ; `init.sh`
+  invokes overlay.sh **twice** :
+  - Step 3 : `overlay.sh --phase pre_cargo_new` → renders the legacy
+    surface (39 entries).
+  - Step 4.5 (new) : `overlay.sh --phase post_cargo_new` → renders
+    only the entries with `phase: post_cargo_new` (5 entries shipped
+    by T.5), with `force=true` implicit, and **without rewriting**
+    the scaffold-manifest.yaml (which was finalised by Step 3).
+
+- **Consequences** :
+  - ✅ Backward compatible : entries without `phase` default to
+    `pre_cargo_new` ; mobile-only and `default` archetypes are
+    untouched ; `scaffolder.test.sh` L1 (7/7) still PASS without
+    modification (the schema accepts the optional field as an
+    additive YAML key).
+  - ✅ Audit trail : the `template_set_sha` in scaffold-manifest is
+    computed over **all** entries (both phases) so adopters get a
+    stable hash regardless of phase ordering.
+  - ✅ Scope-bound : T.5 ships exactly 5 `post_cargo_new` entries ;
+    future archetypes (T.6 / T.7) inherit the mechanism for free.
+  - ⚠️ **`forge upgrade` propagation is intentionally absent for
+    these paths.** The `framework-owned-paths.yml` is **not** extended
+    with `backend/crates/grpc-api/**` or `backend/bin-server/**` —
+    these are application code paths owned by the adopter once
+    scaffolded. A future T.5+ amendment of `transport_connect.rs.tmpl`
+    will not be propagated by `forge upgrade` ; the adopter must
+    re-scaffold or patch manually. This trade-off keeps the framework
+    out of the adopter's business logic.
+  - ⚠️ Two overlay passes ≠ one. The `init.sh` Step 4.5 adds ~50 ms
+    to the scaffold latency (negligible vs the 5 `cargo new`
+    invocations of Step 4).
+
+- **Alternatives considered** :
+  - *Single pass, post-cargo-new only* — would force the workspace
+    Cargo.toml to also render after cargo new, breaking the ADR-002
+    invariant ("workspace Cargo.toml is rendered before cargo new so
+    each crate auto-joins the workspace"). Rejected.
+  - *Standalone script `overlay-post-cargo.sh`* — duplicate ~150 LOC
+    of overlay.sh. Rejected for reviewer ergonomics (single source
+    of truth for template rendering).
+  - *Make every cargo-stubbed file framework-owned via
+    `framework-owned-paths.yml`* — would expand the framework's
+    surface to crate code, conflicting with the "framework does not
+    own application code" principle. Rejected.
+
+- **Constitution compliance** : Article XII — this is an amendment
+  to the `b1-scaffolder` pattern (originally ratified by ADR-002 of
+  that change). The amendment is additive (new optional schema field)
+  and trail-preserved (this ADR + audit comments in `scaffold-plan.yaml`,
+  `overlay.sh`, `init.sh`). No Constitution version bump required.
 
 ---
 
@@ -675,7 +769,7 @@ The 7 BDD scenarios in `specs.md::Acceptance Criteria` map :
 | Risk | Probability | Impact | Mitigation in this design |
 |------|-------------|--------|---------------------------|
 | `connectrpc` Rust crate (Anthropic) ships breaking change before archive | Low | Medium | Pin exact crate version in `Cargo.toml` ; design ADR-T5-001 covers fallback to tonic-web only if M1 spike fails. |
-| `connectrpc-axum` integration mismatch with axum 0.8 router merges | Low | Medium | L1 test asserts `into_router()` returns a valid `axum::Router` ; L2 fixture builds + serves end-to-end. |
+| `connectrpc::Router::into_axum_service()` integration mismatch with axum 0.8 router merges (no `connectrpc-axum` crate — inline integration only) | Low | Medium | L1 test asserts `into_router()` returns a valid `axum::Router` ; L2 fixture builds + serves end-to-end. |
 | Connect-ES v2 API stabilises further (e.g. minor breaking) before archive | Low | Low | Pin `@connectrpc/connect@^2.0.0` + `@connectrpc/connect-web@^2.0.0` in demo-005 `package.json` ; v2 has been GA for ≥ 12 months as of 2026-05-05. |
 | Official `connectrpc/connect-dart` plugin codegen failure | Low | Low | L2 Dart smoke fixture (FR-T5-CC-003) gates archive ; the official org follows ConnectRPC release cadence (lower risk than the abandoned community plugin). |
 | `traceparent` propagation broken by Tower middleware composition | Low | High | L2 traceparent E2E smoke is mandatory ; design pins OTel layer at the Tower middleware level outside the connectrpc service (§2.1). |
@@ -716,7 +810,7 @@ The full task breakdown lands in `tasks.md`. Preview :
 | M1 | **Partially complete at design phase** : versions for buf, connect-go, @bufbuild/protoc-gen-es, @connectrpc/connect{,-web}, connectrpc-dart resolved 2026-05-05 (ADR-T5-002 table). Impl M1 only re-confirms drift + spikes the connectrpc Rust crate version (T-VER-006). | XS (≤ 30 min at impl) | ADR-T5-002 |
 | M2 | Write `t5.test.sh` L1 RED tests | S | none |
 | M3 | Edit `buf.gen.yaml` (3 plugin entries : connectrpc/go, bufbuild/es v2, connectrpc/dart official) + `transport.yaml` v1.1.0 + REVIEW.md Updated | S | M1, M2 |
-| M4 | Implement `transport/connect.rs` using `connectrpc` + `connectrpc-axum` crates ; wire into `main.rs` | M | M3 |
+| M4 | Implement `transport/connect.rs` using `connectrpc` crate (axum integration inline via `Router::into_axum_service()` — no `connectrpc-axum` crate) + `connectrpc-build` build.rs codegen ; wire into `main.rs` | M | M3 |
 | M5 | Write `t5.test.sh` L2 fixtures (buf generate 3 layouts, traceparent E2E with both Connect+JSON and gRPC-Web codecs, Dart smoke against official plugin) | M | M4 |
 | M6 | Demo-005 scaffold (5 .forge files + TS client with `@connectrpc/connect-web@^2` + package.json) | M | M4 |
 | M7 | Linter section `transport-codegen-coverage` + opt-out + linting-rules.md | S | M2 |

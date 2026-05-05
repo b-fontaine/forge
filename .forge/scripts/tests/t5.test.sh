@@ -39,6 +39,13 @@ ARCHETYPE_DIR="$FORGE_ROOT_REAL/.forge/templates/archetypes/full-stack-monorepo"
 PROTO_TPL="$ARCHETYPE_DIR/shared/protos/buf.gen.yaml.tmpl"
 GITIGNORE_TPL="$ARCHETYPE_DIR/.gitignore.tmpl"
 BACKEND_DIR="$ARCHETYPE_DIR/backend"
+GRPC_API_DIR="$BACKEND_DIR/crates/grpc-api"
+GRPC_API_CARGO_TPL="$GRPC_API_DIR/Cargo.toml.tmpl"
+GRPC_API_BUILD_TPL="$GRPC_API_DIR/build.rs.tmpl"
+GRPC_API_LIB_TPL="$GRPC_API_DIR/src/lib.rs.tmpl"
+GRPC_API_CONNECT_TPL="$GRPC_API_DIR/src/transport_connect.rs.tmpl"
+BIN_SERVER_MAIN_TPL="$BACKEND_DIR/bin-server/src/main.rs.tmpl"
+SCAFFOLD_PLAN="$ARCHETYPE_DIR/scaffold-plan.yaml"
 EXAMPLE_DIR="$FORGE_ROOT_REAL/examples/forge-fsm-example"
 EXAMPLE_BUF_GEN="$EXAMPLE_DIR/shared/protos/buf.gen.yaml"
 DEMO5_DIR="$EXAMPLE_DIR/.forge/changes/demo-005-connect-greeting"
@@ -194,8 +201,34 @@ _test_t5_004() {
     return 1
   fi
 }
-_test_t5_005() { _not_implemented; }   # build.rs.tmpl uses connectrpc-build (T-RUST)
-_test_t5_006() { _not_implemented; }   # Cargo.toml.tmpl declares connectrpc-build build-dep (T-RUST)
+_test_t5_005() {
+  # ADR-T5-001 / FR-T5-CC-010 : build.rs.tmpl invokes connectrpc-build
+  if [ ! -f "$GRPC_API_BUILD_TPL" ]; then
+    echo "    missing template: $GRPC_API_BUILD_TPL" >&2
+    return 1
+  fi
+  if ! grep -qE 'connectrpc_build::Config' "$GRPC_API_BUILD_TPL"; then
+    echo "    build.rs.tmpl does not invoke connectrpc_build::Config" >&2
+    return 1
+  fi
+}
+_test_t5_006() {
+  # ADR-T5-001 / FR-T5-CC-010 : Cargo.toml.tmpl declares connectrpc-build build-dep
+  if [ ! -f "$GRPC_API_CARGO_TPL" ]; then
+    echo "    missing template: $GRPC_API_CARGO_TPL" >&2
+    return 1
+  fi
+  if ! grep -qE '^connectrpc-build\s*=\s*"=0\.3\.3"' "$GRPC_API_CARGO_TPL"; then
+    echo "    Cargo.toml.tmpl does not declare connectrpc-build = \"=0.3.3\" build-dep" >&2
+    return 1
+  fi
+  for needle in '^connectrpc\s*=\s*"=0\.3\.3"' '^buffa\s*=\s*"=0\.3\.3"'; do
+    if ! grep -qE "$needle" "$GRPC_API_CARGO_TPL"; then
+      echo "    Cargo.toml.tmpl missing dep matching $needle" >&2
+      return 1
+    fi
+  done
+}
 _test_t5_007() {
   # FR-T5-CC-004 : the 3 existing remote entries are preserved
   for needle in 'buf\.build/community/neoeinstein-tonic' \
@@ -242,11 +275,80 @@ _test_t5_012() {
     return 1
   fi
 }
-_test_t5_013() { _not_implemented; }   # transport/connect.rs exists
-_test_t5_014() { _not_implemented; }   # main.rs mounts /connect
-_test_t5_015() { _not_implemented; }   # OTel outside connectrpc
-_test_t5_016() { _not_implemented; }   # tonic gRPC bind unchanged
-_test_t5_017() { _not_implemented; }   # domain untouched
+_test_t5_013() {
+  # FR-T5-CC-010 : transport_connect.rs.tmpl exists with into_router using into_axum_service()
+  if [ ! -f "$GRPC_API_CONNECT_TPL" ]; then
+    echo "    missing template: $GRPC_API_CONNECT_TPL" >&2
+    return 1
+  fi
+  if ! grep -qE 'pub fn into_router' "$GRPC_API_CONNECT_TPL"; then
+    echo "    transport_connect.rs.tmpl missing pub fn into_router" >&2
+    return 1
+  fi
+  if ! grep -qE 'into_axum_service\(\)' "$GRPC_API_CONNECT_TPL"; then
+    echo "    transport_connect.rs.tmpl missing into_axum_service() call" >&2
+    return 1
+  fi
+}
+_test_t5_014() {
+  # FR-T5-CC-010 : bin-server main.rs.tmpl mounts the Connect adapter at /connect
+  if [ ! -f "$BIN_SERVER_MAIN_TPL" ]; then
+    echo "    missing template: $BIN_SERVER_MAIN_TPL" >&2
+    return 1
+  fi
+  if ! grep -qE 'transport_connect::into_router' "$BIN_SERVER_MAIN_TPL"; then
+    echo "    main.rs.tmpl does not call transport_connect::into_router" >&2
+    return 1
+  fi
+  if ! grep -qE '"/connect"' "$BIN_SERVER_MAIN_TPL"; then
+    echo "    main.rs.tmpl does not mount the adapter at /connect" >&2
+    return 1
+  fi
+}
+_test_t5_015() {
+  # FR-T5-CC-013 : OTel layer applied OUTSIDE the connectrpc::Router (Tower middleware composition)
+  # Heuristic: a `.layer(` call appears AFTER `.into_axum_service()`, not inside the connectrpc::Router builder.
+  if [ ! -f "$GRPC_API_CONNECT_TPL" ]; then
+    echo "    missing template: $GRPC_API_CONNECT_TPL" >&2
+    return 1
+  fi
+  if ! awk '
+    /into_axum_service\(\)/ { seen=1 }
+    seen && /\.layer\(/    { found=1; exit }
+    END { exit !found }
+  ' "$GRPC_API_CONNECT_TPL"; then
+    echo "    transport_connect.rs.tmpl: no .layer(...) found AFTER .into_axum_service() (OTel layer must be outside connectrpc)" >&2
+    return 1
+  fi
+}
+_test_t5_016() {
+  # FR-T5-CC-011 : tonic gRPC server bind preserved in main.rs.tmpl alongside the Connect adapter
+  if [ ! -f "$BIN_SERVER_MAIN_TPL" ]; then
+    echo "    missing template: $BIN_SERVER_MAIN_TPL" >&2
+    return 1
+  fi
+  # Accept either fully-qualified path or `use ... as TonicServer` alias.
+  if ! grep -qE 'tonic::transport::Server' "$BIN_SERVER_MAIN_TPL"; then
+    echo "    main.rs.tmpl does not import tonic::transport::Server" >&2
+    return 1
+  fi
+  if ! grep -qE '(TonicServer|Server)::builder|(TonicServer|Server)::bind' "$BIN_SERVER_MAIN_TPL"; then
+    echo "    main.rs.tmpl does not call Server::builder() or Server::bind()" >&2
+    return 1
+  fi
+}
+_test_t5_017() {
+  # FR-T5-CC-012 : domain layer untouched — no template under crates/domain/
+  if find "$BACKEND_DIR/crates/domain" -type f -name '*.tmpl' 2>/dev/null | grep -q .; then
+    echo "    forbidden: template files found under $BACKEND_DIR/crates/domain/" >&2
+    return 1
+  fi
+  # Also assert Cargo workspace stays at 5-member shape (no new member added by t5).
+  if ! grep -qE '^\s*"crates/grpc-api"' "$BACKEND_DIR/Cargo.toml.tmpl"; then
+    echo "    backend/Cargo.toml.tmpl missing crates/grpc-api workspace member" >&2
+    return 1
+  fi
+}
 _test_t5_018() { _not_implemented; }   # demo-005 archived shape
 _test_t5_019() { _not_implemented; }   # demo-005 has 2 BDD scenarios
 _test_t5_020() { _not_implemented; }   # connect-client.ts parses
