@@ -76,15 +76,20 @@ Goal : Context7-resolved versions recorded ; `t5.test.sh` exists with
         `connectrpc-axum` crate**. Update design.md class diagram +
         ADR-T5-001 + tasks T-RUST-002 to remove the standalone
         `ConnectRpcAxum` reference.
-      - **Codegen path** : **Option A (buf-driven)** confirmed —
-        upstream README recommends `protoc-gen-buffa` (messages) +
-        `protoc-gen-connect-rust` (services) as **local plugins**
-        in `buf.gen.yaml`. The `protoc-gen-connect-rust` binary is
-        published as the `connectrpc-codegen` crate ;
-        `protoc-gen-buffa` from `buffa` family. **Path α**
-        (`connectrpc-build` in `build.rs`) is also documented but
-        upstream prefers buf-driven for buf-as-single-source-of-truth
-        compliance ; pick A.
+      - **Codegen path** : **Option 2 / Path α (`connectrpc-build`
+        via `build.rs`)** picked — supersedes the initial Option A
+        (buf-driven local plugins) decision after T-BUF investigation
+        revealed (a) the codebase convention is "remote plugins only"
+        in `buf.gen.yaml.tmpl` (no local plugins, no `cargo install`
+        adopter prerequisite), (b) the `buf.build/anthropics/connect-rust`
+        remote plugin is **not yet shipped** in the BSR (planned
+        upstream, not accepted as of 2026-05-05). `connectrpc-build`
+        is upstream-supported (documented as "Option B" in the
+        connect-rust README, not a workaround) and integrates as a
+        `build.rs` build-dependency in
+        `backend/crates/grpc-api/Cargo.toml.tmpl` ; generated code
+        consumed via `connectrpc::include_generated!()`. When the
+        BSR remote plugin ships post-T5, a follow-up change migrates.
       - **Version-age waiver** : v0.3.3 is 13 days old (< 30 days
         ADR-T5-002 criterion #1). Waiver justification : (1)
         conformance suite passing satisfies the regression-filter
@@ -203,65 +208,85 @@ flip GREEN ; L2 fixture tests still RED.
       `test_buf_gen_yaml_has_3_connect_plugins` is FAIL (RED witness).
       [Story: FR-T5-CC-001]
 - [ ] **T-BUF-002** : Edit
-      `templates/full-stack-monorepo/1.0.0/proto/buf.gen.yaml` to add
-      the `buf.build/connectrpc/go` remote plugin entry with
-      `out: gen/connect/go` + `paths=source_relative`, revision
-      `v1.19.2` from T-VER-002 (Go forward-compat). [Story: FR-T5-CC-001]
+      `.forge/templates/archetypes/full-stack-monorepo/shared/protos/buf.gen.yaml.tmpl`
+      to add the `buf.build/connectrpc/go` remote plugin entry with
+      `out: ../../backend/crates/grpc-api/src/generated/connect/go`
+      + `paths=source_relative`, revision `v1.19.2` from T-VER-002
+      (Go forward-compat for B.6/B.7). Also bump the live mirror at
+      `examples/forge-fsm-example/shared/protos/buf.gen.yaml` to
+      keep parity. [Story: FR-T5-CC-001]
 - [ ] **T-BUF-003** [P] : Add `buf.build/bufbuild/es` entry (Connect
       v2 / Protobuf-ES v2 plugin — replaces retired
-      `buf.build/connectrpc/es`) with `out: gen/connect/ts` +
+      `buf.build/connectrpc/es`) with
+      `out: ../../frontend/lib/generated/connect/ts` +
       `target=ts` + `import_extension=js`, revision `≥ v2.2.0` from
-      T-VER-003. [Story: FR-T5-CC-002]
+      T-VER-003. Mirror in example. [Story: FR-T5-CC-002]
 - [ ] **T-BUF-004** [P] : Add `buf.build/connectrpc/dart` entry
       (**OFFICIAL** ConnectRPC Dart plugin — replaces abandoned
       `skadero/protoc-gen-connect-dart-community`) with
-      `out: gen/connect/dart`, revision `≥ v1.0.0` from T-VER-004.
-      [Story: FR-T5-CC-003]
-- [ ] **T-BUF-004b** [P] : Add **two local plugin entries** for the
-      Rust path (Option A buf-driven per T-VER-006 spike) :
-      - `local: protoc-gen-buffa` with `out: gen/connect/rust`
-        (proto messages, from `buffa` family v0.3.3).
-      - `local: protoc-gen-connect-rust` with `out: gen/connect/rust`
-        and `opt: [buffa_module=crate::proto]` (services, from
-        `connectrpc-codegen` v0.3.3).
-      Both binaries are `cargo install`-able prerequisites ;
-      document in `templates/full-stack-monorepo/1.0.0/proto/README.md`
-      the install command : `cargo install connectrpc-codegen buffa-codegen --locked`.
-      [Story: FR-T5-CC-010 / ADR-T5-001]
-- [ ] **T-BUF-005** : Verify the existing `tonic-build` invocation in
-      `templates/full-stack-monorepo/1.0.0/backend/build.rs` (or wherever
-      the flagship hosts it) is unchanged ; if `buf.gen.yaml` had
-      tonic-build entries, leave them. [Story: FR-T5-CC-004]
-- [ ] **T-BUF-006** : Add `gen/connect/` to the template `.gitignore`.
+      `out: ../../frontend/lib/generated/connect/dart`, revision
+      `≥ v1.0.0` from T-VER-004. Mirror in example. [Story: FR-T5-CC-003]
+- [ ] **T-BUF-005** : Confirm the **3 existing remote plugin entries**
+      (`neoeinstein-tonic`, `neoeinstein-prost`,
+      `protocolbuffers/dart`) in `buf.gen.yaml.tmpl` are **NOT
+      modified or removed**. They are the canonical Rust gRPC + Dart
+      proto codegen path in this codebase (no `build.rs` for tonic
+      exists ; codegen is buf-driven via remote plugins per ADR-004).
+      [Story: FR-T5-CC-004]
+- [ ] **T-BUF-006** : Add the new generated paths to the template
+      `.gitignore.tmpl` :
+      `backend/crates/grpc-api/src/generated/connect/`
+      + `frontend/lib/generated/connect/`. Existing
+      `backend/crates/grpc-api/src/generated/` (tonic + prost
+      output) is presumably already gitignored ; verify and extend.
       [Story: FR-T5-CC-005]
-- [ ] **T-BUF-007** : Run `t5.test.sh` ; expect 5 buf-related L1 tests
-      PASS. [Story: FR-T5-CC-001..005]
+- [ ] **T-BUF-007** : Run `t5.test.sh` ; expect L1 tests covering
+      buf.gen.yaml entries (3 new Connect plugins added,
+      `neoeinstein-tonic` preserved, `.gitignore` lists new paths)
+      to flip GREEN. Tests asserting Rust local plugins (initially
+      `_test_t5_005` + `_test_t5_006`) are reframed in
+      T-RUST-002 to assert `build.rs` + `connectrpc-build`
+      build-dependency presence instead. [Story: FR-T5-CC-001..005]
 
 ### T-RUST — Rust transport/connect.rs adapter (FR-T5-CC-010..014)
 
 - [ ] **T-RUST-001** : Verify
       `test_transport_connect_rs_exists_and_mounts` is FAIL.
       [Story: FR-T5-CC-010]
-- [ ] **T-RUST-002** : Create
-      `templates/full-stack-monorepo/1.0.0/backend/src/transport/connect.rs`
-      module per `design.md` §2.1 :
-      - public `into_router(use_case: Arc<GreeterUseCase>) -> axum::Router`
-      - registers the Greeter service descriptor with the
-        `connectrpc::Server` builder (Anthropic crate per ADR-T5-001 +
-        T-VER-006 pin) ; converts to `axum::Router` via
-        `connectrpc-axum`.
-      - the OTel layer is composed at the **Tower middleware level
-        outside** the connectrpc service (per design constraint and
-        FR-T5-CC-013).
-      - module-level `//!` doc explaining the `/connect` mount + the
-        full Connect protocol coverage (Connect+JSON, Connect+proto,
-        gRPC, gRPC-Web on the same handler) + the OTel layer ordering.
-      - `Cargo.toml` updated to add `connectrpc = "=0.3.3"`, `buffa = "=0.3.3"`,
-        `buffa-types = "=0.3.3"` (Axum integration is **inline** in
-        `connectrpc` via `into_axum_service()` ; **no separate
-        `connectrpc-axum` crate**, confirmed by T-VER-006 spike).
-      - `serde`, `serde_json`, `http-body` already present in the
-        flagship workspace ; verify in Cargo.toml.
+- [ ] **T-RUST-002** : Create the Rust Connect adapter +
+      build.rs codegen wiring per `design.md` §2.1 + Option 2 path :
+      - **(a)** Add `build.rs` to
+        `.forge/templates/archetypes/full-stack-monorepo/backend/crates/grpc-api/build.rs.tmpl`
+        invoking `connectrpc_build::Config::new()` against the proto
+        files in `shared/protos/v1/` ; emit to
+        `OUT_DIR/_connectrpc.rs`.
+      - **(b)** Update
+        `.forge/templates/archetypes/full-stack-monorepo/backend/crates/grpc-api/Cargo.toml.tmpl`
+        with :
+        - `[dependencies]` : `connectrpc = "=0.3.3"`,
+          `buffa = "=0.3.3"`, `buffa-types = "=0.3.3"`.
+        - `[build-dependencies]` : `connectrpc-build = "=0.3.3"`.
+        - Axum integration is **inline** in `connectrpc` via
+          `Router::into_axum_service()` — **no separate
+          `connectrpc-axum` crate**, confirmed by T-VER-006 spike.
+      - **(c)** Create
+        `.forge/templates/archetypes/full-stack-monorepo/backend/crates/grpc-api/src/transport_connect.rs.tmpl`
+        (or extend the existing transport module) :
+        - `connectrpc::include_generated!("_connectrpc.rs")` to pull
+          in the build.rs output.
+        - public `into_router(use_case: Arc<GreeterUseCase>) -> axum::Router`
+          that registers the service descriptor with
+          `connectrpc::Router` and calls `into_axum_service()`.
+        - the OTel layer is composed at the **Tower middleware level
+          outside** the connectrpc service (per design constraint and
+          FR-T5-CC-013).
+        - module-level `//!` doc explaining the `/connect` mount + the
+          full Connect protocol coverage (Connect+JSON, Connect+proto,
+          gRPC, gRPC-Web on the same handler) + the OTel layer ordering.
+      - **(d)** Verify `serde`, `serde_json`, `http-body` are already
+        present in the flagship workspace's Cargo.toml ; if absent,
+        add them (per upstream connectrpc generated-code dependency
+        list).
       [Story: FR-T5-CC-010..013]
 - [ ] **T-RUST-003** : Wire `transport/connect.rs` into
       `templates/full-stack-monorepo/1.0.0/backend/src/main.rs` :

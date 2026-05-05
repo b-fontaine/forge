@@ -56,8 +56,8 @@ FAIL_NAMES=()
 # MANIFEST: _test_t5_002 — FR-T5-CC-001 buf.gen.yaml has buf.build/connectrpc/go entry
 # MANIFEST: _test_t5_003 — FR-T5-CC-002 buf.gen.yaml has buf.build/bufbuild/es entry (Connect v2)
 # MANIFEST: _test_t5_004 — FR-T5-CC-003 buf.gen.yaml has buf.build/connectrpc/dart official entry
-# MANIFEST: _test_t5_005 — ADR-T5-001 buf.gen.yaml has local protoc-gen-buffa entry
-# MANIFEST: _test_t5_006 — ADR-T5-001 buf.gen.yaml has local protoc-gen-connect-rust entry
+# MANIFEST: _test_t5_005 — ADR-T5-001 build.rs.tmpl invokes connectrpc-build (Option 2 / Path α)
+# MANIFEST: _test_t5_006 — ADR-T5-001 grpc-api Cargo.toml.tmpl declares connectrpc-build build-dep
 # MANIFEST: _test_t5_007 — FR-T5-CC-004 tonic-build invocation preserved in build.rs
 # MANIFEST: _test_t5_008 — FR-T5-CC-005 template .gitignore lists gen/connect/
 # MANIFEST: _test_t5_009 — FR-T5-CC-020 transport.yaml version is 1.1.0
@@ -152,8 +152,8 @@ _test_t5_001() { _not_implemented; }   # buf.gen.yaml parses
 _test_t5_002() { _not_implemented; }   # connectrpc/go entry
 _test_t5_003() { _not_implemented; }   # bufbuild/es entry
 _test_t5_004() { _not_implemented; }   # connectrpc/dart entry
-_test_t5_005() { _not_implemented; }   # local protoc-gen-buffa
-_test_t5_006() { _not_implemented; }   # local protoc-gen-connect-rust
+_test_t5_005() { _not_implemented; }   # build.rs.tmpl uses connectrpc-build
+_test_t5_006() { _not_implemented; }   # Cargo.toml.tmpl declares connectrpc-build build-dep
 _test_t5_007() { _not_implemented; }   # tonic-build preserved
 _test_t5_008() { _not_implemented; }   # gen/connect/ in .gitignore
 _test_t5_009() {

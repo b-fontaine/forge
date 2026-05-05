@@ -64,14 +64,18 @@ additive ; no existing plugin entry is removed.
   only ; `mobile-only / 1.0.0` template untouched). B.9 (T8) integrates
   Connect-Dart into the renamed `mobile-pwa-first` template.
 
-##### FR-T5-CC-004: `tonic-build` invocation preserved
-- **MUST NOT** modify the existing tonic-build path in
-  `templates/full-stack-monorepo/1.0.0/backend/build.rs` (or equivalent).
+##### FR-T5-CC-004: existing Rust gRPC remote-plugin codegen preserved
+- **MUST NOT** modify or remove the existing remote plugin entries
+  in `.forge/templates/archetypes/full-stack-monorepo/shared/protos/buf.gen.yaml.tmpl` :
+  - `buf.build/community/neoeinstein-tonic` (Rust gRPC server+client stubs)
+  - `buf.build/community/neoeinstein-prost` (Rust proto messages)
+  - `buf.build/protocolbuffers/dart` (Dart proto messages — pre-existing,
+    independent of the new `buf.build/connectrpc/dart` Connect plugin)
 - **MUST** keep the existing gRPC service generation as the canonical
-  Rust server-side codegen path (ADR-004).
-- **MUST** ensure both `gen/connect/` outputs and `tonic-build` outputs
-  coexist in the workspace `.gitignore` policy (both ignored ; both
-  regenerable).
+  Rust server-side codegen path (ADR-004 ; this is how tonic codegen
+  happens in this codebase — there is no `build.rs` for tonic).
+- **MUST** ensure all generated artefacts (existing `backend/crates/grpc-api/src/generated/`
+  + new Connect outputs) are gitignored.
 
 ##### FR-T5-CC-005: Output layout `gen/connect/{rust,ts,dart}/`
 - **MUST** declare a stable layout pinned in `transport.yaml`
@@ -149,9 +153,14 @@ additive ; no existing plugin entry is removed.
     crates, exact pin per T-VER-006 ; pre-1.0 → no caret range ;
     waiver from 30-day rule justified by 6 558-test conformance
     suite ; documented in `design.md` ADR-T5-002 footnote)
-  - `protoc-gen-connect-rust` + `protoc-gen-buffa`: **=0.3.3**
-    (local plugin binaries from the connectrpc-rust crate family,
-    `cargo install`-able from crates.io)
+  - `connectrpc-build`: **=0.3.3** (Cargo build-dependency invoked
+    from `build.rs` of the gRPC crate per Option 2 / Path α — replaces
+    the original local-plugin plan to preserve the codebase's
+    "remote plugins only" `buf.gen.yaml` convention. The
+    `buf.build/anthropics/connect-rust` BSR remote plugin is planned
+    upstream but not yet shipped ; when it lands post-T5, a follow-up
+    change can migrate to the remote-plugin path and retire the
+    `build.rs`.)
 - **MUST** match the versions declared in `buf.gen.yaml` (cross-checked
   by `t5.test.sh`).
 - **MUST** record provenance (source URL + accessed-on date) in
@@ -400,10 +409,10 @@ codegen:
     - connectrpc                           # Anthropic Rust crate runtime (Tower-based, Axum integration via into_axum_service())
     - buffa                                # Anthropic zero-copy proto crate, paired with connectrpc
     - buffa-types                          # buffa companion (proto type helpers)
-    - protoc-gen-connect-rust              # buf local plugin (services), from connectrpc-codegen crate
-    - protoc-gen-buffa                     # buf local plugin (messages), from buffa family
-    - tonic-build                          # gRPC Rust path, kept (ADR-004)
-  versions:                               # pinned per FR-T5-CC-022 / ADR-T5-002 (resolved 2026-05-05, T-VER-001..006 evidence trail)
+    - connectrpc-build                     # Cargo build-dependency invoked from build.rs of grpc-api crate (Path α — preserves "remote plugins only" buf.gen.yaml convention)
+    - neoeinstein-tonic                    # gRPC Rust path remote plugin, kept (ADR-004) — buf.build/community/neoeinstein-tonic
+    - neoeinstein-prost                    # Rust proto messages remote plugin, kept — buf.build/community/neoeinstein-prost
+  versions:                               # pinned per FR-T5-CC-022 / ADR-T5-002 (resolved 2026-05-05, T-VER-001..006 + T-BUF investigation evidence trail)
     buf: "1.68.2"
     protoc-gen-connect-go: "1.19.2"
     protoc-gen-es: ">=2.2.0"
@@ -413,8 +422,7 @@ codegen:
     connectrpc: "=0.3.3"                  # exact pin (pre-1.0)
     buffa: "=0.3.3"
     buffa-types: "=0.3.3"
-    protoc-gen-connect-rust: "=0.3.3"     # connectrpc-codegen binary
-    protoc-gen-buffa: "=0.3.3"
+    connectrpc-build: "=0.3.3"            # build.rs codegen path (Option 2 / Path α)
   derived_outputs: [openapi-3.1, asyncapi-3.1]
 ```
 

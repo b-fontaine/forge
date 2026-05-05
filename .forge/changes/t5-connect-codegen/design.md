@@ -142,8 +142,7 @@ phase.
   | `@connectrpc/connect-web` (TS browser/Node transport) | **^2.0.0** | same | 2026-05-05 |
   | `connectrpc/connect-dart` plugin (official, replaces abandoned community plugin) | **≥ v1.0.0** (pub.dev `connectrpc` package) | `pub.dev/packages/connectrpc` + `connectrpc.com/docs/dart/getting-started/` | 2026-05-05 |
   | `connectrpc` + `buffa` + `buffa-types` (Anthropic) | **`=0.3.3`** (released 2026-04-22, **waiver from 30-day rule** — see footnote) | `github.com/anthropics/connect-rust` | 2026-05-05 (T-VER-006) |
-  | `protoc-gen-connect-rust` codegen binary | **=0.3.3** (from `connectrpc-codegen` crate, local plugin) | same | 2026-05-05 (T-VER-006) |
-  | `protoc-gen-buffa` codegen binary | **=0.3.3** (from `buffa` family, local plugin) | same | 2026-05-05 (T-VER-006) |
+  | `connectrpc-build` build-dependency | **=0.3.3** (from connectrpc-rust family) — used in `build.rs` of the gRPC crate per Option 2 (T-BUF investigation) ; replaces the original `local: protoc-gen-{connect-rust,buffa}` plan to preserve "remote plugins only" codebase convention | same | 2026-05-05 (T-BUF) |
 
   > **Waiver footnote (connectrpc v0.3.3)** : the 30-day-old criterion
   > is meant to filter brand-new releases that may carry undetected
@@ -383,6 +382,13 @@ classDiagram
   `connectrpc-axum` crate** — confirmed by T-VER-006 spike) to obtain
   an `axum::Router` that gets `.merge()`'d into the existing main
   router under the `/connect` prefix.
+- The Rust Connect handler stubs are emitted by `connectrpc-build`
+  (build-dependency in `Cargo.toml.tmpl` of the gRPC crate ;
+  invoked from a new `build.rs` per T-RUST-002) and consumed via
+  `connectrpc::include_generated!("_connectrpc.rs")`. This keeps the
+  codebase's "remote plugins only" convention in `buf.gen.yaml.tmpl`
+  intact (the build.rs is internal Cargo machinery, transparent to
+  adopters who never run `cargo install`).
 - The `connectrpc::Router` builder registers the same proto service
   descriptor as the tonic adapter ; the two paths converge on the
   same `GreeterUseCase` (no business-logic duplication).
@@ -429,24 +435,46 @@ plugins:
     opt: []
 ```
 
-**Rust codegen path — Option A (buf-driven) confirmed by T-VER-006 spike** :
-upstream `github.com/anthropics/connect-rust` README recommends
-buf-driven codegen via two **local plugins** (binaries from the
-connectrpc-rust ecosystem). Adopt that path :
+**Rust codegen path — `connectrpc-build` via `build.rs`** (revised
+post T-BUF investigation 2026-05-05). The codebase **convention is
+"remote plugins only"** in `buf.gen.yaml.tmpl` (existing entries :
+`buf.build/community/neoeinstein-tonic`, `neoeinstein-prost`,
+`buf.build/protocolbuffers/dart`). No local plugins, no `cargo
+install` adopter prerequisites. The original spike's recommendation
+to use `local: protoc-gen-buffa` + `local: protoc-gen-connect-rust`
+would have broken that convention.
 
-```yaml
-# Append to buf.gen.yaml (Rust path) :
-  - local: protoc-gen-buffa             # buffa proto messages — installed via `cargo install buffa-codegen`
-    out: gen/connect/rust
-    opt: []
-  - local: protoc-gen-connect-rust      # connectrpc service handlers — installed via `cargo install connectrpc-codegen`
-    out: gen/connect/rust
-    opt: [buffa_module=crate::proto]
+The `buf.build/anthropics/connect-rust` remote plugin is **not yet
+available** in the BSR (planned, not yet accepted upstream) — see
+[buf.build/blog/bsr-generated-sdks-for-rust](https://buf.build/blog/bsr-generated-sdks-for-rust)
++ `github.com/anthropics/connect-rust` README "BSR remote plugin in
+the pipeline" note (accessed 2026-05-05).
+
+Decision : **Use `connectrpc-build = "=0.3.3"`** as a `build.rs`
+build-dependency in the existing
+`.forge/templates/archetypes/full-stack-monorepo/backend/crates/grpc-api/Cargo.toml.tmpl`,
+analogous to how `tonic-build` invocations are typically wired in
+Rust gRPC crates. The `build.rs` invocation is upstream-supported
+(documented as "Option B" in the connect-rust README — not a
+workaround). Generated code is included via
+`connectrpc::include_generated!()`.
+
+```rust
+// templates/.../backend/crates/grpc-api/build.rs (NEW, T-RUST-002)
+fn main() {
+    connectrpc_build::Config::new()
+        .files(&["../../../shared/protos/v1/example/example.proto"])
+        .includes(&["../../../shared/protos/"])
+        .include_file("_connectrpc.rs")
+        .compile()
+        .unwrap();
+}
 ```
 
-Path β (`connectrpc-build` in `build.rs` analogous to `tonic-build`)
-is documented upstream but rejected here for buf-as-single-source-of-truth
-compliance (proto stays canonical via buf, not via Cargo build script).
+When `buf.build/anthropics/connect-rust` ships in the BSR (post-T5),
+a follow-up change can migrate the Rust path to a remote-plugin
+entry in `buf.gen.yaml.tmpl` and retire the `build.rs`. Until then,
+the build.rs path is the canonical Rust codegen mechanism for T5.
 
 Notes :
 - `paths=source_relative` (Go) keeps generated paths predictable.

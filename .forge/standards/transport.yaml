@@ -48,9 +48,9 @@ codegen:
     - connectrpc
     - buffa
     - buffa-types
-    - protoc-gen-connect-rust
-    - protoc-gen-buffa
-    - tonic-build
+    - connectrpc-build
+    - neoeinstein-tonic
+    - neoeinstein-prost
   versions:
     buf: "1.68.2"
     protoc-gen-connect-go: "1.19.2"
@@ -61,8 +61,7 @@ codegen:
     connectrpc: "=0.3.3"
     buffa: "=0.3.3"
     buffa-types: "=0.3.3"
-    protoc-gen-connect-rust: "=0.3.3"
-    protoc-gen-buffa: "=0.3.3"
+    connectrpc-build: "=0.3.3"
   derived_outputs: [openapi-3.1, asyncapi-3.1]
 
 breaking_change_check: "buf breaking --against '.git#branch=main'"
