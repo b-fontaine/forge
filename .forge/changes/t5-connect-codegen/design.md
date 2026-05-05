@@ -141,7 +141,22 @@ phase.
   | `@connectrpc/connect` (TS runtime) | **^2.0.0** | same | 2026-05-05 |
   | `@connectrpc/connect-web` (TS browser/Node transport) | **^2.0.0** | same | 2026-05-05 |
   | `connectrpc/connect-dart` plugin (official, replaces abandoned community plugin) | **≥ v1.0.0** (pub.dev `connectrpc` package) | `pub.dev/packages/connectrpc` + `connectrpc.com/docs/dart/getting-started/` | 2026-05-05 |
-  | `connectrpc` Rust crate (Anthropic) + `buffa` proto crate | **TBD M1** (T-VER-006) | `crates.io/crates/connectrpc` + `github.com/anthropics/connect-rust` | 2026-05-05 |
+  | `connectrpc` + `buffa` + `buffa-types` (Anthropic) | **`=0.3.3`** (released 2026-04-22, **waiver from 30-day rule** — see footnote) | `github.com/anthropics/connect-rust` | 2026-05-05 (T-VER-006) |
+  | `protoc-gen-connect-rust` codegen binary | **=0.3.3** (from `connectrpc-codegen` crate, local plugin) | same | 2026-05-05 (T-VER-006) |
+  | `protoc-gen-buffa` codegen binary | **=0.3.3** (from `buffa` family, local plugin) | same | 2026-05-05 (T-VER-006) |
+
+  > **Waiver footnote (connectrpc v0.3.3)** : the 30-day-old criterion
+  > is meant to filter brand-new releases that may carry undetected
+  > regressions. v0.3.3 (2026-04-22, 13 days old as of 2026-05-05)
+  > carries 6 558 ConnectRPC conformance tests passing (3 600 server
+  > + 1 514 TLS + 1 444 client) which structurally satisfies the
+  > regression-filter intent. Combined with Anthropic's OSS pedigree
+  > and an exact `=0.3.3` pin (no auto-bump), the waiver is
+  > defensible. If T-VER-006 re-runs at impl phase and a v0.3.4 has
+  > shipped meeting both criteria (≥ 30 days old + conformance suite
+  > passing), pick the newer patch. The pre-1.0 caveat means **no
+  > caret range** ; pin exact for the entire T5 lifetime ; B.8
+  > revisits.
 
   Acceptance criteria for the picked versions :
   1. Each release is **≥ 30 days old** as of impl date (filter brand-new
@@ -336,14 +351,11 @@ classDiagram
         -use_case: Arc~GreeterUseCase~
         +into_router() axum::Router
     }
-    class ConnectRpcServer {
-        <<crate: connectrpc>>
-        +service_descriptor()
+    class ConnectRpcRouter {
+        <<crate: connectrpc v0.3.3>>
+        +register(service)
+        +into_axum_service() axum::Router
         +protocols: Connect|gRPC|gRPC-Web
-    }
-    class ConnectRpcAxum {
-        <<crate: connectrpc-axum>>
-        +to_axum_router() axum::Router
     }
     class OtelLayer {
         <<library>>
@@ -354,8 +366,7 @@ classDiagram
 
     GrpcAdapter ..> GreeterUseCase : uses
     ConnectAdapter ..> GreeterUseCase : uses
-    ConnectAdapter ..> ConnectRpcServer : registers
-    ConnectAdapter ..> ConnectRpcAxum : converts
+    ConnectAdapter ..> ConnectRpcRouter : registers + into_axum_service()
     ConnectAdapter ..> OtelLayer : wraps with Tower middleware
     AxumRouter --> ConnectAdapter : mounts at /connect
     AxumRouter --> GrpcAdapter : (server runs separately on gRPC port)
@@ -367,10 +378,12 @@ classDiagram
 - The OTel layer is composed at the Tower middleware level **outside**
   the connectrpc service, so spans cover the whole HTTP request
   including Connect codec translation (FR-T5-CC-013).
-- `into_router()` returns an `axum::Router` (via `connectrpc-axum`'s
-  conversion) that gets `.merge()`'d into the existing main router
-  under the `/connect` prefix.
-- The `ConnectRpcServer` builder registers the same proto service
+- `into_router()` (the adapter's public API) calls
+  `connectrpc::Router::into_axum_service()` (inline, **no separate
+  `connectrpc-axum` crate** — confirmed by T-VER-006 spike) to obtain
+  an `axum::Router` that gets `.merge()`'d into the existing main
+  router under the `/connect` prefix.
+- The `connectrpc::Router` builder registers the same proto service
   descriptor as the tonic adapter ; the two paths converge on the
   same `GreeterUseCase` (no business-logic duplication).
 
@@ -416,14 +429,24 @@ plugins:
     opt: []
 ```
 
-**Rust codegen path** is **NOT declared in `buf.gen.yaml`** — resolved
-at impl M1 (T-VER-006) per ADR-T5-001 :
-- **Option α (preferred)** : `connectrpc-build` invocation from
-  `templates/full-stack-monorepo/1.0.0/backend/build.rs`, analogous to
-  the existing `tonic-build` pattern. No buf.gen.yaml entry needed ;
-  Rust stays self-contained.
-- **Option β** : if a `buf.build/anthropics/connect-rust` (or similar)
-  remote plugin exists, declare it here with `out: gen/connect/rust`.
+**Rust codegen path — Option A (buf-driven) confirmed by T-VER-006 spike** :
+upstream `github.com/anthropics/connect-rust` README recommends
+buf-driven codegen via two **local plugins** (binaries from the
+connectrpc-rust ecosystem). Adopt that path :
+
+```yaml
+# Append to buf.gen.yaml (Rust path) :
+  - local: protoc-gen-buffa             # buffa proto messages — installed via `cargo install buffa-codegen`
+    out: gen/connect/rust
+    opt: []
+  - local: protoc-gen-connect-rust      # connectrpc service handlers — installed via `cargo install connectrpc-codegen`
+    out: gen/connect/rust
+    opt: [buffa_module=crate::proto]
+```
+
+Path β (`connectrpc-build` in `build.rs` analogous to `tonic-build`)
+is documented upstream but rejected here for buf-as-single-source-of-truth
+compliance (proto stays canonical via buf, not via Cargo build script).
 
 Notes :
 - `paths=source_relative` (Go) keeps generated paths predictable.

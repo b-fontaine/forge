@@ -53,17 +53,38 @@ Goal : Context7-resolved versions recorded ; `t5.test.sh` exists with
       `@connectrpc/connect-web@^2.0.0` are the latest stable v2.x
       lineage for demo-005. Pin in `clients/package.json`.
       [Story: FR-T5-CC-032]
-- [ ] **T-VER-006** : **Spike (≤ 30 min)** — pin the `connectrpc`
-      Rust crate (Anthropic OSS, `crates.io/crates/connectrpc` /
-      `github.com/anthropics/connect-rust`) and its companion `buffa`
-      proto crate. Verify (a) latest stable version ≥ 30 days old,
-      (b) Apache-2.0 / MIT licence, (c) Axum integration crate
-      (`connectrpc-axum` if separate, or feature flag `axum` if
-      inline), (d) ConnectRPC conformance suite passing per release
-      notes. Decide between **codegen path α** (`connectrpc-build`
-      via `build.rs` analogous to tonic-build) vs **path β** (a buf
-      remote plugin reference, if available) — record decision in
-      `design.md` ADR-T5-001 footnote. [Story: ADR-T5-001 / ADR-T5-002 / FR-T5-CC-010]
+- [x] **T-VER-006** : **Spike completed 2026-05-05** via WebFetch
+      `github.com/anthropics/connect-rust`. Findings :
+      - **Pin** : `connectrpc = "=0.3.3"` + `buffa = "=0.3.3"` +
+        `buffa-types = "=0.3.3"` (released 2026-04-22 ;
+        Apache-2.0 ; MSRV Rust 1.88).
+      - **Conformance** : 6 558 tests passing (3 600 server +
+        1 514 TLS + 1 444 client) — Connect + gRPC + gRPC-Web, all
+        4 RPC types (unary, server-stream, client-stream, bidi).
+      - **Axum integration** : inline via
+        `connectrpc::Router::into_axum_service()` — **no separate
+        `connectrpc-axum` crate**. Update design.md class diagram +
+        ADR-T5-001 + tasks T-RUST-002 to remove the standalone
+        `ConnectRpcAxum` reference.
+      - **Codegen path** : **Option A (buf-driven)** confirmed —
+        upstream README recommends `protoc-gen-buffa` (messages) +
+        `protoc-gen-connect-rust` (services) as **local plugins**
+        in `buf.gen.yaml`. The `protoc-gen-connect-rust` binary is
+        published as the `connectrpc-codegen` crate ;
+        `protoc-gen-buffa` from `buffa` family. **Path α**
+        (`connectrpc-build` in `build.rs`) is also documented but
+        upstream prefers buf-driven for buf-as-single-source-of-truth
+        compliance ; pick A.
+      - **Version-age waiver** : v0.3.3 is 13 days old (< 30 days
+        ADR-T5-002 criterion #1). Waiver justification : (1)
+        conformance suite passing satisfies the regression-filter
+        intent of the rule, (2) Anthropic OSS pedigree, (3) we pin
+        exact `=0.3.3` so upgrades are manual. Documented in
+        `design.md` ADR-T5-002 footnote.
+      - **API surface caveat** : pre-1.0 ; pin exact, monitor
+        upstream releases ; if a 0.4.x lands before B.8, evaluate
+        whether to bump or stay on 0.3.x.
+      [Story: ADR-T5-001 / ADR-T5-002 / FR-T5-CC-010]
 
 ### T-PHA — t5.test.sh skeleton (RED for the whole change)
 
@@ -150,6 +171,17 @@ flip GREEN ; L2 fixture tests still RED.
       `skadero/protoc-gen-connect-dart-community`) with
       `out: gen/connect/dart`, revision `≥ v1.0.0` from T-VER-004.
       [Story: FR-T5-CC-003]
+- [ ] **T-BUF-004b** [P] : Add **two local plugin entries** for the
+      Rust path (Option A buf-driven per T-VER-006 spike) :
+      - `local: protoc-gen-buffa` with `out: gen/connect/rust`
+        (proto messages, from `buffa` family v0.3.3).
+      - `local: protoc-gen-connect-rust` with `out: gen/connect/rust`
+        and `opt: [buffa_module=crate::proto]` (services, from
+        `connectrpc-codegen` v0.3.3).
+      Both binaries are `cargo install`-able prerequisites ;
+      document in `templates/full-stack-monorepo/1.0.0/proto/README.md`
+      the install command : `cargo install connectrpc-codegen buffa-codegen --locked`.
+      [Story: FR-T5-CC-010 / ADR-T5-001]
 - [ ] **T-BUF-005** : Verify the existing `tonic-build` invocation in
       `templates/full-stack-monorepo/1.0.0/backend/build.rs` (or wherever
       the flagship hosts it) is unchanged ; if `buf.gen.yaml` had
@@ -178,9 +210,12 @@ flip GREEN ; L2 fixture tests still RED.
       - module-level `//!` doc explaining the `/connect` mount + the
         full Connect protocol coverage (Connect+JSON, Connect+proto,
         gRPC, gRPC-Web on the same handler) + the OTel layer ordering.
-      - `Cargo.toml` updated to add `connectrpc`, `buffa`, and
-        `connectrpc-axum` (or the unified `connectrpc[axum]` feature)
-        with versions from T-VER-006.
+      - `Cargo.toml` updated to add `connectrpc = "=0.3.3"`, `buffa = "=0.3.3"`,
+        `buffa-types = "=0.3.3"` (Axum integration is **inline** in
+        `connectrpc` via `into_axum_service()` ; **no separate
+        `connectrpc-axum` crate**, confirmed by T-VER-006 spike).
+      - `serde`, `serde_json`, `http-body` already present in the
+        flagship workspace ; verify in Cargo.toml.
       [Story: FR-T5-CC-010..013]
 - [ ] **T-RUST-003** : Wire `transport/connect.rs` into
       `templates/full-stack-monorepo/1.0.0/backend/src/main.rs` :

@@ -145,8 +145,13 @@ additive ; no existing plugin entry is removed.
   - `connect`: **^2.0.0** (`@connectrpc/connect`, runtime)
   - `connectrpc-dart`: **≥ v1.0.0** (`buf.build/connectrpc/dart`,
     official plugin)
-  - `connectrpc-rust`: **TBD M1** (Anthropic crate, T-VER-006 ≤ 30 min spike)
-  - `buffa`: **TBD M1** (Anthropic proto crate, paired with connectrpc)
+  - `connectrpc` + `buffa` + `buffa-types`: **`=0.3.3`** (Anthropic
+    crates, exact pin per T-VER-006 ; pre-1.0 → no caret range ;
+    waiver from 30-day rule justified by 6 558-test conformance
+    suite ; documented in `design.md` ADR-T5-002 footnote)
+  - `protoc-gen-connect-rust` + `protoc-gen-buffa`: **=0.3.3**
+    (local plugin binaries from the connectrpc-rust crate family,
+    `cargo install`-able from crates.io)
 - **MUST** match the versions declared in `buf.gen.yaml` (cross-checked
   by `t5.test.sh`).
 - **MUST** record provenance (source URL + accessed-on date) in
@@ -391,19 +396,24 @@ codegen:
     - protoc-gen-connect-go                # Go (forward-compat for B.6/B.7)
     - protoc-gen-es                        # @bufbuild/protoc-gen-es ≥ v2.2.0 (Connect v2 — replaces retired protoc-gen-connect-es)
     - connectrpc-dart                      # buf.build/connectrpc/dart official (replaces abandoned skadero community plugin)
-    - connectrpc                           # Anthropic Rust crate (Tower-based, Axum-native) — replaces "deferred to B.8" hand-roll
+    - connectrpc                           # Anthropic Rust crate runtime (Tower-based, Axum integration via into_axum_service())
     - buffa                                # Anthropic zero-copy proto crate, paired with connectrpc
-    - connectrpc-build                     # Rust build.rs invocation (analogous to tonic-build), pending M1 spike
+    - buffa-types                          # buffa companion (proto type helpers)
+    - protoc-gen-connect-rust              # buf local plugin (services), from connectrpc-codegen crate
+    - protoc-gen-buffa                     # buf local plugin (messages), from buffa family
     - tonic-build                          # gRPC Rust path, kept (ADR-004)
-  versions:                               # pinned per FR-T5-CC-022 / ADR-T5-002 (resolved 2026-05-05)
+  versions:                               # pinned per FR-T5-CC-022 / ADR-T5-002 (resolved 2026-05-05, T-VER-001..006 evidence trail)
     buf: "1.68.2"
     protoc-gen-connect-go: "1.19.2"
     protoc-gen-es: ">=2.2.0"
     "@connectrpc/connect": "^2.0.0"
     "@connectrpc/connect-web": "^2.0.0"
     connectrpc-dart: ">=1.0.0"
-    connectrpc-rust: "<TBD M1>"
-    buffa: "<TBD M1>"
+    connectrpc: "=0.3.3"                  # exact pin (pre-1.0)
+    buffa: "=0.3.3"
+    buffa-types: "=0.3.3"
+    protoc-gen-connect-rust: "=0.3.3"     # connectrpc-codegen binary
+    protoc-gen-buffa: "=0.3.3"
   derived_outputs: [openapi-3.1, asyncapi-3.1]
 ```
 
