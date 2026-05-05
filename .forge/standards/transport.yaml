@@ -1,9 +1,18 @@
 # Forge Standard — Transport contracts
-# Audit: T.4 (t4-adr-ratification, 2026-05-04)
+# Audit: T.4 (t4-adr-ratification, 2026-05-04) ; T.5 (t5-connect-codegen, 2026-05-05)
 # Ratifies: ADR-003 + ADR-009 from docs/ARCHITECTURE-TARGET.md
 # Structural exception per Article XII : not subject to 12-month review.
+#
+# v1.1.0 (t5-connect-codegen 2026-05-05) : additive — no breaking change.
+#   - Added codegen.connect_layout_version: 1 (FR-T5-CC-021).
+#   - Added codegen.versions: map with concrete pins (FR-T5-CC-022, ADR-T5-002).
+#   - Refreshed codegen.tools list per Context7 investigation 2026-05-05 :
+#     replaced retired `protoc-gen-connect-es` (Connect v2 migration) with
+#     `protoc-gen-es` ; replaced abandoned `protoc-gen-connect-dart-community`
+#     with the official `connectrpc/connect-dart` plugin ; added the
+#     `connectrpc` Rust crate family (Anthropic OSS) per ADR-T5-001.
 
-version: "1.0.0"
+version: "1.1.0"
 last_reviewed: 2026-05-04
 expires_at: never
 exception_constitutional: true
@@ -30,12 +39,30 @@ server_runtime:
 
 codegen:
   source_of_truth: protobuf
+  connect_layout_version: 1
   tools:
     - buf
     - protoc-gen-connect-go
-    - protoc-gen-connect-es
-    - protoc-gen-connect-dart-community
+    - protoc-gen-es
+    - connectrpc-dart
+    - connectrpc
+    - buffa
+    - buffa-types
+    - protoc-gen-connect-rust
+    - protoc-gen-buffa
     - tonic-build
+  versions:
+    buf: "1.68.2"
+    protoc-gen-connect-go: "1.19.2"
+    protoc-gen-es: ">=2.2.0"
+    "@connectrpc/connect": "^2.0.0"
+    "@connectrpc/connect-web": "^2.0.0"
+    connectrpc-dart: ">=1.0.0"
+    connectrpc: "=0.3.3"
+    buffa: "=0.3.3"
+    buffa-types: "=0.3.3"
+    protoc-gen-connect-rust: "=0.3.3"
+    protoc-gen-buffa: "=0.3.3"
   derived_outputs: [openapi-3.1, asyncapi-3.1]
 
 breaking_change_check: "buf breaking --against '.git#branch=main'"

@@ -162,25 +162,40 @@ flip GREEN ; L2 fixture tests still RED.
 
 ### T-STD — transport.yaml v1.0.0 → v1.1.0 (FR-T5-CC-020..023)
 
-- [ ] **T-STD-001** : Verify `test_transport_yaml_v1_1_0` is FAIL
-      (RED witness). [Story: FR-T5-CC-020]
-- [ ] **T-STD-002** : Edit `.forge/standards/transport.yaml` :
-      `version: "1.0.0"` → `version: "1.1.0"`. No other key touched.
+- [x] **T-STD-001** : RED witness — replaced 4 stubs (`_test_t5_009..012`)
+      in `t5.test.sh` with real `_yq_eval` + `assert_eq` assertions ;
+      ran harness, captured /tmp/t5-red-std.log :
+      - `_test_t5_009`: `transport.yaml version: expected='1.1.0' actual='1.0.0'`
+      - `_test_t5_010`: `codegen.connect_layout_version: expected='1' actual=''`
+      - `_test_t5_011`: `codegen.versions.connectrpc: expected='=0.3.3' actual=''`
+      - `_test_t5_012`: `REVIEW.md missing Updated entry for transport.yaml v1.1.0`
       [Story: FR-T5-CC-020]
-- [ ] **T-STD-003** : Add `codegen.connect_layout_version: 1` field
-      under `codegen:`. [Story: FR-T5-CC-021]
-- [ ] **T-STD-004** : Add `codegen.versions:` map with the 4 pins
-      from T-VER-001..004 (buf, protoc-gen-connect-go,
-      protoc-gen-connect-es, protoc-gen-connect-dart-community).
-      [Story: FR-T5-CC-022]
-- [ ] **T-STD-005** : Append an `Updated` entry to
-      `.forge/standards/REVIEW.md` for `transport.yaml` (date
-      2026-05-05, reason "v1.1.0 codegen pins per t5-connect-codegen").
-      Do NOT alter the existing `Reviewed on: 2026-05-04` baseline
-      (immutable ledger). [Story: FR-T5-CC-023]
-- [ ] **T-STD-006** : Run `t5.test.sh` ; expect 4 tests PASS
-      (parses, version bumped, codegen.connect_layout_version present,
-      codegen.versions complete). [Story: FR-T5-CC-020..023]
+- [x] **T-STD-002** : Edited `.forge/standards/transport.yaml` :
+      `version: "1.0.0"` → `version: "1.1.0"`. Header comment block
+      extended with the v1.1.0 audit trail (T.5 reference + change
+      summary). [Story: FR-T5-CC-020]
+- [x] **T-STD-003** : Added `codegen.connect_layout_version: 1`
+      field under `codegen:`. [Story: FR-T5-CC-021]
+- [x] **T-STD-004** : Added `codegen.versions:` map with **11 pins**
+      (broader than the 4 originally planned, since T-VER-006 spike
+      added the connectrpc Rust crate family) : buf, protoc-gen-connect-go,
+      protoc-gen-es, @connectrpc/connect, @connectrpc/connect-web,
+      connectrpc-dart, connectrpc, buffa, buffa-types,
+      protoc-gen-connect-rust, protoc-gen-buffa. Stale entries in the
+      `codegen.tools:` list also refreshed (`protoc-gen-connect-es`
+      → `protoc-gen-es` ; `protoc-gen-connect-dart-community` →
+      `connectrpc-dart`). [Story: FR-T5-CC-022]
+- [x] **T-STD-005** : Appended `Updated` entry to
+      `.forge/standards/REVIEW.md` for `transport.yaml` v1.1.0 dated
+      2026-05-05, with the canonical schema (Reviewer / Reviewed
+      standards table / Decision / Notes). 2026-05-04 baseline entry
+      preserved (append-only ledger). [Story: FR-T5-CC-023]
+- [x] **T-STD-006** : GREEN gate — ran `t5.test.sh` :
+      `Passed: 4 / Failed: 21` ; tests 009..012 flipped to ✓.
+      No-regression checks passed : constitution-linter
+      `OVERALL: PASS (20/0/0/10)` ; t4.test.sh `25/0 PASS` (transport
+      frontmatter still validates against the t4 contract).
+      [Story: FR-T5-CC-020..023]
 
 ### T-BUF — buf.gen.yaml extension (FR-T5-CC-001..005)
 

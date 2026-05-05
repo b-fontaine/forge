@@ -156,10 +156,31 @@ _test_t5_005() { _not_implemented; }   # local protoc-gen-buffa
 _test_t5_006() { _not_implemented; }   # local protoc-gen-connect-rust
 _test_t5_007() { _not_implemented; }   # tonic-build preserved
 _test_t5_008() { _not_implemented; }   # gen/connect/ in .gitignore
-_test_t5_009() { _not_implemented; }   # transport.yaml version 1.1.0
-_test_t5_010() { _not_implemented; }   # connect_layout_version: 1
-_test_t5_011() { _not_implemented; }   # codegen.versions complete
-_test_t5_012() { _not_implemented; }   # REVIEW.md Updated entry
+_test_t5_009() {
+  # FR-T5-CC-020 : transport.yaml version is 1.1.0
+  local v
+  v="$(_yq_eval '.version' "$STD_DIR/transport.yaml")"
+  assert_eq "1.1.0" "$v" "transport.yaml version"
+}
+_test_t5_010() {
+  # FR-T5-CC-021 : transport.yaml has codegen.connect_layout_version: 1
+  local v
+  v="$(_yq_eval '.codegen.connect_layout_version' "$STD_DIR/transport.yaml")"
+  assert_eq "1" "$v" "transport.yaml codegen.connect_layout_version"
+}
+_test_t5_011() {
+  # FR-T5-CC-022 : codegen.versions includes connectrpc =0.3.3 (sentinel pin)
+  local v
+  v="$(_yq_eval '.codegen.versions.connectrpc' "$STD_DIR/transport.yaml")"
+  assert_eq "=0.3.3" "$v" "transport.yaml codegen.versions.connectrpc"
+}
+_test_t5_012() {
+  # FR-T5-CC-023 : REVIEW.md has Updated entry for transport.yaml v1.1.0
+  if ! grep -qE 'transport\.yaml.*1\.1\.0' "$STD_DIR/REVIEW.md"; then
+    echo "    REVIEW.md missing Updated entry for transport.yaml v1.1.0" >&2
+    return 1
+  fi
+}
 _test_t5_013() { _not_implemented; }   # transport/connect.rs exists
 _test_t5_014() { _not_implemented; }   # main.rs mounts /connect
 _test_t5_015() { _not_implemented; }   # OTel outside connectrpc

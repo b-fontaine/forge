@@ -45,3 +45,31 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   (`transport.yaml` and `state-management.yaml`) escape the 12-month
   expiry trigger but remain reviewable through Article XII Constitution
   amendments.
+
+---
+
+## 2026-05-05 — Updated transport.yaml to v1.1.0 (t5-connect-codegen)
+
+- **Reviewer**: @bfontaine
+- **Reviewed standards**:
+
+  | Standard       | Version | Decision           | Next review due    | Notes                                                                                                  |
+  |----------------|---------|--------------------|--------------------|--------------------------------------------------------------------------------------------------------|
+  | transport.yaml | 1.1.0   | KEEP-WITH-CHANGES  | never (structural) | Added `codegen.connect_layout_version: 1` + `codegen.versions:` (11 pins) ; refreshed `codegen.tools:` |
+
+- **Decision**: Updated by `t5-connect-codegen` (Phase 1 ARCHITECTURE-TARGET).
+  Additive only — `exception_constitutional: true` preserved, no breaking
+  change. Connect codegen plugins added to flagship `buf.gen.yaml` ; Rust
+  adapter via `connectrpc` crate (Anthropic OSS) + Axum integration via
+  `connectrpc::Router::into_axum_service()`.
+- **Notes**: Two stale entries in the v1.0.0 `codegen.tools:` list were
+  replaced per Context7 investigation 2026-05-05 :
+  `protoc-gen-connect-es` (retired by Connect v2 — replaced by
+  `@bufbuild/protoc-gen-es`) ; `protoc-gen-connect-dart-community`
+  (skadero plugin abandoned 2022-09 — replaced by the official
+  `connectrpc/connect-dart` plugin published by the ConnectRPC governance
+  team). Five Rust pins added (`connectrpc`, `buffa`, `buffa-types`,
+  `protoc-gen-connect-rust`, `protoc-gen-buffa` — all `=0.3.3` exact pin
+  per ADR-T5-002 footnote pre-1.0 caveat). See
+  `.forge/changes/t5-connect-codegen/design.md` ADR-T5-001 + ADR-T5-002
+  for the full provenance trail.
