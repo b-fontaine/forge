@@ -35,10 +35,12 @@ SCRIPTS_DIR="$(cd "$HARNESS_DIR/.." && pwd)"
 FORGE_ROOT_REAL="$(cd "$SCRIPTS_DIR/../.." && pwd)"
 
 STD_DIR="$FORGE_ROOT_REAL/.forge/standards"
-TPL_DIR="$FORGE_ROOT_REAL/templates/full-stack-monorepo/1.0.0"
-PROTO_DIR="$TPL_DIR/proto"
-BACKEND_DIR="$TPL_DIR/backend"
+ARCHETYPE_DIR="$FORGE_ROOT_REAL/.forge/templates/archetypes/full-stack-monorepo"
+PROTO_TPL="$ARCHETYPE_DIR/shared/protos/buf.gen.yaml.tmpl"
+GITIGNORE_TPL="$ARCHETYPE_DIR/.gitignore.tmpl"
+BACKEND_DIR="$ARCHETYPE_DIR/backend"
 EXAMPLE_DIR="$FORGE_ROOT_REAL/examples/forge-fsm-example"
+EXAMPLE_BUF_GEN="$EXAMPLE_DIR/shared/protos/buf.gen.yaml"
 DEMO5_DIR="$EXAMPLE_DIR/.forge/changes/demo-005-connect-greeting"
 LINTER="$FORGE_ROOT_REAL/.forge/scripts/constitution-linter.sh"
 SNAPSHOT="$FORGE_ROOT_REAL/.forge/scaffold-snapshots/full-stack-monorepo/1.0.0.tar.gz"
@@ -148,14 +150,73 @@ _not_implemented() {
 
 # ─── L1 stubs ───────────────────────────────────────────────────
 
-_test_t5_001() { _not_implemented; }   # buf.gen.yaml parses
-_test_t5_002() { _not_implemented; }   # connectrpc/go entry
-_test_t5_003() { _not_implemented; }   # bufbuild/es entry
-_test_t5_004() { _not_implemented; }   # connectrpc/dart entry
-_test_t5_005() { _not_implemented; }   # build.rs.tmpl uses connectrpc-build
-_test_t5_006() { _not_implemented; }   # Cargo.toml.tmpl declares connectrpc-build build-dep
-_test_t5_007() { _not_implemented; }   # tonic-build preserved
-_test_t5_008() { _not_implemented; }   # gen/connect/ in .gitignore
+_test_t5_001() {
+  # FR-T5-CC-001 : buf.gen.yaml.tmpl parses as YAML (template + example mirror)
+  if ! _yq_parses "$PROTO_TPL"; then
+    echo "    buf.gen.yaml.tmpl does not parse: $PROTO_TPL" >&2
+    return 1
+  fi
+  if ! _yq_parses "$EXAMPLE_BUF_GEN"; then
+    echo "    example buf.gen.yaml does not parse: $EXAMPLE_BUF_GEN" >&2
+    return 1
+  fi
+}
+_test_t5_002() {
+  # FR-T5-CC-001 : buf.build/connectrpc/go entry present (template + example)
+  if ! grep -qE '^\s*-\s*remote:\s*buf\.build/connectrpc/go' "$PROTO_TPL"; then
+    echo "    buf.build/connectrpc/go entry missing in $PROTO_TPL" >&2
+    return 1
+  fi
+  if ! grep -qE '^\s*-\s*remote:\s*buf\.build/connectrpc/go' "$EXAMPLE_BUF_GEN"; then
+    echo "    buf.build/connectrpc/go entry missing in $EXAMPLE_BUF_GEN" >&2
+    return 1
+  fi
+}
+_test_t5_003() {
+  # FR-T5-CC-002 : buf.build/bufbuild/es entry present (Connect v2 / Protobuf-ES v2)
+  if ! grep -qE '^\s*-\s*remote:\s*buf\.build/bufbuild/es' "$PROTO_TPL"; then
+    echo "    buf.build/bufbuild/es entry missing in $PROTO_TPL" >&2
+    return 1
+  fi
+  if ! grep -qE '^\s*-\s*remote:\s*buf\.build/bufbuild/es' "$EXAMPLE_BUF_GEN"; then
+    echo "    buf.build/bufbuild/es entry missing in $EXAMPLE_BUF_GEN" >&2
+    return 1
+  fi
+}
+_test_t5_004() {
+  # FR-T5-CC-003 : buf.build/connectrpc/dart entry present (OFFICIAL plugin)
+  if ! grep -qE '^\s*-\s*remote:\s*buf\.build/connectrpc/dart' "$PROTO_TPL"; then
+    echo "    buf.build/connectrpc/dart entry missing in $PROTO_TPL" >&2
+    return 1
+  fi
+  if ! grep -qE '^\s*-\s*remote:\s*buf\.build/connectrpc/dart' "$EXAMPLE_BUF_GEN"; then
+    echo "    buf.build/connectrpc/dart entry missing in $EXAMPLE_BUF_GEN" >&2
+    return 1
+  fi
+}
+_test_t5_005() { _not_implemented; }   # build.rs.tmpl uses connectrpc-build (T-RUST)
+_test_t5_006() { _not_implemented; }   # Cargo.toml.tmpl declares connectrpc-build build-dep (T-RUST)
+_test_t5_007() {
+  # FR-T5-CC-004 : the 3 existing remote entries are preserved
+  for needle in 'buf\.build/community/neoeinstein-tonic' \
+                'buf\.build/community/neoeinstein-prost' \
+                'buf\.build/protocolbuffers/dart'; do
+    if ! grep -qE "$needle" "$PROTO_TPL"; then
+      echo "    canonical remote entry $needle missing in $PROTO_TPL" >&2
+      return 1
+    fi
+  done
+}
+_test_t5_008() {
+  # FR-T5-CC-005 : template .gitignore.tmpl lists generated connect paths
+  for needle in 'backend/crates/grpc-api/src/generated/connect/' \
+                'frontend/lib/generated/connect/'; do
+    if ! grep -qF "$needle" "$GITIGNORE_TPL"; then
+      echo "    .gitignore.tmpl missing $needle" >&2
+      return 1
+    fi
+  done
+}
 _test_t5_009() {
   # FR-T5-CC-020 : transport.yaml version is 1.1.0
   local v

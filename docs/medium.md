@@ -18,7 +18,7 @@ Cet article raconte ce qu'est Forge, comment il s'est construit en quelques mois
 
 Forge part d'un constat très simple : **les LLM amplifient les bonnes pratiques quand elles sont structurelles, et les mauvaises quand elles sont disciplinaires**. Donner à Claude une consigne du type « pense à écrire les tests avant le code » fonctionne dix minutes, puis se dissout dans la pression du contexte. Donner à Claude un agent qui *refuse* de produire du code tant qu'un test rouge n'existe pas, c'est un autre univers.
 
-La proposition de valeur tient en trois lignes (`.forge/product/mission.md:65-72`) :
+La proposition de valeur tient en trois lignes :
 
 > *Unlike advisory frameworks (ADR templates, process wikis, review checklists), Forge's guardrails are structural — the tooling refuses to proceed when invariants are violated. The core value: a spec-driven pipeline where each phase has a blocking gate, and where the LLM is only one voice among several (deterministic scripts, mythological-persona agents, constitutional articles) rather than the sole arbiter.*
 
@@ -89,7 +89,7 @@ Forge applique Forge à lui-même : son propre dépôt utilise sa propre Constit
 
 Le document central de Forge n'est pas un README, c'est `.forge/constitution.md`. Douze articles, ratifiés et versionnés (`v1.1.0`, effective au 30 avril 2026), qui régissent absolument tout. Le préambule est explicite :
 
-> *When any article of this Constitution conflicts with a team preference, a shortcut, a deadline pressure, or a 'it's just this once' rationale, the Constitution wins. Always.* (`constitution.md:15`)
+> *When any article of this Constitution conflicts with a team preference, a shortcut, a deadline pressure, or a 'it's just this once' rationale, the Constitution wins. Always.*
 
 ```mermaid
 graph LR
@@ -129,7 +129,7 @@ stateDiagram-v2
     REFACTOR --> [*] : Améliorer<br/>sans changer<br/>le comportement
 ```
 
-La Constitution énumère explicitement les cinq excuses interdites (`constitution.md:44-54`) :
+La Constitution énumère explicitement les cinq excuses interdites :
 
 > *« It's too simple to test. » / « It's just a utility function. » / « We'll add tests later. » / « This is a prototype. » / « Tests would take too long. » There are no exemptions.*
 
@@ -348,13 +348,13 @@ graph LR
 
 Un archétype `flutter-firebase` était initialement prévu — il a été **annulé** parce qu'incompatible avec les contraintes EU (Schrems II et CLOUD Act). Forge assume une cible géographique : être robuste pour les équipes européennes d'abord.
 
-Trois archétypes sont en roadmap (`docs/new-archetypes-plan.md`) :
+Trois archétypes sont en roadmap :
 
 - `event-driven-eu` (Rust + NATS JetStream + Temporal + AsyncAPI 3.1, conformité T2/T3 RGPD/NIS2/DORA/CRA),
 - `ai-native-rag` (Rust + pgvector + LLM gateway Mistral Scaleway / vLLM self-host + MCP + UI streaming Qwik),
 - `rust-cli-tui` (auteurs d'outils CLI avec ratatui).
 
-L'archétype phare `full-stack-monorepo` lui-même évoluera en **2.0.0** — une migration breaking qui remplace Kong par Envoy Gateway, Temporal par DBOS (Postgres-backed durable execution), et le bridge REST→gRPC par Connect-RPC. Le verdict est explicite (`new-archetypes-plan.md:49-51`) :
+L'archétype phare `full-stack-monorepo` lui-même évoluera en **2.0.0** — une migration breaking qui remplace Kong par Envoy Gateway, Temporal par DBOS (Postgres-backed durable execution), et le bridge REST→gRPC par Connect-RPC. Le verdict est explicite :
 
 > *Le risque maintenant n'est pas de manquer d'exécution, c'est de figer un flagship dont les briques internes (Kong/Temporal/REST-bridge) ne survivront pas 18 mois dans les mains de tes adopters EU.*
 
@@ -407,7 +407,7 @@ flowchart LR
 
 Deux mécanismes complémentaires construisent la défense de Forge contre l'hallucination LLM.
 
-**Le marqueur `[NEEDS CLARIFICATION:]`** est explicite (`constitution.md:131-137`) :
+**Le marqueur `[NEEDS CLARIFICATION:]`** est explicite :
 
 > *When a specification contains ambiguity, contradictions, or undefined behavior, the implementing agent or developer MUST output `[NEEDS CLARIFICATION: <specific question>]` and STOP all implementation work. Guessing at intent is prohibited. Assumptions that turn out to be wrong cost more than the time saved by not asking.*
 
@@ -503,7 +503,7 @@ Et si vous travaillez sur un projet existant qui n'a pas démarré sous Forge, `
 
 ## 11. Roadmap : la migration vers Forge 2.0
 
-La trajectoire post-v0.3.0 est cartographiée dans `docs/new-archetypes-plan.md`. Six mois, cinq trimestres internes (T4 → T8), un point de non-retour.
+La trajectoire post-v0.3.0 couvre six mois, cinq trimestres internes (T4 → T8), un point de non-retour.
 
 ```mermaid
 gantt
@@ -579,12 +579,9 @@ Si vous écrivez du Flutter ou du Rust avec Claude Code, et que vous avez déjà
 ## Pour aller plus loin
 
 - **Dépôt** : `https://github.com/bfontaine/forge`
-- **Constitution** : `.forge/constitution.md` (12 articles, v1.1.0)
-- **Guide utilisateur** : `docs/GUIDE.md`
-- **Architecture cible** : `docs/ARCHITECTURE-TARGET.md` (~89 ko)
-- **Roadmap détaillée** : `docs/new-archetypes-plan.md`
-- **Gouvernance** : `GOVERNANCE.md` (modèle BDFL-with-fallback)
-- **Licence** : Apache 2.0, avec attributions BMAD / SpecKit / OpenSpec / Agent OS v3 / Superpowers / oh-my-claudecode / Context7 dans `NOTICE`.
+- **Constitution** : 12 articles, v1.1.0, ratifiée
+- **Gouvernance** : modèle BDFL-with-fallback
+- **Licence** : Apache 2.0, avec attributions BMAD / SpecKit / OpenSpec / Agent OS v3 / Superpowers / oh-my-claudecode / Context7
 
 > *Quality is not a matter of willpower — it is a matter of process.*
 > — Forge Constitution, Préambule

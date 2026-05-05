@@ -204,10 +204,10 @@ flip GREEN ; L2 fixture tests still RED.
 
 ### T-BUF — buf.gen.yaml extension (FR-T5-CC-001..005)
 
-- [ ] **T-BUF-001** : Verify
+- [x] **T-BUF-001** : Verify
       `test_buf_gen_yaml_has_3_connect_plugins` is FAIL (RED witness).
       [Story: FR-T5-CC-001]
-- [ ] **T-BUF-002** : Edit
+- [x] **T-BUF-002** : Edit
       `.forge/templates/archetypes/full-stack-monorepo/shared/protos/buf.gen.yaml.tmpl`
       to add the `buf.build/connectrpc/go` remote plugin entry with
       `out: ../../backend/crates/grpc-api/src/generated/connect/go`
@@ -215,32 +215,32 @@ flip GREEN ; L2 fixture tests still RED.
       (Go forward-compat for B.6/B.7). Also bump the live mirror at
       `examples/forge-fsm-example/shared/protos/buf.gen.yaml` to
       keep parity. [Story: FR-T5-CC-001]
-- [ ] **T-BUF-003** [P] : Add `buf.build/bufbuild/es` entry (Connect
+- [x] **T-BUF-003** [P] : Add `buf.build/bufbuild/es` entry (Connect
       v2 / Protobuf-ES v2 plugin — replaces retired
       `buf.build/connectrpc/es`) with
       `out: ../../frontend/lib/generated/connect/ts` +
       `target=ts` + `import_extension=js`, revision `≥ v2.2.0` from
       T-VER-003. Mirror in example. [Story: FR-T5-CC-002]
-- [ ] **T-BUF-004** [P] : Add `buf.build/connectrpc/dart` entry
+- [x] **T-BUF-004** [P] : Add `buf.build/connectrpc/dart` entry
       (**OFFICIAL** ConnectRPC Dart plugin — replaces abandoned
       `skadero/protoc-gen-connect-dart-community`) with
       `out: ../../frontend/lib/generated/connect/dart`, revision
       `≥ v1.0.0` from T-VER-004. Mirror in example. [Story: FR-T5-CC-003]
-- [ ] **T-BUF-005** : Confirm the **3 existing remote plugin entries**
+- [x] **T-BUF-005** : Confirm the **3 existing remote plugin entries**
       (`neoeinstein-tonic`, `neoeinstein-prost`,
       `protocolbuffers/dart`) in `buf.gen.yaml.tmpl` are **NOT
       modified or removed**. They are the canonical Rust gRPC + Dart
       proto codegen path in this codebase (no `build.rs` for tonic
       exists ; codegen is buf-driven via remote plugins per ADR-004).
       [Story: FR-T5-CC-004]
-- [ ] **T-BUF-006** : Add the new generated paths to the template
+- [x] **T-BUF-006** : Add the new generated paths to the template
       `.gitignore.tmpl` :
       `backend/crates/grpc-api/src/generated/connect/`
       + `frontend/lib/generated/connect/`. Existing
       `backend/crates/grpc-api/src/generated/` (tonic + prost
       output) is presumably already gitignored ; verify and extend.
       [Story: FR-T5-CC-005]
-- [ ] **T-BUF-007** : Run `t5.test.sh` ; expect L1 tests covering
+- [x] **T-BUF-007** : Run `t5.test.sh` ; expect L1 tests covering
       buf.gen.yaml entries (3 new Connect plugins added,
       `neoeinstein-tonic` preserved, `.gitignore` lists new paths)
       to flip GREEN. Tests asserting Rust local plugins (initially
