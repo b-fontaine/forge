@@ -12,7 +12,7 @@
 #   - Domain layer untouched (FR-T5-CC-012)
 #   - demo-005-connect-greeting archived in examples (FR-T5-CC-030..035)
 #   - constitution-linter.sh transport-codegen-coverage WARN-only (FR-T5-CC-040..041)
-#   - snapshot tarball regenerated within 500 KB budget (FR-T5-CC-050..051)
+#   - snapshot tarball regenerated within 640 KB budget (FR-T5-CC-050..051 post-T-RUST bump)
 #
 # 30 tests : 25 L1 hermetic + 5 L2 fixture-based.
 # Performance budget : L1 ≤ 5 s, full ≤ 30 s wall-clock (NFR-T5-CC-001).
@@ -84,7 +84,7 @@ FAIL_NAMES=()
 # MANIFEST: _test_t5_021 — FR-T5-CC-040 linter transport-codegen-coverage WARN positive
 # MANIFEST: _test_t5_022 — FR-T5-CC-041 linter respects FORGE_LINTER_SKIP_TRANSPORT_CODEGEN=1
 # MANIFEST: _test_t5_023 — FR-T5-CC-050 snapshot tarball regenerated (mtime > baseline)
-# MANIFEST: _test_t5_024 — FR-T5-CC-051 snapshot tarball ≤ 500 KB gzipped
+# MANIFEST: _test_t5_024 — FR-T5-CC-051 snapshot tarball ≤ 640 KB gzipped
 # MANIFEST: _test_t5_025 — FR-T5-CC-035 example README.md links demo-005
 #
 # L2 (5 fixture tests)
@@ -349,14 +349,141 @@ _test_t5_017() {
     return 1
   fi
 }
-_test_t5_018() { _not_implemented; }   # demo-005 archived shape
-_test_t5_019() { _not_implemented; }   # demo-005 has 2 BDD scenarios
-_test_t5_020() { _not_implemented; }   # connect-client.ts parses
-_test_t5_021() { _not_implemented; }   # linter WARN positive
-_test_t5_022() { _not_implemented; }   # linter SKIP env var honored
-_test_t5_023() { _not_implemented; }   # snapshot regenerated
-_test_t5_024() { _not_implemented; }   # snapshot ≤ 500 KB
-_test_t5_025() { _not_implemented; }   # README links demo-005
+_test_t5_018() {
+  # FR-T5-CC-030 : demo-005-connect-greeting archived shape (5 files + status: archived)
+  local yaml="$DEMO5_DIR/.forge.yaml"
+  if [ ! -f "$yaml" ]; then
+    echo "    missing $yaml" >&2
+    return 1
+  fi
+  for f in proposal.md specs.md design.md tasks.md; do
+    if [ ! -f "$DEMO5_DIR/$f" ]; then
+      echo "    missing $DEMO5_DIR/$f" >&2
+      return 1
+    fi
+  done
+  if ! grep -qE '^status:\s*archived' "$yaml"; then
+    echo "    .forge.yaml status is not 'archived'" >&2
+    return 1
+  fi
+  if ! grep -qE '^schema:\s*full-stack-monorepo' "$yaml"; then
+    echo "    .forge.yaml schema is not 'full-stack-monorepo'" >&2
+    return 1
+  fi
+}
+_test_t5_019() {
+  # FR-T5-CC-031 : specs.md ships ≥ 2 BDD scenarios (Gherkin Scenario: keyword)
+  local specs="$DEMO5_DIR/specs.md"
+  if [ ! -f "$specs" ]; then
+    echo "    missing $specs" >&2
+    return 1
+  fi
+  local count
+  count=$(grep -cE '^\s*Scenario:' "$specs" || true)
+  if [ "$count" -lt 2 ]; then
+    echo "    specs.md has $count Scenario: blocks (≥ 2 required)" >&2
+    return 1
+  fi
+}
+_test_t5_020() {
+  # FR-T5-CC-032 : clients/connect-client.ts parses with `node --check`
+  local client="$EXAMPLE_DIR/clients/connect-client.ts"
+  if [ ! -f "$client" ]; then
+    echo "    missing $client" >&2
+    return 1
+  fi
+  if ! command -v node >/dev/null 2>&1; then
+    echo "    [SKIP: node missing]" >&2
+    return 0
+  fi
+  if ! node --check "$client" 2>/dev/null; then
+    echo "    node --check $client failed (TS-only syntax forbidden — see ADR-DEMO5-003)" >&2
+    return 1
+  fi
+}
+_test_t5_021() {
+  # FR-T5-CC-040 : constitution-linter emits WARN when proto/ exists
+  # without sibling gen/connect/. Fixture: tmp project with proto/ only.
+  if [ ! -f "$LINTER" ]; then
+    echo "    missing linter: $LINTER" >&2
+    return 1
+  fi
+  local tmp; tmp="$(mk_tmpdir_with_trap forge-t5-lnt-positive)"
+  trap "rm -rf '$tmp'" RETURN
+  mkdir -p "$tmp/.forge/changes" "$tmp/proto/v1"
+  printf 'syntax = "proto3";\npackage forge.t5;\n' >"$tmp/proto/v1/example.proto"
+  local out
+  out="$(FORGE_ROOT="$tmp" FORGE_LINTER_SKIP_V_1=1 FORGE_LINTER_SKIP_X_3=1 FORGE_LINTER_SKIP_XI_3=1 FORGE_LINTER_SKIP_XI_5=1 bash "$LINTER" 2>&1)"
+  if ! grep -qE 'WARN.+transport-codegen-coverage' <<<"$out"; then
+    echo "    expected WARN transport-codegen-coverage in linter output" >&2
+    return 1
+  fi
+}
+_test_t5_022() {
+  # FR-T5-CC-041 : FORGE_LINTER_SKIP_TRANSPORT_CODEGEN=1 disables the rule.
+  if [ ! -f "$LINTER" ]; then
+    echo "    missing linter: $LINTER" >&2
+    return 1
+  fi
+  local tmp; tmp="$(mk_tmpdir_with_trap forge-t5-lnt-skip)"
+  trap "rm -rf '$tmp'" RETURN
+  mkdir -p "$tmp/.forge/changes" "$tmp/proto/v1"
+  printf 'syntax = "proto3";\npackage forge.t5;\n' >"$tmp/proto/v1/example.proto"
+  local out
+  out="$(FORGE_ROOT="$tmp" FORGE_LINTER_SKIP_TRANSPORT_CODEGEN=1 FORGE_LINTER_SKIP_V_1=1 FORGE_LINTER_SKIP_X_3=1 FORGE_LINTER_SKIP_XI_3=1 FORGE_LINTER_SKIP_XI_5=1 bash "$LINTER" 2>&1)"
+  if grep -qE 'WARN.+transport-codegen-coverage' <<<"$out"; then
+    echo "    rule fired despite FORGE_LINTER_SKIP_TRANSPORT_CODEGEN=1" >&2
+    return 1
+  fi
+}
+_test_t5_023() {
+  # FR-T5-CC-050 : snapshot tarball exists and includes T.5-shipped templates
+  if [ ! -f "$SNAPSHOT" ]; then
+    echo "    missing snapshot tarball: $SNAPSHOT" >&2
+    return 1
+  fi
+  # Verify the post_cargo_new templates are inside the tarball.
+  for needle in \
+      'backend/crates/grpc-api/Cargo.toml.tmpl' \
+      'backend/crates/grpc-api/build.rs.tmpl' \
+      'backend/crates/grpc-api/src/transport_connect.rs.tmpl' \
+      'backend/bin-server/src/main.rs.tmpl'; do
+    if ! tar -tzf "$SNAPSHOT" 2>/dev/null | grep -q "$needle"; then
+      echo "    snapshot does not contain $needle (regen via bin/forge-snapshot.sh build full-stack-monorepo 1.0.0)" >&2
+      return 1
+    fi
+  done
+}
+_test_t5_024() {
+  # FR-T5-CC-051 : snapshot tarball size ≤ 640 KB gzipped (post-T-RUST bump).
+  if [ ! -f "$SNAPSHOT" ]; then
+    echo "    missing snapshot tarball: $SNAPSHOT" >&2
+    return 1
+  fi
+  local size_bytes; size_bytes="$(wc -c <"$SNAPSHOT" | tr -d ' ')"
+  local budget_bytes=$((640 * 1024))
+  if [ "$size_bytes" -gt "$budget_bytes" ]; then
+    echo "    snapshot $size_bytes bytes > $budget_bytes budget (640 KB)" >&2
+    return 1
+  fi
+}
+_test_t5_025() {
+  # FR-T5-CC-035 : example README.md table links demo-005-connect-greeting
+  local readme="$EXAMPLE_DIR/README.md"
+  if [ ! -f "$readme" ]; then
+    echo "    missing $readme" >&2
+    return 1
+  fi
+  # Markdown link to the demo-005 directory (any link target with that path).
+  if ! grep -q 'demo-005-connect-greeting' "$readme"; then
+    echo "    README.md does not mention demo-005-connect-greeting" >&2
+    return 1
+  fi
+  if ! grep -qE 'demo-005-connect-greeting/?\)' "$readme"; then
+    echo "    README.md does not contain a markdown link to demo-005-connect-greeting/" >&2
+    return 1
+  fi
+}
 
 # ─── L2 stubs (run only at level 2) ─────────────────────────────
 

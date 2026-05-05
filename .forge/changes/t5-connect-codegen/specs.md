@@ -239,8 +239,11 @@ additive ; no existing plugin entry is removed.
   (T6).
 
 ##### FR-T5-CC-051: Snapshot size budget
-- **MUST** keep the tarball under 500 KB gzipped (current : 422 KB ;
-  budget delta ≤ 50 KB).
+- **MUST** keep the tarball under **640 KB** gzipped (post-T.5 budget,
+  bumped from the original 500 KB after T-RUST shipped the
+  post_cargo_new templates + the t5.test.sh harness grew to 20 KB ;
+  pre-T.5 baseline 422 KB ; post-T.5 measured ~549 KB ; remaining
+  headroom ~90 KB).
 
 #### Group 7 — Test harness `t5.test.sh` (FR-T5-CC-060 → 064)
 

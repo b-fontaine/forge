@@ -787,6 +787,40 @@ if [ "$iii4_violations" -eq 0 ]; then
   pass "  No [NEEDS CLARIFICATION:] inline in implemented/archived changes"
 fi
 
+# ─── T.5 (t5-connect-codegen) — transport-codegen-coverage ──────
+#
+# WARN-only rule (FR-T5-CC-040 / FR-T5-CC-041). Walks the project for
+# any `proto/`-suffixed directory and emits a WARN if no sibling
+# `gen/connect/` tree exists. The intent is to nudge adopters toward
+# the Connect codegen path post-T.5 without breaking existing CI.
+#
+# Opt-out : `FORGE_LINTER_SKIP_TRANSPORT_CODEGEN=1` skips the rule.
+echo ""
+echo "T.5 (Transport Codegen Coverage):"
+if [ -n "${FORGE_LINTER_SKIP_TRANSPORT_CODEGEN:-}" ]; then
+  not_applicable "transport-codegen-coverage rule skipped via FORGE_LINTER_SKIP_TRANSPORT_CODEGEN"
+else
+  tcc_proto_count=0
+  tcc_warn_count=0
+  while IFS= read -r tcc_proto_dir; do
+    [ -z "$tcc_proto_dir" ] && continue
+    case "$tcc_proto_dir" in
+      */node_modules/*|*/.git/*|*/target/*|*/build/*) continue ;;
+    esac
+    tcc_proto_count=$((tcc_proto_count + 1))
+    tcc_parent="$(dirname "$tcc_proto_dir")"
+    if [ ! -d "$tcc_parent/gen/connect" ]; then
+      warn "transport-codegen-coverage: $tcc_proto_dir has no sibling gen/connect/ — see docs/MIGRATION-PATHS.md (T.5)"
+      tcc_warn_count=$((tcc_warn_count + 1))
+    fi
+  done < <(find_excluding_examples "$FORGE_ROOT" -type d \( -name 'protos' -o -name 'proto' \) 2>/dev/null)
+  if [ "$tcc_proto_count" = "0" ]; then
+    not_applicable "transport-codegen-coverage: no proto/ or protos/ directory found"
+  elif [ "$tcc_warn_count" = "0" ]; then
+    pass "transport-codegen-coverage: $tcc_proto_count proto director(y/ies) all have sibling gen/connect/"
+  fi
+fi
+
 # ── Summary ───────────────────────────────────────────────────
 echo ""
 echo "========================"
