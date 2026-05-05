@@ -32,8 +32,9 @@ parallel to the existing tonic gRPC service. Options :
 ### Resolution
 
 - **Resolved on**: 2026-05-05
-- **Decision**: **Option C — `tonic` + `tonic-web`**, ratified as ADR-T5-001 in `design.md`.
-- **Rationale**: Connect-ES TypeScript client (the only client consumed in T5 — see Q-003) provides `createGrpcWebTransport` natively, which is wire-compatible with `tonic-web`. This keeps the change strictly within the crates already pinned by ADR-004 (no new Rust dependency, no new Cargo.toml widening, no spike on community crate maturity). The known limitation is that strict Connect+JSON over HTTP/1.1 (`application/connect+json` codec) is **not** supported — an acceptable T5 limitation, with full Connect codec support deferred to B.8 (T6) per the additive-first/breaking-second migration discipline. Spike footprint ≤ 30 LOC of glue in `transport/connect.rs`. Documented limitation surfaces in `transport.yaml` rationale and `docs/MIGRATION-PATHS.md`.
+- **Initial decision (superseded same day)**: Option C — tonic + tonic-web. Rationale was to avoid spiking a community Rust crate of unknown maturity ; accept HTTP/1.1+JSON Connect codec deferment to B.8.
+- **Final decision (post-Context7 investigation)**: **Option A — adopt the `connectrpc` Rust crate (Anthropic OSS, Tower-based, Axum-native)** with companion `buffa` zero-copy proto crate. Ratified as ADR-T5-001 in `design.md`.
+- **Rationale (revised)**: Context7 + WebSearch + WebFetch investigation on 2026-05-05 surfaced that Anthropic open-sourced `connectrpc` (`crates.io/crates/connectrpc` + `github.com/anthropics/connect-rust`) as the canonical Rust ConnectRPC implementation. Production-tested at Anthropic, passes the ~12 800 ConnectRPC server/client/TLS conformance tests, integrates as Tower middleware (fits FR-T5-CC-013 OTel layer), Axum-native via `connectrpc-axum`. Apache-2.0 licence. Adopting it eliminates the `application/connect+json` HTTP/1.1 limitation and removes the codec-swap dependency from B.8. Risk mitigation : pin exact crate version, T-VER-006 spike (≤ 30 min) verifies conformance suite + licence + Axum integration before adoption. Crate ecosystem younger than tonic but explicitly nominated as canonical by ConnectRPC governance — defensible choice.
 
 ---
 
@@ -60,8 +61,15 @@ in this change ?
 ### Resolution
 
 - **Resolved on**: 2026-05-05
-- **Decision**: **Pin at implementation time** via Context7 lookup for each component, recorded in `transport.yaml` `codegen.versions` AND `buf.gen.yaml` (canonical pin source duplicated for tooling discoverability), with changelog URL captured in `tasks.md` M1 evidence trail. Ratified as ADR-T5-002.
-- **Rationale**: Concrete plugin versions drift weekly upstream ; pinning them in this design document at spec time risks staleness by archive time (2026-05-05 is the earliest archive ; M1 of `/forge:implement` re-resolves). Acceptance criteria : (1) each plugin's selected release ≥ 30 days old to filter brand-new regressions ; (2) OSI-approved licence ; (3) `buf` CLI version backwards-compatible with the existing `b1-foundations` pin (verified via `buf format --diff` against frozen flagship `proto/`) ; (4) `protoc-gen-connect-es` version's TS output consumable by the `@connectrpc/connect-web` runtime version pinned in demo-005's TS client. Closes Q-002 structurally rather than by guessing arbitrary numbers (Article III.4).
+- **Decision**: **Versions resolved at design phase** via Context7 + WebSearch + WebFetch investigation 2026-05-05. Recorded in `design.md` ADR-T5-002 table + `transport.yaml` `codegen.versions` (canonical pin source) + `buf.gen.yaml` revision fields + `tasks.md` T-VER-001..006 with provenance URLs. Ratified as ADR-T5-002.
+- **Resolved values (2026-05-05)** :
+  - `buf` CLI : **v1.68.2** (`buf.build/docs/cli/installation`).
+  - `protoc-gen-connect-go` : **v1.19.2** (released 2025-04-20, `github.com/connectrpc/connect-go/releases/latest`) — Go path, forward-compat for B.6/B.7.
+  - **`@bufbuild/protoc-gen-es ≥ v2.2.0`** (TS, replaces retired `protoc-gen-connect-es` per Connect v2 migration).
+  - **`@connectrpc/connect@^2.0.0`** + **`@connectrpc/connect-web@^2.0.0`** (TS runtime + transport).
+  - **`connectrpc/connect-dart` ≥ v1.0.0** (OFFICIAL plugin, pub.dev `connectrpc` package, replaces abandoned `skadero/protoc-gen-connect-dart-community`).
+  - **`connectrpc` Rust crate + `buffa` proto crate** (Anthropic OSS, ratified by ADR-T5-001) — exact versions resolved by T-VER-006 spike at impl Phase 1 (≤ 30 min, verifies licence + conformance + Axum integration).
+- **Rationale**: Investigation surfaced (a) Connect v2 retired the `protoc-gen-connect-es` plugin in favour of `@bufbuild/protoc-gen-es`, (b) the `skadero/protoc-gen-connect-dart-community` plugin was abandoned in 2022-09 and replaced by an official ConnectRPC Dart plugin in 2025, (c) the `connectrpc` Rust crate (Anthropic OSS) made the original "Connect+JSON deferred to B.8" trade-off unnecessary. Resolving versions at design phase (instead of impl M1) saves ~10 min at impl and avoids shipping a buf.gen.yaml referencing dead plugins. Acceptance criteria : (1) ≥ 30 days old, (2) OSI licence, (3) `buf format --diff` no-op at impl M1 verification, (4) Connect v2 cross-compat verified via upstream MIGRATING.md, (5) ConnectRPC conformance suite passing for the Rust crate. Closes Q-002 structurally with public-URL provenance for every pin (Article III.4).
 
 ---
 

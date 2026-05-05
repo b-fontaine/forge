@@ -20,32 +20,50 @@
 Goal : Context7-resolved versions recorded ; `t5.test.sh` exists with
 ≥ 25 L1 + ≥ 5 L2 stub tests all returning FAIL. Full RED state.
 
-### T-VER — Plugin version resolution (ADR-T5-002 / FR-T5-CC-022)
+### T-VER — Toolchain version resolution (ADR-T5-002 / FR-T5-CC-022)
 
-- [ ] **T-VER-001** : Resolve `buf` CLI latest stable via
-      `mcp__context7__resolve-library-id` (`bufbuild/buf`) +
-      `mcp__context7__query-docs`. Record version + changelog URL +
-      access date in this section as a comment table. Verify
-      `buf format --diff` against `templates/full-stack-monorepo/1.0.0/proto/`
-      yields no diff (acceptance criterion #3 of ADR-T5-002).
+> **Most versions resolved at design phase 2026-05-05** post-Context7
+> investigation (see `design.md` ADR-T5-002 table). Impl Phase 1 only
+> re-confirms drift + spikes the connectrpc Rust crate (T-VER-006).
+
+- [ ] **T-VER-001** : Re-confirm `buf` CLI **v1.68.2** is still
+      latest stable as of impl date (drift check via
+      `buf.build/docs/cli/installation`). If a patch (e.g. v1.68.3)
+      has shipped, pick it. Run `buf format --diff` against
+      `templates/full-stack-monorepo/1.0.0/proto/` ; expect no diff
+      (acceptance criterion #3 of ADR-T5-002).
       [Story: FR-T5-CC-022 / NFR-T5-CC-010]
-- [ ] **T-VER-002** [P] : Resolve `protoc-gen-connect-go` latest stable
-      ≥ 30 days old via Context7 (or fallback `WebFetch`
-      <https://github.com/connectrpc/connect-go/releases>). Record
-      version + URL + access date. [Story: FR-T5-CC-001 / FR-T5-CC-022]
-- [ ] **T-VER-003** [P] : Resolve `protoc-gen-connect-es` latest stable
-      ≥ 30 days old via Context7 (or
-      <https://github.com/connectrpc/connect-es/releases>). Verify
-      compatibility with `@connectrpc/connect-web` runtime version
-      that demo-005 will pin (acceptance criterion #4).
+- [ ] **T-VER-002** [P] : Re-confirm `protoc-gen-connect-go` **v1.19.2**
+      (released 2025-04-20) is still latest stable
+      (`github.com/connectrpc/connect-go/releases/latest`). If a patch
+      has shipped, pick it. [Story: FR-T5-CC-001 / FR-T5-CC-022]
+- [ ] **T-VER-003** [P] : Re-confirm Connect v2 baseline :
+      `@bufbuild/protoc-gen-es ≥ v2.2.0` + `@connectrpc/connect@^2.0.0`
+      + `@connectrpc/connect-web@^2.0.0` are the canonical pins (cross-
+      check against `github.com/connectrpc/connect-es/blob/main/MIGRATING.md`).
+      `protoc-gen-connect-es` is **NOT** consumed (retired in Connect v2).
       [Story: FR-T5-CC-002 / FR-T5-CC-022]
-- [ ] **T-VER-004** [P] : Resolve `protoc-gen-connect-dart-community`
-      latest stable ≥ 30 days old via Context7 (or its GitHub releases
-      page). Confirm OSI licence. [Story: FR-T5-CC-003 / FR-T5-CC-022]
-- [ ] **T-VER-005** : Resolve `@connectrpc/connect` and
-      `@connectrpc/connect-web` npm versions for demo-005. Pin together
-      with the protoc-gen-connect-es version chosen in T-VER-003.
+- [ ] **T-VER-004** [P] : Re-confirm the **OFFICIAL**
+      `connectrpc/connect-dart` plugin (pub.dev `connectrpc` package
+      v1.0.0+, verified publisher `connectrpc.com`) is still
+      maintained. Confirm Apache-2.0 licence. **Replaces** the
+      abandoned `skadero/protoc-gen-connect-dart` (last update 2022-09).
+      [Story: FR-T5-CC-003 / FR-T5-CC-022]
+- [ ] **T-VER-005** : Re-confirm npm `@connectrpc/connect@^2.0.0` and
+      `@connectrpc/connect-web@^2.0.0` are the latest stable v2.x
+      lineage for demo-005. Pin in `clients/package.json`.
       [Story: FR-T5-CC-032]
+- [ ] **T-VER-006** : **Spike (≤ 30 min)** — pin the `connectrpc`
+      Rust crate (Anthropic OSS, `crates.io/crates/connectrpc` /
+      `github.com/anthropics/connect-rust`) and its companion `buffa`
+      proto crate. Verify (a) latest stable version ≥ 30 days old,
+      (b) Apache-2.0 / MIT licence, (c) Axum integration crate
+      (`connectrpc-axum` if separate, or feature flag `axum` if
+      inline), (d) ConnectRPC conformance suite passing per release
+      notes. Decide between **codegen path α** (`connectrpc-build`
+      via `build.rs` analogous to tonic-build) vs **path β** (a buf
+      remote plugin reference, if available) — record decision in
+      `design.md` ADR-T5-001 footnote. [Story: ADR-T5-001 / ADR-T5-002 / FR-T5-CC-010]
 
 ### T-PHA — t5.test.sh skeleton (RED for the whole change)
 
@@ -77,8 +95,10 @@ Goal : Context7-resolved versions recorded ; `t5.test.sh` exists with
       [Story: FR-T5-CC-061]
 
 **Phase 1 exit gate** : `t5.test.sh` exits non-zero with `FAIL ≥ 23`,
-all 5 T-VER-* tasks have a recorded version + URL + access date,
-constitution-linter still OVERALL PASS (no new artefacts yet).
+all 6 T-VER-* tasks (001..006) have a confirmed version + URL +
+access date — including the connectrpc Rust crate / buffa pin from
+the T-VER-006 spike — constitution-linter still OVERALL PASS (no new
+artefacts yet).
 
 ---
 
@@ -117,14 +137,18 @@ flip GREEN ; L2 fixture tests still RED.
       [Story: FR-T5-CC-001]
 - [ ] **T-BUF-002** : Edit
       `templates/full-stack-monorepo/1.0.0/proto/buf.gen.yaml` to add
-      the `protoc-gen-connect-go` remote plugin entry with
-      `out: gen/connect/rust` + `paths=source_relative`, version pin
-      from T-VER-002. [Story: FR-T5-CC-001]
-- [ ] **T-BUF-003** [P] : Add `protoc-gen-connect-es` entry with
-      `out: gen/connect/ts` + `target=ts` + `import_extension=js`,
-      version pin from T-VER-003. [Story: FR-T5-CC-002]
-- [ ] **T-BUF-004** [P] : Add `protoc-gen-connect-dart-community`
-      entry with `out: gen/connect/dart`, version pin from T-VER-004.
+      the `buf.build/connectrpc/go` remote plugin entry with
+      `out: gen/connect/go` + `paths=source_relative`, revision
+      `v1.19.2` from T-VER-002 (Go forward-compat). [Story: FR-T5-CC-001]
+- [ ] **T-BUF-003** [P] : Add `buf.build/bufbuild/es` entry (Connect
+      v2 / Protobuf-ES v2 plugin — replaces retired
+      `buf.build/connectrpc/es`) with `out: gen/connect/ts` +
+      `target=ts` + `import_extension=js`, revision `≥ v2.2.0` from
+      T-VER-003. [Story: FR-T5-CC-002]
+- [ ] **T-BUF-004** [P] : Add `buf.build/connectrpc/dart` entry
+      (**OFFICIAL** ConnectRPC Dart plugin — replaces abandoned
+      `skadero/protoc-gen-connect-dart-community`) with
+      `out: gen/connect/dart`, revision `≥ v1.0.0` from T-VER-004.
       [Story: FR-T5-CC-003]
 - [ ] **T-BUF-005** : Verify the existing `tonic-build` invocation in
       `templates/full-stack-monorepo/1.0.0/backend/build.rs` (or wherever
@@ -144,12 +168,19 @@ flip GREEN ; L2 fixture tests still RED.
       `templates/full-stack-monorepo/1.0.0/backend/src/transport/connect.rs`
       module per `design.md` §2.1 :
       - public `into_router(use_case: Arc<GreeterUseCase>) -> axum::Router`
-      - wraps the existing tonic Greeter service descriptor with
-        `tonic_web::GrpcWebLayer::new()`.
-      - the OTel layer is composed **outside** the tonic-web layer
-        (per design constraint and FR-T5-CC-013).
+      - registers the Greeter service descriptor with the
+        `connectrpc::Server` builder (Anthropic crate per ADR-T5-001 +
+        T-VER-006 pin) ; converts to `axum::Router` via
+        `connectrpc-axum`.
+      - the OTel layer is composed at the **Tower middleware level
+        outside** the connectrpc service (per design constraint and
+        FR-T5-CC-013).
       - module-level `//!` doc explaining the `/connect` mount + the
-        Connect-ES wire-compat note + the `Connect+JSON` deferment.
+        full Connect protocol coverage (Connect+JSON, Connect+proto,
+        gRPC, gRPC-Web on the same handler) + the OTel layer ordering.
+      - `Cargo.toml` updated to add `connectrpc`, `buffa`, and
+        `connectrpc-axum` (or the unified `connectrpc[axum]` feature)
+        with versions from T-VER-006.
       [Story: FR-T5-CC-010..013]
 - [ ] **T-RUST-003** : Wire `transport/connect.rs` into
       `templates/full-stack-monorepo/1.0.0/backend/src/main.rs` :
@@ -195,14 +226,21 @@ traceparent E2E) flip GREEN.
       adapter from flagship, TS client, E2E smoke). [Story: FR-T5-CC-030]
 - [ ] **T-DEMO-007** : Create `examples/forge-fsm-example/clients/`
       directory if missing. [Story: FR-T5-CC-032]
-- [ ] **T-DEMO-008** : Write `connect-client.ts` (~30 LOC) calling the
-      Connect Greeter via `createGrpcWebTransport({ baseUrl:
-      "http://localhost:8080/connect" })`. Use `crypto.randomUUID()`
-      to seed a `traceparent` header for the smoke test.
-      [Story: FR-T5-CC-032]
+- [ ] **T-DEMO-008** : Write `connect-client.ts` (~30–40 LOC) calling
+      the Connect Greeter using `@connectrpc/connect@^2` runtime +
+      `@connectrpc/connect-web@^2` transport. Default to
+      `createConnectTransport({ baseUrl, httpVersion: "1.1" })` (full
+      Connect+JSON path now that ADR-T5-001 picked the connectrpc
+      crate). Add a second variant invoking `createGrpcWebTransport`
+      to exercise the gRPC-Web wire format on the same handler. Use
+      `crypto.randomUUID()` to seed a W3C `traceparent` header for the
+      smoke test. [Story: FR-T5-CC-032]
 - [ ] **T-DEMO-009** : Write minimal `clients/package.json` pinning
-      `@connectrpc/connect` + `@connectrpc/connect-web` from T-VER-005.
-      No lockfile committed (CI generates fresh). [Story: FR-T5-CC-032]
+      `@connectrpc/connect@^2.0.0` + `@connectrpc/connect-web@^2.0.0`
+      + `@bufbuild/protobuf@^2.2.0` (for generated message types) per
+      T-VER-005. No lockfile committed (CI generates fresh). Note in
+      a header comment that these are Connect v2 ; v1 packages are
+      retired and **MUST NOT** be pinned. [Story: FR-T5-CC-032]
 - [ ] **T-DEMO-010** [P] : Add a one-line note to
       `examples/forge-fsm-example/README.md` linking to demo-005.
       [Story: FR-T5-CC-035]
@@ -220,29 +258,37 @@ traceparent E2E) flip GREEN.
       ADR-T5-004 (rust/, ts/, dart/ subtrees). [Story: FR-T5-CC-064]
 - [ ] **T-L2-003** : Implement Dart plugin smoke L2 fixture (gating
       per FR-T5-CC-003) : run buf generate against demo proto with
-      only the dart plugin entry ; assert exit 0 + at least one .dart
-      file produced. If FAIL, the harness FAILs (per design).
+      only the **official** `buf.build/connectrpc/dart` plugin entry
+      ; assert exit 0 + at least one `.dart` file produced under
+      `gen/connect/dart/`. If FAIL, the harness FAILs (per design).
       [Story: FR-T5-CC-003]
 - [ ] **T-L2-004** : Implement traceparent E2E smoke L2 fixture
       (FR-T5-CC-014 / FR-T5-CC-033) :
       1. Spawn a minimal Rust process (Cargo fixture workspace under
-         `tmp/t5-fixtures/connect-server/`) serving the Connect handler
-         on `127.0.0.1:0` (kernel-assigned port).
+         `tmp/t5-fixtures/connect-server/`) using the `connectrpc`
+         crate (Anthropic) to serve the Connect handler on
+         `127.0.0.1:0` (kernel-assigned port).
       2. Stand up a mock OTel collector that listens on
          `127.0.0.1:0` and records OTLP HTTP payloads.
       3. Run the demo `connect-client.ts` via `node` against the
-         fixture server with a known traceparent.
-      4. Assert the collector recorded a span with the same `traceId`
-         and matching parent spanId.
+         fixture server **twice** : once with `createConnectTransport`
+         (Connect+JSON codec) and once with `createGrpcWebTransport`
+         (gRPC-Web codec) ; both with a known `traceparent`.
+      4. Assert the collector recorded **two** spans (one per codec),
+         each with the same client-side `traceId` and matching parent
+         spanId. Both codec paths must satisfy FR-T5-CC-014.
       [Story: FR-T5-CC-014 / FR-T5-CC-033]
 - [ ] **T-L2-005** : Implement Cargo build fixture : `cargo fetch`
       primes the local cache ; subsequent build uses `--offline` for
       determinism. [Story: FR-T5-CC-064]
-- [ ] **T-L2-006** : Implement tonic-web layer integration test
-      (Rust unit test inside the fixture workspace) : POST a gRPC-Web
-      framed request to `/connect/forge.greeter.v1.Greeter/Greet`,
-      assert status 200 + correct response payload.
-      [Story: FR-T5-CC-014]
+- [ ] **T-L2-006** : Implement connectrpc service integration test
+      (Rust unit test inside the fixture workspace) : exercise both
+      codecs against `/connect/forge.greeter.v1.Greeter/Greet` :
+      (a) POST `application/connect+json` body, assert status 200 +
+      correct JSON response ; (b) POST a gRPC-Web framed request,
+      assert status 200 + correct binary response. Proves the
+      "Connect+gRPC+gRPC-Web on the same handler" property of the
+      connectrpc crate. [Story: FR-T5-CC-014]
 - [ ] **T-L2-007** : Run `t5.test.sh` full ; expect 5 L2 tests PASS
       (or `SKIP` if `buf` CLI absent locally — CI must PASS).
       [Story: FR-T5-CC-064]

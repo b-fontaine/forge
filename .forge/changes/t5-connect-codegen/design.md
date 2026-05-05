@@ -24,100 +24,153 @@ phase.
 
 ## 1. Architecture Decisions
 
-### ADR-T5-001 — Use `tonic` + `tonic-web` for the parallel Connect route (Q-001 resolved)
+### ADR-T5-001 — Use the `connectrpc` Rust crate (Anthropic OSS, Tower-based) for the parallel Connect route (Q-001 resolved)
 
 > Resolves : `open-questions.md` Q-001 (Which Connect-Rust crate?)
+>
+> **Reversed 2026-05-05 post-Context7 investigation** — original
+> tentative decision (tonic + tonic-web) was based on the assumption
+> that no production-grade Connect-Rust crate existed. Investigation
+> via Context7 + crates.io + lib.rs revealed Anthropic open-sourced
+> the canonical Rust implementation (Anthropic-nominated as canonical
+> by the ConnectRPC governance team) ; this ADR adopts it.
 
 - **Context** : ARCH §14 caveat 2 flags Connect-Rust ecosystem maturity
-  as the #1 risk for B.8. The Rust workspace already pins `tonic 0.14`
-  and `axum 0.8` via ADR-004 (ratified in t4-adr-ratification). The
-  TypeScript Connect-ES client (`@connectrpc/connect` +
-  `@connectrpc/connect-web`) supports a `createGrpcWebTransport`
-  factory natively that emits gRPC-Web wire format compatible with
-  `tonic-web`.
+  as the #1 risk for B.8. The original tentative path (tonic + tonic-web,
+  serving gRPC-Web wire format only) explicitly **deferred** full
+  `application/connect+proto` and `application/connect+json` HTTP/1.1
+  codecs to B.8 (T6). Subsequent investigation found the
+  **`connectrpc` crate** ([crates.io/crates/connectrpc](https://crates.io/crates/connectrpc)
+  ; [github.com/anthropics/connect-rust](https://github.com/anthropics/connect-rust))
+  open-sourced by Anthropic, Tower-based, framework-agnostic with an
+  Axum-native integration (`connectrpc-axum`), already in production at
+  Anthropic, passing the **~12 800 ConnectRPC server/client/TLS
+  conformance tests**. The companion zero-copy Protobuf crate
+  (**`buffa`**) is also OSS. Article from March 2026 (Iain McGinniss,
+  Medium) covers production usage. The pairing crate fits the
+  flagship's existing tonic 0.14 + axum 0.8 stack as a **drop-in
+  parallel adapter**, NOT a replacement.
 
-- **Decision** : Use **`tonic` + `tonic-web`** as the parallel
-  Connect-compatible HTTP entry point. No new Rust dependency. The
-  `transport/connect.rs` module wraps the existing tonic Greeter
-  service descriptor with a `tonic_web::GrpcWebLayer`, mounted under
-  `/connect` on the existing axum router. Full Connect+JSON HTTP/1.1
-  codec (the strict Connect-RPC content-type
-  `application/connect+json`) is **explicitly out of scope** for T5
-  and lands with B.8 in T6.
+- **Decision** : Adopt **`connectrpc` + `connectrpc-axum`** (Anthropic
+  OSS, Tower-based, Axum-native) for the parallel Connect route. The
+  `transport/connect.rs` module exposes an `into_router(use_case:
+  Arc<GreeterUseCase>) -> axum::Router` that registers the Greeter
+  service descriptor with a `connectrpc::Server` builder, then
+  applies the OTel layer via Tower middleware (the standard fits the
+  crate's middleware contract directly, FR-T5-CC-013). The router is
+  mounted under `/connect` on the existing axum top-level router. The
+  existing tonic gRPC server stays unchanged on its own port. Full
+  Connect protocol (Connect+proto, Connect+JSON, gRPC, gRPC-Web on
+  the same handler) is available on day 1 — no codec is deferred to
+  B.8.
 
 - **Consequences** :
-  - ✅ Zero new Rust dependency (already pinned by ADR-004) ; no Q-001
-    Cargo.toml widening.
-  - ✅ `tonic-web` is mature, well-documented, ships with tonic 0.14.
-  - ✅ Connect-ES TypeScript client interoperates via
-    `createGrpcWebTransport` ; demo-005 works out of the box.
-  - ✅ Adopters with hand-customised axum routers see a single conflict
-    marker at the router-mount line (FR-T5-CC-NNN scenario).
-  - ⚠️ Limitation : `application/connect+json` HTTP/1.1 codec is **not**
-    supported by tonic-web. Documented in `transport.yaml` rationale
-    and `docs/MIGRATION-PATHS.md` ; full Connect+JSON ships in B.8.
-  - ⚠️ Limitation : strict Connect protocol streaming nuances (server-
-    streaming over HTTP/1.1) follow tonic-web's gRPC-Web semantics —
-    sufficient for the Greeter demo's unary RPC.
-  - ❌ A future commercial requirement for HTTP/1.1+JSON Connect would
-    require swapping in a Connect-Rust crate (or hand-rolled codec) at
-    B.8 time. Acceptable risk : B.8 is the point of no return ; this
-    decision keeps T5 boring.
+  - ✅ Full Connect protocol (Connect+JSON HTTP/1.1, Connect+proto,
+    gRPC, gRPC-Web) on the **same handler** ; T5 ships the target
+    transport without a `[NEEDS MIGRATION:]` marker for B.8.
+  - ✅ Tower middleware integration native ; the existing
+    `tracing-opentelemetry` + `tower-http::trace` layer wires in via
+    `Service` composition with no glue beyond the call.
+  - ✅ Production-tested (Anthropic) + full ConnectRPC conformance
+    suite passing.
+  - ✅ Pinning a specific version + Apache-2.0 / MIT licence resolves
+    Q-001 acceptance criteria 1–3.
+  - ✅ Eliminates the original ADR's "Connect+JSON deferred to B.8"
+    debt — B.8 (T6) only handles Envoy + DBOS + Zitadel + schema
+    bump 2.0.0, NOT a codec swap.
+  - ⚠️ Crate ecosystem is younger than tonic ; mitigation : pin
+    exact version, monitor upstream releases via the existing
+    `transport.yaml` 12-month review window (informational — transport
+    is `exception_constitutional: true` so not subject to 12-month
+    expiry, but the version pin still gets reviewed at any
+    `transport.yaml` bump).
+  - ⚠️ Adds two new Rust dependencies (`connectrpc`, `buffa` — and
+    `connectrpc-axum` as a thin glue crate, if separate). All three
+    Apache-2.0/MIT and from the same Anthropic OSS tree.
+  - ⚠️ Codegen path : two viable options, **resolved at impl M1 spike
+    (T-VER-006)** :
+    - **Option α** : `connectrpc-build` invocation in `build.rs`,
+      analogous to `tonic-build` (zero buf plugin entry).
+    - **Option β** : a buf remote plugin from the connectrpc family
+      (e.g. `buf.build/connectrpc/rust` if it exists) declared in
+      `buf.gen.yaml`.
+    Either way preserves the buf-as-single-source-of-truth invariant
+    (proto remains canonical).
 
 - **Constitution compliance** : Article VII (Rust architecture) — the
-  Connect handler is registered as an *adapter* under `transport/`,
-  consuming the same `Greeter` use case from the domain layer. No
-  domain dependency is added. Article IX (Security) — Aegis review
-  not required (no new secret material, no new external dependency).
+  Connect handler stays an *adapter* under `transport/`, consuming
+  the same `Greeter` use case from the domain layer ; no domain
+  dependency added (the `connectrpc` crate is an outbound transport
+  dependency only). Article IX (Security) — Aegis review not required
+  (no new secret material, no privileged kernel access). The new
+  dependencies are vetted via the standard SBOM CycloneDX path that
+  ships with B.8 ; for T5, document the additions in CHANGELOG.
 
-- **Spike footprint** : ≤ 30 LOC of glue in
+- **Spike footprint** : ≤ 50 LOC of glue in
   `templates/full-stack-monorepo/1.0.0/backend/src/transport/connect.rs`
-  (the tonic-web layer wrapping is well-documented).
+  (slightly more than the original tonic-web estimate because the
+  `connectrpc::Server` builder pattern is more explicit, but no
+  hand-rolled codec needed).
 
-### ADR-T5-002 — Pin Connect codegen plugin versions in `transport.yaml`, exact values resolved at implementation time via Context7 (Q-002 resolved)
+### ADR-T5-002 — Toolchain version pins resolved at design phase via Context7 + WebSearch (Q-002 resolved)
 
 > Resolves : `open-questions.md` Q-002 (Concrete plugin version pins?)
+>
+> **Updated 2026-05-05 post-Context7 investigation** — versions are
+> now resolved at design phase instead of impl phase, since the
+> investigation that exposed Connect-ES v2 + Connect-Rust crate +
+> Connect-Dart official plugin already required Context7 + WebSearch
+> + WebFetch. The resolved values are recorded below ; impl M1 only
+> verifies they remain valid (no version drift since 2026-05-05) and
+> fills the connectrpc Rust crate version (the one item still open).
 
 - **Context** : `specs.md` FR-T5-CC-022 + NFR-T5-CC-010 require pinned
-  plugin versions in `transport.yaml` `codegen.versions` with a
-  documented changelog URL recorded in this design. Concrete versions
-  drift weekly upstream ; pinning them in this design document at
-  spec time risks staleness by archive time.
+  versions in `transport.yaml` `codegen.versions` with documented
+  provenance. Investigation completed 2026-05-05.
 
-- **Decision** : Pin **at implementation time (`/forge:implement` first
-  task)** by querying Context7 (`mcp__context7__resolve-library-id`
-  + `mcp__context7__query-docs`) for the four toolchain components
-  and recording the resolved versions in :
-  - `templates/full-stack-monorepo/1.0.0/proto/buf.gen.yaml` (canonical
-    source for the build).
-  - `.forge/standards/transport.yaml` `codegen.versions` (canonical
-    source for the standard).
-  - `tasks.md` M1 task evidence trail (changelog URL + accessed date).
+- **Decision** : The following versions are pinned (sources cited).
+  Impl M1 (T-VER-001..006) re-confirms they are still latest stable
+  as of impl date ; if upstream has shipped a patch (e.g. buf
+  v1.68.2 → v1.68.3), the patch version is picked.
+
+  | Component | Pinned version | Source URL | Accessed |
+  |-----------|----------------|------------|----------|
+  | `buf` CLI | **v1.68.2** | `buf.build/docs/cli/installation` | 2026-05-05 |
+  | `protoc-gen-connect-go` (Go forward-compat) | **v1.19.2** (released 2025-04-20) | `github.com/connectrpc/connect-go/releases/latest` | 2026-05-05 |
+  | `@bufbuild/protoc-gen-es` (TS, replaces removed `protoc-gen-connect-es`) | **≥ v2.2.0** | `github.com/connectrpc/connect-es/blob/main/MIGRATING.md` | 2026-05-05 |
+  | `@connectrpc/connect` (TS runtime) | **^2.0.0** | same | 2026-05-05 |
+  | `@connectrpc/connect-web` (TS browser/Node transport) | **^2.0.0** | same | 2026-05-05 |
+  | `connectrpc/connect-dart` plugin (official, replaces abandoned community plugin) | **≥ v1.0.0** (pub.dev `connectrpc` package) | `pub.dev/packages/connectrpc` + `connectrpc.com/docs/dart/getting-started/` | 2026-05-05 |
+  | `connectrpc` Rust crate (Anthropic) + `buffa` proto crate | **TBD M1** (T-VER-006) | `crates.io/crates/connectrpc` + `github.com/anthropics/connect-rust` | 2026-05-05 |
 
   Acceptance criteria for the picked versions :
-  1. Each plugin's selected release is **≥ 30 days old** as of impl
-     date (filter brand-new releases that may regress).
-  2. Each plugin uses an **OSI-approved licence** (Apache-2.0, MIT, or
-     compatible).
-  3. The `buf` CLI version is **backwards-compatible** with the existing
-     `b1-foundations` pin (verify by running `buf format --diff` against
-     a frozen flagship `proto/` snapshot — no diff allowed).
-  4. The `protoc-gen-connect-es` version's TS output is consumable by
-     the `@connectrpc/connect-web` runtime version pinned in demo-005's
-     TS client.
+  1. Each release is **≥ 30 days old** as of impl date (filter brand-new
+     regressions). All current pins satisfy this except the connectrpc
+     Rust crate, where M1 spike confirms before adoption.
+  2. Each component uses an **OSI-approved licence** (Apache-2.0 or MIT).
+  3. The `buf` CLI version is backwards-compatible with the existing
+     `b1-foundations` pin (verified at impl M1 by running `buf format
+     --diff` against the frozen flagship `proto/` snapshot — no diff
+     allowed).
+  4. `@bufbuild/protoc-gen-es` v2 output is consumable by
+     `@connectrpc/connect-web@^2.0.0` (verified by Connect v2 migration
+     guide cross-check).
+  5. The `connectrpc` Rust crate version (T-VER-006) passes the full
+     ConnectRPC conformance suite at the picked version
+     (Anthropic publishes conformance results per release).
 
 - **Consequences** :
-  - ✅ Versions are fresh at archive time (recorded with sha + URL).
-  - ✅ Provenance trail is explicit in `tasks.md` (audit-ready).
-  - ⚠️ `/forge:implement` adds a ~10 min Context7-driven preamble before
-    M1 starts. Acceptable cost.
-  - ⚠️ If Context7 resolution fails for a plugin, fall back to the
-    plugin's GitHub releases page via `WebFetch` and document the
-    fallback in `tasks.md`.
+  - ✅ Versions are concrete at design archive time (provenance audited).
+  - ✅ Q-002 closes without blocking impl Phase 1.
+  - ✅ Impl M1 reduces to a verification step (drift check) instead of
+    a resolution spike — faster phase 1.
+  - ⚠️ The connectrpc Rust crate version is the only TBD item ;
+    T-VER-006 (≤ 30 min spike against crates.io + GitHub releases)
+    closes it.
 
 - **Constitution compliance** : Article III.4 (anti-hallucination) —
-  no version is guessed. Q-002 is closed structurally, not by picking
-  arbitrary numbers in this design.
+  every version is sourced from a public URL with an accessed-on date.
+  No version is guessed.
 
 ### ADR-T5-003 — Demo-005 ships a TypeScript client only ; Rust Connect client deferred to B.8 (Q-003 resolved)
 
@@ -283,8 +336,14 @@ classDiagram
         -use_case: Arc~GreeterUseCase~
         +into_router() axum::Router
     }
-    class TonicWebLayer {
-        <<library>>
+    class ConnectRpcServer {
+        <<crate: connectrpc>>
+        +service_descriptor()
+        +protocols: Connect|gRPC|gRPC-Web
+    }
+    class ConnectRpcAxum {
+        <<crate: connectrpc-axum>>
+        +to_axum_router() axum::Router
     }
     class OtelLayer {
         <<library>>
@@ -295,8 +354,9 @@ classDiagram
 
     GrpcAdapter ..> GreeterUseCase : uses
     ConnectAdapter ..> GreeterUseCase : uses
-    ConnectAdapter ..> TonicWebLayer : wraps
-    ConnectAdapter ..> OtelLayer : wraps
+    ConnectAdapter ..> ConnectRpcServer : registers
+    ConnectAdapter ..> ConnectRpcAxum : converts
+    ConnectAdapter ..> OtelLayer : wraps with Tower middleware
     AxumRouter --> ConnectAdapter : mounts at /connect
     AxumRouter --> GrpcAdapter : (server runs separately on gRPC port)
 ```
@@ -304,17 +364,23 @@ classDiagram
 **Key invariants** :
 - `GreeterUseCase` is the single source of business logic ; both
   adapters depend on it (Article VII hexagonal).
-- The OTel layer wraps **outside** the tonic-web layer so spans cover
-  the whole HTTP request including codec translation (FR-T5-CC-013).
-- `into_router()` returns an `axum::Router` that gets `.merge()`'d
-  into the existing main router under the `/connect` prefix.
+- The OTel layer is composed at the Tower middleware level **outside**
+  the connectrpc service, so spans cover the whole HTTP request
+  including Connect codec translation (FR-T5-CC-013).
+- `into_router()` returns an `axum::Router` (via `connectrpc-axum`'s
+  conversion) that gets `.merge()`'d into the existing main router
+  under the `/connect` prefix.
+- The `ConnectRpcServer` builder registers the same proto service
+  descriptor as the tonic adapter ; the two paths converge on the
+  same `GreeterUseCase` (no business-logic duplication).
 
 ### 2.2 `buf.gen.yaml` extension (FR-T5-CC-001..005)
 
 Targets : `templates/full-stack-monorepo/1.0.0/proto/buf.gen.yaml`.
 
 ```yaml
-# Target shape after this change. Concrete versions resolved at impl per ADR-T5-002.
+# Target shape after this change. Versions pinned per ADR-T5-002.
+# Connect v2 (TS) + Connect-Dart official + connectrpc Rust crate decision.
 version: v2
 
 managed:
@@ -324,33 +390,51 @@ plugins:
   # ── Existing tonic-build invocation (preserved per FR-T5-CC-004) ──────
   # tonic-build is invoked from backend/build.rs ; not declared here.
 
-  # ── Connect codegen (FR-T5-CC-001..003) ───────────────────────────────
-  - remote: buf.build/connectrpc/go        # protoc-gen-connect-go
-    revision: <pinned at impl>
-    out: gen/connect/rust
+  # ── Connect codegen — Go (forward-compat for B.6/B.7) ────────────────
+  - remote: buf.build/connectrpc/go        # protoc-gen-connect-go v1.19.2
+    revision: v1.19.2
+    out: gen/connect/go
     opt:
       - paths=source_relative
-  - remote: buf.build/connectrpc/es        # protoc-gen-connect-es
-    revision: <pinned at impl>
+
+  # ── Connect codegen — TS (Connect v2 / Protobuf-ES v2 path) ──────────
+  # Connect v2 retired protoc-gen-connect-es ; service descriptors now
+  # come from @bufbuild/protoc-gen-es ≥ 2.2.0. Runtime: @connectrpc/connect@^2 + @connectrpc/connect-web@^2.
+  - remote: buf.build/bufbuild/es          # @bufbuild/protoc-gen-es v2.x
+    revision: v2.2.0                        # ≥ ; impl M1 picks current latest
     out: gen/connect/ts
     opt:
       - target=ts
       - import_extension=js
-  - remote: buf.build/community/connectrpc-dart  # protoc-gen-connect-dart-community
-    revision: <pinned at impl>
+
+  # ── Connect codegen — Dart (OFFICIAL connectrpc/connect-dart) ────────
+  # Replaces abandoned skadero/protoc-gen-connect-dart-community (last update 2022-09).
+  # Source: pub.dev/packages/connectrpc v1.0.0 (verified publisher connectrpc.com).
+  - remote: buf.build/connectrpc/dart      # connectrpc/connect-dart official
+    revision: <pinned at impl M1, ≥ v1.0.0>
     out: gen/connect/dart
     opt: []
 ```
 
+**Rust codegen path** is **NOT declared in `buf.gen.yaml`** — resolved
+at impl M1 (T-VER-006) per ADR-T5-001 :
+- **Option α (preferred)** : `connectrpc-build` invocation from
+  `templates/full-stack-monorepo/1.0.0/backend/build.rs`, analogous to
+  the existing `tonic-build` pattern. No buf.gen.yaml entry needed ;
+  Rust stays self-contained.
+- **Option β** : if a `buf.build/anthropics/connect-rust` (or similar)
+  remote plugin exists, declare it here with `out: gen/connect/rust`.
+
 Notes :
-- `protoc-gen-connect-go` outputs Go but is consumed by the Rust
-  workspace in two ways : (1) as a contract-generation reference for
-  the eventual Connect-Rust path in B.8, (2) for s2s Go clients in
-  potential B.6/B.7 archetypes. Forward-compat per scope.
+- `paths=source_relative` (Go) keeps generated paths predictable.
 - `target=ts` (FR-T5-CC-002) excludes JS-only emit ; demo-005 client
   is TypeScript-strict.
-- The Dart plugin is community-maintained ; gated by the Dart smoke
-  test L2 fixture per FR-T5-CC-003.
+- `import_extension=js` keeps Connect v2 ESM import compatibility.
+- The Dart plugin entry is gated by the L2 smoke test (FR-T5-CC-003)
+  but no longer rests on a community-abandoned codebase ; the
+  official `connectrpc/connect-dart` repo is published by the
+  ConnectRPC governance team and follows the same release cadence
+  as connect-go and connect-es.
 
 ### 2.3 Reference demo `demo-005-connect-greeting` (FR-T5-CC-030..035)
 
@@ -413,24 +497,24 @@ L2 tests `SKIP` if `buf` CLI absent (CI-only execution).
 ```mermaid
 sequenceDiagram
     autonumber
-    participant TS as TypeScript Client<br/>(demo-005 / connect-client.ts)
+    participant TS as TypeScript Client<br/>(demo-005 / connect-client.ts)<br/>@connectrpc/connect-web@^2
     participant Kong as Kong Gateway
     participant Axum as axum Router
-    participant Otel as OTel Layer
-    participant TWeb as tonic-web Layer
+    participant Otel as OTel Layer<br/>(Tower middleware)
+    participant CRPC as connectrpc Service<br/>(Anthropic crate)
     participant Greet as GreeterUseCase
     participant Coll as OTel Collector
 
     TS->>TS: Generate traceparent<br/>"00-{traceId}-{spanIdC}-01"
-    TS->>Kong: POST /connect/forge.greeter.v1.Greeter/Greet<br/>+ traceparent header
+    TS->>Kong: POST /connect/forge.greeter.v1.Greeter/Greet<br/>Content-Type: application/connect+json (or +proto)<br/>+ traceparent header
     Kong->>Axum: Forward unchanged<br/>+ traceparent
     Axum->>Otel: Route /connect/* matched
     Otel->>Otel: Extract traceparent<br/>Create child span<br/>spanIdS = new()
-    Otel->>TWeb: Forward inner handler call
-    TWeb->>TWeb: Decode gRPC-Web frame<br/>(Connect-ES wire-compat)
-    TWeb->>Greet: Call greet(name)
-    Greet-->>TWeb: Greeting
-    TWeb-->>Otel: Encoded response
+    Otel->>CRPC: Forward inner Service call
+    CRPC->>CRPC: Negotiate codec (Connect/gRPC/gRPC-Web)<br/>Decode message
+    CRPC->>Greet: Call greet(name)
+    Greet-->>CRPC: Greeting
+    CRPC-->>Otel: Encoded response (matching codec)
     Otel->>Coll: Export span<br/>{traceId, parent=spanIdC, id=spanIdS}
     Otel-->>Axum: Response bytes
     Axum-->>Kong: HTTP 200
@@ -443,7 +527,12 @@ sequenceDiagram
 collector carries the same `traceId` as the one generated client-side
 in step 1. The test stands up a minimal mock collector (HTTP receiver
 that captures the OTLP payload), runs the Node TS client, and inspects
-the captured span.
+the captured span. Two codec variants are exercised :
+- **Variant A** : `application/connect+json` (HTTP/1.1) — proves the
+  full Connect protocol, the codec deferred under the original
+  ADR-T5-001 (now satisfied via the connectrpc crate).
+- **Variant B** : gRPC-Web wire format (Connect-ES default) — proves
+  the gRPC-Web compatibility path.
 
 ---
 
@@ -534,12 +623,14 @@ The 7 BDD scenarios in `specs.md::Acceptance Criteria` map :
 
 | Risk | Probability | Impact | Mitigation in this design |
 |------|-------------|--------|---------------------------|
-| Connect-ES `createGrpcWebTransport` API shifts before archive | Low | Low | Pin `@connectrpc/connect-web` version in demo-005 `package.json` ; smoke test catches break. |
-| tonic-web layer interaction with axum 0.8 router merges | Low | Medium | L1 test asserts `into_router()` returns a valid `axum::Router` ; L2 fixture builds + serves. |
-| Connect-Dart community plugin breaks at codegen time | Medium | Low | L2 smoke (FR-T5-CC-003) blocks archive ; Dart entry never consumed in T5. |
-| `traceparent` propagation broken by tonic-web layer ordering | Low | High | L2 traceparent E2E smoke is mandatory ; design pin OTel layer outside tonic-web (§2.1). |
+| `connectrpc` Rust crate (Anthropic) ships breaking change before archive | Low | Medium | Pin exact crate version in `Cargo.toml` ; design ADR-T5-001 covers fallback to tonic-web only if M1 spike fails. |
+| `connectrpc-axum` integration mismatch with axum 0.8 router merges | Low | Medium | L1 test asserts `into_router()` returns a valid `axum::Router` ; L2 fixture builds + serves end-to-end. |
+| Connect-ES v2 API stabilises further (e.g. minor breaking) before archive | Low | Low | Pin `@connectrpc/connect@^2.0.0` + `@connectrpc/connect-web@^2.0.0` in demo-005 `package.json` ; v2 has been GA for ≥ 12 months as of 2026-05-05. |
+| Official `connectrpc/connect-dart` plugin codegen failure | Low | Low | L2 Dart smoke fixture (FR-T5-CC-003) gates archive ; the official org follows ConnectRPC release cadence (lower risk than the abandoned community plugin). |
+| `traceparent` propagation broken by Tower middleware composition | Low | High | L2 traceparent E2E smoke is mandatory ; design pins OTel layer at the Tower middleware level outside the connectrpc service (§2.1). |
 | Adopter snapshot regeneration drifts (CI only) | Low | Low | Snapshot regenerated by `bin/forge-snapshot.sh` (existing), validated by a7.test.sh. |
-| `buf` CLI breaking change between b1-foundations pin and impl-time pin | Low | Medium | ADR-T5-002 acceptance criterion #3 : `buf format --diff` against frozen `proto/`. |
+| `buf` CLI breaking change between b1-foundations pin and impl-time pin | Low | Medium | ADR-T5-002 acceptance criterion #3 : `buf format --diff` against frozen `proto/` at impl M1. |
+| `connectrpc` Rust crate licensing / supply-chain issue (Anthropic OSS) | Very Low | High | Apache-2.0 / MIT licence verified at M1 ; SBOM CycloneDX captures provenance in B.8 ; for T5, document in CHANGELOG. |
 
 ---
 
@@ -571,12 +662,12 @@ The full task breakdown lands in `tasks.md`. Preview :
 
 | M | Milestone | Effort | Dependencies |
 |---|-----------|--------|--------------|
-| M1 | Resolve concrete plugin versions via Context7 + record in design+transport.yaml+buf.gen.yaml | S (≤ 1 h) | ADR-T5-002 |
+| M1 | **Partially complete at design phase** : versions for buf, connect-go, @bufbuild/protoc-gen-es, @connectrpc/connect{,-web}, connectrpc-dart resolved 2026-05-05 (ADR-T5-002 table). Impl M1 only re-confirms drift + spikes the connectrpc Rust crate version (T-VER-006). | XS (≤ 30 min at impl) | ADR-T5-002 |
 | M2 | Write `t5.test.sh` L1 RED tests | S | none |
-| M3 | Edit `buf.gen.yaml` + `transport.yaml` v1.1.0 + REVIEW.md Updated | S | M1, M2 |
-| M4 | Implement `transport/connect.rs` + wire into `main.rs` | M | M3 |
-| M5 | Write `t5.test.sh` L2 fixtures (buf generate, traceparent E2E, Dart smoke) | M | M4 |
-| M6 | Demo-005 scaffold (5 .forge files + TS client + package.json) | M | M4 |
+| M3 | Edit `buf.gen.yaml` (3 plugin entries : connectrpc/go, bufbuild/es v2, connectrpc/dart official) + `transport.yaml` v1.1.0 + REVIEW.md Updated | S | M1, M2 |
+| M4 | Implement `transport/connect.rs` using `connectrpc` + `connectrpc-axum` crates ; wire into `main.rs` | M | M3 |
+| M5 | Write `t5.test.sh` L2 fixtures (buf generate 3 layouts, traceparent E2E with both Connect+JSON and gRPC-Web codecs, Dart smoke against official plugin) | M | M4 |
+| M6 | Demo-005 scaffold (5 .forge files + TS client with `@connectrpc/connect-web@^2` + package.json) | M | M4 |
 | M7 | Linter section `transport-codegen-coverage` + opt-out + linting-rules.md | S | M2 |
 | M8 | Snapshot tarball regeneration + size budget assertion | S | M3, M4 |
 | M9 | Docs : MIGRATION-PATHS.md + ARCHETYPES.md + CHANGELOG | S | all impl green |
@@ -584,4 +675,6 @@ The full task breakdown lands in `tasks.md`. Preview :
 | M11 | `/forge:review` quality gate (Tribune for Rust + Nemesis if Flutter touched) | S | M10 |
 
 **Estimated total** : ~3–4 working days for one experienced contributor,
-fits the `L` envelope from `roadmap.md` Phase 3 / T5 row.
+fits the `L` envelope from `roadmap.md` Phase 3 / T5 row. M1 cost
+reduced post-investigation (versions pre-pinned at design ; only the
+connectrpc Rust crate version still requires a ≤ 30 min spike).

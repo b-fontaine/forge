@@ -36,21 +36,33 @@ additive ; no existing plugin entry is removed.
 - **MUST** pin the plugin version (Q-002) in `transport.yaml` `codegen.versions`.
 - **MUST** declare `out:` under `gen/connect/rust/` (per FR-T5-CC-005 layout).
 
-##### FR-T5-CC-002: `protoc-gen-connect-es` plugin entry
-- **MUST** add a `plugins:` entry generating TypeScript Connect stubs.
-- **MUST** pin the plugin version in `transport.yaml` `codegen.versions`.
+##### FR-T5-CC-002: TypeScript Connect codegen via `@bufbuild/protoc-gen-es` (Connect v2 path)
+- **MUST** add a `plugins:` entry pointing to `buf.build/bufbuild/es`
+  (the Protobuf-ES v2 plugin) — **NOT** to the retired
+  `buf.build/connectrpc/es` plugin (removed in Connect v2 per the
+  upstream MIGRATING.md).
+- **MUST** pin the plugin version `≥ v2.2.0` in `transport.yaml` `codegen.versions`.
 - **MUST** declare `out:` under `gen/connect/ts/`.
-- **MUST** include `opt: target=ts` (no JS-only output) per Q-004 resolution.
+- **MUST** include `opt: target=ts` (no JS-only output) and
+  `opt: import_extension=js` (Connect v2 ESM import compat).
+- **MUST** consume the generated stubs through the
+  `@connectrpc/connect@^2.0.0` runtime + `@connectrpc/connect-web@^2.0.0`
+  transport in demo-005's TS client (FR-T5-CC-032).
 
-##### FR-T5-CC-003: `protoc-gen-connect-dart-community` plugin entry (gated)
-- **MUST** add a `plugins:` entry generating Dart Connect stubs.
-- **MUST** pin the plugin version in `transport.yaml` `codegen.versions`.
+##### FR-T5-CC-003: Dart Connect codegen via `connectrpc/connect-dart` (OFFICIAL plugin)
+- **MUST** add a `plugins:` entry pointing to `buf.build/connectrpc/dart`
+  (the **OFFICIAL ConnectRPC Dart plugin**, pub.dev `connectrpc`
+  package v1.0.0+, verified publisher `connectrpc.com`) — **NOT** to
+  the abandoned community plugin `skadero/protoc-gen-connect-dart`
+  (last update 2022-09).
+- **MUST** pin the plugin version `≥ v1.0.0` in `transport.yaml` `codegen.versions`.
 - **MUST** declare `out:` under `gen/connect/dart/`.
 - **MUST** be guarded by an L2 smoke test in `t5.test.sh` : if the
   plugin fails at codegen time against the demo proto, the change blocks
-  archive (does not auto-disable the entry).
+  archive.
 - **MUST NOT** be consumed by any template in this change (forward-compat
-  only ; mobile-only / 1.0.0 untouched).
+  only ; `mobile-only / 1.0.0` template untouched). B.9 (T8) integrates
+  Connect-Dart into the renamed `mobile-pwa-first` template.
 
 ##### FR-T5-CC-004: `tonic-build` invocation preserved
 - **MUST NOT** modify the existing tonic-build path in
@@ -122,13 +134,24 @@ additive ; no existing plugin entry is removed.
   `transport.yaml`.
 - **MUST** match the layout described in FR-T5-CC-005.
 
-##### FR-T5-CC-022: Plugin version pins
-- **MUST** add `codegen.versions:` map pinning the three Connect plugin
-  versions (`protoc-gen-connect-go`, `protoc-gen-connect-es`,
-  `protoc-gen-connect-dart-community`) plus the `buf` CLI version.
+##### FR-T5-CC-022: Toolchain version pins
+- **MUST** add `codegen.versions:` map pinning the canonical toolchain
+  per ADR-T5-002 (resolved 2026-05-05) :
+  - `buf`: **v1.68.2**
+  - `protoc-gen-connect-go`: **v1.19.2** (forward-compat, Go path)
+  - `protoc-gen-es`: **≥ v2.2.0** (`@bufbuild/protoc-gen-es`, replaces
+    retired `protoc-gen-connect-es`)
+  - `connect-web`: **^2.0.0** (`@connectrpc/connect-web`, runtime)
+  - `connect`: **^2.0.0** (`@connectrpc/connect`, runtime)
+  - `connectrpc-dart`: **≥ v1.0.0** (`buf.build/connectrpc/dart`,
+    official plugin)
+  - `connectrpc-rust`: **TBD M1** (Anthropic crate, T-VER-006 ≤ 30 min spike)
+  - `buffa`: **TBD M1** (Anthropic proto crate, paired with connectrpc)
 - **MUST** match the versions declared in `buf.gen.yaml` (cross-checked
   by `t5.test.sh`).
-- Concrete pin values resolved at design time (Q-002).
+- **MUST** record provenance (source URL + accessed-on date) in
+  `tasks.md` M1 evidence trail (or in a `codegen.versions[].source` key
+  if YAML linter accepts it).
 
 ##### FR-T5-CC-023: `REVIEW.md` Updated entry
 - **MUST** append an `Updated` entry (not a new review) to
@@ -363,24 +386,36 @@ version: "1.1.0"
 codegen:
   source_of_truth: protobuf
   connect_layout_version: 1
-  tools:
-    - buf
-    - protoc-gen-connect-go
-    - protoc-gen-connect-es
-    - protoc-gen-connect-dart-community
-    - tonic-build
-  versions:                # pinned per FR-T5-CC-022, values resolved in design.md (Q-002)
-    buf: "<pinned>"
-    protoc-gen-connect-go: "<pinned>"
-    protoc-gen-connect-es: "<pinned>"
-    protoc-gen-connect-dart-community: "<pinned>"
+  tools:                                  # Updated per Context7 investigation 2026-05-05
+    - buf                                  # CLI
+    - protoc-gen-connect-go                # Go (forward-compat for B.6/B.7)
+    - protoc-gen-es                        # @bufbuild/protoc-gen-es ≥ v2.2.0 (Connect v2 — replaces retired protoc-gen-connect-es)
+    - connectrpc-dart                      # buf.build/connectrpc/dart official (replaces abandoned skadero community plugin)
+    - connectrpc                           # Anthropic Rust crate (Tower-based, Axum-native) — replaces "deferred to B.8" hand-roll
+    - buffa                                # Anthropic zero-copy proto crate, paired with connectrpc
+    - connectrpc-build                     # Rust build.rs invocation (analogous to tonic-build), pending M1 spike
+    - tonic-build                          # gRPC Rust path, kept (ADR-004)
+  versions:                               # pinned per FR-T5-CC-022 / ADR-T5-002 (resolved 2026-05-05)
+    buf: "1.68.2"
+    protoc-gen-connect-go: "1.19.2"
+    protoc-gen-es: ">=2.2.0"
+    "@connectrpc/connect": "^2.0.0"
+    "@connectrpc/connect-web": "^2.0.0"
+    connectrpc-dart: ">=1.0.0"
+    connectrpc-rust: "<TBD M1>"
+    buffa: "<TBD M1>"
   derived_outputs: [openapi-3.1, asyncapi-3.1]
 ```
 
 Reason : ADR-009 + ADR-003 prescribe Connect codegen ; T5 ships it
 additively. The new `connect_layout_version: 1` and `versions:` keys
 formalise the codegen contract so `t5.test.sh` and adopters can rely
-on a stable layout. No `forbidden:` modification.
+on a stable layout. **The original T4 `codegen.tools` list was stale
+on two counts** (Connect v2 retired `protoc-gen-connect-es` ; the
+Dart community plugin had been abandoned since 2022-09) — both fixed
+in this MODIFIED block per the Context7-driven investigation. No
+`forbidden:` modification, no `exception_constitutional` change,
+`expires_at: never` preserved.
 
 ### `templates/full-stack-monorepo/1.0.0/proto/buf.gen.yaml`
 
