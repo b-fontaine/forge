@@ -73,3 +73,36 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   per ADR-T5-002 footnote pre-1.0 caveat). See
   `.forge/changes/t5-connect-codegen/design.md` ADR-T5-001 + ADR-T5-002
   for the full provenance trail.
+
+---
+
+## 2026-05-05 — Correction note on the v1.1.0 entry above (t5-connect-codegen pivot)
+
+- **Reviewer**: @bfontaine
+- **Reviewed standards**:
+
+  | Standard       | Version | Decision | Next review due    | Notes |
+  |----------------|---------|----------|--------------------|-------|
+  | transport.yaml | 1.1.0   | KEEP     | never (structural) | Textual correction only — no version bump, no spec change. |
+
+- **Decision**: KEEP the previous v1.1.0 entry as-is (Article XII
+  append-only). This entry corrects a textual drift in the previous
+  Notes block introduced before the post-T-BUF pivot to Path α
+  (`connectrpc-build` build-dep) on 2026-05-05.
+- **Notes**: The previous entry's *Notes* section says
+  *« Five Rust pins added (`connectrpc`, `buffa`, `buffa-types`,
+  `protoc-gen-connect-rust`, `protoc-gen-buffa`) »*. After the T-BUF
+  investigation pivoted to **Option 2 / Path α** (`connectrpc-build`
+  via `build.rs` build-dependency rather than buf-driven local plugins,
+  to preserve the codebase's "remote plugins only" convention — see
+  `tasks.md::T-VER-006` evidence and the `fc41e49` commit), the
+  effective Rust pin set in `transport.yaml::codegen.versions` is
+  **four** entries : `connectrpc`, `buffa`, `buffa-types`,
+  `connectrpc-build` (no `protoc-gen-connect-rust`, no
+  `protoc-gen-buffa` — those local protoc plugins are not used). The
+  previous entry's textual count and naming are stale relative to the
+  shipped `transport.yaml` ; this corrective entry records the truth
+  without amending the past entry. A `WAIVER 2026-05-05` comment was
+  also added inline next to the `=0.3.3` pins in `transport.yaml` to
+  document the 13-day age waiver of ADR-T5-002 #1 visibly to reviewers
+  reading the standard alone.

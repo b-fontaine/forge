@@ -52,16 +52,25 @@ codegen:
     - neoeinstein-tonic
     - neoeinstein-prost
   versions:
+    # WAIVER 2026-05-05 : connectrpc / buffa / buffa-types / connectrpc-build
+    # all pinned `=0.3.3` at 13-day crate age (< 30-day age criterion of
+    # ADR-T5-002 #1 in design.md of t5-connect-codegen). Justification :
+    #   (1) ConnectRPC conformance suite (6 558 tests) passing satisfies the
+    #       regression-filter intent of the 30-day rule.
+    #   (2) Anthropic OSS pedigree (`anthropics/connect-rust`).
+    #   (3) Exact `=0.3.3` pin keeps upgrades manual.
+    # Pre-1.0 — monitor upstream releases ; if 0.4.x lands before B.8 (T6),
+    # evaluate bump vs stay via a new `transport.yaml` review entry.
     buf: "1.68.2"
     protoc-gen-connect-go: "1.19.2"
     protoc-gen-es: ">=2.2.0"
     "@connectrpc/connect": "^2.0.0"
     "@connectrpc/connect-web": "^2.0.0"
     connectrpc-dart: ">=1.0.0"
-    connectrpc: "=0.3.3"
-    buffa: "=0.3.3"
-    buffa-types: "=0.3.3"
-    connectrpc-build: "=0.3.3"
+    connectrpc: "=0.3.3"        # WAIVER (see comment above)
+    buffa: "=0.3.3"              # WAIVER
+    buffa-types: "=0.3.3"        # WAIVER
+    connectrpc-build: "=0.3.3"   # WAIVER (build-dep)
   derived_outputs: [openapi-3.1, asyncapi-3.1]
 
 breaking_change_check: "buf breaking --against '.git#branch=main'"
