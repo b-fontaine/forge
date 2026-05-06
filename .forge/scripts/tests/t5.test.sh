@@ -444,31 +444,21 @@ _test_t5_022() {
   fi
 }
 _test_t5_023() {
-  # FR-T5-CC-050 : snapshot tarball exists and includes T.5-shipped templates
+  # FR-T5-CC-050 : snapshot tarball exists and includes T.5-shipped templates.
+  # Regenerate via `bin/forge-snapshot.sh build full-stack-monorepo 1.0.0`
+  # (which strips macOS xattrs + AppleDouble metadata for cross-platform
+  # `tar -tzf` portability — see forge-snapshot.sh comment block).
   if [ ! -f "$SNAPSHOT" ]; then
     echo "    missing snapshot tarball: $SNAPSHOT" >&2
     return 1
   fi
-  local tar_out tar_rc tar_count
-  tar_out="$(tar -tzf "$SNAPSHOT" 2>&1)"
-  tar_rc=$?
-  if [ "$tar_rc" -ne 0 ]; then
-    echo "    tar -tzf failed (rc=$tar_rc) on $SNAPSHOT (size=$(wc -c <"$SNAPSHOT" | tr -d ' '))" >&2
-    echo "    tar stderr (first line): $(echo "$tar_out" | head -1)" >&2
-    return 1
-  fi
-  tar_count="$(echo "$tar_out" | wc -l | tr -d ' ')"
-  # Verify the post_cargo_new templates are inside the tarball.
   for needle in \
       'backend/crates/grpc-api/Cargo.toml.tmpl' \
       'backend/crates/grpc-api/build.rs.tmpl' \
       'backend/crates/grpc-api/src/transport_connect.rs.tmpl' \
       'backend/bin-server/src/main.rs.tmpl'; do
-    if ! echo "$tar_out" | grep -q "$needle"; then
-      echo "    snapshot does not contain $needle (size=$(wc -c <"$SNAPSHOT" | tr -d ' '), entries=$tar_count)" >&2
-      echo "    first 3 entries: $(echo "$tar_out" | head -3 | tr '\n' '|' | sed 's/|$//')" >&2
-      echo "    grpc-api entries: $(echo "$tar_out" | grep grpc-api | head -3 | tr '\n' '|' | sed 's/|$//')" >&2
-      echo "    HINT: regen via bin/forge-snapshot.sh build full-stack-monorepo 1.0.0" >&2
+    if ! tar -tzf "$SNAPSHOT" 2>/dev/null | grep -q "$needle"; then
+      echo "    snapshot does not contain $needle (regen via bin/forge-snapshot.sh build full-stack-monorepo 1.0.0)" >&2
       return 1
     fi
   done
