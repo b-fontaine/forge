@@ -386,7 +386,14 @@ _test_t5_019() {
   fi
 }
 _test_t5_020() {
-  # FR-T5-CC-032 : clients/connect-client.ts parses with `node --check`
+  # FR-T5-CC-032 : clients/connect-client.ts parses as ESM JS.
+  #
+  # Implementation detail : `node --check <file.ts>` parses the file
+  # using the extension-driven default mode (CJS for unknown
+  # extensions on Node 20), which rejects top-level `import` / `await`
+  # — a false negative for a TS-compatible-JS source. We therefore
+  # pipe the file through stdin with `--input-type=module` so the
+  # check runs in ESM mode regardless of file extension.
   local client="$EXAMPLE_DIR/clients/connect-client.ts"
   if [ ! -f "$client" ]; then
     echo "    missing $client" >&2
@@ -396,8 +403,8 @@ _test_t5_020() {
     echo "    [SKIP: node missing]" >&2
     return 0
   fi
-  if ! node --check "$client" 2>/dev/null; then
-    echo "    node --check $client failed (TS-only syntax forbidden — see ADR-DEMO5-003)" >&2
+  if ! node --input-type=module --check <"$client" 2>/dev/null; then
+    echo "    node --input-type=module --check $client failed (TS-only syntax forbidden — see ADR-DEMO5-003)" >&2
     return 1
   fi
 }
