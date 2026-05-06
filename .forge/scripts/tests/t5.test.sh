@@ -445,35 +445,39 @@ _test_t5_022() {
 }
 _test_t5_023() {
   # FR-T5-CC-050 : snapshot tarball exists and includes T.5-shipped templates.
+  # We use Python's `tarfile` module (cross-platform, deterministic)
+  # rather than `tar -tzf | grep`, which was producing ghost entries
+  # under GNU tar on Linux when the tarball was authored by bsdtar.
   if [ ! -f "$SNAPSHOT" ]; then
     echo "    missing snapshot tarball: $SNAPSHOT" >&2
     return 1
   fi
-  # CI debug: tarball provenance signals (size + sha256 + entry count)
-  local _size _sha _count
-  _size="$(wc -c <"$SNAPSHOT" | tr -d ' ')"
-  if command -v sha256sum >/dev/null 2>&1; then
-    _sha="$(sha256sum "$SNAPSHOT" | awk '{print $1}')"
-  elif command -v shasum >/dev/null 2>&1; then
-    _sha="$(shasum -a 256 "$SNAPSHOT" | awk '{print $1}')"
-  else
-    _sha="<no-sha-tool>"
-  fi
-  _count="$(tar -tzf "$SNAPSHOT" 2>/dev/null | wc -l | tr -d ' ')"
-  echo "    [debug] snapshot=$SNAPSHOT" >&2
-  echo "    [debug] size=$_size, sha256=$_sha, entries=$_count" >&2
-  for needle in \
-      'backend/crates/grpc-api/Cargo.toml.tmpl' \
-      'backend/crates/grpc-api/build.rs.tmpl' \
-      'backend/crates/grpc-api/src/transport_connect.rs.tmpl' \
-      'backend/bin-server/src/main.rs.tmpl'; do
-    if ! tar -tzf "$SNAPSHOT" 2>/dev/null | grep -q "$needle"; then
-      echo "    snapshot does not contain $needle (regen via bin/forge-snapshot.sh build full-stack-monorepo 1.0.0)" >&2
-      echo "    [debug] grpc-api entries seen by tar:" >&2
-      tar -tzf "$SNAPSHOT" 2>/dev/null | grep -E 'grpc-api|bin-server' | head -10 | sed 's/^/      /' >&2
-      return 1
-    fi
-  done
+  python3 - "$SNAPSHOT" <<'PY' || return 1
+import sys, tarfile
+snap = sys.argv[1]
+needles = [
+    'backend/crates/grpc-api/Cargo.toml.tmpl',
+    'backend/crates/grpc-api/build.rs.tmpl',
+    'backend/crates/grpc-api/src/transport_connect.rs.tmpl',
+    'backend/bin-server/src/main.rs.tmpl',
+]
+try:
+    with tarfile.open(snap, 'r:gz') as t:
+        names = t.getnames()
+except Exception as e:
+    print(f"    tarfile open failed: {e}", file=sys.stderr)
+    sys.exit(1)
+missing = [n for n in needles if not any(n in name for name in names)]
+if missing:
+    print(f"    snapshot does not contain: {missing}", file=sys.stderr)
+    print(f"    (regen via bin/forge-snapshot.sh build full-stack-monorepo 1.0.0)", file=sys.stderr)
+    print(f"    [debug] entries in tarball: {len(names)}", file=sys.stderr)
+    grpc_entries = [n for n in names if 'grpc-api' in n]
+    print(f"    [debug] grpc-api entries: {len(grpc_entries)}", file=sys.stderr)
+    for n in grpc_entries[:5]:
+        print(f"      {n}", file=sys.stderr)
+    sys.exit(1)
+PY
 }
 _test_t5_024() {
   # FR-T5-CC-051 : snapshot tarball size ≤ 640 KB gzipped (post-T-RUST bump).
