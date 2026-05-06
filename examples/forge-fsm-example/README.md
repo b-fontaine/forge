@@ -77,6 +77,7 @@ narrative.
 | [`demo-002-greeting-screen`](.forge/changes/demo-002-greeting-screen/) | `[frontend]` | archived | Single-layer frontend change — Flutter screen consuming demo-001's contract via Cubit + `flutter_bloc`, widget test, golden test |
 | [`demo-003-rate-limit`](.forge/changes/demo-003-rate-limit/) | `[backend, infra]` | archived | Multi-layer change triggering Janus orchestration — Kong rate-limit plugin with per-layer designs (`design-backend.md` + `design-infra.md`) and tasks (`tasks-backend.md` + `tasks-infra.md`) |
 | [`demo-004-user-onboarding`](.forge/changes/demo-004-user-onboarding/) | `[backend, frontend, protos]` | **specified** | In-flight spec demonstrating `[NEEDS CLARIFICATION]` markers (Article III.4) — purposely never advanced past the spec phase to show what a "live spec" looks like |
+| [`demo-005-connect-greeting`](.forge/changes/demo-005-connect-greeting/) | `[backend]` | archived | Single-layer backend change shipped by `t5-connect-codegen` — exposes the existing Greeter via Connect-RPC at `/connect`, with a TypeScript reference client under [`clients/connect-client.ts`](clients/connect-client.ts) seeding a W3C `traceparent` header per call. Validates the Connect codec end-to-end without retiring the tonic gRPC path |
 
 A short summary of each demo with its archive date is also
 maintained at [`.forge/changes/MANIFEST.md`](.forge/changes/MANIFEST.md).

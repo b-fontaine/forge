@@ -1,0 +1,12 @@
+{
+  "name": "forge-fsm-example-clients",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Reference Connect-RPC clients for examples/forge-fsm-example. Pinned to Connect v2 (v1 packages are retired and MUST NOT be added). Demo-005-connect-greeting only.",
+  "dependencies": {
+    "@connectrpc/connect": "^2.0.0",
+    "@connectrpc/connect-web": "^2.0.0",
+    "@bufbuild/protobuf": "^2.2.0"
+  }
+}

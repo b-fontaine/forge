@@ -27,3 +27,23 @@ plugins:
   # ── Dart (messages + gRPC clients) ──
   - remote: buf.build/protocolbuffers/dart:v21.1.2
     out: ../../frontend/lib/generated/protos
+
+  # ── Connect codegen — Go (forward-compat for B.6/B.7 ; FR-T5-CC-001) ──
+  - remote: buf.build/connectrpc/go:v1.19.2
+    out: ../../backend/crates/grpc-api/src/generated/connect/go
+    opt:
+      - paths=source_relative
+
+  # ── Connect codegen — TS (Connect v2 / Protobuf-ES v2 ; FR-T5-CC-002) ──
+  # Connect v2 retired protoc-gen-connect-es ; service descriptors come
+  # from @bufbuild/protoc-gen-es ≥ 2.2.0. Runtime: @connectrpc/connect@^2.
+  - remote: buf.build/bufbuild/es:v2.2.0
+    out: ../../frontend/lib/generated/connect/ts
+    opt:
+      - target=ts
+      - import_extension=js
+
+  # ── Connect codegen — Dart (OFFICIAL connectrpc/connect-dart ; FR-T5-CC-003) ──
+  # Replaces abandoned skadero/protoc-gen-connect-dart-community.
+  - remote: buf.build/connectrpc/dart:v1.0.0
+    out: ../../frontend/lib/generated/connect/dart

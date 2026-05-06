@@ -240,6 +240,17 @@ main() {
   )
   echo "  ✓ 5 crates created"
 
+  echo "── Step 4.5 : overlay post_cargo_new templates (ADR-T5-006) ──"
+  # Re-invoke overlay.sh with --phase post_cargo_new to overwrite the
+  # cargo-generated stubs in crates/grpc-api/ and bin-server/ with the
+  # T.5-shipped Connect-RPC adapter + tonic gRPC main entrypoint.
+  bash "$OVERLAY_SH" \
+    --target "$target_abs" \
+    --project-name "$PROJECT_NAME" \
+    --reverse-domain "$REVERSE_DOMAIN" \
+    --phase post_cargo_new
+  echo "  ✓ post_cargo_new overlay applied"
+
   echo "── Step 5 : buf lint seed protos ──"
   (
     cd "$target_abs/shared/protos"

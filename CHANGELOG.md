@@ -12,6 +12,59 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added — T.5 Connect codegen (`t5-connect-codegen`, in flight)
+
+- **5 post_cargo_new templates** for the `full-stack-monorepo / 1.0.0`
+  archetype shipping a parallel Connect-RPC adapter alongside the
+  existing tonic gRPC server :
+  - `backend/crates/grpc-api/Cargo.toml.tmpl` (deps : `connectrpc`,
+    `buffa`, `buffa-types` `=0.3.3` ; build-dep : `connectrpc-build`
+    `=0.3.3`).
+  - `backend/crates/grpc-api/build.rs.tmpl` (Path α codegen via
+    `connectrpc_build::Config::new()`).
+  - `backend/crates/grpc-api/src/lib.rs.tmpl`.
+  - `backend/crates/grpc-api/src/transport_connect.rs.tmpl` (public
+    `into_router` + `connectrpc::Router::into_axum_service()` inline
+    integration — no separate `connectrpc-axum` crate).
+  - `backend/bin-server/src/main.rs.tmpl` (preserves tonic
+    `Server::builder()` bind on port 50051 + mounts the Connect
+    adapter under `/connect` on port 8080).
+- **3 new buf plugins** in
+  `templates/full-stack-monorepo/shared/protos/buf.gen.yaml.tmpl` :
+  `buf.build/connectrpc/go:v1.19.2`, `buf.build/bufbuild/es:v2.2.0`,
+  `buf.build/connectrpc/dart:v1.0.0` (official Dart plugin replaces
+  abandoned `skadero/connect-dart-community`).
+- **`transport.yaml` v1.0.0 → v1.1.0** : `codegen.connect_layout_version: 1`
+  + `codegen.versions:` map (11 pins) + inline `WAIVER 2026-05-05`
+  block documenting the 13-day age waiver of ADR-T5-002 #1 for the
+  `=0.3.3` Rust crate family.
+- **`scaffold-plan.yaml` schema extension** (additive) : optional
+  `phase: pre_cargo_new | post_cargo_new` field per template entry.
+  Default `pre_cargo_new` (legacy / b1-scaffolder semantics).
+- **`overlay.sh` `--phase` flag** : filters templates by phase, with
+  implicit `force=true` on `post_cargo_new` and manifest-write skip
+  (`scaffold-manifest.yaml` finalised by the `pre_cargo_new` pass).
+- **`init.sh` Step 4.5** inserted between `cargo new` (Step 4) and
+  `buf lint` (Step 5) : second overlay pass with `--phase post_cargo_new`.
+- **`constitution-linter.sh` rule `transport-codegen-coverage`** —
+  WARN-only ; opt-out via `FORGE_LINTER_SKIP_TRANSPORT_CODEGEN=1`.
+- **Reference demo `demo-005-connect-greeting`** in
+  `examples/forge-fsm-example/.forge/changes/` + TS reference client
+  `examples/forge-fsm-example/clients/connect-client.ts` seeding a
+  W3C `traceparent` header per call.
+- **Test harness `t5.test.sh`** : 25 L1 + 5 L2 fixture tests, 25/25
+  L1 GREEN at archive time.
+- **Snapshot tarball** `full-stack-monorepo / 1.0.0.tar.gz` regenerated
+  (~549 KB ; under the post-T.5 budget of 640 KB ; original 500 KB
+  budget bumped — see `specs.md::FR-T5-CC-051`).
+- **`docs/MIGRATION-PATHS.md`** — new top-level migration index
+  (referenced by the WARN-only linter rule).
+- **Design docs** : ADR-T5-001 (connectrpc Anthropic OSS), ADR-T5-002
+  (toolchain pins resolved at design phase), ADR-T5-003 (TS-only
+  client), ADR-T5-004 (`gen/connect/<lang>/<pkg>/...` layout),
+  ADR-T5-005 (`transport-codegen-coverage` WARN-only),
+  **ADR-T5-006** (`phase: post_cargo_new` template pattern).
+
 ### Added — T.4 ratification (`t4-adr-ratification`)
 
 - Six versioned standards under `.forge/standards/*.yaml` ratifying the

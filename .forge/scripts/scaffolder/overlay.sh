@@ -15,7 +15,20 @@
 #
 # Usage:
 #   overlay.sh --target <dir> --project-name <name> --reverse-domain <fqdn> \
-#              [--root-module <mod>] [--force] [--dry-run]
+#              [--root-module <mod>] [--force] [--dry-run] \
+#              [--phase pre_cargo_new|post_cargo_new]
+#
+# `--phase` (default `pre_cargo_new`) filters the templates[] list :
+#    - pre_cargo_new  : runs ONLY entries with no `phase` field or
+#                       `phase: pre_cargo_new` (legacy behaviour).
+#    - post_cargo_new : runs ONLY entries with `phase: post_cargo_new`,
+#                       implicit force=true (cargo new has just written
+#                       a stub Cargo.toml / lib.rs that we now overwrite).
+#                       The scaffold-manifest.yaml is NOT rewritten in
+#                       this phase (it was finalised by the pre pass).
+#
+# Introduced by t5-connect-codegen (ADR-T5-006) so the flagship template
+# can ship Rust crate code that overlays cargo new output.
 #
 # Exit codes:
 #   0 — success
@@ -34,6 +47,7 @@ REVERSE_DOMAIN=""
 ROOT_MODULE=""
 FORCE="false"
 DRY_RUN="false"
+PHASE="pre_cargo_new"
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -47,8 +61,10 @@ while [ $# -gt 0 ]; do
     --root-module=*)   ROOT_MODULE="${1#*=}"; shift ;;
     --force)          FORCE="true"; shift ;;
     --dry-run)        DRY_RUN="true"; shift ;;
+    --phase)          PHASE="${2:-}"; shift 2 ;;
+    --phase=*)        PHASE="${1#*=}"; shift ;;
     --help|-h)
-      sed -n '2,22p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+      sed -n '2,30p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *)
@@ -57,6 +73,19 @@ while [ $# -gt 0 ]; do
       ;;
   esac
 done
+
+case "$PHASE" in
+  pre_cargo_new|post_cargo_new) ;;
+  *)
+    echo "overlay.sh: --phase must be 'pre_cargo_new' or 'post_cargo_new', got '$PHASE'" >&2
+    exit 2
+    ;;
+esac
+
+# In post_cargo_new phase, force is implicit (cargo just wrote stubs).
+if [ "$PHASE" = "post_cargo_new" ]; then
+  FORCE="true"
+fi
 
 # ─── Required args ──────────────────────────────────────────────
 
@@ -104,7 +133,7 @@ export OVERLAY_FLUTTER_VERSION="${OVERLAY_FLUTTER_VERSION:-}"
 export OVERLAY_CARGO_VERSION="${OVERLAY_CARGO_VERSION:-}"
 export OVERLAY_BUF_VERSION="${OVERLAY_BUF_VERSION:-}"
 
-export ARCHETYPE_DIR SCAFFOLD_PLAN TARGET PROJECT_NAME REVERSE_DOMAIN ROOT_MODULE FORCE DRY_RUN SOURCE_DATE_EPOCH
+export ARCHETYPE_DIR SCAFFOLD_PLAN TARGET PROJECT_NAME REVERSE_DOMAIN ROOT_MODULE FORCE DRY_RUN SOURCE_DATE_EPOCH PHASE
 
 python3 - <<'PY'
 import os, sys, yaml, shutil, hashlib, datetime
@@ -118,11 +147,20 @@ root_module     = os.environ['ROOT_MODULE']
 force           = os.environ['FORCE'] == 'true'
 dry_run         = os.environ['DRY_RUN'] == 'true'
 sde             = os.environ.get('SOURCE_DATE_EPOCH', '')
+phase           = os.environ.get('PHASE', 'pre_cargo_new')
 
 with open(plan_path, 'r', encoding='utf-8') as f:
     plan = yaml.safe_load(f)
 
-templates = plan.get('templates', [])
+# Filter templates by phase. Default phase for entries without an
+# explicit `phase` field is `pre_cargo_new` (legacy / b1-scaffolder
+# entries). Entries with `phase: post_cargo_new` are introduced by
+# t5-connect-codegen ADR-T5-006.
+all_templates = plan.get('templates', [])
+templates = [
+    e for e in all_templates
+    if e.get('phase', 'pre_cargo_new') == phase
+]
 
 def substitute(content: str) -> str:
     return (content
@@ -167,10 +205,21 @@ def sha256_path(path: str) -> str:
             h.update(chunk)
     return h.hexdigest()
 
+# In post_cargo_new phase, the scaffold-manifest.yaml has already
+# been written by the pre_cargo_new pass — do not rewrite it here.
+if phase == 'post_cargo_new':
+    sys.stderr.write(
+        f"overlay.sh: {len(templates)} post_cargo_new templates rendered into {target}\n"
+    )
+    sys.exit(0)
+
 plan_sha = sha256_path(plan_path)
 
+# Manifest must hash the FULL template set (not just the current
+# phase), so adopters get a stable template_set_sha regardless of
+# phase ordering.
 tmpl_hash = hashlib.sha256()
-for entry in sorted(templates, key=lambda e: e['source']):
+for entry in sorted(all_templates, key=lambda e: e['source']):
     src = os.path.join(archetype_dir, entry['source'])
     tmpl_hash.update(entry['source'].encode('utf-8'))
     tmpl_hash.update(b'\0')

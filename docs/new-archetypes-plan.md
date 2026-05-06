@@ -29,53 +29,50 @@
   Article V est préservé via 35 ADDED FRs (`FR-T4-ADR-001..010` +
   `FR-T4-STD-001..006` + `FR-T4-LC-001..005` + `FR-T4-SCH-001..002` + ...)
   dans `.forge/specs/adr-ratification.md`. Côté livrables physiques :
-  - Six `.forge/standards/*.yaml` v1.0.0 (`transport`, `state-management`,
-    `observability`, `orchestration`, `identity`, `persistence`) avec
-    frontmatter uniforme (`version` / `last_reviewed` / `expires_at` /
-    `exception_constitutional` / `linter_rule` / `enforcement` /
-    `forbidden` / `rationale`).
-  - `global/standards-lifecycle.md` + `.forge/standards/REVIEW.md` ledger
-    append-only avec entrée seed (4 standards `Next review due: 2027-05-04`,
-    2 structurels `never`).
-  - `.forge/schemas/compliance-tier.schema.json` (enum T1/T2/T3).
-  - `.forge/schemas/archetype.schema.json` **v2.0.0** : 5 archétypes
-    canoniques (`full-stack-monorepo`, `mobile-pwa-first`, `event-driven-eu`,
-    `ai-native-rag`, `rust-cli-tui`) + `mobile-only` conservé comme alias
-    déprécié pour les adopters v0.3.0 (B.4) jusqu'à B.9 en T8.
-  - Index `.forge/standards/index.yml` étendu avec un bloc
-    `T.4 ratifications` qui expose les 6 standards YAML + 2 normes
-    associées (`global/standards-lifecycle.md`, `global/source-document-pinning.md`)
-    aux triggers d'injection JIT.
-  - `compliance-tier.schema.json` est référencé par
-    `archetype.schema.json` v2 dans `x-component-eligibility-matrix-source`.
+    - Six `.forge/standards/*.yaml` v1.0.0 (`transport`, `state-management`,
+      `observability`, `orchestration`, `identity`, `persistence`) avec
+      frontmatter uniforme (`version` / `last_reviewed` / `expires_at` /
+      `exception_constitutional` / `linter_rule` / `enforcement` /
+      `forbidden` / `rationale`).
+    - `global/standards-lifecycle.md` + `.forge/standards/REVIEW.md` ledger
+      append-only avec entrée seed (4 standards `Next review due: 2027-05-04`,
+      2 structurels `never`).
+    - `.forge/schemas/compliance-tier.schema.json` (enum T1/T2/T3).
+    - `.forge/schemas/archetype.schema.json` **v2.0.0** : 5 archétypes
+      canoniques (`full-stack-monorepo`, `mobile-pwa-first`, `event-driven-eu`,
+      `ai-native-rag`, `rust-cli-tui`) + `mobile-only` conservé comme alias
+      déprécié pour les adopters v0.3.0 (B.4) jusqu'à B.9 en T8.
+    - Index `.forge/standards/index.yml` étendu avec un bloc
+      `T.4 ratifications` qui expose les 6 standards YAML + 2 normes
+      associées (`global/standards-lifecycle.md`, `global/source-document-pinning.md`)
+      aux triggers d'injection JIT.
+    - `compliance-tier.schema.json` est référencé par
+      `archetype.schema.json` v2 dans `x-component-eligibility-matrix-source`.
 
 ### Module en cours
 
 - **`t5-connect-codegen`** (branche `t5-connect-codegen`, status `planned`,
   Phase 1 RED active) — **première brique T5 Phase 1 ARCH**, additive.
-  - Étend `templates/full-stack-monorepo/1.0.0/proto/buf.gen.yaml.tmpl`
-    avec `protoc-gen-connect-go`, `protoc-gen-connect-es` (Connect v2),
-    `connectrpc/connect-dart` officiel (publié sur pub.dev par
-    `connectrpc.com`).
-  - **Pivot d'implémentation** post-investigation T-BUF (2026-05-05) :
-    le plugin BSR `buf.build/anthropics/connect-rust` n'est pas encore
-    publié, et la convention codebase impose des plugins remote uniquement.
-    → bascule sur `connectrpc-build` via `build.rs`
-    (Option 2 / Path α, supportée upstream comme "Option B").
-    Pin `connectrpc = "=0.3.3"` + `buffa = "=0.3.3"` (Anthropic OSS
-    Apache-2.0, MSRV 1.88, 6 558 conformance tests).
-  - Bump `transport.yaml` 1.0.0 → 1.1.0 (codegen pinning) + entrée
-    `Updated` dans `REVIEW.md` — 4 tests T-STD GREEN au commit `a96222d`.
-  - Demo `demo-005-connect-greeting` ajoutée à `examples/forge-fsm-example/`,
-    parallèle au gRPC tonic existant. Traceparent W3C E2E à valider.
-  - Harness `t5.test.sh` skeleton 25 L1 + 5 L2 stubs (full RED, `T-PHA-001/002`).
-  - tonic-build inchangé (ADR-004 KEEP).
+    - Étend `templates/full-stack-monorepo/1.0.0/proto/buf.gen.yaml.tmpl`
+      avec `protoc-gen-connect-go`, `protoc-gen-connect-es` (Connect v2),
+      `connectrpc/connect-dart` officiel (publié sur pub.dev par
+      `connectrpc.com`).
+    - **Pivot d'implémentation** post-investigation T-BUF (2026-05-05) :
+      le plugin BSR `buf.build/anthropics/connect-rust` n'est pas encore
+      publié, et la convention codebase impose des plugins remote uniquement.
+      → bascule sur `connectrpc-build` via `build.rs`
+      (Option 2 / Path α, supportée upstream comme "Option B").
+      Pin `connectrpc = "=0.3.3"` + `buffa = "=0.3.3"` (Anthropic OSS
+      Apache-2.0, MSRV 1.88, 6 558 conformance tests).
+    - Bump `transport.yaml` 1.0.0 → 1.1.0 (codegen pinning) + entrée
+      `Updated` dans `REVIEW.md` — 4 tests T-STD GREEN au commit `a96222d`.
+    - Demo `demo-005-connect-greeting` ajoutée à `examples/forge-fsm-example/`,
+      parallèle au gRPC tonic existant. Traceparent W3C E2E à valider.
+    - Harness `t5.test.sh` skeleton 25 L1 + 5 L2 stubs (full RED, `T-PHA-001/002`).
+    - tonic-build inchangé (ADR-004 KEEP).
 
 ### Modules toujours en attente
 
-- **P-5** (refactor Hera 9 → 5 sub-agents) — flag `opinion d'architecte
-  non sourcée`, **requiert décision utilisateur** avant T6. Le mainteneur
-  ne l'a pas commencé.
 - **T5 (suite)** post-`t5-connect-codegen` : Phase 1 OTel + OBI + Coroot
   stack, J.7 (`validate-standards-yaml.sh`), J.8 (Janus rules forbidden-list),
   K.3 (Demeter agent), I.2–I.6 (compliance docs + workflow + AI Act / NIS2 /
@@ -85,23 +82,23 @@
 
 ### Inventaire `.forge/changes/` (2026-05-05)
 
-| Change                  | Status   | Tier livré      |
-|-------------------------|----------|-----------------|
-| `b1-foundations`        | archived | T2 P1 (B.1.1)   |
-| `b1-scaffolder`         | archived | T2 P1 (B.1.2)   |
-| `b1-workflow`           | archived | T2 P1 (B.1.3)   |
-| `b1-delivery`           | archived | T2 P1 (B.1.4)   |
-| `c1-reference-project`  | archived | T2 P1 (C.1)     |
-| `b5-1-init-wizard`      | archived | T2 P1 (B.5.1)   |
-| `g1-forge-ci`           | archived | T2 P1 (G.1)     |
-| `a7-forge-upgrade`      | archived | T2 P1 (A.7)     |
-| `d5-governance`         | archived | T2 P1 (D.5)     |
-| `b4-mobile-only`        | archived | T2 P2 (B.4)     |
-| `f1-open-questions`     | archived | T3 (F.1)        |
-| `f2-yaml-schema`        | archived | T3 (F.2)        |
-| `f4-linter-extension`   | archived | T3 (F.4)        |
-| `t4-adr-ratification`   | archived | T4 (P-1..P-4 + J.1–J.6 + I.1) |
-| `t5-connect-codegen`    | planned (WIP, branche) | T5 Phase 1 (Connect codegen) |
+| Change                 | Status                 | Tier livré                    |
+|------------------------|------------------------|-------------------------------|
+| `b1-foundations`       | archived               | T2 P1 (B.1.1)                 |
+| `b1-scaffolder`        | archived               | T2 P1 (B.1.2)                 |
+| `b1-workflow`          | archived               | T2 P1 (B.1.3)                 |
+| `b1-delivery`          | archived               | T2 P1 (B.1.4)                 |
+| `c1-reference-project` | archived               | T2 P1 (C.1)                   |
+| `b5-1-init-wizard`     | archived               | T2 P1 (B.5.1)                 |
+| `g1-forge-ci`          | archived               | T2 P1 (G.1)                   |
+| `a7-forge-upgrade`     | archived               | T2 P1 (A.7)                   |
+| `d5-governance`        | archived               | T2 P1 (D.5)                   |
+| `b4-mobile-only`       | archived               | T2 P2 (B.4)                   |
+| `f1-open-questions`    | archived               | T3 (F.1)                      |
+| `f2-yaml-schema`       | archived               | T3 (F.2)                      |
+| `f4-linter-extension`  | archived               | T3 (F.4)                      |
+| `t4-adr-ratification`  | archived               | T4 (P-1..P-4 + J.1–J.6 + I.1) |
+| `t5-connect-codegen`   | planned (WIP, branche) | T5 Phase 1 (Connect codegen)  |
 
 **14 archivés sur `main`** + 1 en cours sur branche dédiée. Aucun change
 orphelin, aucun `status: in_progress` bloqué, aucun marqueur
@@ -151,63 +148,63 @@ sont créés. Cinq nouveaux agents Forge sont introduits. Plan de migration **4 
 
 ### 1.1 Acquis
 
-| Domaine                       | État                | Référence                                  |
-|-------------------------------|---------------------|--------------------------------------------|
-| OSS Apache 2.0 + npm + Docker | ✅ T0/T1            | A1, A2, A3, A4, A5, A6                    |
-| `forge init` 3 modes          | ✅ T2 P1 (B.5.1)    | `.forge/scaffolding/dispatch-table.yml`   |
-| `forge upgrade` 3-way merge   | ✅ T2 P1 (A.7)      | `bin/forge-upgrade.sh` + snapshot tarballs|
-| Archétype `full-stack-monorepo / 1.0.0` | ✅ T2 P1 (B.1)      | 4 changes archivés, schema stable      |
-| Archétype `mobile-only / 1.0.0` | ✅ T2 P2 (B.4)      | `b4-mobile-only` 47/47 tests              |
-| Reference project + 4 demos   | ✅ T2 P1 (C.1)      | `examples/forge-fsm-example/`             |
-| CI Forge dog-fooded           | ✅ T2 P1 (G.1)      | `forge-ci.yml` 6 jobs                     |
-| Governance BDFL-with-fallback | ✅ T2 P1 (D.5)      | `GOVERNANCE.md` + Article XII             |
-| GitHub Discussions ouvert     | ✅ T2 P1 (D.6)      | community channel actif                   |
-| Open questions tracking       | ✅ T3 (F.1)         | `f1-open-questions`                       |
-| YAML schema validation        | ✅ T3 (F.2)         | `f2-yaml-schema`                          |
-| Linter étendu V/X.3/XI.3/XI.5 | ✅ T3 (F.4)         | `f4-linter-extension`                     |
-| Release v0.3.0 publiée        | ✅ 2026-05-02       | tag `v0.3.0`, npm `@sdd-forge/cli@0.3.0` |
+| Domaine                                 | État            | Référence                                  |
+|-----------------------------------------|-----------------|--------------------------------------------|
+| OSS Apache 2.0 + npm + Docker           | ✅ T0/T1         | A1, A2, A3, A4, A5, A6                     |
+| `forge init` 3 modes                    | ✅ T2 P1 (B.5.1) | `.forge/scaffolding/dispatch-table.yml`    |
+| `forge upgrade` 3-way merge             | ✅ T2 P1 (A.7)   | `bin/forge-upgrade.sh` + snapshot tarballs |
+| Archétype `full-stack-monorepo / 1.0.0` | ✅ T2 P1 (B.1)   | 4 changes archivés, schema stable          |
+| Archétype `mobile-only / 1.0.0`         | ✅ T2 P2 (B.4)   | `b4-mobile-only` 47/47 tests               |
+| Reference project + 4 demos             | ✅ T2 P1 (C.1)   | `examples/forge-fsm-example/`              |
+| CI Forge dog-fooded                     | ✅ T2 P1 (G.1)   | `forge-ci.yml` 6 jobs                      |
+| Governance BDFL-with-fallback           | ✅ T2 P1 (D.5)   | `GOVERNANCE.md` + Article XII              |
+| GitHub Discussions ouvert               | ✅ T2 P1 (D.6)   | community channel actif                    |
+| Open questions tracking                 | ✅ T3 (F.1)      | `f1-open-questions`                        |
+| YAML schema validation                  | ✅ T3 (F.2)      | `f2-yaml-schema`                           |
+| Linter étendu V/X.3/XI.3/XI.5           | ✅ T3 (F.4)      | `f4-linter-extension`                      |
+| Release v0.3.0 publiée                  | ✅ 2026-05-02    | tag `v0.3.0`, npm `@sdd-forge/cli@0.3.0`   |
 
 ### 1.2 Décisions ratifiées par `docs/ARCHITECTURE-TARGET.md`
 
-| ADR    | Décision                                                                                      | Statut                              |
-|--------|-----------------------------------------------------------------------------------------------|-------------------------------------|
-| ADR-001 | REPLACE Kong → Envoy Gateway sur tous les archétypes serveur                                  | À planifier (T6)                    |
-| ADR-002 | Temporal → DBOS par défaut, Temporal réservé `event-driven-eu`                                | À planifier (T6)                    |
-| ADR-003 | REPLACE REST/JSON Kong-bridge → Connect-RPC                                                   | À planifier (T6)                    |
-| ADR-004 | KEEP Rust + tonic 0.14 + axum 0.8                                                             | Acquis                              |
-| ADR-005 | KEEP Flutter mobile + desktop, REPLACE Flutter Web public → Qwik                              | À planifier (T7)                    |
-| ADR-006 | flutter_bloc seul state management autorisé, hors fenêtre 12 mois                             | Inscrit dans templates B.1 + B.4    |
-| ADR-007 | REPLACE Firebase → Zitadel (ou Keycloak/Authentik en alternative)                             | Annule B.2 du plan d'origine        |
-| ADR-008 | KEEP-WITH-CHANGES SigNoz + OBI eBPF + Coroot service map                                      | À planifier (T7)                    |
-| ADR-009 | KEEP buf+proto + ADD Connect codegen + AsyncAPI 3.1 dérivé                                    | À planifier (T6)                    |
-| ADR-010 | Postgres 17 + pgvector 0.8 comme défaut universel                                             | À planifier (T6)                    |
+| ADR     | Décision                                                          | Statut                           |
+|---------|-------------------------------------------------------------------|----------------------------------|
+| ADR-001 | REPLACE Kong → Envoy Gateway sur tous les archétypes serveur      | À planifier (T6)                 |
+| ADR-002 | Temporal → DBOS par défaut, Temporal réservé `event-driven-eu`    | À planifier (T6)                 |
+| ADR-003 | REPLACE REST/JSON Kong-bridge → Connect-RPC                       | À planifier (T6)                 |
+| ADR-004 | KEEP Rust + tonic 0.14 + axum 0.8                                 | Acquis                           |
+| ADR-005 | KEEP Flutter mobile + desktop, REPLACE Flutter Web public → Qwik  | À planifier (T7)                 |
+| ADR-006 | flutter_bloc seul state management autorisé, hors fenêtre 12 mois | Inscrit dans templates B.1 + B.4 |
+| ADR-007 | REPLACE Firebase → Zitadel (ou Keycloak/Authentik en alternative) | Annule B.2 du plan d'origine     |
+| ADR-008 | KEEP-WITH-CHANGES SigNoz + OBI eBPF + Coroot service map          | À planifier (T7)                 |
+| ADR-009 | KEEP buf+proto + ADD Connect codegen + AsyncAPI 3.1 dérivé        | À planifier (T6)                 |
+| ADR-010 | Postgres 17 + pgvector 0.8 comme défaut universel                 | À planifier (T6)                 |
 
 ### 1.3 Modules du plan d'origine **annulés ou renommés**
 
-| Module d'origine                              | Verdict                                              |
-|-----------------------------------------------|------------------------------------------------------|
-| **B.2 `flutter-firebase`**                    | **ANNULÉ** — Schrems II + CLOUD Act incompatibles    |
-| **B.4 `mobile-only`** (déjà livré 1.0.0)     | **RENOMMÉ** → `mobile-pwa-first` ; schema `2.0.0`    |
-| Roadmap `Phase 3 / mobile-only`               | **OBSOLÈTE** (déjà livré sous l'ancien nom)          |
-| Roadmap `Phase 3 / flutter-firebase`          | **DEPRIORITIZED** ou retiré                          |
+| Module d'origine                         | Verdict                                           |
+|------------------------------------------|---------------------------------------------------|
+| **B.2 `flutter-firebase`**               | **ANNULÉ** — Schrems II + CLOUD Act incompatibles |
+| **B.4 `mobile-only`** (déjà livré 1.0.0) | **RENOMMÉ** → `mobile-pwa-first` ; schema `2.0.0` |
+| Roadmap `Phase 3 / mobile-only`          | **OBSOLÈTE** (déjà livré sous l'ancien nom)       |
+| Roadmap `Phase 3 / flutter-firebase`     | **DEPRIORITIZED** ou retiré                       |
 
 ### 1.4 Modules **nouveaux** introduits par ce plan
 
-| Code  | Nom                          | Source                          | Effort      | Status (2026-05-05) |
-|-------|------------------------------|---------------------------------|-------------|---------------------|
-| B.6   | `event-driven-eu`            | ARCHITECTURE-TARGET §3.3        | `XL`        | Pending (T7)        |
-| B.7   | `ai-native-rag`              | ARCHITECTURE-TARGET §3.3        | `XL`        | Pending (T7)        |
-| B.8   | Migration flagship 1.0.0 → 2.0.0 (Envoy/DBOS/Connect/Zitadel) | ARCHITECTURE-TARGET §11 | `XL` | Pending (T6 — point of no return) |
-| B.9   | Migration `mobile-only / 1.0.0` → `mobile-pwa-first / 2.0.0` (PWA Qwik + Bloc renforcé) | ARCHITECTURE-TARGET §6.3 | `L` | Pending (T8) |
-| I.1   | Compliance EU graded — JSON schemas (T1/T2/T3 + archetype v2) | ARCHITECTURE-TARGET §10 | `S` | **Done 2026-05-04** via `t4-adr-ratification` |
-| I.2–I.6 | Compliance EU graded — standard `compliance-tiers.md`, linter rule, Demeter agent, `forge-compliance.yml` workflow, NIS2/DORA/CRA/AI Act artefacts | ARCHITECTURE-TARGET §10 | `M`–`L` | Pending (T5–T7) |
-| J.1–J.6 | Six standards versionnés `.forge/standards/*.yaml` (transport / state-management / observability / orchestration / identity / persistence) v1.0.0 | ARCHITECTURE-TARGET §12.1 | `M` | **Done 2026-05-04** via `t4-adr-ratification` ; J.1 `transport.yaml` à bumper en 1.1.0 par `t5-connect-codegen` (codegen pinning) |
-| J.7 / J.8 | `validate-standards-yaml.sh` linter + Janus forbidden-list orchestrator rules | ARCHITECTURE-TARGET §12.1 + §12.5 | `S`–`M` | Pending (T5)        |
-| K.1   | Hermes-Async (event-driven)  | ARCHITECTURE-TARGET §9.2        | `M`         | Pending (T7)        |
-| K.2   | Pythia (AI/RAG)              | ARCHITECTURE-TARGET §9.2        | `M`         | Pending (T7)        |
-| K.3   | Demeter (data steward EU)    | ARCHITECTURE-TARGET §9.2        | `M`         | Pending (T5)        |
-| K.4   | Iris-Web (Qwik/SvelteKit)    | ARCHITECTURE-TARGET §9.2        | `M`         | Pending (T7)        |
-| K.5   | Themis (compliance officer)  | ARCHITECTURE-TARGET §9.2        | `M`         | Pending (T7) — automation `forge review-standards` ; cycle 12 mois lui-même livré (P-3) |
+| Code      | Nom                                                                                                                                                | Source                            | Effort  | Status (2026-05-05)                                                                                                               |
+|-----------|----------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------|---------|-----------------------------------------------------------------------------------------------------------------------------------|
+| B.6       | `event-driven-eu`                                                                                                                                  | ARCHITECTURE-TARGET §3.3          | `XL`    | Pending (T7)                                                                                                                      |
+| B.7       | `ai-native-rag`                                                                                                                                    | ARCHITECTURE-TARGET §3.3          | `XL`    | Pending (T7)                                                                                                                      |
+| B.8       | Migration flagship 1.0.0 → 2.0.0 (Envoy/DBOS/Connect/Zitadel)                                                                                      | ARCHITECTURE-TARGET §11           | `XL`    | Pending (T6 — point of no return)                                                                                                 |
+| B.9       | Migration `mobile-only / 1.0.0` → `mobile-pwa-first / 2.0.0` (PWA Qwik + Bloc renforcé)                                                            | ARCHITECTURE-TARGET §6.3          | `L`     | Pending (T8)                                                                                                                      |
+| I.1       | Compliance EU graded — JSON schemas (T1/T2/T3 + archetype v2)                                                                                      | ARCHITECTURE-TARGET §10           | `S`     | **Done 2026-05-04** via `t4-adr-ratification`                                                                                     |
+| I.2–I.6   | Compliance EU graded — standard `compliance-tiers.md`, linter rule, Demeter agent, `forge-compliance.yml` workflow, NIS2/DORA/CRA/AI Act artefacts | ARCHITECTURE-TARGET §10           | `M`–`L` | Pending (T5–T7)                                                                                                                   |
+| J.1–J.6   | Six standards versionnés `.forge/standards/*.yaml` (transport / state-management / observability / orchestration / identity / persistence) v1.0.0  | ARCHITECTURE-TARGET §12.1         | `M`     | **Done 2026-05-04** via `t4-adr-ratification` ; J.1 `transport.yaml` à bumper en 1.1.0 par `t5-connect-codegen` (codegen pinning) |
+| J.7 / J.8 | `validate-standards-yaml.sh` linter + Janus forbidden-list orchestrator rules                                                                      | ARCHITECTURE-TARGET §12.1 + §12.5 | `S`–`M` | Pending (T5)                                                                                                                      |
+| K.1       | Hermes-Async (event-driven)                                                                                                                        | ARCHITECTURE-TARGET §9.2          | `M`     | Pending (T7)                                                                                                                      |
+| K.2       | Pythia (AI/RAG)                                                                                                                                    | ARCHITECTURE-TARGET §9.2          | `M`     | Pending (T7)                                                                                                                      |
+| K.3       | Demeter (data steward EU)                                                                                                                          | ARCHITECTURE-TARGET §9.2          | `M`     | Pending (T5)                                                                                                                      |
+| K.4       | Iris-Web (Qwik/SvelteKit)                                                                                                                          | ARCHITECTURE-TARGET §9.2          | `M`     | Pending (T7)                                                                                                                      |
+| K.5       | Themis (compliance officer)                                                                                                                        | ARCHITECTURE-TARGET §9.2          | `M`     | Pending (T7) — automation `forge review-standards` ; cycle 12 mois lui-même livré (P-3)                                           |
 
 ---
 
@@ -243,9 +240,11 @@ Ces items sont des **gates** : aucun module B.6/B.7/B.8/B.9 ne démarre sans eux
 Six fichiers YAML à créer/migrer **avant** d'éditer un seul template :
 
 - `transport.yaml` — Connect-RPC, buf, proto pinning, derived OpenAPI 3.1 + AsyncAPI 3.1
-- `state-management.yaml` — flutter_bloc + interdiction Riverpod/Provider/GetX/MobX/states_rebuilder + linter `no-state-management-alternatives` bloquant
+- `state-management.yaml` — flutter_bloc + interdiction Riverpod/Provider/GetX/MobX/states_rebuilder + linter
+  `no-state-management-alternatives` bloquant
 - `observability.yaml` — OTel SDK + OBI eBPF + Coroot + SigNoz + sampler `parentbased_traceidratio`
-- `orchestration.yaml` — DBOS default, Temporal fallback (`workflow_volume_per_day_gt_10000 OR cross_service_count_gt_10`)
+- `orchestration.yaml` — DBOS default, Temporal fallback (
+  `workflow_volume_per_day_gt_10000 OR cross_service_count_gt_10`)
 - `identity.yaml` — Zitadel default, Keycloak/Authentik alternatives, Firebase Auth interdit
 - `persistence.yaml` — Postgres 17 + pgvector + extensions, Citus pour sharding,
   DynamoDB/Firestore/Cosmos interdits en T2/T3 strict
@@ -307,16 +306,13 @@ Effort : `M` (J.1-J.5 du tableau §1.4).
 > le `forge upgrade` de A.7 : un adopter B.4 actuel (`mobile-only / 1.0.0`)
 > peut rester immobile jusqu'à T8 avant d'être incité à migrer.
 
-### 2.5 P-5 — Refactor Hera 9 → 5 sub-agents *(opinion d'architecte non sourcée)*
+### 2.5 P-5 — *RETIRÉ 2026-05-06*
 
-- Audit `.claude/agents/flutter/*.md` : Hera + 9 sub-agents (Athena, Spartan, Apollo,
-  Hephaestus, Hermes, Iris, Argus, Prometheus, Nemesis).
-- Verdict ARCHITECTURE-TARGET : multiplier les sub-agents donne l'illusion de coverage
-  et multiplie les conflits de prompts. Cible : **5 max** (UI builder, State Bloc,
-  Animation, Test BDD, OTel client).
-- **Décision utilisateur requise** avant exécution : c'est un changement breaking pour
-  toute orchestration `/forge:implement` qui invoque les agents nommément.
-- Effort : `M`.
+> ⛔ **Définitivement retiré** par le mainteneur le 2026-05-06.
+> L'argument ARCHITECTURE-TARGET (« multiplier les sub-agents donne l'illusion de coverage »)
+> est rejeté : la spécialisation Hera 9 sub-agents (Athena, Spartan, Apollo, Hephaestus,
+> Hermes, Iris, Argus, Prometheus, Nemesis) reste en place. Aucun refactor 9 → 5 ne sera
+> exécuté en T6 ni ultérieurement. P-5 disparaît du backlog.
 
 ---
 
@@ -327,8 +323,8 @@ Effort : `M` (J.1-J.5 du tableau §1.4).
 - **`full-stack-monorepo / 1.0.0`** (livré v0.3.0) : Kong + Temporal + REST-bridge,
   reste supporté en `legacy compat` jusqu'à T8 (≈ 6 mois après bascule 2.0.0).
 - **`full-stack-monorepo / 2.0.0`** (B.8 nouveau) : Envoy Gateway + DBOS + Connect-RPC
-  + Zitadel + Postgres+pgvector + SigNoz+OBI+Coroot + Qwik public web (back-office
-  Flutter Web conservé).
+    + Zitadel + Postgres+pgvector + SigNoz+OBI+Coroot + Qwik public web (back-office
+      Flutter Web conservé).
 - Migration via `forge upgrade` (A.7) + script dédié `bin/forge-migrate-flagship.sh`.
 - Voir §4 pour le détail B.8.
 
@@ -376,13 +372,13 @@ Effort : `M` (J.1-J.5 du tableau §1.4).
 
 ### 3.7 Matrice cible × workload × profil d'équipe (cible 2026)
 
-| Archétype             | Web                   | Mobile                       | Desktop          | Workload              | Profil équipe min                  |
-|-----------------------|-----------------------|------------------------------|------------------|------------------------|------------------------------------|
-| `full-stack-monorepo` | ✅ Flutter+Qwik       | ✅ Flutter                   | ✅ Flutter/Tauri | CRUD sync premium      | 4–6 dev (1 Rust, 2 Flutter, 1 SRE) |
-| `mobile-pwa-first`    | ✅ PWA Qwik           | ✅ PWA + native fallback iOS | ⚠️ PWA installable | App grand public     | 2–3 dev fullstack                  |
-| `event-driven-eu`     | ⚠️ admin Qwik         | ❌                            | ❌               | Pub/sub, sagas, audit  | 3–5 dev backend Rust               |
-| `ai-native-rag`       | ✅ Qwik streaming     | ⚠️ Flutter optionnel          | ❌               | LLM+RAG+agentic        | 2–4 dev (1 ML, 2 Rust)             |
-| `rust-cli-tui`        | ❌                    | ❌                            | ✅ binary natif  | Devtools               | 1–2 dev Rust                       |
+| Archétype             | Web              | Mobile                      | Desktop            | Workload              | Profil équipe min                  |
+|-----------------------|------------------|-----------------------------|--------------------|-----------------------|------------------------------------|
+| `full-stack-monorepo` | ✅ Flutter+Qwik   | ✅ Flutter                   | ✅ Flutter/Tauri    | CRUD sync premium     | 4–6 dev (1 Rust, 2 Flutter, 1 SRE) |
+| `mobile-pwa-first`    | ✅ PWA Qwik       | ✅ PWA + native fallback iOS | ⚠️ PWA installable | App grand public      | 2–3 dev fullstack                  |
+| `event-driven-eu`     | ⚠️ admin Qwik    | ❌                           | ❌                  | Pub/sub, sagas, audit | 3–5 dev backend Rust               |
+| `ai-native-rag`       | ✅ Qwik streaming | ⚠️ Flutter optionnel        | ❌                  | LLM+RAG+agentic       | 2–4 dev (1 ML, 2 Rust)             |
+| `rust-cli-tui`        | ❌                | ❌                           | ✅ binary natif     | Devtools              | 1–2 dev Rust                       |
 
 ---
 
@@ -394,6 +390,7 @@ fin de B.8.
 ### 4.1 Stratégie
 
 Migration **additive d'abord, breaking ensuite** :
+
 1. Ajouter Envoy Gateway en parallèle de Kong (canary par route).
 2. Ajouter DBOS embedded library en parallèle de Temporal.
 3. Ajouter Connect-RPC handlers en parallèle de REST-bridge.
@@ -441,10 +438,10 @@ Migration **additive d'abord, breaking ensuite** :
 - **B.8.12.** Tests E2E migration : `c1-reference-project` migré vers 2.0.0, captures
   p95/p99 avant/après, 0 régression sur les 4 demos. Effort : `M`.
 - **B.8.13.** Critères de rollback documentés (ARCHITECTURE-TARGET §11.3) :
-  - p99 augmente > 20 % après Envoy → rollback Kong.
-  - Erreurs traceparent > 1 % → rollback OTel SDK seul.
-  - DBOS Postgres saturé > 70 % CPU → fallback Temporal pour workflows lourds.
-  Effort : `S`.
+    - p99 augmente > 20 % après Envoy → rollback Kong.
+    - Erreurs traceparent > 1 % → rollback OTel SDK seul.
+    - DBOS Postgres saturé > 70 % CPU → fallback Temporal pour workflows lourds.
+      Effort : `S`.
 - **B.8.14.** Bump schema `1.0.0` → `2.0.0` + amendement Constitution si nécessaire
   (Article XII). Annoncer la deprecation 1.0.0 à T+6 mois (CHANGELOG + `GOVERNANCE.md`
   release process). Effort : `S`.
@@ -505,13 +502,13 @@ fallback natif si push critique.
   cluster Helm chart, AsyncAPI 3.1 in `shared/asyncapi/`, Postgres event store, Temporal
   cluster optionnel. Effort : `L`.
 - **B.6.3.** Standards :
-  - `standards/global/event-driven.md` — patterns saga / process manager / outbox /
-    inbox, idempotency keys, event versioning.
-  - `standards/global/asyncapi-contracts.md` — versioning AsyncAPI 3.1, validation buf
-    breaking equivalent (TBD : `asyncapi-cli` validate).
-  - `standards/infra/nats-jetstream.md` — clustering, RAFT, persistence,
-    consumer groups.
-  Effort : `M`.
+    - `standards/global/event-driven.md` — patterns saga / process manager / outbox /
+      inbox, idempotency keys, event versioning.
+    - `standards/global/asyncapi-contracts.md` — versioning AsyncAPI 3.1, validation buf
+      breaking equivalent (TBD : `asyncapi-cli` validate).
+    - `standards/infra/nats-jetstream.md` — clustering, RAFT, persistence,
+      consumer groups.
+      Effort : `M`.
 - **B.6.4.** Nouvel agent **Hermes-Async** (K.1) : maintient AsyncAPI specs, génère
   bindings NATS/Kafka, pose les idempotency keys. Effort : `M`.
 - **B.6.5.** Templates pipelines CI : workflows par layer
@@ -538,13 +535,13 @@ fallback natif si push critique.
   (Mistral on Scaleway / vLLM EU / OpenAI fallback), MCP servers stub
   (`db`, `file`, `search`), Qwik streaming UI (SSE / WebTransport). Effort : `XL`.
 - **B.7.3.** Standards :
-  - `standards/global/rag-patterns.md` — chunking, embeddings, retrieval (BM25 + vector),
-    re-ranking, context window management.
-  - `standards/global/llm-gateway.md` — proxy patterns, prompt audit logs, BYOK,
-    tenant-scoped budgets, kill switch.
-  - `standards/global/mcp-servers.md` — protocole, sécurité (sandboxing), versioning,
-    auth.
-  Effort : `M`.
+    - `standards/global/rag-patterns.md` — chunking, embeddings, retrieval (BM25 + vector),
+      re-ranking, context window management.
+    - `standards/global/llm-gateway.md` — proxy patterns, prompt audit logs, BYOK,
+      tenant-scoped budgets, kill switch.
+    - `standards/global/mcp-servers.md` — protocole, sécurité (sandboxing), versioning,
+      auth.
+      Effort : `M`.
 - **B.7.4.** Nouvel agent **Pythia** (K.2) : pilote embeddings pipeline, tune pgvector
   (HNSW `ef_search`), MCP servers, prompt audit. Effort : `M`.
 - **B.7.5.** Templates compliance AI Act : classification de risque, transparence
@@ -586,11 +583,11 @@ Source : ARCHITECTURE-TARGET §10.
 - **I.5.** Templates `.github/workflows/forge-compliance.yml` qui exécute Demeter +
   SBOM CycloneDX + scanners de licences sur chaque PR. Effort : `M`.
 - **I.6.** Échéances réglementaires inscrites dans `.forge/compliance/` :
-  - NIS2 reporting 24h/72h
-  - DORA RoI ESA submission 30 avr 2026
-  - CRA reporting 11 sept 2026, full requirements 11 déc 2027
-  - AI Act phases 2025–2027 par catégorie de risque
-  Documentation `docs/COMPLIANCE.md`. Effort : `M`.
+    - NIS2 reporting 24h/72h
+    - DORA RoI ESA submission 30 avr 2026
+    - CRA reporting 11 sept 2026, full requirements 11 déc 2027
+    - AI Act phases 2025–2027 par catégorie de risque
+      Documentation `docs/COMPLIANCE.md`. Effort : `M`.
 
 **Total I : `L`**, ~4–6 semaines.
 
@@ -622,15 +619,16 @@ Cf. P-2. Six fichiers YAML versionnés avec metadata `version`, `last_reviewed`,
 
 Source : ARCHITECTURE-TARGET §9.2.
 
-| Code | Persona              | Responsabilités                                                                                | Archétype                          | Effort |
-|------|----------------------|------------------------------------------------------------------------------------------------|------------------------------------|--------|
-| K.1  | **Hermes-Async**     | AsyncAPI 3.1, NATS/Kafka bindings, idempotency keys                                            | `event-driven-eu`                  | `M`    |
-| K.2  | **Pythia**           | Embeddings, pgvector tuning (HNSW `ef_search`), MCP servers, prompt audit                      | `ai-native-rag`                    | `M`    |
-| K.3  | **Demeter**          | Data classification T1/T2/T3, DPA validation, CLOUD Act detection                              | tous                               | `M`    |
-| K.4  | **Iris-Web**         | Standards Qwik / SvelteKit, distinct de Hera (Flutter)                                         | `full-stack-monorepo`, `mobile-pwa-first` | `M` |
-| K.5  | **Themis**           | Compliance officer NIS2/DORA/CRA + cycle review-standards                                      | tous EU                            | `M`    |
+| Code | Persona          | Responsabilités                                                           | Archétype                                 | Effort |
+|------|------------------|---------------------------------------------------------------------------|-------------------------------------------|--------|
+| K.1  | **Hermes-Async** | AsyncAPI 3.1, NATS/Kafka bindings, idempotency keys                       | `event-driven-eu`                         | `M`    |
+| K.2  | **Pythia**       | Embeddings, pgvector tuning (HNSW `ef_search`), MCP servers, prompt audit | `ai-native-rag`                           | `M`    |
+| K.3  | **Demeter**      | Data classification T1/T2/T3, DPA validation, CLOUD Act detection         | tous                                      | `M`    |
+| K.4  | **Iris-Web**     | Standards Qwik / SvelteKit, distinct de Hera (Flutter)                    | `full-stack-monorepo`, `mobile-pwa-first` | `M`    |
+| K.5  | **Themis**       | Compliance officer NIS2/DORA/CRA + cycle review-standards                 | tous EU                                   | `M`    |
 
 Modifications agents existants (ARCHITECTURE-TARGET §9.1) :
+
 - **Janus** : élevé (5 archétypes au lieu de 4, pipeline buf+Connect, interdiction Riverpod).
 - **Atlas** : très élevé (Helm Envoy, Zitadel, NATS, OBI DaemonSet).
 - **Hera** : faible (génération Bloc renforcée + suppression switch state-management).
@@ -652,6 +650,7 @@ Modifications agents existants (ARCHITECTURE-TARGET §9.1) :
 Reprise de ARCHITECTURE-TARGET §11.
 
 ### Phase 0 — Freeze + audit (2 semaines, T4)
+
 - Geler les choix actuels, instrumenter baseline p95/p99 sur l'exemple flagship.
 - Audit Aegis : OWASP ASVS L2 + NIS2 gap analysis.
 - Inventaire dépendances pour conformité CLOUD Act (Demeter, K.3).
@@ -660,6 +659,7 @@ Reprise de ARCHITECTURE-TARGET §11.
 - **Point de non-retour** : non.
 
 ### Phase 1 — Observability + contrats (4 semaines, T5)
+
 - Migrer codegen vers buf + Connect (proto inchangé, ajout Connect protocol).
 - Déployer OTel Collector + OBI + Coroot en parallèle de SigNoz.
 - Validation traceparent end-to-end Flutter → Kong → Rust.
@@ -669,6 +669,7 @@ Reprise de ARCHITECTURE-TARGET §11.
 - **Point de non-retour** : non. Réversible.
 
 ### Phase 2 — Bascule structurelle (6 semaines, T6) — **POINT DE NON-RETOUR**
+
 - Remplacer Kong par Envoy Gateway (canary par route).
 - Migrer Temporal → DBOS pour workflows monorepo simples (cardinalité < 10k/jour).
 - Renforcer scaffolding flutter_bloc + bloc_test via mise à jour Hera (templates v2).
@@ -682,6 +683,7 @@ Reprise de ARCHITECTURE-TARGET §11.
 - **Mitigations** : feature flag par route, blue-green Envoy/Kong, training équipe SRE.
 
 ### Phase 3 — Nouveaux archétypes (8 semaines, T7)
+
 - Implémenter `event-driven-eu` (NATS JetStream + Temporal + AsyncAPI 3.1) → B.6.
 - Implémenter `ai-native-rag` (pgvector + LLM gateway + MCP) → B.7.
 - Mettre à jour Forge CLI `@sdd-forge/cli init --archetype event-driven-eu|ai-native-rag`.
@@ -689,6 +691,7 @@ Reprise de ARCHITECTURE-TARGET §11.
 - **Risques** : maturité DBOS pour AI agents, MCP encore en évolution.
 
 ### Phase 4 — Deprecation (4 semaines, T8)
+
 - Supprimer `flutter-firebase` du backlog (B.2 du plan d'origine).
 - Renommer `mobile-only` → `mobile-pwa-first`, ajouter Qwik PWA template (B.9).
 - Préparer T3 SecNumCloud (Outscale OKS) pour clients souverains.
@@ -696,6 +699,7 @@ Reprise de ARCHITECTURE-TARGET §11.
 - Annoncer EOL `full-stack-monorepo / 1.0.0` (legacy compat).
 
 ### Critères de rollback (ARCHITECTURE-TARGET §11.3)
+
 - p99 augmente > 20 % après Envoy → rollback Kong.
 - Erreurs traceparent > 1 % → rollback OTel SDK seul (sans OBI).
 - DBOS Postgres saturé > 70 % CPU → fallback Temporal pour workflows lourds.
@@ -704,14 +708,14 @@ Reprise de ARCHITECTURE-TARGET §11.
 
 ## 11. Priorisation recommandée — T4 → T8 (post-v0.3.0)
 
-| Trimestre | Modules                                                        | Status (2026-05-05)                                                                                          | Rationale                                                                                                   |
-|-----------|----------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------|
-| **T4**    | **P-1, P-2, P-3, P-4, I.1, J.1–J.6**                           | ✅ **Done 2026-05-04** via `t4-adr-ratification` (PR #2 mergée). 35 ADDED FRs + 8 NFRs. P-5 reste pending.    | Méthodologie : ADR capturés, 6 standards YAML v1.0.0, cycle 12 mois, schémas compliance.                    |
-| **T5**    | **Phase 1 ARCHITECTURE-TARGET, J.7, J.8, K.3 (Demeter), I.2–I.6** | 🚧 **Connect codegen en cours** sur branche `t5-connect-codegen` (Phase 1 RED — `transport.yaml` v1.1.0 GREEN, demo-005 + axum Connect route additif via `connectrpc-build` Path α). OTel+OBI+Coroot, J.7, J.8, K.3, I.2–I.6 = pending. | Observabilité + Connect contrats + standards linter + compliance graduée. Réversible.                       |
-| **T6**    | **B.8 (flagship 1.0.0 → 2.0.0), Phase 2 ARCHITECTURE-TARGET, P-5** | ⏸️ Pending. P-5 (Hera 9→5) demande **décision utilisateur** avant exécution.                                | Migration breaking flagship + refactor Hera 9→5. **Point de non-retour**.                                   |
-| **T7**    | **B.6 (event-driven-eu), B.7 (ai-native-rag), K.1, K.2, K.4, K.5** | ⏸️ Pending.                                                                                                  | Deux nouveaux archétypes + 4 nouveaux agents.                                                               |
-| **T8**    | **B.9 (mobile-pwa-first / 2.0.0), B.3 (rust-cli-tui), pédagogie C.2-C.5, F.3** | ⏸️ Pending.                                                                                                  | Renommage mobile + dernier archétype premium + walkthrough/anti-patterns/comparison/migration + fix release script (F.3 post-mortem v0.3.0). |
-| **T9+**   | **G.* (Forge Guardian, VSCode, pre-commit), H.* (multi-tenant, télémétrie, compliance reports)** | ⏸️ Pending.                                                                                                  | Outillage périphérique et enterprise après que les 5 archétypes soient stables.                            |
+| Trimestre | Modules                                                                                          | Status (2026-05-05)                                                                                                                                                                                                                     | Rationale                                                                                                                                    |
+|-----------|--------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| **T4**    | **P-1, P-2, P-3, P-4, I.1, J.1–J.6**                                                             | ✅ **Done 2026-05-04** via `t4-adr-ratification` (PR #2 mergée). 35 ADDED FRs + 8 NFRs. P-5 retiré 2026-05-06 (Hera 9 sub-agents conservés).                                                                                            | Méthodologie : ADR capturés, 6 standards YAML v1.0.0, cycle 12 mois, schémas compliance.                                                     |
+| **T5**    | **Phase 1 ARCHITECTURE-TARGET, J.7, J.8, K.3 (Demeter), I.2–I.6**                                | 🚧 **Connect codegen en cours** sur branche `t5-connect-codegen` (Phase 1 RED — `transport.yaml` v1.1.0 GREEN, demo-005 + axum Connect route additif via `connectrpc-build` Path α). OTel+OBI+Coroot, J.7, J.8, K.3, I.2–I.6 = pending. | Observabilité + Connect contrats + standards linter + compliance graduée. Réversible.                                                        |
+| **T6**    | **B.8 (flagship 1.0.0 → 2.0.0), Phase 2 ARCHITECTURE-TARGET**                                    | ⏸️ Pending.                                                                                                                                                                                                                             | Migration breaking flagship. **Point de non-retour**.                                                                                        |
+| **T7**    | **B.6 (event-driven-eu), B.7 (ai-native-rag), K.1, K.2, K.4, K.5**                               | ⏸️ Pending.                                                                                                                                                                                                                             | Deux nouveaux archétypes + 4 nouveaux agents.                                                                                                |
+| **T8**    | **B.9 (mobile-pwa-first / 2.0.0), B.3 (rust-cli-tui), pédagogie C.2-C.5, F.3**                   | ⏸️ Pending.                                                                                                                                                                                                                             | Renommage mobile + dernier archétype premium + walkthrough/anti-patterns/comparison/migration + fix release script (F.3 post-mortem v0.3.0). |
+| **T9+**   | **G.* (Forge Guardian, VSCode, pre-commit), H.* (multi-tenant, télémétrie, compliance reports)** | ⏸️ Pending.                                                                                                                                                                                                                             | Outillage périphérique et enterprise après que les 5 archétypes soient stables.                                                              |
 
 ### Alternative « adoption lente, qualité maximale »
 
@@ -724,19 +728,18 @@ existant, puis fais B.8 en T8. Le coût : flagship reste sur Kong/Temporal penda
 
 ## 12. Risques transverses *(post ARCHITECTURE-TARGET)*
 
-| Risque                                                                | Probabilité | Impact | Mitigation                                                                                                                  |
-|-----------------------------------------------------------------------|-------------|--------|-----------------------------------------------------------------------------------------------------------------------------|
-| Connect-Dart encore community-only                                    | Moyenne     | Moyen  | Forker, contribuer upstream, sinon Kotlin FFI                                                                               |
-| DBOS Go SDK breaking changes < 1 an de prod                           | Moyenne     | Élevé  | Wrapper interne Forge, épingler version, garder Temporal en option pour workflows critiques                                 |
-| Envoy Gateway CRD courbe                                              | Élevée      | Moyen  | Documentation Atlas + templates Helm + runbooks                                                                             |
-| Maintenir 9 sub-agents Hera (sans P-5)                                | Élevée      | Élevé  | Refactor en 5 sub-agents en T6                                                                                              |
-| OBI nécessite kernel ≥ 5.8                                            | Moyenne     | Faible | Documenter prérequis nodes ; opt-in via flag                                                                                |
-| Drift specs ↔ code (problème SDD générique)                           | Élevée      | Élevé  | Adopter "living specs" pattern (Augment Intent)                                                                             |
-| Friction recrutement si marché Flutter bascule Riverpod-majoritaire   | Moyenne     | Moyen  | Assumé comme coût de positionnement premium ; rationale Bloc dans README de chaque archétype                                |
-| Migration flagship 1.0.0 → 2.0.0 casse les adopters early-bird        | Moyenne     | Élevé  | `forge upgrade` 3-way merge + legacy compat 6 mois + migration script + canary par route                                    |
-| Schrems II / CLOUD Act réinterprétés en 2027 (assouplis ?)            | Faible      | Moyen  | Si décision change, ajouter `flutter-baas-eu` ou similaire ; ne pas réintroduire Firebase                                   |
-| AI Act phases 2026–2027 ne sont pas finalisées                        | Moyenne     | Moyen  | Templates B.7 conçus extensibles ; agent Themis (K.5) suit l'évolution réglementaire                                        |
-| Déclassement `mobile-only / 1.0.0` casse les adopters T2 P2           | Moyenne     | Moyen  | Alias rétro-compatible jusqu'à T8 (≥ 6 mois) + `forge upgrade` mobile-only → mobile-pwa-first via B.9.9                     |
+| Risque                                                              | Probabilité | Impact | Mitigation                                                                                              |
+|---------------------------------------------------------------------|-------------|--------|---------------------------------------------------------------------------------------------------------|
+| Connect-Dart encore community-only                                  | Moyenne     | Moyen  | Forker, contribuer upstream, sinon Kotlin FFI                                                           |
+| DBOS Go SDK breaking changes < 1 an de prod                         | Moyenne     | Élevé  | Wrapper interne Forge, épingler version, garder Temporal en option pour workflows critiques             |
+| Envoy Gateway CRD courbe                                            | Élevée      | Moyen  | Documentation Atlas + templates Helm + runbooks                                                         |
+| OBI nécessite kernel ≥ 5.8                                          | Moyenne     | Faible | Documenter prérequis nodes ; opt-in via flag                                                            |
+| Drift specs ↔ code (problème SDD générique)                         | Élevée      | Élevé  | Adopter "living specs" pattern (Augment Intent)                                                         |
+| Friction recrutement si marché Flutter bascule Riverpod-majoritaire | Moyenne     | Moyen  | Assumé comme coût de positionnement premium ; rationale Bloc dans README de chaque archétype            |
+| Migration flagship 1.0.0 → 2.0.0 casse les adopters early-bird      | Moyenne     | Élevé  | `forge upgrade` 3-way merge + legacy compat 6 mois + migration script + canary par route                |
+| Schrems II / CLOUD Act réinterprétés en 2027 (assouplis ?)          | Faible      | Moyen  | Si décision change, ajouter `flutter-baas-eu` ou similaire ; ne pas réintroduire Firebase               |
+| AI Act phases 2026–2027 ne sont pas finalisées                      | Moyenne     | Moyen  | Templates B.7 conçus extensibles ; agent Themis (K.5) suit l'évolution réglementaire                    |
+| Déclassement `mobile-only / 1.0.0` casse les adopters T2 P2         | Moyenne     | Moyen  | Alias rétro-compatible jusqu'à T8 (≥ 6 mois) + `forge upgrade` mobile-only → mobile-pwa-first via B.9.9 |
 
 ---
 
@@ -757,46 +760,42 @@ existant, puis fais B.8 en T8. Le coût : flagship reste sur Kong/Temporal penda
    (l'archétype `event-driven-eu` le justifie déjà).
 4. **OBI / Coroot eBPF** : kernel récent + privileged DaemonSet. Audit Aegis
    obligatoire avant prod. Certains clusters managés EU restreignent.
-5. **Refactor Hera 9 → 5 (P-5)** est une `opinion d'architecte non sourcée`.
-   À débattre publiquement avant exécution (Article XII.1 amendment process si la
-   liste des sub-agents est codifiée dans Constitution).
-6. **flutter-firebase REMOVE** est une décision de positionnement, pas technique.
+5. **flutter-firebase REMOVE** est une décision de positionnement, pas technique.
    Defendable mais **à assumer publiquement** dans `docs/ARCHETYPES.md` et
    `CHANGELOG.md` pour ne pas surprendre les adopters qui auraient extrapolé du plan
    d'origine.
-7. **`event-driven-eu` n'est pas un cas d'usage prouvé chez Forge** au moment de la
+6. **`event-driven-eu` n'est pas un cas d'usage prouvé chez Forge** au moment de la
    décision — c'est une lecture d'industrie (kai-waehner.de, ARCHITECTURE-TARGET §3.3).
    Mesurer la demande avant T7 (issues GitHub Discussions, sondage early-adopters).
-8. **`ai-native-rag` est un cible mouvante** — MCP, agents, RAG patterns évoluent
+7. **`ai-native-rag` est un cible mouvante** — MCP, agents, RAG patterns évoluent
    tous les 3 mois. Templates B.7 doivent être versionnés agressivement avec
    fenêtre 12 mois sans exception structurelle.
-9. **`opinion d'architecte non sourcée`** sur les points suivants :
-   - Refactor Hera 9 → 5 sub-agents (P-5).
-   - Rejet GraphQL Federation par défaut.
-   - Recommandation `mobile-pwa-first` PWA-by-default (le marché est partagé).
-   - Postgres comme défaut universel pour `ai-native-rag` (Qdrant > 50M vecteurs).
-10. **Pas d'archétype `data-intensive`** proposé (volontairement écarté faute de
-    demande explicite — manque potentiel à 18 mois).
+8. **`opinion d'architecte non sourcée`** sur les points suivants :
+    - Rejet GraphQL Federation par défaut.
+    - Recommandation `mobile-pwa-first` PWA-by-default (le marché est partagé).
+    - Postgres comme défaut universel pour `ai-native-rag` (Qdrant > 50M vecteurs).
+    - *(Refactor Hera 9 → 5 sub-agents — P-5 — retiré 2026-05-06 par le mainteneur.)*
+9. **Pas d'archétype `data-intensive`** proposé (volontairement écarté faute de
+   demande explicite — manque potentiel à 18 mois).
 
 ---
 
 ## 14. Fichiers critiques à modifier (delta vs plan d'origine)
 
-| Module | Fichiers nouveaux                                                                                                           |
-|--------|------------------------------------------------------------------------------------------------------------------------------|
-| P-1    | `.forge/changes/adr-001..adr-010/` (10 nouveaux changes archived avec proposal/specs/design)                                |
-| P-2 / J | `.forge/standards/{transport,state-management,observability,orchestration,identity,persistence}.yaml`                       |
-| P-3    | `.forge/standards/REVIEW.md`, `.forge/standards/global/standards-lifecycle.md`                                              |
-| P-4 / I | `.forge/schemas/compliance-tier.schema.json`, `.forge/schemas/archetype.schema.json` v2                                    |
-| P-5    | `.claude/agents/flutter/*` (5 sub-agents au lieu de 9 — supprime 4 fichiers, fusionne en 5)                                  |
-| B.6    | `.forge/schemas/event-driven-eu/1.0.0.yaml`, `.forge/templates/event-driven-eu/*`, `.claude/agents/hermes-async.md`, `.forge/standards/{global/event-driven,global/asyncapi-contracts,infra/nats-jetstream}.md`, `examples/forge-eda-example/`, `bin/forge-init-event-driven-eu.sh` |
-| B.7    | `.forge/schemas/ai-native-rag/1.0.0.yaml`, `.forge/templates/ai-native-rag/*`, `.claude/agents/pythia.md`, `.forge/standards/{global/rag-patterns,global/llm-gateway,global/mcp-servers}.md`, `examples/forge-rag-example/`, `bin/forge-init-ai-native-rag.sh` |
-| B.8    | `.forge/schemas/full-stack-monorepo/2.0.0.yaml`, `.forge/templates/full-stack-monorepo/2.0.0/*` (Envoy/DBOS/Connect/Zitadel/Postgres+pgvector/SigNoz+OBI+Coroot/Qwik), `bin/forge-migrate-flagship.sh`, `.forge/scaffold-snapshots/full-stack-monorepo/2.0.0.tar.gz` |
-| B.9    | `.forge/schemas/mobile-pwa-first/2.0.0.yaml`, `.forge/templates/mobile-pwa-first/2.0.0/web-pwa/*`, `bin/forge-migrate-mobile-pwa.sh`, `.forge/scaffold-snapshots/mobile-pwa-first/2.0.0.tar.gz` |
-| I      | `.forge/standards/global/compliance-tiers.md`, `.claude/agents/demeter.md`, `.github/workflows/forge-compliance.yml`, `docs/COMPLIANCE.md`, `.forge/compliance/{nis2,dora,cra,ai-act}/*` |
-| J      | `.forge/scripts/validate-standards-yaml.sh`, `.claude/agents/janus.md` (élargir règles)                                     |
-| K      | `.claude/agents/{hermes-async,pythia,demeter,iris-web,themis}.md`                                                            |
-| Docs   | `docs/ARCHETYPES.md` (5 lignes au lieu de 4), `docs/MIGRATION-PATHS.md` (enrichi B.8 + B.9), `docs/COMPLIANCE.md`, `CHANGELOG.md`, `.forge/product/roadmap.md` |
+| Module  | Fichiers nouveaux                                                                                                                                                                                                                                                                   |
+|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| P-1     | `.forge/changes/adr-001..adr-010/` (10 nouveaux changes archived avec proposal/specs/design)                                                                                                                                                                                        |
+| P-2 / J | `.forge/standards/{transport,state-management,observability,orchestration,identity,persistence}.yaml`                                                                                                                                                                               |
+| P-3     | `.forge/standards/REVIEW.md`, `.forge/standards/global/standards-lifecycle.md`                                                                                                                                                                                                      |
+| P-4 / I | `.forge/schemas/compliance-tier.schema.json`, `.forge/schemas/archetype.schema.json` v2                                                                                                                                                                                             |
+| B.6     | `.forge/schemas/event-driven-eu/1.0.0.yaml`, `.forge/templates/event-driven-eu/*`, `.claude/agents/hermes-async.md`, `.forge/standards/{global/event-driven,global/asyncapi-contracts,infra/nats-jetstream}.md`, `examples/forge-eda-example/`, `bin/forge-init-event-driven-eu.sh` |
+| B.7     | `.forge/schemas/ai-native-rag/1.0.0.yaml`, `.forge/templates/ai-native-rag/*`, `.claude/agents/pythia.md`, `.forge/standards/{global/rag-patterns,global/llm-gateway,global/mcp-servers}.md`, `examples/forge-rag-example/`, `bin/forge-init-ai-native-rag.sh`                      |
+| B.8     | `.forge/schemas/full-stack-monorepo/2.0.0.yaml`, `.forge/templates/full-stack-monorepo/2.0.0/*` (Envoy/DBOS/Connect/Zitadel/Postgres+pgvector/SigNoz+OBI+Coroot/Qwik), `bin/forge-migrate-flagship.sh`, `.forge/scaffold-snapshots/full-stack-monorepo/2.0.0.tar.gz`                |
+| B.9     | `.forge/schemas/mobile-pwa-first/2.0.0.yaml`, `.forge/templates/mobile-pwa-first/2.0.0/web-pwa/*`, `bin/forge-migrate-mobile-pwa.sh`, `.forge/scaffold-snapshots/mobile-pwa-first/2.0.0.tar.gz`                                                                                     |
+| I       | `.forge/standards/global/compliance-tiers.md`, `.claude/agents/demeter.md`, `.github/workflows/forge-compliance.yml`, `docs/COMPLIANCE.md`, `.forge/compliance/{nis2,dora,cra,ai-act}/*`                                                                                            |
+| J       | `.forge/scripts/validate-standards-yaml.sh`, `.claude/agents/janus.md` (élargir règles)                                                                                                                                                                                             |
+| K       | `.claude/agents/{hermes-async,pythia,demeter,iris-web,themis}.md`                                                                                                                                                                                                                   |
+| Docs    | `docs/ARCHETYPES.md` (5 lignes au lieu de 4), `docs/MIGRATION-PATHS.md` (enrichi B.8 + B.9), `docs/COMPLIANCE.md`, `CHANGELOG.md`, `.forge/product/roadmap.md`                                                                                                                      |
 
 ---
 
@@ -827,17 +826,18 @@ et AI-native souverain.
 
 **Prochaines actions concrètes (T4)** *(rédigé le 2026-05-04)* :
 
-1. ~~Convertir les 10 ADR en `.forge/changes/` (P-1) — 1 semaine.~~ ✅ Done 2026-05-04 (consolidé en `t4-adr-ratification`).
+1. ~~Convertir les 10 ADR en `.forge/changes/` (P-1) — 1 semaine.~~ ✅ Done 2026-05-04 (consolidé en
+   `t4-adr-ratification`).
 2. ~~Créer les 6 standards YAML (P-2 / J.1–J.6) — 1 semaine.~~ ✅ Done 2026-05-04.
 3. ~~Inscrire le cycle de réévaluation 12 mois (P-3) — 2 jours.~~ ✅ Done 2026-05-04.
 4. ~~Schémas JSON compliance (P-4 / I.1) — 2 jours.~~ ✅ Done 2026-05-04.
-5. Décider P-5 (refactor Hera 9 → 5) ou le repousser — **décision utilisateur toujours en attente**.
+5. ~~Décider P-5 (refactor Hera 9 → 5).~~ ✅ **Retiré 2026-05-06** — refactor rejeté, Hera 9 sub-agents conservés.
 
 **Prochaines actions concrètes (T5, post-`t4-adr-ratification`)** :
 
 1. 🚧 **Finir `t5-connect-codegen`** (en cours) — RED → GREEN sur les 25 L1
-   + 5 L2 stubs, archive le change avec demo-005-connect-greeting fonctionnel
-   et `transport.yaml` v1.1.0 ratifié.
+    + 5 L2 stubs, archive le change avec demo-005-connect-greeting fonctionnel
+      et `transport.yaml` v1.1.0 ratifié.
 2. ⏸️ **Lancer Phase 1 OTel + OBI + Coroot stack** — templates K8s/compose,
    instrumenter `examples/forge-fsm-example/`, sampler `parentbased_traceidratio`.
 3. ⏸️ **Livrer J.7** (`validate-standards-yaml.sh`) — linter dédié de cohérence
@@ -849,9 +849,6 @@ et AI-native souverain.
 6. ⏸️ **Livrer I.2–I.6** — `global/compliance-tiers.md`, linter rule T3,
    `forge-compliance.yml` workflow, échéances NIS2/DORA/CRA/AI Act dans
    `.forge/compliance/`.
-7. 📌 **Décider P-5** avant T6 démarrage (B.8 dépend de Hera côté templates
-   `mobile-pwa-first`).
-
 Tout le reste découle.
 
 — *Fin du nouveau plan. Mise à jour partielle 2026-05-05.*

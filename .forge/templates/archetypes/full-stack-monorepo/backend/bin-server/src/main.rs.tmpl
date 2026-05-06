@@ -1,0 +1,69 @@
+//! `bin-server` — top-level entrypoint for <project-name>.
+//!
+//! Hosts two parallel transports :
+//!   - **tonic gRPC** server (port 50051) — preserved by ADR-004 KEEP.
+//!   - **Connect-RPC** adapter (port 8080) — Connect+JSON, Connect+proto,
+//!     gRPC, gRPC-Web all on the same axum handler under `/connect`
+//!     (ADR-T5-001 ; T.5 t5-connect-codegen).
+//!
+//! Audit: T.5 (t5-connect-codegen) ; FR-T5-CC-010 / FR-T5-CC-011.
+
+use std::net::SocketAddr;
+use std::sync::Arc;
+
+use axum::Router;
+use grpc_api::transport_connect;
+use tonic::transport::Server as TonicServer;
+use tower_http::trace::TraceLayer;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    // ── Tracing init ─────────────────────────────────────────────
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| "info".into()),
+        )
+        .init();
+
+    // ── Use case wiring ─────────────────────────────────────────
+    //
+    // TODO(adopter): replace `Arc<()>` with the application use case
+    // bag your hexagonal domain exposes — typically constructed from
+    // the configuration loader + the infrastructure adapters wired
+    // above. The transport layer never sees the concrete type ; the
+    // generic on `transport_connect::into_router` keeps the boundary
+    // clean (Article VII). The `()` stub below compiles but yields a
+    // serving binary with no service registered (every request → 404).
+    let use_case: Arc<()> = Arc::new(());
+
+    // ── Connect-RPC adapter on axum (port 8080) ──────────────────
+    //
+    // TraceLayer is a generic HTTP tracing placeholder. Swap for an
+    // OTel-specific layer (e.g. `axum_tracing_opentelemetry::OtelAxumLayer`)
+    // to get traceparent W3C E2E propagation (FR-T5-CC-014).
+    let connect_addr: SocketAddr = "0.0.0.0:8080".parse()?;
+    let tracing_layer = TraceLayer::new_for_http();
+    let app: Router = Router::new()
+        .nest("/connect", transport_connect::into_router(use_case.clone(), tracing_layer));
+
+    let listener = tokio::net::TcpListener::bind(connect_addr).await?;
+
+    // ── tonic gRPC server (port 50051) — ADR-004 KEEP ────────────
+    //
+    // TODO(adopter): register your proto services via
+    // `.add_service(MyServer::new(my_handler))` BEFORE serving.
+    // tonic panics at runtime when serving an empty router, so the
+    // seed template stops short of the `.serve()` call until at
+    // least one service is registered. Once your services are
+    // attached, uncomment the `.serve(grpc_addr)` line and switch
+    // the `tokio::select!` arm below.
+    let grpc_addr: SocketAddr = "0.0.0.0:50051".parse()?;
+    let _grpc_builder = TonicServer::builder();
+    tracing::info!(target: "bin_server", grpc_addr = %grpc_addr, "tonic gRPC bind configured (no services registered yet)");
+
+    // Serve only the Connect adapter for now ; gRPC bind is reserved
+    // by the constant above so adopters know the canonical port.
+    axum::serve(listener, app.into_make_service()).await?;
+    Ok(())
+}

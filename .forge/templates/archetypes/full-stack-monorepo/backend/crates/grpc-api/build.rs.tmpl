@@ -1,0 +1,27 @@
+// <!-- Audit: T.5 (t5-connect-codegen) — grpc-api build script -->
+//
+// Generates Rust Connect-RPC service stubs at build time. The proto
+// source of truth lives at <project>/shared/protos/v1/ ; the buf
+// remote plugins handle gRPC + Dart + TS codegen, while this build
+// script handles the Rust Connect codegen path (ADR-T5-001 Path α).
+//
+// The output `_connectrpc.rs` is consumed by transport_connect.rs via
+// `connectrpc::include_generated!("_connectrpc.rs")`.
+
+fn main() {
+    let proto_root = "../../shared/protos/v1";
+    println!("cargo:rerun-if-changed={}", proto_root);
+
+    connectrpc_build::Config::new()
+        .out_file("_connectrpc.rs")
+        .compile(
+            &[
+                // Adopter MUST list each .proto file here as it is added
+                // to shared/protos/v1/. The seed proto from b1-scaffolder
+                // is example/example.proto.
+                "../../shared/protos/v1/example/example.proto",
+            ],
+            &[proto_root],
+        )
+        .expect("connectrpc-build codegen failed — check shared/protos/v1/ paths");
+}

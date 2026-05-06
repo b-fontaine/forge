@@ -130,7 +130,19 @@ cmd_build() {
   # in `forge upgrade` is SHA-256 per file (ADR-004), not over the
   # tarball — so per-file determinism is what matters and is
   # preserved by `cp -p` not setting any new flags.
-  ( cd "$tmp" && tar -czf "$out_file" . )
+  #
+  # macOS-specific : strip xattrs + AppleDouble metadata so the tarball
+  # is byte-portable across BSD tar (build-side, macOS) and GNU tar
+  # (consume-side, Linux CI). Without these flags, bsdtar embeds
+  # `LIBARCHIVE.xattr.com.apple.provenance` headers + `._<file>`
+  # AppleDouble entries that GNU tar reads as plain files, doubling
+  # the entry count and breaking `tar -tzf | grep <real-file>` assertions
+  # downstream. Discovered via t5_023 CI failure on PR #3 (043 stage).
+  local _tar_extra_flags=()
+  if [ "$(uname -s)" = "Darwin" ]; then
+    _tar_extra_flags+=(--no-mac-metadata --no-xattrs)
+  fi
+  ( cd "$tmp" && tar "${_tar_extra_flags[@]}" -czf "$out_file" . )
 
   local size; size=$(wc -c < "$out_file" | tr -d ' ')
   echo "✓ snapshot built: $out_file ($count files, $size bytes gzipped)"

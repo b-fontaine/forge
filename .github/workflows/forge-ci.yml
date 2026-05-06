@@ -80,6 +80,13 @@ jobs:
         run: bash .forge/scripts/tests/f4.test.sh --level 1,2
       - name: t4.test.sh
         run: bash .forge/scripts/tests/t4.test.sh --level 1,2
+      - name: t5.test.sh
+        # L2 fixtures (T-L2-001..007) deferred to a follow-up change ;
+        # see .forge/changes/t5-connect-codegen/tasks.md "DEFERRED 2026-05-06"
+        # note. L1 alone validates the post_cargo_new templates + the
+        # v1.1.0 transport standard + the demo-005 archived shape —
+        # sufficient for the T.5 archival gate.
+        run: bash .forge/scripts/tests/t5.test.sh --level 1
 
   # ─── gates ── verify.sh + constitution-linter.sh ───────────────
   gates:
