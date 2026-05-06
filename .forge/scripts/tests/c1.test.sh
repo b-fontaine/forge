@@ -358,12 +358,17 @@ demos = sorted([d for d in os.listdir(demos_dir)
                 if os.path.isdir(os.path.join(demos_dir, d))
                 and d.startswith("demo-")])
 errs = []
-if len(demos) != 4:
-    errs.append(f"expected 4 demos, found {len(demos)}: {demos}")
-expected = ["demo-001-greeting-service", "demo-002-greeting-screen",
-            "demo-003-rate-limit", "demo-004-user-onboarding"]
-if demos != expected:
-    errs.append(f"demo names mismatch: got {demos!r}, expected {expected!r}")
+# Canonical demos shipped by c1-reference-project — MUST be present,
+# in this exact order. Extra demos (demo-005+, contributed by later
+# Forge changes such as t5-connect-codegen) are allowed and validated
+# only on `status` membership : archived | specified.
+canonical = ["demo-001-greeting-service", "demo-002-greeting-screen",
+             "demo-003-rate-limit", "demo-004-user-onboarding"]
+if len(demos) < 4:
+    errs.append(f"expected at least 4 demos, found {len(demos)}: {demos}")
+missing_canonical = [d for d in canonical if d not in demos]
+if missing_canonical:
+    errs.append(f"missing canonical demos: {missing_canonical}")
 statuses = {}
 for d in demos:
     fy = os.path.join(demos_dir, d, ".forge.yaml")
@@ -382,6 +387,14 @@ for d, want in expected_statuses.items():
     got = statuses.get(d, "<missing>")
     if got != want:
         errs.append(f"{d}: status='{got}', expected '{want}'")
+# For non-canonical demos (demo-005+), require status ∈ {archived, specified}.
+allowed_statuses = {"archived", "specified"}
+for d in demos:
+    if d in canonical:
+        continue
+    got = statuses.get(d, "<missing>")
+    if got not in allowed_statuses:
+        errs.append(f"{d}: status='{got}', expected one of {sorted(allowed_statuses)}")
 if errs:
     for e in errs: print(f"    {e}", file=sys.stderr)
     sys.exit(1)
@@ -563,24 +576,32 @@ test_demos_cover_distinct_layer_combinations() {
   python3 - "$EXAMPLE_DEMOS_DIR" <<'PY' || return 1
 import os, sys, yaml
 demos_dir = sys.argv[1]
+canonical = {"demo-001-greeting-service", "demo-002-greeting-screen",
+             "demo-003-rate-limit", "demo-004-user-onboarding"}
 demos = sorted(d for d in os.listdir(demos_dir)
                if os.path.isdir(os.path.join(demos_dir, d))
                and d.startswith("demo-"))
-combos = []
+canonical_combos = []
 for d in demos:
+    if d not in canonical:
+        continue
     fy = os.path.join(demos_dir, d, ".forge.yaml")
     with open(fy) as f:
         meta = yaml.safe_load(f) or {}
     layers = tuple(sorted(meta.get("layers") or []))
-    combos.append((d, layers))
+    canonical_combos.append((d, layers))
+# The 4 canonical demos MUST cover 4 distinct layer combinations
+# (NFR-EX-005). Non-canonical demos (demo-005+, e.g. demo-005-connect-greeting
+# from t5-connect-codegen) are NOT required to introduce a new combo —
+# they may legitimately re-use an existing one (e.g. backend-only).
 seen = set()
-for d, c in combos:
+for d, c in canonical_combos:
     if c in seen:
-        print(f"    duplicate layer combination {c!r} in {d}", file=sys.stderr)
+        print(f"    duplicate layer combination {c!r} in canonical demo {d}", file=sys.stderr)
         sys.exit(1)
     seen.add(c)
 if len(seen) != 4:
-    print(f"    expected 4 distinct layer combinations, got {len(seen)}: {seen}", file=sys.stderr)
+    print(f"    expected 4 distinct layer combinations across canonical demos, got {len(seen)}: {seen}", file=sys.stderr)
     sys.exit(1)
 PY
 }
