@@ -355,6 +355,14 @@ traceparent E2E) flip GREEN.
       [Story: FR-T5-CC-030..032]
 
 ### T-L2 — L2 fixture tests (FR-T5-CC-064)
+> **DEFERRED 2026-05-06** : T-L2-001..007 are deferred to a follow-up
+> change. The CI matrix runs t5.test.sh at `--level 1` only ; the L2
+> fixtures (buf generate, Dart smoke, traceparent dual-codec E2E, cargo
+> fixture build, connectrpc dual-codec direct) require a Rust workspace
+> fixture + a mock OTel collector + buf CLI, which is more invasive
+> than the T.5 archival gate requires. Re-evaluate at the start of T.6
+> (B.8 flagship migration).
+
 
 - [ ] **T-L2-001** : Verify `test_buf_generate_3_layouts` is FAIL.
       [Story: FR-T5-CC-064]
