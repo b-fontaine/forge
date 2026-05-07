@@ -498,15 +498,15 @@ snapshot regenerated under budget ; docs updated.
 
 ### T-REV — Quality review gate
 
-- [ ] **T-REV-001** : Invoke **Tribune** (Rust quality guardian) on
+- [x] **T-REV-001** : Invoke **Tribune** (Rust quality guardian) on
       the Rust adapter (`transport/connect.rs` + `main.rs` diff)
       validating hexagonal preservation, OTel layer ordering, public
       API doc ratio ≥ 80%. [Story: NFR-T5-CC-004 / Article X.3]
-- [ ] **T-REV-002** : Run `/forge:review t5-connect-codegen` to drive
+- [x] **T-REV-002** : Run `/forge:review t5-connect-codegen` to drive
       the constitutional gate review : Articles I (TDD), II (BDD),
       III + III.4, IV (delta), V, VII (Rust), IX (Sec), X (Quality),
       XII (Governance). Block if any returns VIOLATION. [Story: Article V]
-- [ ] **T-REV-003** : Run the full `verify.sh` once more on a clean
+- [x] **T-REV-003** : Run the full `verify.sh` once more on a clean
       checkout to confirm reproducibility. [Story: NFR-T5-CC-004]
 
 **Phase 4 exit gate (= change archival readiness)** :

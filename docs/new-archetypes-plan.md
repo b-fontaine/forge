@@ -15,7 +15,7 @@
 
 ---
 
-## 0.0 Status update — 2026-05-05
+## 0.0 Status update — 2026-05-07
 
 > **Mise à jour cumulative depuis la rédaction du plan le 2026-05-04.**
 > Lis cette section avant le reste du document : elle reflète l'état réel
@@ -49,27 +49,46 @@
     - `compliance-tier.schema.json` est référencé par
       `archetype.schema.json` v2 dans `x-component-eligibility-matrix-source`.
 
+- **`t5-connect-codegen` archivé 2026-05-06** (PR #3 mergée, merge commit
+  `ca27257`) — **première brique T5 Phase 1 ARCH** livrée additive sur la
+  flagship. Spec consolidée `.forge/specs/connect-codegen.md` (32 ADDED FRs
+  `FR-T5-CC-001..072` + 10 NFRs `NFR-T5-CC-001..010` + 6 ADRs
+  `ADR-T5-001..006`). Livrables physiques :
+    - `templates/full-stack-monorepo/1.0.0/proto/buf.gen.yaml.tmpl`
+      étendu avec `protoc-gen-connect-go` v1.19.2, `bufbuild/protoc-gen-es`
+      ≥ v2.2.0 (Connect v2), `connectrpc/connect-dart` officiel ≥ v1.0.0
+      (publié sur pub.dev par `connectrpc.com`).
+    - **Pivot d'implémentation Rust** post-investigation T-BUF
+      (2026-05-05) : le plugin BSR `buf.build/anthropics/connect-rust`
+      n'est pas encore publié, et la convention codebase impose des
+      plugins remote uniquement → bascule sur `connectrpc-build` via
+      `build.rs` (Option 2 / Path α, supportée upstream comme
+      "Option B"). Pin `connectrpc = "=0.3.3"` + `buffa = "=0.3.3"` +
+      `buffa-types = "=0.3.3"` (Anthropic OSS Apache-2.0, MSRV 1.88,
+      6 558 conformance tests). Intégration axum inline via
+      `Router::into_axum_service()` — pas de crate `connectrpc-axum`
+      séparé.
+    - `transport.yaml` 1.0.0 → 1.1.0 (codegen pinning, additif — pas
+      de `breaking_change: true`) avec 11 versions épinglées + entrée
+      `Updated` dans `.forge/standards/REVIEW.md`.
+    - Demo `demo-005-connect-greeting` archivée dans
+      `examples/forge-fsm-example/`, parallèle au gRPC tonic existant.
+    - Linter `transport-codegen-coverage` WARN-only ajouté à
+      `constitution-linter.sh` (opt-out
+      `FORGE_LINTER_SKIP_TRANSPORT_CODEGEN=1`).
+    - Harness `t5.test.sh` 25/25 L1 PASS, 0 FAIL ; **L2 fixtures
+      (T-L2-001..007) volontairement deferred à T6** (B.8 flagship
+      migration) — buf generate, Dart smoke, traceparent dual-codec
+      E2E, cargo fixture build, connectrpc dual-codec direct. La CI
+      matrix exécute `t5.test.sh --level 1` uniquement.
+    - tonic-build inchangé (ADR-004 KEEP).
+
 ### Module en cours
 
-- **`t5-connect-codegen`** (branche `t5-connect-codegen`, status `planned`,
-  Phase 1 RED active) — **première brique T5 Phase 1 ARCH**, additive.
-    - Étend `templates/full-stack-monorepo/1.0.0/proto/buf.gen.yaml.tmpl`
-      avec `protoc-gen-connect-go`, `protoc-gen-connect-es` (Connect v2),
-      `connectrpc/connect-dart` officiel (publié sur pub.dev par
-      `connectrpc.com`).
-    - **Pivot d'implémentation** post-investigation T-BUF (2026-05-05) :
-      le plugin BSR `buf.build/anthropics/connect-rust` n'est pas encore
-      publié, et la convention codebase impose des plugins remote uniquement.
-      → bascule sur `connectrpc-build` via `build.rs`
-      (Option 2 / Path α, supportée upstream comme "Option B").
-      Pin `connectrpc = "=0.3.3"` + `buffa = "=0.3.3"` (Anthropic OSS
-      Apache-2.0, MSRV 1.88, 6 558 conformance tests).
-    - Bump `transport.yaml` 1.0.0 → 1.1.0 (codegen pinning) + entrée
-      `Updated` dans `REVIEW.md` — 4 tests T-STD GREEN au commit `a96222d`.
-    - Demo `demo-005-connect-greeting` ajoutée à `examples/forge-fsm-example/`,
-      parallèle au gRPC tonic existant. Traceparent W3C E2E à valider.
-    - Harness `t5.test.sh` skeleton 25 L1 + 5 L2 stubs (full RED, `T-PHA-001/002`).
-    - tonic-build inchangé (ADR-004 KEEP).
+Aucun change en cours sur `main` au 2026-05-07. Le prochain candidat
+naturel est le scaffolding T5 résiduel (OTel + OBI + Coroot stack
+templates, J.7 `validate-standards-yaml.sh`, J.8 Janus rules), ou K.3
+(Demeter agent), à arbitrer.
 
 ### Modules toujours en attente
 
@@ -80,7 +99,7 @@
 - **T6 / T7 / T8 / T9+** : non commencés (B.6, B.7, B.8, B.9, B.3, K.1,
   K.2, K.4, K.5, C.2–C.5, F.3, G.*, H.*).
 
-### Inventaire `.forge/changes/` (2026-05-05)
+### Inventaire `.forge/changes/` (2026-05-07)
 
 | Change                 | Status                 | Tier livré                    |
 |------------------------|------------------------|-------------------------------|
@@ -98,9 +117,9 @@
 | `f2-yaml-schema`       | archived               | T3 (F.2)                      |
 | `f4-linter-extension`  | archived               | T3 (F.4)                      |
 | `t4-adr-ratification`  | archived               | T4 (P-1..P-4 + J.1–J.6 + I.1) |
-| `t5-connect-codegen`   | planned (WIP, branche) | T5 Phase 1 (Connect codegen)  |
+| `t5-connect-codegen`   | archived               | T5 Phase 1 (Connect codegen)  |
 
-**14 archivés sur `main`** + 1 en cours sur branche dédiée. Aucun change
+**15 archivés sur `main`**, aucun change en cours. Aucun change
 orphelin, aucun `status: in_progress` bloqué, aucun marqueur
 `[NEEDS CLARIFICATION:]` non résolu inline dans les changes archivés
 (tous gates `verify.sh` + `constitution-linter.sh` PASS).
@@ -198,7 +217,7 @@ sont créés. Cinq nouveaux agents Forge sont introduits. Plan de migration **4 
 | B.9       | Migration `mobile-only / 1.0.0` → `mobile-pwa-first / 2.0.0` (PWA Qwik + Bloc renforcé)                                                            | ARCHITECTURE-TARGET §6.3          | `L`     | Pending (T8)                                                                                                                      |
 | I.1       | Compliance EU graded — JSON schemas (T1/T2/T3 + archetype v2)                                                                                      | ARCHITECTURE-TARGET §10           | `S`     | **Done 2026-05-04** via `t4-adr-ratification`                                                                                     |
 | I.2–I.6   | Compliance EU graded — standard `compliance-tiers.md`, linter rule, Demeter agent, `forge-compliance.yml` workflow, NIS2/DORA/CRA/AI Act artefacts | ARCHITECTURE-TARGET §10           | `M`–`L` | Pending (T5–T7)                                                                                                                   |
-| J.1–J.6   | Six standards versionnés `.forge/standards/*.yaml` (transport / state-management / observability / orchestration / identity / persistence) v1.0.0  | ARCHITECTURE-TARGET §12.1         | `M`     | **Done 2026-05-04** via `t4-adr-ratification` ; J.1 `transport.yaml` à bumper en 1.1.0 par `t5-connect-codegen` (codegen pinning) |
+| J.1–J.6   | Six standards versionnés `.forge/standards/*.yaml` (transport / state-management / observability / orchestration / identity / persistence) v1.0.0  | ARCHITECTURE-TARGET §12.1         | `M`     | **Done 2026-05-04** via `t4-adr-ratification` ; J.1 `transport.yaml` bumpé en 1.1.0 le 2026-05-06 par `t5-connect-codegen` (codegen pinning, additif) |
 | J.7 / J.8 | `validate-standards-yaml.sh` linter + Janus forbidden-list orchestrator rules                                                                      | ARCHITECTURE-TARGET §12.1 + §12.5 | `S`–`M` | Pending (T5)                                                                                                                      |
 | K.1       | Hermes-Async (event-driven)                                                                                                                        | ARCHITECTURE-TARGET §9.2          | `M`     | Pending (T7)                                                                                                                      |
 | K.2       | Pythia (AI/RAG)                                                                                                                                    | ARCHITECTURE-TARGET §9.2          | `M`     | Pending (T7)                                                                                                                      |
@@ -265,10 +284,10 @@ Effort : `M` (J.1-J.5 du tableau §1.4).
 > Zitadel/SigNoz si `--eu-tier=T3`, force Mistral-EU ou vLLM si `ai-native-rag`
 > + T3, génération SBOM CycloneDX).
 >
-> Note : `transport.yaml` sera bumpé en **1.1.0** par `t5-connect-codegen`
-> (codegen pinning, additif — pas de `breaking_change: true`). Le ledger
-> `.forge/standards/REVIEW.md` recevra une entrée `Updated` (pas une re-revue
-> complète).
+> Note : `transport.yaml` a été bumpé en **1.1.0** le 2026-05-06 par
+> `t5-connect-codegen` (codegen pinning, additif — pas de
+> `breaking_change: true`). Le ledger `.forge/standards/REVIEW.md` a reçu
+> une entrée `Updated` (pas une re-revue complète).
 
 ### 2.3 P-3 — Cycle de réévaluation 12 mois
 
@@ -708,10 +727,10 @@ Reprise de ARCHITECTURE-TARGET §11.
 
 ## 11. Priorisation recommandée — T4 → T8 (post-v0.3.0)
 
-| Trimestre | Modules                                                                                          | Status (2026-05-05)                                                                                                                                                                                                                     | Rationale                                                                                                                                    |
+| Trimestre | Modules                                                                                          | Status (2026-05-07)                                                                                                                                                                                                                     | Rationale                                                                                                                                    |
 |-----------|--------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
 | **T4**    | **P-1, P-2, P-3, P-4, I.1, J.1–J.6**                                                             | ✅ **Done 2026-05-04** via `t4-adr-ratification` (PR #2 mergée). 35 ADDED FRs + 8 NFRs. P-5 retiré 2026-05-06 (Hera 9 sub-agents conservés).                                                                                            | Méthodologie : ADR capturés, 6 standards YAML v1.0.0, cycle 12 mois, schémas compliance.                                                     |
-| **T5**    | **Phase 1 ARCHITECTURE-TARGET, J.7, J.8, K.3 (Demeter), I.2–I.6**                                | 🚧 **Connect codegen en cours** sur branche `t5-connect-codegen` (Phase 1 RED — `transport.yaml` v1.1.0 GREEN, demo-005 + axum Connect route additif via `connectrpc-build` Path α). OTel+OBI+Coroot, J.7, J.8, K.3, I.2–I.6 = pending. | Observabilité + Connect contrats + standards linter + compliance graduée. Réversible.                                                        |
+| **T5**    | **Phase 1 ARCHITECTURE-TARGET, J.7, J.8, K.3 (Demeter), I.2–I.6**                                | ✅ **Connect codegen done 2026-05-06** via `t5-connect-codegen` (PR #3 mergée — `transport.yaml` v1.1.0, demo-005, parallel axum Connect route via `connectrpc-build` Path α, 25/25 L1 PASS, L2 deferred to T6). OTel+OBI+Coroot, J.7, J.8, K.3, I.2–I.6 = pending. | Observabilité + Connect contrats + standards linter + compliance graduée. Réversible.                                                        |
 | **T6**    | **B.8 (flagship 1.0.0 → 2.0.0), Phase 2 ARCHITECTURE-TARGET**                                    | ⏸️ Pending.                                                                                                                                                                                                                             | Migration breaking flagship. **Point de non-retour**.                                                                                        |
 | **T7**    | **B.6 (event-driven-eu), B.7 (ai-native-rag), K.1, K.2, K.4, K.5**                               | ⏸️ Pending.                                                                                                                                                                                                                             | Deux nouveaux archétypes + 4 nouveaux agents.                                                                                                |
 | **T8**    | **B.9 (mobile-pwa-first / 2.0.0), B.3 (rust-cli-tui), pédagogie C.2-C.5, F.3**                   | ⏸️ Pending.                                                                                                                                                                                                                             | Renommage mobile + dernier archétype premium + walkthrough/anti-patterns/comparison/migration + fix release script (F.3 post-mortem v0.3.0). |
@@ -833,11 +852,11 @@ et AI-native souverain.
 4. ~~Schémas JSON compliance (P-4 / I.1) — 2 jours.~~ ✅ Done 2026-05-04.
 5. ~~Décider P-5 (refactor Hera 9 → 5).~~ ✅ **Retiré 2026-05-06** — refactor rejeté, Hera 9 sub-agents conservés.
 
-**Prochaines actions concrètes (T5, post-`t4-adr-ratification`)** :
+**Prochaines actions concrètes (T5 suite, post-`t5-connect-codegen`)** :
 
-1. 🚧 **Finir `t5-connect-codegen`** (en cours) — RED → GREEN sur les 25 L1
-    + 5 L2 stubs, archive le change avec demo-005-connect-greeting fonctionnel
-      et `transport.yaml` v1.1.0 ratifié.
+1. ✅ ~~**Finir `t5-connect-codegen`**~~ — **Done 2026-05-06** : 25/25 L1 PASS,
+   demo-005-connect-greeting archivée, `transport.yaml` v1.1.0 ratifié, PR #3
+   mergée (`ca27257`). L2 fixtures (T-L2-001..007) deferred à T6.
 2. ⏸️ **Lancer Phase 1 OTel + OBI + Coroot stack** — templates K8s/compose,
    instrumenter `examples/forge-fsm-example/`, sampler `parentbased_traceidratio`.
 3. ⏸️ **Livrer J.7** (`validate-standards-yaml.sh`) — linter dédié de cohérence
@@ -851,4 +870,4 @@ et AI-native souverain.
    `.forge/compliance/`.
 Tout le reste découle.
 
-— *Fin du nouveau plan. Mise à jour partielle 2026-05-05.*
+— *Fin du nouveau plan. Mise à jour partielle 2026-05-07.*

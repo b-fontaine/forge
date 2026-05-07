@@ -1,12 +1,16 @@
 name: t5-connect-codegen
-status: planned
+status: archived
 created: 2026-05-05
 schema: default
 constitution_version: "1.1.0"
+parent_audit_items:
+  - T.5  # Phase 1 ARCHITECTURE-TARGET — first concrete additive transport step
 timeline:
   proposed: 2026-05-05
   specified: 2026-05-05
   designed: 2026-05-05
   planned: 2026-05-05
-  # implemented: <!-- auto-filled by /forge:implement -->
-  # archived: <!-- auto-filled by /forge:archive -->
+  implemented: 2026-05-06
+  archived: 2026-05-06
+archived_to:
+  - .forge/specs/connect-codegen.md  # 32 ADDED FRs (FR-T5-CC-001..072) + 10 NFRs (NFR-T5-CC-001..010) + 6 ADRs (ADR-T5-001..006)
