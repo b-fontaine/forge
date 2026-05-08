@@ -12,6 +12,37 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added — J.7 Standards YAML validation (`j7-validate-standards-yaml`)
+
+- **`bin/validate-standards-yaml.sh`** — deterministic linter for
+  `.forge/standards/*.yaml`. Validates the 8-field frontmatter contract
+  (FR-J7-002..010) plus 5 lifecycle invariants from
+  `global/standards-lifecycle.md` : Article XII coupling
+  `expires_at: never` ⇔ `exception_constitutional: true` (FR-J7-020),
+  strict `expires_at > last_reviewed` (FR-J7-021), `REVIEW.md` ledger
+  drift (FR-J7-023, full ledger scan), `linter_rule` cross-reference
+  into `constitution-linter.sh` (FR-J7-030), `index.yml` trigger
+  reachability (FR-J7-050). Bash thin + Python 3 inline (F.2 pattern
+  reuse, no `jsonschema` lib). Exit codes 0 / 1 / 2 ; output
+  `[STD-PASS]` / `[STD-FAIL: <path>:<field>: <reason>]` /
+  `[STD-INFO: ...]`.
+- **`.forge/schemas/standard.schema.json`** — JSON Schema Draft 2020-12
+  encoding the frontmatter contract. Root `additionalProperties: true`
+  to accommodate domain-specific bodies (transport / state-management /
+  observability / etc.).
+- **`verify.sh` § "Standards YAML Schema"** — new section iterates
+  the six top-level standards plus the index.yml triggers. Six PASS
+  lines + 1 trigger-reachability line on the live tree
+  (`136 PASS / 0 FAIL / RESULT: PASS` post-J.7).
+- **`j7.test.sh` harness** — 21 tests (17 L1 + 4 L2) registered in
+  `forge-ci.yml` matrix. Live-tree validator wall-clock 122 ms (NFR-J7-001
+  budget 2 s).
+- **`global/standards-lifecycle.md`** — new "Automated enforcement"
+  section cross-linking the validator + harness + invariant catalogue.
+- **`docs/SCHEMA.md`** — new "Standard YAML schema" section mirroring
+  the existing Change YAML schema docs (frontmatter table, invariants,
+  CLI usage, common errors, "adding a new standard YAML" recipe).
+
 ### Added — T.5 Connect codegen (`t5-connect-codegen`, in flight)
 
 - **5 post_cargo_new templates** for the `full-stack-monorepo / 1.0.0`

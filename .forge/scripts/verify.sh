@@ -635,6 +635,48 @@ elif [ ! -x "$VALIDATOR_F2" ]; then
   warn "validate-change-yaml.sh missing or not executable — skipping schema gate"
 fi
 
+# ─── 10b. Standards YAML Schema — j7-validate-standards-yaml ───
+# Iterate top-level .forge/standards/*.yaml (not global/*.md), invoke
+# bin/validate-standards-yaml.sh to check frontmatter contract +
+# lifecycle invariants (Article XII coupling, REVIEW.md drift,
+# linter_rule cross-ref, index.yml triggers, forbidden shape).
+# Skip-guard examples/ honored.
+
+section "Standards YAML Schema"
+
+VALIDATOR_J7="$FORGE_ROOT/bin/validate-standards-yaml.sh"
+STD_DIR_VFY="$FORGE_ROOT/.forge/standards"
+if [ -x "$VALIDATOR_J7" ] && [ -d "$STD_DIR_VFY" ]; then
+  for std_yaml in "$STD_DIR_VFY"/*.yaml; do
+    [ -e "$std_yaml" ] || continue
+    is_under_examples "$std_yaml" && continue
+    name="$(basename "$std_yaml")"
+    [ "$name" = "index.yml" ] && continue
+    if bash "$VALIDATOR_J7" "$std_yaml" >/dev/null 2>&1; then
+      pass "standards/$name validates against schema"
+    else
+      fail "standards/$name schema validation failed"
+      bash "$VALIDATOR_J7" "$std_yaml" 2>&1 | sed 's/^/      /'
+    fi
+  done
+  # Also validate cross-cutting index.yml triggers + orphan check by
+  # invoking the validator on the directory once (Phase-2 cross-cutting
+  # block runs only in directory mode). Errors here are about triggers,
+  # not individual files.
+  if ! bash "$VALIDATOR_J7" "$STD_DIR_VFY" >/dev/null 2>&1; then
+    # Extract index-level FAIL lines only (skip per-file lines already counted).
+    idx_errs="$(bash "$VALIDATOR_J7" "$STD_DIR_VFY" 2>&1 | grep '^\[STD-FAIL: index.yml' || true)"
+    if [ -n "$idx_errs" ]; then
+      fail "standards/index.yml triggers"
+      printf '%s\n' "$idx_errs" | sed 's/^/      /'
+    fi
+  else
+    pass "standards/index.yml triggers reachable"
+  fi
+elif [ ! -x "$VALIDATOR_J7" ]; then
+  warn "validate-standards-yaml.sh missing or not executable — skipping standards schema gate"
+fi
+
 # ─── 9. Open Questions Gate — f1-open-questions ────────────────
 # For each change with status: archived, fail if open-questions.md
 # contains at least one question with `Status: open`. Skip when the

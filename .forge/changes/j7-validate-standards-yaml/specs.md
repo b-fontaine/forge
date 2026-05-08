@@ -389,18 +389,20 @@ For each FR above :
 
 ## Open Questions
 
-[NEEDS CLARIFICATION: FR-J7-030 — exact regex for the
-`constitution-linter.sh` section anchor used to validate
-`linter_rule` cross-references. Candidates : `^# === ${rule} ===`,
-`^# Rule: ${rule}$`, or function-name pattern `^${rule}() {`.
-Lock at design time after grepping the live linter for its
-section convention.]
+Inline `` `[NEEDS CLARIFICATION:]` `` markers : none in this `specs.md`.
+Two open questions Q-003 + Q-004 raised at this phase, both tracked
+in `open-questions.md` and resolved during `/forge:design` :
 
-[NEEDS CLARIFICATION: FR-J7-023 — REVIEW.md drift detection scope.
-Should the validator only check the **latest** entry per standard,
-or scan the **full append-only ledger** for any historical mention
-of the declared `version` ? Lean toward "full ledger scan" — cheap,
-catches version-rollback accidents.]
+- **Q-003** → ADR-J7-002 locks the `linter_rule` cross-reference
+  pattern to a structured grep `^\s*(echo|#).*\b{rule}\b` after a
+  live `constitution-linter.sh` inspection (the cosmetic
+  `# === ${rule} ===` candidate does not exist in the live
+  convention ; the actual section anchors are echo-form and
+  comment-header form).
+- **Q-004** → ADR-J7-003 locks the REVIEW.md drift detection scope
+  to a **full ledger scan** (multi-entry per `(file, version)`
+  tolerated, as confirmed by `transport.yaml` having two legitimate
+  v1.1.0 entries on 2026-05-05).
 
 ---
 

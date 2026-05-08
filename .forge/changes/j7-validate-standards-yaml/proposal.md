@@ -172,14 +172,9 @@ requires.
 
 ## Open Questions
 
-[NEEDS CLARIFICATION: Should the linter additionally validate that
-`index.yml` triggers reference standards that actually exist on disk
-(no orphan triggers, no missing standards) ? — Lean YES, defer to
-design phase ; one-line yq lookup, low cost, closes a real gap.]
-
-[NEEDS CLARIFICATION: Tolerance window for the
-`expires_at > last_reviewed + ~12 months` invariant — exact 12 months
-mandated, or `± 30 days` permitted to avoid noisy renewals on the
-boundary day ? — Defer to design phase ; preference for **strict
-12 months** with explicit `expires_at: never` opt-out for structural
-exceptions.]
+Inline `` `[NEEDS CLARIFICATION:]` `` markers : none in this `proposal.md`.
+Two open questions Q-001 + Q-002 raised at this phase, both tracked in
+`open-questions.md` and resolved during `/forge:specify` (Q-001 →
+**YES** for `index.yml` trigger validation, captured as Cluster 5 of
+`specs.md` ; Q-002 → **strict 12-month** invariant with `expires_at:
+never` opt-out, captured as FR-J7-020..022).
