@@ -1,5 +1,5 @@
 # Tasks: j7-validate-standards-yaml
-<!-- Status: implemented -->
+<!-- Status: archived -->
 <!-- Schema: default -->
 
 ## Convention
