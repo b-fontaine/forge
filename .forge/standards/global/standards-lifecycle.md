@@ -105,3 +105,54 @@ pour les WARN d'expiration et ouvre les changes correspondants à la main.
    également que WARN).
 
 Opt-out via `FORGE_LINTER_SKIP_STANDARDS_EXPIRY=1` env var.
+
+## Automated enforcement (J.7 — `validate-standards-yaml.sh`)
+
+Depuis `j7-validate-standards-yaml` (2026-05-08), le contrat
+frontmatter et les invariants lifecycle sont vérifiés automatiquement
+par `bin/validate-standards-yaml.sh` (validator dédié, distinct de
+`constitution-linter.sh`). Le validator est invoqué par `verify.sh`
+section "Standards YAML Schema" pour chaque `.forge/standards/*.yaml`
+top-level et par la harness `j7.test.sh` (CI matrix).
+
+### Invariants bloquants (`[STD-FAIL]`)
+
+- **FR-J7-001..010** : 8 champs obligatoires + types + patterns
+  (SemVer pour `version`, ISO-8601 pour `last_reviewed`, kebab-case
+  pour `linter_rule` non-null).
+- **FR-J7-020** : couplage Article XII bidirectionnel —
+  `expires_at: never` ⇔ `exception_constitutional: true`.
+- **FR-J7-021** : `expires_at` strictement supérieur à
+  `last_reviewed` quand les deux sont datés.
+- **FR-J7-023** : la `version` déclarée DOIT apparaître dans le
+  ledger `REVIEW.md` (full ledger scan, multi-entrée par
+  `(file, version)` toléré).
+- **FR-J7-030** : `linter_rule` non-null DOIT être référencé comme
+  ancre de section (`echo "..."` ou `# ...`) dans
+  `constitution-linter.sh`.
+- **FR-J7-040..041** : entrées `forbidden:` sont des strings non-vides
+  uniques.
+- **FR-J7-050** : les `path:` de `index.yml` pointent vers des
+  fichiers existants.
+
+### Indicateurs informatifs (`[STD-INFO]`, non bloquants)
+
+- **FR-J7-022** : la fenêtre `expires_at - last_reviewed` excède
+  ~12 mois (lâche).
+- **FR-J7-051** : un standard sur disque non référencé par aucune
+  entrée de `index.yml` (orphelin légitime ou index incomplet).
+
+### Validateur autonome
+
+`bin/validate-standards-yaml.sh` est appelable seul :
+
+```bash
+bash bin/validate-standards-yaml.sh                # défaut .forge/standards/
+bash bin/validate-standards-yaml.sh <dir>          # validate every *.yaml
+bash bin/validate-standards-yaml.sh <file.yaml>    # single file
+```
+
+Sortie : `[STD-PASS]` (stdout) / `[STD-FAIL: ...]` (stderr) /
+`[STD-INFO: ...]` (stdout). Exit codes 0 (PASS) / 1 (FAIL) /
+2 (usage). Voir `docs/SCHEMA.md` § "Standard YAML schema" pour la
+documentation utilisateur complète.

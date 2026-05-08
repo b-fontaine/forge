@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forge.dev/schemas/standard.schema.json",
+  "title": "Forge Standard YAML",
+  "description": "Frontmatter contract for .forge/standards/*.yaml files. additionalProperties:true at root because standards carry domain-specific body fields (e.g. transport.yaml has codegen, server_runtime ; state-management.yaml has framework, forbidden_alternatives). Phase 2 lifecycle invariants enforced by validate-standards-yaml.sh outside this schema (see ADR-J7-002 + ADR-J7-003 in j7-validate-standards-yaml/design.md). Reference: ADR-J7-004.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "version",
+    "last_reviewed",
+    "expires_at",
+    "exception_constitutional",
+    "linter_rule",
+    "enforcement",
+    "forbidden",
+    "rationale"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "last_reviewed": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "expires_at": {
+      "type": "string",
+      "$comment": "Polymorphic via Phase-2 logic in validate-standards-yaml.sh : either ISO 8601 date or the literal 'never'. Schema-level type:string accepts both ; pattern enforced in the validator (FR-J7-005)."
+    },
+    "exception_constitutional": {
+      "type": "boolean"
+    },
+    "linter_rule": {
+      "type": ["string", "null"],
+      "$comment": "When string, MUST match ^[a-z][a-z0-9-]*$ (kebab-case). Pattern enforced in Phase-2 to keep schema-walker simple (FR-J7-007 + ADR-J7-002)."
+    },
+    "enforcement": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["ci_blocking", "pre_commit_hook"],
+      "$comment": "Canonical fields are ci_blocking + pre_commit_hook (FR-J7-008). additionalProperties:true accommodates documented extensions (e.g. state-management.yaml's `activation_planned: \"B.8 (T6)\"` describing the planned warn→error transition). Tighten to false in a future J.7-extension once the extension vocabulary stabilises ; for now NFR-J7-002 (live tree GREEN) takes precedence.",
+      "properties": {
+        "ci_blocking": {"type": "boolean"},
+        "pre_commit_hook": {"type": "boolean"}
+      }
+    },
+    "forbidden": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "rationale": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

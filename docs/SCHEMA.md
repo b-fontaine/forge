@@ -105,9 +105,94 @@ change to the pipeline. It requires :
 5. Re-audit of all archived changes against the new schema (none
    should fail — the new value is additive).
 
+## Standard YAML schema (J.7)
+
+Symmetric to the Change YAML schema, the **Standard YAML schema**
+governs the frontmatter contract of `.forge/standards/*.yaml` files
+and the lifecycle invariants from
+`.forge/standards/global/standards-lifecycle.md`.
+
+### Required frontmatter
+
+| Field                       | Type           | Constraint                                                              |
+|-----------------------------|----------------|-------------------------------------------------------------------------|
+| `version`                   | string         | SemVer pattern `^[0-9]+\.[0-9]+\.[0-9]+$`                               |
+| `last_reviewed`             | string         | ISO 8601 date `YYYY-MM-DD`                                              |
+| `expires_at`                | string         | ISO 8601 date OR the literal `never`                                    |
+| `exception_constitutional`  | boolean        | `true` ⇔ `expires_at: never` (Article XII coupling)                     |
+| `linter_rule`               | string \| null | When string : kebab-case `^[a-z][a-z0-9-]*$`                            |
+| `enforcement`               | object         | Required sub-keys `ci_blocking` + `pre_commit_hook` (booleans)          |
+| `forbidden`                 | array          | List of non-empty trimmed strings, no duplicates                        |
+| `rationale`                 | string         | Non-empty (`minLength: 1`) ; multiline `|` block scalars valid          |
+
+Body fields beyond the frontmatter are **allowed** (`additionalProperties: true`
+at the root level) since each standard carries domain-specific content
+(e.g. `transport.yaml::codegen`, `state-management.yaml::framework`).
+
+### Lifecycle invariants
+
+- **Article XII coupling** : `expires_at: never` ⇔ `exception_constitutional: true`.
+- **Strict ordering** : `expires_at > last_reviewed` when both are dated.
+- **REVIEW.md drift** : the declared `version` MUST appear in
+  `.forge/standards/REVIEW.md` (full ledger scan, table-row regex).
+- **`linter_rule` cross-reference** : when non-null, the rule name MUST
+  appear as a section header (line starting `echo` or `#`) in
+  `.forge/scripts/constitution-linter.sh`.
+- **`index.yml` triggers** : every `path:` in
+  `.forge/standards/index.yml` MUST resolve to an existing file under
+  `.forge/<path>` or `<repo-root>/<path>`.
+
+### Validating manually
+
+```bash
+bash bin/validate-standards-yaml.sh                           # default .forge/standards/
+bash bin/validate-standards-yaml.sh <dir>                     # validate every *.yaml in <dir>
+bash bin/validate-standards-yaml.sh .forge/standards/transport.yaml  # single file
+```
+
+Output line shapes :
+
+```
+[STD-PASS] <relative-path>                         # stdout, file conformant
+[STD-FAIL: <path>:<field>: <reason>]               # stderr, blocking violation
+[STD-INFO: <path>:<field>: <reason>]               # stdout, non-blocking signal
+```
+
+Exit codes : `0` (all PASS) / `1` (≥ 1 FAIL) / `2` (usage error).
+
+### Common errors
+
+| Error fragment                                    | Likely cause                                                                                            |
+|---------------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| `version: required field missing`                 | Frontmatter does not declare `version:` at the top level.                                               |
+| `version: pattern mismatch`                       | `version` is not strict SemVer (`v1`, `1.0`, `1.0.0-rc.1` all rejected).                                |
+| `last_reviewed: pattern mismatch`                 | Date is not `YYYY-MM-DD` (e.g. `2026/05/04`, `04-05-2026`).                                             |
+| `Article XII`                                     | `expires_at: never` paired with `exception_constitutional: false` (or the reverse).                     |
+| `must be strictly greater than last_reviewed`     | Dated `expires_at` is on or before `last_reviewed`.                                                     |
+| `declared <V> not present in REVIEW.md ledger`    | The standard's `version:` was bumped without an `Updated` entry in `.forge/standards/REVIEW.md`.        |
+| `rule "<r>" not found … in constitution-linter.sh`| `linter_rule:` references a rule that has no matching section header in the live linter.                |
+| `dangling path '...' (file does not exist)`       | `index.yml` trigger path points to a missing standard file.                                             |
+| `expected type boolean`                           | `enforcement.ci_blocking` / `pre_commit_hook` set to a non-boolean value (e.g. `"true"`, `1`, `"yes"`). |
+
+### Adding a new standard YAML
+
+1. Create the file under `.forge/standards/<name>.yaml` with all 8
+   frontmatter fields conformant to the table above.
+2. Append an entry to `.forge/standards/REVIEW.md` (initial
+   ratification) — the full ledger scan needs at least one row
+   matching `(<basename>, <version>)`.
+3. Optional : register in `.forge/standards/index.yml` for JIT
+   injection by triggers (FR-J7-051 emits `[STD-INFO]` orphans, but
+   it does not block — the file is usable without index registration).
+4. Run `bash bin/validate-standards-yaml.sh .forge/standards/<name>.yaml`
+   — expect exit 0.
+
 ## See also
 
 - Standard : [`change-yaml-schema.md`](../.forge/standards/global/change-yaml-schema.md)
-- Schema : [`change.schema.json`](../.forge/schemas/change.schema.json)
-- Validator : [`.forge/scripts/validate-change-yaml.sh`](../.forge/scripts/validate-change-yaml.sh)
+- Schema (changes) : [`change.schema.json`](../.forge/schemas/change.schema.json)
+- Schema (standards) : [`standard.schema.json`](../.forge/schemas/standard.schema.json)
+- Validator (changes) : [`.forge/scripts/validate-change-yaml.sh`](../.forge/scripts/validate-change-yaml.sh)
+- Validator (standards) : [`bin/validate-standards-yaml.sh`](../bin/validate-standards-yaml.sh)
+- Lifecycle : [`global/standards-lifecycle.md`](../.forge/standards/global/standards-lifecycle.md)
 - Constitution : [Article XII Governance](../.forge/constitution.md)

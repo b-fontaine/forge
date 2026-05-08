@@ -87,6 +87,8 @@ jobs:
         # v1.1.0 transport standard + the demo-005 archived shape —
         # sufficient for the T.5 archival gate.
         run: bash .forge/scripts/tests/t5.test.sh --level 1
+      - name: j7.test.sh
+        run: bash .forge/scripts/tests/j7.test.sh --level 1,2
 
   # ─── gates ── verify.sh + constitution-linter.sh ───────────────
   gates:
