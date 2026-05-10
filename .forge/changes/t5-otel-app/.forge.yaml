@@ -1,5 +1,5 @@
 name: t5-otel-app
-status: specified
+status: designed
 created: 2026-05-10
 schema: full-stack-monorepo
 constitution_version: "1.1.0"
@@ -22,8 +22,7 @@ tasks_per_layer:
 timeline:
   proposed: 2026-05-10
   specified: 2026-05-10
-  # specified: <auto-filled by /forge:specify>  # done
-  # designed:  <auto-filled by /forge:design>
+  designed: 2026-05-10
   # planned:   <auto-filled by /forge:plan>
   # implemented: <auto-filled by /forge:implement>
   # archived:    <auto-filled by /forge:archive>
