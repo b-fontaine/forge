@@ -1,0 +1,114 @@
+# <!-- Audit: T.5 (t5-otel-stack, FR-OTEL-020..023) -->
+# Coroot — service-map + RED metrics ingester. Standard:
+# `.forge/standards/observability.yaml` v1.1.0. ADR base: ADR-008 ;
+# structural choice: ADR-OTEL-006 in `.forge/changes/t5-otel-stack/design.md`
+# (multi-doc YAML : Deployment + Service + ConfigMap in a single file for
+# visual proximity, single-replica deploy aligned with B.1.14 conventions).
+#
+# Image pin per `observability.yaml::versions.coroot` (1.1.0+).
+# Local-dev defaults : emptyDir for /data ; production rollouts should swap
+# to a PersistentVolumeClaim (documented in `infra/CLAUDE.md.tmpl`).
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: <project-name>-coroot-config
+  labels:
+    app.kubernetes.io/name: <project-name>
+    app.kubernetes.io/component: coroot
+data:
+  config.yaml: |
+    listen: 0.0.0.0:8080
+    data_dir: /data
+    otel:
+      grpc:
+        listen: 0.0.0.0:4317
+      http:
+        listen: 0.0.0.0:4318
+    integrations:
+      collector_endpoint: http://<project-name>-otel-collector:4317
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: <project-name>-coroot
+  labels:
+    app.kubernetes.io/name: <project-name>
+    app.kubernetes.io/component: coroot
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: <project-name>
+    app.kubernetes.io/component: coroot
+  ports:
+    - name: ui
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+      protocol: TCP
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+      protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: <project-name>-coroot
+  labels:
+    app.kubernetes.io/name: <project-name>
+    app.kubernetes.io/component: coroot
+  annotations:
+    forge.dev/standard: "observability.yaml@1.1.0"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: <project-name>
+      app.kubernetes.io/component: coroot
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: <project-name>
+        app.kubernetes.io/component: coroot
+    spec:
+      containers:
+        - name: coroot
+          image: coroot/coroot:1.4.4
+          imagePullPolicy: IfNotPresent
+          args: ["--config=/etc/coroot/config.yaml"]
+          ports:
+            - name: ui
+              containerPort: 8080
+              protocol: TCP
+            - name: otlp-grpc
+              containerPort: 4317
+              protocol: TCP
+            - name: otlp-http
+              containerPort: 4318
+              protocol: TCP
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/coroot
+              readOnly: true
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: config
+          configMap:
+            name: <project-name>-coroot-config
+        - name: data
+          # NOTE: emptyDir is local-dev only.
+          # Production rollouts SHOULD swap to a PersistentVolumeClaim
+          # (see infra/CLAUDE.md "Coroot persistence" section).
+          emptyDir: {}

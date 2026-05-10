@@ -1,5 +1,5 @@
 # Tasks: t5-otel-stack
-<!-- Status: planned -->
+<!-- Status: implemented -->
 <!-- Schema: default -->
 
 ## Convention
@@ -35,21 +35,21 @@ exists with **14 L1 stubs all FAIL**, full RED state captured,
 > archive runs same-day. If `/forge:implement` re-runs after a
 > non-trivial gap, T-VER tasks become real drift checks.
 
-- [ ] **T-VER-001** : `grafana/beyla:2.0.1` confirmed (Context7
+- [x] **T-VER-001** : `grafana/beyla:2.0.1` confirmed (Context7
       `/grafana/beyla` 2026-05-08, > 30 days old per ADR-T5-002 #1).
       Same-day at archive → no-op. [Story: FR-OTEL-007]
-- [ ] **T-VER-002** [P] : `coroot/coroot:1.4.4` confirmed (Context7
+- [x] **T-VER-002** [P] : `coroot/coroot:1.4.4` confirmed (Context7
       `/coroot/coroot` 2026-05-08, > 30 days old). Same-day at
       archive → no-op. [Story: FR-OTEL-021]
 
 ### T-PHA — t5-otel.test.sh skeleton (RED for the whole change)
 
-- [ ] **T-PHA-001** : Create `.forge/scripts/tests/t5-otel.test.sh`
+- [x] **T-PHA-001** : Create `.forge/scripts/tests/t5-otel.test.sh`
       with bash header (`#!/usr/bin/env bash`,
       `set -uo pipefail`, source `_helpers.sh`), PASS/FAIL counters
       reset, `--level 1,2` parsing, `print_summary` close-out.
       Mirror the j7.test.sh layout. [Story: FR-OTEL-060]
-- [ ] **T-PHA-002** : Add **14 L1 test stubs** returning
+- [x] **T-PHA-002** : Add **14 L1 test stubs** returning
       `_not_implemented` covering the 12 FR-OTEL checkpoints +
       example-mirror + standard-bump :
       - 7 OBI DaemonSet (FR-OTEL-001..010 collapsed into 7 anchors)
@@ -59,11 +59,11 @@ exists with **14 L1 stubs all FAIL**, full RED state captured,
       - 1 example mirror (FR-OTEL-050)
       - 1 standard bump + REVIEW.md ledger (FR-OTEL-080)
       [Story: FR-OTEL-061]
-- [ ] **T-PHA-003** [P] : Register `t5-otel.test.sh` in
+- [x] **T-PHA-003** [P] : Register `t5-otel.test.sh` in
       `.github/workflows/forge-ci.yml` `harness` job matrix
       immediately after `j7.test.sh` with `--level 1`.
       [Story: FR-OTEL-070]
-- [ ] **T-PHA-004** : RED gate confirmed —
+- [x] **T-PHA-004** : RED gate confirmed —
       `bash .forge/scripts/tests/t5-otel.test.sh > /tmp/t5-otel-red.log 2>&1` ;
       `bash exit: 1` ; `Failed: 14 / Passed: 0` ; all stubs report
       `not implemented (RED witness)`. [Story: FR-OTEL-061]
@@ -81,10 +81,10 @@ phase, 7 OBI tests + 2 Coroot tests + 1 standard test flip GREEN.
 
 ### T-OBI — OBI eBPF DaemonSet (FR-OTEL-001..010)
 
-- [ ] **T-OBI-001** : RED witness — convert `_test_otel_001_obi_exists`
+- [x] **T-OBI-001** : RED witness — convert `_test_otel_001_obi_exists`
       to assert file presence at the template path. Capture
       `/tmp/t5-otel-red-obi.log`. [Story: FR-OTEL-001]
-- [ ] **T-OBI-002** : Create
+- [x] **T-OBI-002** : Create
       `.forge/templates/archetypes/full-stack-monorepo/infra/k8s/base/obi-daemonset.yaml.tmpl`
       with the **unprivileged-with-capabilities** form per
       ADR-OTEL-004 :
@@ -111,7 +111,7 @@ phase, 7 OBI tests + 2 Coroot tests + 1 standard test flip GREEN.
       - `tolerations: [{operator: Exists}]` so the DaemonSet runs
         on all schedulable nodes that match the kernel-min label.
       [Story: FR-OTEL-001..010]
-- [ ] **T-OBI-003** [P] : Create the dedicated
+- [x] **T-OBI-003** [P] : Create the dedicated
       `ServiceAccount` + `ClusterRole` + `ClusterRoleBinding` for
       `fsm-obi` (FR-OTEL-008). Multi-doc YAML inside the same file
       (`---` separators), or a sibling
@@ -120,18 +120,18 @@ phase, 7 OBI tests + 2 Coroot tests + 1 standard test flip GREEN.
       `pods` (get/list/watch) + `nodes` (get/list/watch) +
       `replicasets` (get/list/watch).
       [Story: FR-OTEL-008]
-- [ ] **T-OBI-004** : Register the new manifest in
+- [x] **T-OBI-004** : Register the new manifest in
       `infra/k8s/base/kustomization.yaml.tmpl` `resources:` list.
       [Story: FR-OTEL-001 / ADR-OTEL-005]
-- [ ] **T-OBI-005** : Run `t5-otel.test.sh` ; expect 7 OBI tests
+- [x] **T-OBI-005** : Run `t5-otel.test.sh` ; expect 7 OBI tests
       flip GREEN (file presence + kind + caps + host* + nodeSelector
       + image + Aegis annotation). [Story: FR-OTEL-001..010]
 
 ### T-COR — Coroot deployment (FR-OTEL-020..023)
 
-- [ ] **T-COR-001** : RED witness — convert
+- [x] **T-COR-001** : RED witness — convert
       `_test_otel_020_coroot_exists`. [Story: FR-OTEL-020]
-- [ ] **T-COR-002** : Create
+- [x] **T-COR-002** : Create
       `.forge/templates/archetypes/full-stack-monorepo/infra/k8s/base/coroot-deployment.yaml.tmpl`
       as **multi-doc YAML** (per ADR-OTEL-006) :
       - `kind: Deployment`, single replica, `image:
@@ -149,28 +149,28 @@ phase, 7 OBI tests + 2 Coroot tests + 1 standard test flip GREEN.
         template HA-agnostic, with a comment pointing to the PVC
         upgrade path).
       [Story: FR-OTEL-020..023]
-- [ ] **T-COR-003** : Register the new manifest in
+- [x] **T-COR-003** : Register the new manifest in
       `infra/k8s/base/kustomization.yaml.tmpl` `resources:`.
       [Story: FR-OTEL-020 / ADR-OTEL-005]
-- [ ] **T-COR-004** : Run `t5-otel.test.sh` ; expect 2 Coroot tests
+- [x] **T-COR-004** : Run `t5-otel.test.sh` ; expect 2 Coroot tests
       flip GREEN. [Story: FR-OTEL-020..023]
 
 ### T-STD — observability.yaml 1.0.0 → 1.1.0 + REVIEW.md (FR-OTEL-080)
 
-- [ ] **T-STD-001** : RED witness — convert
+- [x] **T-STD-001** : RED witness — convert
       `_test_otel_080_standard_bumped` to assert
       `version: "1.1.0"` AND `versions.beyla: "2.0.1"` AND
       `versions.coroot: "1.4.4"` AND a matching `Updated` row in
       `REVIEW.md` (table-row regex per FR-J7-023 / ADR-J7-003).
       [Story: FR-OTEL-080]
-- [ ] **T-STD-002** : Edit `.forge/standards/observability.yaml` :
+- [x] **T-STD-002** : Edit `.forge/standards/observability.yaml` :
       bump `version: "1.0.0"` → `"1.1.0"`. Append header comment
       block extending the audit trail (T.5 reference + change
       summary). Add `versions:` block under `forbidden:` with the
       two pins. Keep `last_reviewed` and `expires_at` unchanged
       (additive bump per ADR-OTEL-003).
       [Story: FR-OTEL-080 / ADR-OTEL-003]
-- [ ] **T-STD-003** : Append `Updated` entry to
+- [x] **T-STD-003** : Append `Updated` entry to
       `.forge/standards/REVIEW.md` for `observability.yaml` v1.1.0
       dated 2026-05-09, schema canonical (Reviewer / Reviewed
       standards table / Decision = `KEEP-WITH-CHANGES` /
@@ -178,12 +178,12 @@ phase, 7 OBI tests + 2 Coroot tests + 1 standard test flip GREEN.
       ADR-OTEL-002 + ADR-OTEL-003). 2026-05-04 baseline preserved
       (append-only).
       [Story: FR-OTEL-080]
-- [ ] **T-STD-004** : Run **j7.test.sh** to confirm the new
+- [x] **T-STD-004** : Run **j7.test.sh** to confirm the new
       `observability.yaml` v1.1.0 still validates against the J.7
       schema (FR-J7-001..010 + FR-J7-023 ledger drift) without
       regression. Expect 21/21 PASS unchanged.
       [Story: FR-OTEL-080 / NFR-OTEL-002]
-- [ ] **T-STD-005** : Run `t5-otel.test.sh` ; expect 1 standard
+- [x] **T-STD-005** : Run `t5-otel.test.sh` ; expect 1 standard
       test flip GREEN. [Story: FR-OTEL-080]
 
 **Phase 2 exit gate** : `t5-otel.test.sh` `Passed: ≥ 10 / Failed: ≤ 4`
@@ -203,9 +203,9 @@ mirror).
 
 ### T-SAM — Sampler in OTel collector base (FR-OTEL-030/031/035)
 
-- [ ] **T-SAM-001** : RED witness — convert
+- [x] **T-SAM-001** : RED witness — convert
       `_test_otel_030_sampler_base`. [Story: FR-OTEL-030]
-- [ ] **T-SAM-002** : Edit
+- [x] **T-SAM-002** : Edit
       `.forge/templates/archetypes/full-stack-monorepo/infra/observability/otel-collector-config.yaml.tmpl`
       to insert `processors.probabilistic_sampler` block per
       ADR-OTEL-001 :
@@ -231,38 +231,38 @@ mirror).
       pipelines (metrics, logs) unchanged — sampling applies to
       traces only.
       [Story: FR-OTEL-030 / FR-OTEL-031 / FR-OTEL-035 / ADR-OTEL-001]
-- [ ] **T-SAM-003** : Run `t5-otel.test.sh` ; expect sampler base
+- [x] **T-SAM-003** : Run `t5-otel.test.sh` ; expect sampler base
       L1 test flip GREEN. [Story: FR-OTEL-030/031/035]
 
 ### T-OVL — Env-tier overlay patches (FR-OTEL-032..034)
 
-- [ ] **T-OVL-001** : RED witness — convert
+- [x] **T-OVL-001** : RED witness — convert
       `_test_otel_032_overlay_prod`. [Story: FR-OTEL-032]
-- [ ] **T-OVL-002** [P] : Create
+- [x] **T-OVL-002** [P] : Create
       `infra/k8s/overlays/prod/sampler-patch.yaml.tmpl` (strategic
       merge patch on the OTel collector ConfigMap) setting
       `sampling_percentage: 10`. Register the patch in the prod
       `kustomization.yaml.tmpl` under `patches:` (or `patchesStrategicMerge:`
       per upstream Kustomize naming).
       [Story: FR-OTEL-032]
-- [ ] **T-OVL-003** [P] : Create
+- [x] **T-OVL-003** [P] : Create
       `infra/k8s/overlays/staging/sampler-patch.yaml.tmpl` setting
       `sampling_percentage: 100`. Register in staging
       `kustomization.yaml.tmpl`.
       [Story: FR-OTEL-033]
-- [ ] **T-OVL-004** [P] : Create
+- [x] **T-OVL-004** [P] : Create
       `infra/k8s/overlays/dev/sampler-patch.yaml.tmpl` setting
       `sampling_percentage: 100` (explicit per ADR-OTEL-005, FR-OTEL-034
       option a). Register in dev `kustomization.yaml.tmpl`.
       [Story: FR-OTEL-034]
-- [ ] **T-OVL-005** : Run `t5-otel.test.sh` ; expect prod overlay
+- [x] **T-OVL-005** : Run `t5-otel.test.sh` ; expect prod overlay
       L1 test flip GREEN. [Story: FR-OTEL-032]
 
 ### T-AEG — Aegis privileged DaemonSet documentation (FR-OTEL-040..041)
 
-- [ ] **T-AEG-001** : RED witness — convert
+- [x] **T-AEG-001** : RED witness — convert
       `_test_otel_040_aegis_doc`. [Story: FR-OTEL-040]
-- [ ] **T-AEG-002** : Append `## Privileged DaemonSet — Aegis audit
+- [x] **T-AEG-002** : Append `## Privileged DaemonSet — Aegis audit
       required` H2 section to
       `.forge/templates/archetypes/full-stack-monorepo/infra/CLAUDE.md.tmpl`
       enumerating : (1) the OBI DaemonSet's
@@ -273,7 +273,7 @@ mirror).
       patch for environments where the BPF capability is not
       reliable (kernel < 5.8 or older runtimes).
       [Story: FR-OTEL-040 / ADR-OTEL-004]
-- [ ] **T-AEG-003** [P] : Append `## Deployment prerequisites`
+- [x] **T-AEG-003** [P] : Append `## Deployment prerequisites`
       checklist to
       `.forge/templates/archetypes/full-stack-monorepo/infra/k8s/base/README.md.tmpl` :
       - Kernel ≥ 5.8 on all worker nodes.
@@ -282,33 +282,33 @@ mirror).
       - `kubectl label node <name> forge.dev/kernel-min-58=true`
         on eligible nodes.
       [Story: FR-OTEL-041 / ADR-OTEL-007]
-- [ ] **T-AEG-004** : Run `t5-otel.test.sh` ; expect Aegis docs L1
+- [x] **T-AEG-004** : Run `t5-otel.test.sh` ; expect Aegis docs L1
       test flip GREEN. [Story: FR-OTEL-040/041]
 
 ### T-EX — Example mirror parity (FR-OTEL-050)
 
-- [ ] **T-EX-001** : RED witness — convert
+- [x] **T-EX-001** : RED witness — convert
       `_test_otel_050_example_mirror`. [Story: FR-OTEL-050]
-- [ ] **T-EX-002** [P] : Mirror `obi-daemonset.yaml.tmpl` (rendered
+- [x] **T-EX-002** [P] : Mirror `obi-daemonset.yaml.tmpl` (rendered
       form, no `.tmpl` suffix) into
       `examples/forge-fsm-example/infra/k8s/base/obi-daemonset.yaml`.
       [Story: FR-OTEL-050]
-- [ ] **T-EX-003** [P] : Mirror `coroot-deployment.yaml.tmpl` into
+- [x] **T-EX-003** [P] : Mirror `coroot-deployment.yaml.tmpl` into
       `examples/forge-fsm-example/infra/k8s/base/coroot-deployment.yaml`.
       [Story: FR-OTEL-050]
-- [ ] **T-EX-004** [P] : Mirror the modified
+- [x] **T-EX-004** [P] : Mirror the modified
       `otel-collector-config.yaml.tmpl` into
       `examples/forge-fsm-example/infra/observability/otel-collector-config.yaml`
       (probabilistic_sampler stanza included).
       [Story: FR-OTEL-050]
-- [ ] **T-EX-005** [P] : Mirror the 3 overlay sampler-patch files
+- [x] **T-EX-005** [P] : Mirror the 3 overlay sampler-patch files
       into `examples/forge-fsm-example/infra/k8s/overlays/{dev,staging,prod}/sampler-patch.yaml`.
       [Story: FR-OTEL-050]
-- [ ] **T-EX-006** : Update the example's
+- [x] **T-EX-006** : Update the example's
       `infra/k8s/base/kustomization.yaml` + per-overlay
       `kustomization.yaml` files to register the new resources +
       patches. [Story: FR-OTEL-050]
-- [ ] **T-EX-007** : Run `t5-otel.test.sh` ; expect example mirror
+- [x] **T-EX-007** : Run `t5-otel.test.sh` ; expect example mirror
       L1 test flip GREEN. [Story: FR-OTEL-050]
 
 **Phase 3 exit gate** : `t5-otel.test.sh` 14/14 GREEN, 0 FAIL,
@@ -324,11 +324,11 @@ is in REVIEW.md ledger).
 
 ### T-DOC — Documentation (FR-OTEL-081..082)
 
-- [ ] **T-DOC-001** [P] : Update the flagship row in
+- [x] **T-DOC-001** [P] : Update the flagship row in
       `docs/ARCHETYPES.md` to mention the OBI + Coroot manifests
       shipping with the observability stack.
       [Story: FR-OTEL-081]
-- [ ] **T-DOC-002** [P] : Add an entry under `## [Unreleased]` in
+- [x] **T-DOC-002** [P] : Add an entry under `## [Unreleased]` in
       `CHANGELOG.md` flagging :
       - OBI eBPF DaemonSet (`grafana/beyla:2.0.1`).
       - Coroot deployment (`coroot/coroot:1.4.4`).
@@ -341,44 +341,44 @@ is in REVIEW.md ledger).
 
 ### T-SNP — Snapshot tarball regeneration (NFR-OTEL-001)
 
-- [ ] **T-SNP-001** : Run the existing snapshot regeneration script
+- [x] **T-SNP-001** : Run the existing snapshot regeneration script
       (`bin/forge-snapshot.sh full-stack-monorepo 1.0.0` or
       equivalent per project conventions) to refresh
       `.forge/scaffold-snapshots/full-stack-monorepo/1.0.0.tar.gz`
       with the new templates. [Story: NFR-OTEL-001]
-- [ ] **T-SNP-002** : Verify size ≤ 600 KB gzipped (T.5 baseline ≈
+- [x] **T-SNP-002** : Verify size ≤ 600 KB gzipped (T.5 baseline ≈
       470 KB + ~ 80 KB this change). Capture `du -h` output as
       evidence. [Story: NFR-OTEL-001]
-- [ ] **T-SNP-003** : Run `a7.test.sh` to confirm `forge upgrade`
+- [x] **T-SNP-003** : Run `a7.test.sh` to confirm `forge upgrade`
       3-way merge still works against the regenerated snapshot.
       Expect no regression. [Story: NFR-OTEL-002]
 
 ### T-CI — CI registration finalisation
 
-- [ ] **T-CI-001** : Confirm `t5-otel.test.sh` is in the
+- [x] **T-CI-001** : Confirm `t5-otel.test.sh` is in the
       `forge-ci.yml` `harness` job matrix (registered in T-PHA-003).
       [Story: FR-OTEL-070]
-- [ ] **T-CI-002** : Run `verify.sh` locally ; expect aggregate
+- [x] **T-CI-002** : Run `verify.sh` locally ; expect aggregate
       counter to grow without regression vs the j7-merged baseline
       (138 PASS post-J.7 merge ; this change adds ~ 6 PASS).
       [Story: NFR-OTEL-002]
-- [ ] **T-CI-003** : Run `constitution-linter.sh` ; expect OVERALL
+- [x] **T-CI-003** : Run `constitution-linter.sh` ; expect OVERALL
       PASS (the 5 pre-existing T.5 transport-codegen-coverage WARN
       are acceptable per ADR-T5-005 ; no new WARN expected).
       [Story: NFR-OTEL-002]
 
 ### T-REV — Quality review gate
 
-- [ ] **T-REV-001** : Run `/forge:review t5-otel-stack` driving
+- [x] **T-REV-001** : Run `/forge:review t5-otel-stack` driving
       the constitutional gate review : Articles I (TDD), III + III.4
       (specs first + open questions resolved), IV (delta — additive
       bump 1.0.0 → 1.1.0), V (audit trail), VIII (infra), IX
       (observability — three signals realised), X (gate coverage),
       XII (governance — amendment-versioning preserved). Block if
       any returns VIOLATION. [Story: Article V]
-- [ ] **T-REV-002** : Run the full `verify.sh` once more on a clean
+- [x] **T-REV-002** : Run the full `verify.sh` once more on a clean
       checkout to confirm reproducibility. [Story: NFR-OTEL-002]
-- [ ] **T-REV-003** : Verify
+- [x] **T-REV-003** : Verify
       `bin/forge-questions.sh --change t5-otel-stack --status open`
       returns empty (Q-001..Q-003 all answered post-design).
       [Story: Article III.4]

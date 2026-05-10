@@ -1,7 +1,7 @@
 <!-- Audit: B.1.3 (part of b1-scaffolder, infra nested CLAUDE.md) -->
 <!-- Scope: infra/ subtree only — infra standards -->
 
-# CLAUDE.md — forge-fsm-example/infra
+# CLAUDE.md — <project-name>/infra
 
 ## Scope
 
@@ -113,3 +113,69 @@ These rules derive from Article VIII of the Constitution, `infra/docker`, `infra
 **Full multi-layer routing policy** : see `.forge/standards/global/multi-layer-workflow.md`
 and the Janus agent definition at `.claude/agents/cross-layer-orchestrator.md`. When a change declares
 `layers:` with ≥ 2 entries, Janus orchestrates; infra-only work stays under Atlas.
+
+## Privileged DaemonSet — Aegis audit required
+
+The OBI eBPF DaemonSet (`infra/k8s/base/obi-daemonset.yaml`) is shipped
+under T.5 `t5-otel-stack` as the realisation leg of `observability.yaml`
+v1.1.0 (ADR-008 + ADR-OTEL-004 in `.forge/changes/t5-otel-stack/design.md`).
+
+It carries elevated privileges that **MUST** be audited by Aegis before
+any production rollout :
+
+- `hostPID: true` — required for Beyla to discover host processes.
+- `hostNetwork: true` — required to monitor network packets at the host
+  level.
+- Linux capabilities `add: [BPF, SYS_PTRACE, NET_RAW, CHECKPOINT_RESTORE,
+  DAC_READ_SEARCH, PERFMON, NET_ADMIN, SYS_ADMIN]` — drop ALL otherwise.
+- `securityContext.runAsUser: 0` + `readOnlyRootFilesystem: true`.
+- `metadata.annotations["forge.dev/aegis-audit"]: "required"` — surfaces
+  the duty to deployment tooling.
+- `nodeSelector: forge.dev/kernel-min-58: "true"` — gates scheduling on
+  eBPF-capable kernels (`observability.yaml::kernel_min: "5.8"`). Operators
+  apply the label manually : `kubectl label node <name>
+  forge.dev/kernel-min-58=true`.
+
+**Aegis duty** stems from `observability.yaml::deployment_constraints
+.aegis_audit_required_for_prod: true`. The audit MUST verify : minimal
+capability set, no `privileged: true` blanket, kernel ≥ 5.8 fleet-wide,
+RBAC scoped to read-only on pods+nodes+replicasets.
+
+**Opt-out path** for T1 environments where eBPF kernel ≥ 5.8 is not
+guaranteed : remove `obi-daemonset.yaml` from the observability
+kustomization. The OTel + SigNoz + Coroot trio still ships ; OBI is the
+zero-instrumentation layer adopters can defer.
+
+**Privileged form (legacy fallback)** for runtimes where the BPF
+capability is not reliable (older containerd / Docker shim, kernel < 5.8) :
+Kustomize patch swapping the `capabilities` block for
+`securityContext.privileged: true`. Documented but **not preferred** —
+Aegis approval is harder to obtain for the privileged form.
+
+## Sampler overlay mechanism (T.5 `t5-otel-stack`)
+
+`infra/observability/otel-collector-config.yaml` ships with a
+`processors.probabilistic_sampler` block (ADR-OTEL-001) defaulting to
+`sampling_percentage: 100` (dev). Per-env-tier override files live at
+`infra/k8s/overlays/{dev,staging,prod}/sampler-patch.yaml` carrying only
+the override fragment :
+
+```yaml
+processors:
+  probabilistic_sampler:
+    sampling_percentage: 10   # prod ratio per observability.yaml::ratios.prod
+```
+
+The patch is applied at deployment time via `configMapGenerator.behavior:
+merge` in the env-tier kustomization (Phase B wires the actual ConfigMap
+when the OTel collector ships as a K8s Service). Until then, the per-env
+ratio lives as documentation of the intended override and is consumed by
+local-dev `docker-compose` workflows manually.
+
+## Coroot persistence
+
+`coroot-deployment.yaml` ships a single replica with `emptyDir` for
+`/data` — adequate for local-dev. **Production rollouts** SHOULD swap
+`emptyDir: {}` for a `PersistentVolumeClaim` referencing a storage class
+appropriate for the cluster (block storage minimum 10 GiB, retention
+matching the trace retention budget).

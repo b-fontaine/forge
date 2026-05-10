@@ -1,5 +1,5 @@
 name: t5-otel-stack
-status: planned
+status: implemented
 created: 2026-05-08
 schema: default
 constitution_version: "1.1.0"
@@ -10,6 +10,7 @@ timeline:
   specified: 2026-05-08
   designed: 2026-05-09
   planned: 2026-05-09
+  implemented: 2026-05-10
   # designed: <auto-filled by /forge:design>
   # planned: <auto-filled by /forge:plan>
   # implemented: <auto-filled by /forge:implement>

@@ -202,28 +202,18 @@ forks) will trigger a review entry per `global/standards-lifecycle.md`.
 
 ## Open Questions
 
-[NEEDS CLARIFICATION: Sampler configuration mechanism — should the
-`parentbased_traceidratio` ratio live in the OTel collector
-`processors.tail_sampling` block (post-collection sampling, more
-flexible) or in the SDK init (head-based sampling, lower
-collector-side cost) ? `observability.yaml` doesn't mandate a
-location. Lean toward **collector-side via tail_sampling** because
-it preserves the head-based default of `parentbased` while letting
-the env-tier ratio be patched by Kustomize without touching app
-images. Resolve at `/forge:design`.]
+Inline `` `[NEEDS CLARIFICATION:]` `` markers : none in this
+`proposal.md`. Three open questions Q-001 + Q-002 + Q-003 raised
+at this phase, all tracked in `open-questions.md` and resolved
+during `/forge:design` :
 
-[NEEDS CLARIFICATION: Image pin policy — should OBI and Coroot
-images be pinned to a specific upstream tag in the templates, or
-left as `:latest` with a note in `CLAUDE.md` to override per
-deployment ? Lean toward **exact pin** with the version recorded in
-`observability.yaml::versions` (analogous to T.5's
-`transport.yaml::codegen.versions`). Resolve at `/forge:design`
-after Context7 + upstream Helm chart inspection.]
-
-[NEEDS CLARIFICATION: Should this change also bump
-`observability.yaml` to `1.1.0` to record the OBI / Coroot image
-pins, or leave the standard at `1.0.0` and pin via Kustomize patches
-only ? Lean toward **bump to 1.1.0** for symmetry with T.5's
-`transport.yaml` 1.0.0 → 1.1.0 pattern (codegen pinning was the
-T.5 trigger ; image pinning is the analogue here). Adds a REVIEW.md
-`Updated` ledger entry. Resolve at `/forge:design`.]
+- **Q-001** → ADR-OTEL-001 locks **collector-side
+  `processors.probabilistic_sampler`** (`mode: proportional`,
+  `attribute_source: traceID`, `hash_seed: 22`) per Context7
+  review of `/open-telemetry/opentelemetry-collector-contrib`.
+- **Q-002** → ADR-OTEL-002 locks **`grafana/beyla:2.0.1`** and
+  **`coroot/coroot:1.4.4`** per Context7 review of `/grafana/beyla`
+  and `/coroot/coroot`. Both > 30 days old at design time.
+- **Q-003** → ADR-OTEL-003 locks **`observability.yaml` 1.0.0 →
+  1.1.0** with new `versions:` block (symmetric with T.5
+  `transport.yaml` 1.0.0 → 1.1.0).

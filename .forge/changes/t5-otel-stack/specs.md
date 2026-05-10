@@ -321,26 +321,21 @@ For each FR :
 
 ## Open Questions
 
-[NEEDS CLARIFICATION: Q-001 (FR-OTEL-030) — sampler location.
-**Collector-side `processors.tail_sampling`** (post-collection,
-flexible, env overlays patch the ConfigMap only — no app rebuild)
-vs **SDK head-based** sampler (lower collector load, but the ratio
-flows through env vars + app rebuild loop). Lean toward
-collector-side for the env-overlay ergonomics. Resolve at
-`/forge:design` after Context7 review of OTel collector v0.110+
-processor support.]
+Inline `` `[NEEDS CLARIFICATION:]` `` markers : none in this
+`specs.md`. Three open questions Q-001 + Q-002 + Q-003 raised at
+the proposal phase, all tracked in `open-questions.md` and resolved
+during `/forge:design` :
 
-[NEEDS CLARIFICATION: Q-002 (FR-OTEL-007 / FR-OTEL-021) —
-exact upstream image tags for OBI and Coroot. Need Context7 +
-upstream Helm chart inspection. OBI is at
-`grafana/beyla` (rebranded from `grafana/ebpf-autoinstrument`) ;
-Coroot is at `coroot/coroot`. Pick the most recent stable tag per
-ADR-T5-002 30-day waiver criterion. Lock at design time.]
-
-[NEEDS CLARIFICATION: Q-003 (FR-OTEL-080) — bump
-`observability.yaml` 1.0.0 → 1.1.0 to record image pins
-(`versions:` block analogous to T.5 `transport.yaml::codegen.versions`)
-or leave at 1.0.0 ? Lean **bump to 1.1.0** for symmetry and
-because pinning images IS a behavioural change to the standard's
-realisation surface. Adds REVIEW.md `Updated` ledger entry.
-Resolve at design.]
+- **Q-001** (FR-OTEL-030, sampler location) → ADR-OTEL-001 locks
+  collector-side `processors.probabilistic_sampler` (`mode:
+  proportional`, `attribute_source: traceID`, `hash_seed: 22`)
+  after Context7 review of
+  `/open-telemetry/opentelemetry-collector-contrib`.
+- **Q-002** (FR-OTEL-007 / FR-OTEL-021, image pins) → ADR-OTEL-002
+  locks `grafana/beyla:2.0.1` + `coroot/coroot:1.4.4` after Context7
+  review of `/grafana/beyla` + `/coroot/coroot`, both > 30 days
+  old at design time (no waiver needed).
+- **Q-003** (FR-OTEL-080, standard bump) → ADR-OTEL-003 locks
+  `observability.yaml` 1.0.0 → 1.1.0 (additive, `versions:` block,
+  symmetric with T.5 `transport.yaml` 1.0.0 → 1.1.0). REVIEW.md
+  ledger entry shipped.

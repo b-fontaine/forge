@@ -12,6 +12,50 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added — T.5 OTel + OBI + Coroot stack templates (`t5-otel-stack`)
+
+- **OBI eBPF DaemonSet** (`infra/k8s/base/obi-daemonset.yaml.tmpl`) for
+  the `full-stack-monorepo / 1.0.0` archetype : `grafana/beyla:2.0.1`
+  with the **unprivileged-with-capabilities** posture (ADR-OTEL-004) —
+  `BPF, SYS_PTRACE, NET_RAW, CHECKPOINT_RESTORE, DAC_READ_SEARCH,
+  PERFMON, NET_ADMIN, SYS_ADMIN`, drop ALL otherwise. `hostPID: true`,
+  `hostNetwork: true`, `nodeSelector: forge.dev/kernel-min-58: "true"`,
+  `metadata.annotations["forge.dev/aegis-audit"]: "required"`. Dedicated
+  `ServiceAccount` + `ClusterRole` (read-only on pods/nodes/replicasets)
+  + `ClusterRoleBinding` shipped as multi-doc in the same file.
+- **Coroot deployment** (`infra/k8s/base/coroot-deployment.yaml.tmpl`) :
+  `coroot/coroot:1.4.4` single replica, multi-doc YAML
+  (Deployment + Service + ConfigMap, ADR-OTEL-006), local-dev `emptyDir`
+  persistence (production rollouts swap to PVC per CLAUDE.md).
+- **OTel collector sampler** : `processors.probabilistic_sampler` block
+  added to `infra/observability/otel-collector-config.yaml.tmpl`
+  (ADR-OTEL-001) — `mode: proportional`, `attribute_source: traceID`,
+  `hash_seed: 22`, `sampling_percentage: 100` (dev default). Wired into
+  the traces pipeline only (metrics + logs unchanged). Env-tier overlays
+  patch the ratio :
+  `infra/k8s/overlays/dev/sampler-patch.yaml.tmpl` → 100,
+  `infra/k8s/overlays/staging/sampler-patch.yaml.tmpl` → 100,
+  `infra/k8s/overlays/prod/sampler-patch.yaml.tmpl` → 10
+  (per `observability.yaml::ratios.prod = 0.1`).
+- **`observability.yaml` 1.0.0 → 1.1.0** : new `versions:` block
+  recording the OBI + Coroot image pins (symmetric with T.5
+  `transport.yaml` 1.0.0 → 1.1.0 codegen-pinning pattern). REVIEW.md
+  ledger gains an `Updated` entry.
+- **Aegis audit documentation** : `infra/CLAUDE.md.tmpl` gains a
+  "Privileged DaemonSet — Aegis audit required" section + a "Sampler
+  overlay mechanism" section + a "Coroot persistence" section.
+  `infra/k8s/base/README.md.tmpl` gains a "Deployment prerequisites"
+  checklist (kernel ≥ 5.8, Aegis review, kernel-min node label, Coroot
+  persistence).
+- **Example mirror** : `examples/forge-fsm-example/infra/` gains the
+  six rendered files for parity (FR-OTEL-050).
+- **Test harness** `t5-otel.test.sh` : 14/14 GREEN at `--level 1`,
+  registered in `forge-ci.yml` matrix immediately after `j7.test.sh`.
+- **`docs/ARCHETYPES.md`** flagship row updated to mention OBI eBPF +
+  Coroot + sampler overlays.
+- **New consolidated spec** `.forge/specs/otel-stack.md` (deferred to
+  archive phase ; in-flight in `.forge/changes/t5-otel-stack/`).
+
 ### Added — J.7 Standards YAML validation (`j7-validate-standards-yaml`)
 
 - **`bin/validate-standards-yaml.sh`** — deterministic linter for
