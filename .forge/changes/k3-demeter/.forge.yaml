@@ -1,0 +1,18 @@
+name: k3-demeter
+status: proposed
+created: 2026-05-10
+schema: default
+constitution_version: "1.1.0"
+parent_audit_items:
+  - K.3   # ARCHITECTURE-TARGET §9.2 — Demeter (data steward EU)
+  - I.4   # new-archetypes-plan §7.1 line 733 — Demeter agent persona
+depends_on:
+  - t4-adr-ratification   # ships compliance-tier.schema.json + archetype.schema.json v2
+  - j8-janus-rules        # ships J8-RULE-* refusal catalogue Demeter integrates with
+timeline:
+  proposed: 2026-05-10
+  # specified: <auto-filled by /forge:specify>
+  # designed: <auto-filled by /forge:design>
+  # planned: <auto-filled by /forge:plan>
+  # implemented: <auto-filled by /forge:implement>
+  # archived: <auto-filled by /forge:archive>
