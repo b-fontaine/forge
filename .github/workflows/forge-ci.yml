@@ -109,27 +109,10 @@ jobs:
         run: bash .forge/scripts/verify.sh
       - name: constitution-linter.sh
         run: bash .forge/scripts/constitution-linter.sh
-
-  # ─── sbom ── CycloneDX 1.5 SBOM for the example tree (J.8.d) ───
-  sbom:
-    name: Forge SBOM (CycloneDX 1.5)
-    runs-on: ubuntu-latest
-    needs: [harness]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Install PyYAML
-        run: pip install pyyaml
-      - name: forge-sbom.sh
+      - name: forge-sbom.sh (J.8.d — CycloneDX 1.5)
         run: bash bin/forge-sbom.sh --target examples/forge-fsm-example/ --output sbom.cdx.json
-      - name: Upload SBOM artefact
-        uses: actions/upload-artifact@v4
-        with:
-          name: sbom-cyclonedx
-          path: sbom.cdx.json
-          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with: { name: sbom-cyclonedx, path: sbom.cdx.json, if-no-files-found: error }
 
   # ─── cli ── Vitest + lint + bundle ─────────────────────────────
   cli:
