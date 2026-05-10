@@ -1,5 +1,5 @@
 # Tasks: j8-janus-rules
-<!-- Status: implemented -->
+<!-- Status: archived -->
 <!-- Schema: default -->
 
 ## Convention

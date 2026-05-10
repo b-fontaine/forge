@@ -165,19 +165,63 @@
     - **Harness** `.forge/scripts/tests/t5-otel.test.sh` 14/14 GREEN
       à `--level 1`. Registered dans `forge-ci.yml`.
 
+- **`j8-janus-rules` archivé 2026-05-10** — **trois sous-modules**
+  consolidés en un seul change pour cohérence EU compliance :
+  Spec consolidée `.forge/specs/janus-rules.md` (36 ADDED FRs
+  `FR-J8-001..112` + 6 NFRs + 7 ADRs `ADR-J8-001..007`).
+    - **J.8.a — Janus refusal rules** : `cross-layer-orchestrator.md`
+      gagne section H2 "Forbidden archetypes & combinations" avec 3
+      seed rules (`J8-RULE-001` flutter-firebase Schrems II + CLOUD
+      Act ; `J8-RULE-002` T3 ⇒ self-host Zitadel ; `J8-RULE-003`
+      T3 ⇒ self-host SigNoz + no Datadog). `dispatch-table.yml`
+      gagne `forbidden_archetypes:` runtime registry. Helper
+      partagé `bin/_forge-init-helpers.sh::_refuse_if_forbidden()`
+      (Python 3 inline, défense en profondeur, sourced par 2
+      wrappers). TS dispatcher `init-archetype.ts` est première
+      ligne de défense. Standard `global/janus-orchestration-rules.md`
+      codifie le catalogue + procédure d'extension. Refusal exit
+      code = **3** (ADR-J8-003).
+    - **J.8.b — `--eu-tier` flag** : `init.ts` gagne
+      `EU_TIER_ENUM = ["T1", "T2", "T3"]` + champ optionnel
+      `euTier?:` validé contre `compliance-tier.schema.json` (T.4) ;
+      env-var `FORGE_EU_TIER` ABI vers wrappers ; T3 case-block
+      dans fsm wrapper refuse Datadog + signoz.io + identité cloud
+      (Auth0/Okta/Keycloak-cloud) avec structured `[REFUSAL: ...]` ;
+      T1/T2 émettent `[INFO: <tier>: ...]` seulement. Ledger
+      `<target>/.forge/.forge-tier` plain-text 1-line (ADR-J8-006).
+      Backward compat préservé (NFR-J8-002 — flag absent =
+      comportement identique au pré-J.8).
+    - **J.8.d — CycloneDX 1.5 SBOM** : `bin/forge-sbom.sh` bash
+      thin + Python 3 inline (handcraft per Context7-verified
+      mandatory fields, **zero new external dep** NFR-J8-005),
+      détection lockfiles récursive (depth 4 + skip-list
+      `node_modules/target/.dart_tool/.git/...`) pour Cargo + npm
+      family + pubspec. **`SOURCE_DATE_EPOCH`-deterministic**
+      byte-identical output (FR-J8-075, uuid v5 derivation).
+      Standard `global/sbom-policy.md` (rationale NIS2/DORA/CRA).
+      Nouveau job `sbom` dans `forge-ci.yml` upload artefact
+      `sbom-cyclonedx`. Smoke sur `examples/forge-fsm-example/`
+      → **74 components** (Cargo backend + pubspec frontend).
+    - **Harness** `.forge/scripts/tests/j8.test.sh` 20/20 GREEN à
+      `--level 1,2` (18 L1 + 2 L2). Registered dans `forge-ci.yml`.
+    - **J.8.c retiré du scope** — règles Janus pour
+      `ai-native-rag` (force Mistral-EU/vLLM si T3) déférées vers
+      un change suivant qui livrera l'archetype `ai-native-rag` en
+      T7. Aucun blocage T7 ; J.8.c se cumule avec K.1/K.2/K.4/K.5.
+
 ### Module en cours
 
 Aucun change en cours sur `main` au 2026-05-10. Le prochain candidat
-naturel est **J.8** (Janus orchestrator forbidden-list rules) ou
-**K.3** (Demeter agent — débloque I.2–I.6 compliance graduée), à
-arbitrer.
+naturel est **K.3** (Demeter agent — débloque I.2–I.6 compliance
+graduée non-SBOM) ou **I.2–I.6** directement (avec K.3 en parallèle
+ou éclaté), à arbitrer.
 
 ### Modules toujours en attente
 
-- **T5 (suite)** post-`t5-otel-stack` : J.8 (Janus rules
-  forbidden-list), K.3 (Demeter agent), I.2–I.6 (compliance docs +
-  workflow + AI Act / NIS2 / DORA /
-  CRA artefacts), validation traceparent W3C E2E.
+- **T5 (suite)** post-`j8-janus-rules` : K.3 (Demeter agent),
+  I.2–I.6 (compliance docs + workflow + AI Act / NIS2 / DORA /
+  CRA artefacts au-delà du SBOM livré dans J.8.d), validation
+  traceparent W3C E2E.
 - **T6 / T7 / T8 / T9+** : non commencés (B.6, B.7, B.8, B.9, B.3, K.1,
   K.2, K.4, K.5, C.2–C.5, F.3, G.*, H.*).
 
@@ -202,8 +246,9 @@ arbitrer.
 | `t5-connect-codegen`         | archived               | T5 Phase 1 (Connect codegen)  |
 | `j7-validate-standards-yaml` | archived               | T5 (J.7)                      |
 | `t5-otel-stack`              | archived               | T5 (OTel + OBI + Coroot)      |
+| `j8-janus-rules`             | archived               | T5 (J.8.a + J.8.b + J.8.d)    |
 
-**17 archivés sur `main`**, aucun change en cours. Aucun change
+**18 archivés sur `main`**, aucun change en cours. Aucun change
 orphelin, aucun `status: in_progress` bloqué, aucun marqueur
 `[NEEDS CLARIFICATION:]` non résolu inline dans les changes archivés
 (tous gates `verify.sh` + `constitution-linter.sh` PASS).
@@ -302,7 +347,7 @@ sont créés. Cinq nouveaux agents Forge sont introduits. Plan de migration **4 
 | I.1       | Compliance EU graded — JSON schemas (T1/T2/T3 + archetype v2)                                                                                      | ARCHITECTURE-TARGET §10           | `S`     | **Done 2026-05-04** via `t4-adr-ratification`                                                                                     |
 | I.2–I.6   | Compliance EU graded — standard `compliance-tiers.md`, linter rule, Demeter agent, `forge-compliance.yml` workflow, NIS2/DORA/CRA/AI Act artefacts | ARCHITECTURE-TARGET §10           | `M`–`L` | Pending (T5–T7)                                                                                                                   |
 | J.1–J.6   | Six standards versionnés `.forge/standards/*.yaml` (transport / state-management / observability / orchestration / identity / persistence) v1.0.0  | ARCHITECTURE-TARGET §12.1         | `M`     | **Done 2026-05-04** via `t4-adr-ratification` ; J.1 `transport.yaml` bumpé en 1.1.0 le 2026-05-06 par `t5-connect-codegen` (codegen pinning, additif) |
-| J.7 / J.8 | `validate-standards-yaml.sh` linter + Janus forbidden-list orchestrator rules                                                                      | ARCHITECTURE-TARGET §12.1 + §12.5 | `S`–`M` | J.7 **Done 2026-05-08** via `j7-validate-standards-yaml` (21/21 tests, live-tree 122 ms, +7 PASS in `verify.sh`) ; J.8 Pending (T5) |
+| J.7 / J.8 | `validate-standards-yaml.sh` linter + Janus forbidden-list orchestrator rules + `--eu-tier` flag + CycloneDX SBOM | ARCHITECTURE-TARGET §12.1 + §12.5 | `S`–`L` | J.7 **Done 2026-05-08** via `j7-validate-standards-yaml` (PR #4 merged) ; J.8 (a + b + d) **Done 2026-05-10** via `j8-janus-rules` (20/20 tests, +6 PASS verify.sh, smoke 74 SBOM components) ; J.8.c (`ai-native-rag` LLM gateway rules) deferred to T7 |
 | K.1       | Hermes-Async (event-driven)                                                                                                                        | ARCHITECTURE-TARGET §9.2          | `M`     | Pending (T7)                                                                                                                      |
 | K.2       | Pythia (AI/RAG)                                                                                                                                    | ARCHITECTURE-TARGET §9.2          | `M`     | Pending (T7)                                                                                                                      |
 | K.3       | Demeter (data steward EU)                                                                                                                          | ARCHITECTURE-TARGET §9.2          | `M`     | Pending (T5)                                                                                                                      |
@@ -819,7 +864,7 @@ Reprise de ARCHITECTURE-TARGET §11.
 | Trimestre | Modules                                                                                          | Status (2026-05-10)                                                                                                                                                                                                                     | Rationale                                                                                                                                    |
 |-----------|--------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
 | **T4**    | **P-1, P-2, P-3, P-4, I.1, J.1–J.6**                                                             | ✅ **Done 2026-05-04** via `t4-adr-ratification` (PR #2 mergée). 35 ADDED FRs + 8 NFRs. P-5 retiré 2026-05-06 (Hera 9 sub-agents conservés).                                                                                            | Méthodologie : ADR capturés, 6 standards YAML v1.0.0, cycle 12 mois, schémas compliance.                                                     |
-| **T5**    | **Phase 1 ARCHITECTURE-TARGET, J.7, J.8, K.3 (Demeter), I.2–I.6**                                | ✅ **Connect codegen done 2026-05-06** via `t5-connect-codegen` (PR #3). ✅ **J.7 done 2026-05-08** via `j7-validate-standards-yaml` (PR #4 merged). ✅ **OTel + OBI + Coroot stack templates done 2026-05-10** via `t5-otel-stack` (14/14 tests, +6 PASS verify.sh, snapshot 520 KB, `observability.yaml` 1.0.0 → 1.1.0). J.8, K.3, I.2–I.6 = pending. | Observabilité + Connect contrats + standards linter + compliance graduée. Réversible.                                                        |
+| **T5**    | **Phase 1 ARCHITECTURE-TARGET, J.7, J.8, K.3 (Demeter), I.2–I.6**                                | ✅ **Connect codegen done 2026-05-06** via `t5-connect-codegen` (PR #3). ✅ **J.7 done 2026-05-08** via `j7-validate-standards-yaml` (PR #4 merged). ✅ **OTel + OBI + Coroot stack templates done 2026-05-10** via `t5-otel-stack` (PR #5 merged). ✅ **J.8 done 2026-05-10** via `j8-janus-rules` (refusal rules + `--eu-tier` flag + CycloneDX SBOM ; 20/20 tests, +6 PASS verify.sh ; J.8.c deferred to T7). K.3, I.2–I.6 (non-SBOM) = pending. | Observabilité + Connect contrats + standards linter + compliance graduée. Réversible.                                                        |
 | **T6**    | **B.8 (flagship 1.0.0 → 2.0.0), Phase 2 ARCHITECTURE-TARGET**                                    | ⏸️ Pending.                                                                                                                                                                                                                             | Migration breaking flagship. **Point de non-retour**.                                                                                        |
 | **T7**    | **B.6 (event-driven-eu), B.7 (ai-native-rag), K.1, K.2, K.4, K.5**                               | ⏸️ Pending.                                                                                                                                                                                                                             | Deux nouveaux archétypes + 4 nouveaux agents.                                                                                                |
 | **T8**    | **B.9 (mobile-pwa-first / 2.0.0), B.3 (rust-cli-tui), pédagogie C.2-C.5, F.3**                   | ⏸️ Pending.                                                                                                                                                                                                                             | Renommage mobile + dernier archétype premium + walkthrough/anti-patterns/comparison/migration + fix release script (F.3 post-mortem v0.3.0). |
@@ -958,13 +1003,17 @@ et AI-native souverain.
    schéma JSON Draft 2020-12, 21/21 tests GREEN, live-tree 122 ms,
    `verify.sh` § "Standards YAML Schema" (+7 PASS), spec consolidée
    `.forge/specs/standards-yaml-validation.md`.
-4. ⏸️ **Livrer J.8** (Janus orchestrator forbidden-list rules — refus
-   `flutter-firebase`, force self-host Zitadel/SigNoz si T3, etc.).
+4. ✅ ~~**Livrer J.8**~~ — **Done 2026-05-10** via `j8-janus-rules`
+   (sous-modules J.8.a + J.8.b + J.8.d) : refus
+   `flutter-firebase` Schrems II + CLOUD Act, force self-host
+   Zitadel/SigNoz si T3, `--eu-tier` flag plumbing, CycloneDX SBOM
+   handcrafted Python inline. J.8.c (`ai-native-rag` LLM gateway
+   rules) déférée vers T7 quand l'archetype shippera.
 5. ⏸️ **Livrer K.3 (Demeter)** — premier des 5 nouveaux agents, focal pour
    I.2–I.6 (compliance graduée).
 6. ⏸️ **Livrer I.2–I.6** — `global/compliance-tiers.md`, linter rule T3,
    `forge-compliance.yml` workflow, échéances NIS2/DORA/CRA/AI Act dans
-   `.forge/compliance/`.
+   `.forge/compliance/` (au-delà du SBOM CycloneDX livré dans J.8.d).
 Tout le reste découle.
 
 — *Fin du nouveau plan. Mise à jour partielle 2026-05-10.*

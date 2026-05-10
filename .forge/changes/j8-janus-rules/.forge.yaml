@@ -1,16 +1,19 @@
 name: j8-janus-rules
-status: implemented
+status: archived
 created: 2026-05-10
 schema: default
 constitution_version: "1.1.0"
 parent_audit_items:
   - J.8  # ARCHITECTURE-TARGET §12.5 — Janus orchestrator forbidden-list rules
+archived_to:
+  - .forge/specs/janus-rules.md  # 36 ADDED FRs (FR-J8-001..112) + 6 NFRs + 7 ADRs (ADR-J8-001..007)
 timeline:
   proposed: 2026-05-10
   specified: 2026-05-10
   designed: 2026-05-10
   planned: 2026-05-10
   implemented: 2026-05-10
+  archived: 2026-05-10
   # designed: <auto-filled by /forge:design>
   # planned: <auto-filled by /forge:plan>
   # implemented: <auto-filled by /forge:implement>
