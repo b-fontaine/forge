@@ -1,5 +1,5 @@
 name: j8-janus-rules
-status: planned
+status: implemented
 created: 2026-05-10
 schema: default
 constitution_version: "1.1.0"
@@ -10,6 +10,7 @@ timeline:
   specified: 2026-05-10
   designed: 2026-05-10
   planned: 2026-05-10
+  implemented: 2026-05-10
   # designed: <auto-filled by /forge:design>
   # planned: <auto-filled by /forge:plan>
   # implemented: <auto-filled by /forge:implement>

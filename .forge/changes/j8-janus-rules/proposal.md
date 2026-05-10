@@ -217,24 +217,21 @@ validation does not apply (J.7 is YAML-only).
 
 ## Open Questions
 
-[NEEDS CLARIFICATION: SBOM tooling — handcraft CycloneDX 1.5 JSON
-via Python 3 inline (NFR-J8-005 self-imposed "no new deps") OR
-shell out to upstream `cargo-cyclonedx` + `cyclonedx-npm` plugins
-(which adopters would need to install) ? Lean toward
-**handcraft minimal viable SBOM** : we only need top-level
-component list + dependency tree, not the full CycloneDX feature
-matrix. Resolve at design time after a quick read of the
-CycloneDX 1.5 spec section "Mandatory fields".]
+Inline `` `[NEEDS CLARIFICATION:]` `` markers : none in this
+`proposal.md`. Three open questions Q-001 + Q-002 + Q-003 raised
+at this phase, all tracked in `open-questions.md` and resolved
+during `/forge:design` :
 
-[NEEDS CLARIFICATION: `--eu-tier` flag default — should it default
-to no tier (today's behavior) OR default to T2 (which is the
-recommended posture per `docs/ARCHITECTURE-TARGET.md` §10) ? Lean
-toward **no default** for backward compat (NFR-J8-002), with a
-`--eu-tier` warning if the flag is absent and the project is
-production-bound. Resolve at design time.]
-
-[NEEDS CLARIFICATION: Wrapper refusal exit code — exit 3 (used
-elsewhere for "policy violation") OR exit 4 (currently used for
-"target collision" in `forge-snapshot.sh`) ? Lean toward exit 3
-for refusals, exit 4 for I/O collisions. Lock the convention in a
-`global/cli-exit-codes.md` standard later. Resolve at design.]
+- **Q-001** → ADR-J8-001 locks **handcraft Python 3 inline** for
+  SBOM generation, after Context7 review of
+  `/cyclonedx/cyclonedx-python-lib` confirmed the minimum-viable
+  CycloneDX 1.5 fits in handcraft territory (NFR-J8-005 zero
+  new deps preserved).
+- **Q-002** → ADR-J8-002 locks **no default** for `--eu-tier`
+  with a soft `[INFO: --eu-tier not set ...]` warning, suppressible
+  via `FORGE_EU_TIER_QUIET=1`. Backward compat preserved
+  (NFR-J8-002).
+- **Q-003** → ADR-J8-003 locks **exit code 3** for policy
+  refusals, distinct from 1 (invalid) / 2 (usage). A future
+  `global/cli-exit-codes.md` standard will lock the convention
+  repo-wide ; out of scope here.

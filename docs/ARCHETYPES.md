@@ -39,3 +39,43 @@ adopters who scripted `forge init` before B.5.1 landed.
 When the archetype's `signals:` list is non-empty (i.e., the archetype expects a project name + reverse domain), the
 dispatcher REQUIRES `--org <reverse-domain>` (or the wizard's prompt). Reverse domain validation :
 `^[a-z][a-z0-9.-]+\.[a-z][a-z0-9.-]+$`.
+
+## Forbidden combinations
+
+J.8 (`j8-janus-rules`) ships a runtime refusal mechanism for archetype +
+flag combinations that conflict with Forge's EU-strict / premium positioning.
+Refusals fire **before any scaffolding side-effect** : exit code is **3**
+(policy violation) and the structured stderr line is
+
+```
+[REFUSAL: <archetype>: <rule_id>: <reason> ; alternative: <alternative>]
+```
+
+| Rule ID       | Trigger                                       | Refusal target                                  | Alternative                                                                          |
+|---------------|-----------------------------------------------|-------------------------------------------------|--------------------------------------------------------------------------------------|
+| `J8-RULE-001` | `--archetype flutter-firebase`                | scaffolding of flutter-firebase                 | `default` archetype + adopter-managed Firebase overlay (out of Forge scope)         |
+| `J8-RULE-002` | `--eu-tier T3` + non-self-host Zitadel        | cloud-Zitadel / Auth0 / Keycloak-cloud variants | self-host Zitadel on EU-jurisdiction infrastructure                                  |
+| `J8-RULE-003` | `--eu-tier T3` + Datadog or SigNoz Cloud SaaS | Datadog exporter / `signoz.io` endpoints        | self-host SigNoz on EU-jurisdiction infrastructure (`infra/observability/` already defaults to local self-host) |
+
+Full rule catalogue : `.forge/standards/global/janus-orchestration-rules.md`.
+
+## EU compliance tier (`--eu-tier`)
+
+`forge init --eu-tier <T1|T2|T3>` declares the project's intended EU
+compliance posture. The flag is **optional** ; absence preserves
+backward compat (no tier-specific refusals fire).
+
+| Tier | Posture                                       | Janus enforcement at scaffold time                                              |
+|------|-----------------------------------------------|---------------------------------------------------------------------------------|
+| T1   | RGPD via DPA (cloud SaaS acceptable)          | Informational only — `[INFO: T1: tier recorded ; no refusal at this tier ; ...]` |
+| T2   | Self-hostable recommended                     | Informational only.                                                              |
+| T3   | SecNumCloud / EUCS High strict EU jurisdiction | Refusals fire (J8-RULE-002 + J8-RULE-003 — cloud identity + Datadog + SigNoz Cloud blocked) |
+
+When `--eu-tier` is set (any tier), the wrapper writes a one-line
+ledger file `<target>/.forge/.forge-tier` containing the chosen tier
+(plain text, trailing newline). Adopter-side downstream tooling
+consumes this for deployment-time gating.
+
+Validation : the flag value is checked against
+`.forge/schemas/compliance-tier.schema.json` enum `[T1, T2, T3]`
+(case-sensitive). Invalid value → exit 2 + usage error.

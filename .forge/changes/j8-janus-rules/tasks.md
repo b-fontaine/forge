@@ -1,5 +1,5 @@
 # Tasks: j8-janus-rules
-<!-- Status: planned -->
+<!-- Status: implemented -->
 <!-- Schema: default -->
 
 ## Convention
@@ -28,28 +28,28 @@ captured ; CI registration done.
 
 ### T-PHA — j8.test.sh skeleton
 
-- [ ] **T-PHA-001** : Create `.forge/scripts/tests/j8.test.sh`
+- [x] **T-PHA-001** : Create `.forge/scripts/tests/j8.test.sh`
       with bash header (`#!/usr/bin/env bash`,
       `set -uo pipefail`, source `_helpers.sh`), PASS/FAIL counters
       reset, `--level 1,2` parsing, `print_summary` close-out.
       Mirror the J.7 / T.5-OTel layout. [Story: FR-J8-100]
-- [ ] **T-PHA-002** : Add **18 L1 test stubs** returning
+- [x] **T-PHA-002** : Add **18 L1 test stubs** returning
       `_not_implemented` covering the 18 anchor IDs enumerated in
       `design.md` § "L1 unit-level" table. [Story: FR-J8-101]
-- [ ] **T-PHA-003** [P] : Add **2 L2 fixture stubs**
+- [x] **T-PHA-003** [P] : Add **2 L2 fixture stubs**
       (`_test_j8_l2_sbom_good`, `_test_j8_l2_sbom_determinism`)
       using `mk_tmpdir_with_trap`. [Story: FR-J8-102]
-- [ ] **T-PHA-004** [P] : Register `j8.test.sh` in
+- [x] **T-PHA-004** [P] : Register `j8.test.sh` in
       `.github/workflows/forge-ci.yml` `harness` job matrix
       immediately after `t5-otel.test.sh` with `--level 1,2`.
       [Story: FR-J8-100]
-- [ ] **T-PHA-005** : RED gate confirmed —
+- [x] **T-PHA-005** : RED gate confirmed —
       `bash .forge/scripts/tests/j8.test.sh --level 1,2 > /tmp/j8-red.log 2>&1` ;
       `bash exit: 1` ; `Failed: 20 / Passed: 0`. [Story: FR-J8-101]
 
 ### T-HLP — Wrapper helper skeleton (`bin/_forge-init-helpers.sh`)
 
-- [ ] **T-HLP-001** : Create `bin/_forge-init-helpers.sh` with
+- [x] **T-HLP-001** : Create `bin/_forge-init-helpers.sh` with
       bash header + `# shellcheck shell=bash` + audit comment.
       Empty function `_refuse_if_forbidden() { :; }` placeholder
       (filled in T-JAN-007). [Story: FR-J8-022 / ADR-J8-005]
@@ -68,10 +68,10 @@ After this phase, 7 L1 tests flip GREEN (3 Janus + 3 dispatch-table
 
 ### T-JAN — Janus agent forbidden-archetypes section
 
-- [ ] **T-JAN-001** : RED witness — convert
+- [x] **T-JAN-001** : RED witness — convert
       `_test_j8_001_janus_section` + `_test_j8_002_janus_rule_001`
       + `_test_j8_003_janus_rule_002_003`. [Story: FR-J8-001..005]
-- [ ] **T-JAN-002** : Edit
+- [x] **T-JAN-002** : Edit
       `.claude/agents/cross-layer-orchestrator.md` to add a new H2
       section "Forbidden archetypes & combinations" placed BETWEEN
       "Dispatch Table" (line 21) and "12-Step Workflow" (line 35).
@@ -89,17 +89,17 @@ After this phase, 7 L1 tests flip GREEN (3 Janus + 3 dispatch-table
         refusal logic BEFORE any layer-specific routing
         (FR-J8-004).
       [Story: FR-J8-001..005 / ADR-J8-004]
-- [ ] **T-JAN-003** : Run `j8.test.sh` ; expect 3 Janus L1 tests
+- [x] **T-JAN-003** : Run `j8.test.sh` ; expect 3 Janus L1 tests
       flip GREEN. [Story: FR-J8-001..005]
 
 ### T-DT — dispatch-table forbidden-archetypes list
 
-- [ ] **T-DT-001** : RED witness — convert
+- [x] **T-DT-001** : RED witness — convert
       `_test_j8_010_dispatch_forbidden` +
       `_test_j8_011_entry_shape` +
       `_test_j8_012_seed_flutter_firebase`.
       [Story: FR-J8-010..012]
-- [ ] **T-DT-002** : Edit `.forge/scaffolding/dispatch-table.yml`
+- [x] **T-DT-002** : Edit `.forge/scaffolding/dispatch-table.yml`
       to add a top-level `forbidden_archetypes:` list with the
       `flutter-firebase` seed entry per FR-J8-012 :
       ```yaml
@@ -112,56 +112,56 @@ After this phase, 7 L1 tests flip GREEN (3 Janus + 3 dispatch-table
       ```
       Header comment block extended with the J.8 audit reference.
       [Story: FR-J8-010..013 / ADR-J8-004]
-- [ ] **T-DT-003** : Run `j8.test.sh` ; expect 3 dispatch-table
+- [x] **T-DT-003** : Run `j8.test.sh` ; expect 3 dispatch-table
       L1 tests flip GREEN. [Story: FR-J8-010..012]
 
 ### T-HLP — `_forge-init-helpers.sh` refusal logic
 
-- [ ] **T-HLP-002** : RED witness — convert
+- [x] **T-HLP-002** : RED witness — convert
       `_test_j8_020_helper_exists` +
       `_test_j8_021_wrapper_sources_helper` +
       `_test_j8_023_refusal_format`. [Story: FR-J8-022 / FR-J8-021]
-- [ ] **T-HLP-003** : Implement `_refuse_if_forbidden()` in
+- [x] **T-HLP-003** : Implement `_refuse_if_forbidden()` in
       `bin/_forge-init-helpers.sh` per ADR-J8-005 (Python 3 inline
       reads `dispatch-table.yml`, matches archetype against
       `forbidden_archetypes[*].name`, emits structured stderr
       `[REFUSAL: <archetype>: <rule_id>: <reason> ; alternative: <alt>]`,
       exits 3). [Story: FR-J8-021..023 / ADR-J8-003 / ADR-J8-005]
-- [ ] **T-HLP-004** : Edit `bin/forge-init-fsm.sh` to source
+- [x] **T-HLP-004** : Edit `bin/forge-init-fsm.sh` to source
       `_forge-init-helpers.sh` at the top + invoke
       `_refuse_if_forbidden "full-stack-monorepo"` as the first
       action. [Story: FR-J8-022]
-- [ ] **T-HLP-005** [P] : Same edit on `bin/forge-init-mobile-only.sh`.
+- [x] **T-HLP-005** [P] : Same edit on `bin/forge-init-mobile-only.sh`.
       [Story: FR-J8-022]
-- [ ] **T-HLP-006** : Run `j8.test.sh` ; expect 3 helper-related
+- [x] **T-HLP-006** : Run `j8.test.sh` ; expect 3 helper-related
       L1 tests flip GREEN. [Story: FR-J8-020..022]
 
 ### T-DSP — TS dispatcher refusal check
 
-- [ ] **T-DSP-001** : RED witness — convert
+- [x] **T-DSP-001** : RED witness — convert
       `_test_j8_022_dispatcher_check`. [Story: FR-J8-020]
-- [ ] **T-DSP-002** : Edit `cli/src/commands/init-archetype.ts`
+- [x] **T-DSP-002** : Edit `cli/src/commands/init-archetype.ts`
       (or the dispatcher entrypoint located at impl time) to read
       `dispatch-table.yml::forbidden_archetypes` BEFORE invoking
       any wrapper. On match → exit 3 + structured stderr per
       FR-J8-021 format. NFR-J8-006 strict mode preserved (no
       `any`, no `@ts-ignore`). [Story: FR-J8-020..023 / NFR-J8-006]
-- [ ] **T-DSP-003** : Run `j8.test.sh` ; expect dispatcher L1 test
+- [x] **T-DSP-003** : Run `j8.test.sh` ; expect dispatcher L1 test
       flip GREEN. [Story: FR-J8-020]
 
 ### T-STD — janus-orchestration-rules.md standard
 
-- [ ] **T-STD-001** : RED witness — convert
+- [x] **T-STD-001** : RED witness — convert
       `_test_j8_030_standard_exists`. [Story: FR-J8-030]
-- [ ] **T-STD-002** : Create
+- [x] **T-STD-002** : Create
       `.forge/standards/global/janus-orchestration-rules.md` with
       ≥ 5 H2 sections per FR-J8-030 : Purpose, Rule catalogue
       (J8-RULE-XXX table), Adoption path, Refusal vs warning
       semantics, Extending the catalogue. [Story: FR-J8-030]
-- [ ] **T-STD-003** [P] : Register in `.forge/standards/index.yml`
+- [x] **T-STD-003** [P] : Register in `.forge/standards/index.yml`
       under triggers like `[scaffolding, refusal, forbidden,
       schrems, cloud-act]`. [Story: FR-J8-030]
-- [ ] **T-STD-004** : Run `j8.test.sh` ; expect standard L1 test
+- [x] **T-STD-004** : Run `j8.test.sh` ; expect standard L1 test
       flip GREEN. [Story: FR-J8-030]
 
 **Phase 2 exit gate** : 11 L1 tests GREEN (Janus 3 + dispatch 3 +
@@ -178,38 +178,38 @@ this phase, 5 L1 tests flip GREEN (3 flag + 1 T3 + 1 ledger).
 
 ### T-CLI — `--eu-tier` flag in `init.ts`
 
-- [ ] **T-CLI-001** : RED witness — convert
+- [x] **T-CLI-001** : RED witness — convert
       `_test_j8_040_eu_tier_flag` + `_test_j8_041_eu_tier_validation`
       + `_test_j8_042_no_default`. [Story: FR-J8-040..042 / NFR-J8-002]
-- [ ] **T-CLI-002** : Edit `cli/src/commands/init.ts` to declare
+- [x] **T-CLI-002** : Edit `cli/src/commands/init.ts` to declare
       the `--eu-tier <tier>` flag (TS strict). Add to the existing
       flag-parsing infrastructure mirroring `--archetype` shape.
       [Story: FR-J8-040 / NFR-J8-006]
-- [ ] **T-CLI-003** : Implement validation against
+- [x] **T-CLI-003** : Implement validation against
       `.forge/schemas/compliance-tier.schema.json` enum
       `[T1, T2, T3]`. Invalid value → exit 2 + error pointing to
       the schema. [Story: FR-J8-041]
-- [ ] **T-CLI-004** : Pass validated tier to wrapper via env var
+- [x] **T-CLI-004** : Pass validated tier to wrapper via env var
       `FORGE_EU_TIER=<tier>` (empty when absent). [Story: FR-J8-043]
-- [ ] **T-CLI-005** [P] : Implement soft warning per ADR-J8-002 :
+- [x] **T-CLI-005** [P] : Implement soft warning per ADR-J8-002 :
       when `--eu-tier` absent AND `.forge/.forge-tier` not present
       in target tree, emit `[INFO: --eu-tier not set ...]` to
       stderr. Suppressible via `FORGE_EU_TIER_QUIET=1`.
       [Story: FR-J8-042 / ADR-J8-002]
-- [ ] **T-CLI-006** [P] : Add wizard prompt when `--wizard` is
+- [x] **T-CLI-006** [P] : Add wizard prompt when `--wizard` is
       invoked, asking for the EU tier with default "skip".
       [Story: FR-J8-045]
-- [ ] **T-CLI-007** : Update Vitest unit tests (`cli/test/...`) to
+- [x] **T-CLI-007** : Update Vitest unit tests (`cli/test/...`) to
       cover the new flag (validation, env-var passthrough, warning).
       [Story: NFR-J8-006]
-- [ ] **T-CLI-008** : Run `j8.test.sh` ; expect 3 flag L1 tests
+- [x] **T-CLI-008** : Run `j8.test.sh` ; expect 3 flag L1 tests
       flip GREEN. [Story: FR-J8-040..042]
 
 ### T-T3 — T3 enforcement in `forge-init-fsm.sh`
 
-- [ ] **T-T3-001** : RED witness — convert
+- [x] **T-T3-001** : RED witness — convert
       `_test_j8_050_t3_self_host_zitadel`. [Story: FR-J8-050..054]
-- [ ] **T-T3-002** : Edit `bin/forge-init-fsm.sh` to read
+- [x] **T-T3-002** : Edit `bin/forge-init-fsm.sh` to read
       `$FORGE_EU_TIER` post-helper-source. Apply T3 rules when
       tier == T3 :
       - Refuse `identity_provider != zitadel-self-hosted`
@@ -219,27 +219,27 @@ this phase, 5 L1 tests flip GREEN (3 flag + 1 T3 + 1 ledger).
       - Verify no Datadog in collector exporters (FR-J8-053).
       Each refusal exits 3 + structured `[REFUSAL: ...]` stderr.
       [Story: FR-J8-050..053 / ADR-J8-003]
-- [ ] **T-T3-003** [P] : Add T1 / T2 informational `[INFO: <tier>: ...]`
+- [x] **T-T3-003** [P] : Add T1 / T2 informational `[INFO: <tier>: ...]`
       stdout lines (FR-J8-054). No refusal at T1 / T2.
       [Story: FR-J8-054]
-- [ ] **T-T3-004** : Run `j8.test.sh` ; expect T3 L1 test flip
+- [x] **T-T3-004** : Run `j8.test.sh` ; expect T3 L1 test flip
       GREEN. [Story: FR-J8-050..054]
 
 ### T-LED — `.forge-tier` ledger
 
-- [ ] **T-LED-001** : RED witness — convert
+- [x] **T-LED-001** : RED witness — convert
       `_test_j8_060_tier_ledger`. [Story: FR-J8-060]
-- [ ] **T-LED-002** : Edit `bin/forge-init-fsm.sh` post-scaffold
+- [x] **T-LED-002** : Edit `bin/forge-init-fsm.sh` post-scaffold
       step : when `$FORGE_EU_TIER` is non-empty, write
       `<target>/.forge/.forge-tier` containing exactly one line
       `<tier>\n` per ADR-J8-006 plain-text convention.
       [Story: FR-J8-060 / ADR-J8-006]
-- [ ] **T-LED-003** [P] : Same edit on
+- [x] **T-LED-003** [P] : Same edit on
       `bin/forge-init-mobile-only.sh` (T3 rules don't apply yet
       to mobile-only — but the ledger should still record the
       declared tier for downstream consistency).
       [Story: FR-J8-060]
-- [ ] **T-LED-004** : Run `j8.test.sh` ; expect ledger L1 test
+- [x] **T-LED-004** : Run `j8.test.sh` ; expect ledger L1 test
       flip GREEN. [Story: FR-J8-060]
 
 **Phase 3 exit gate** : 5 additional L1 tests GREEN (cumulative 16).
@@ -255,24 +255,24 @@ standard) AND the 2 L2 fixtures flip GREEN.
 
 ### T-SBM — `bin/forge-sbom.sh` script + Python engine
 
-- [ ] **T-SBM-001** : RED witness — convert
+- [x] **T-SBM-001** : RED witness — convert
       `_test_j8_070_sbom_signature`. [Story: FR-J8-070]
-- [ ] **T-SBM-002** : Create `bin/forge-sbom.sh` with bash header
+- [x] **T-SBM-002** : Create `bin/forge-sbom.sh` with bash header
       (`#!/usr/bin/env bash`, `set -uo pipefail`), `case` arg
       parsing for `--output <path>`, `--format json|xml`,
       `--target <dir>` (defaults : `sbom.cdx.json`, `json`,
       `$(pwd)`). Exit 2 on usage error. [Story: FR-J8-070 / NFR-J8-004]
-- [ ] **T-SBM-003** : Implement Python 3 inline engine via
+- [x] **T-SBM-003** : Implement Python 3 inline engine via
       `python3 - <<'PY' ... PY` invocation per ADR-J8-007. Phase 1
       detection : walk `--target` for `Cargo.lock` / lockfiles
       (npm / pubspec). At least one MUST be present, else exit 1.
       [Story: FR-J8-071]
-- [ ] **T-SBM-004** [P] : Phase 2 parsers — TOML stdlib `tomllib`
+- [x] **T-SBM-004** [P] : Phase 2 parsers — TOML stdlib `tomllib`
       (Python ≥ 3.11) for Cargo, JSON stdlib for npm / pnpm /
       yarn lockfiles, PyYAML for pubspec. Each parser returns a
       flat list of `(name, version, purl)` tuples.
       [Story: FR-J8-073]
-- [ ] **T-SBM-005** : Phase 3 emit JSON minimum-viable CycloneDX
+- [x] **T-SBM-005** : Phase 3 emit JSON minimum-viable CycloneDX
       1.5 per ADR-J8-001 :
       - `bomFormat`, `specVersion: "1.5"`, `serialNumber:
         "urn:uuid:<v4>"`, `version: 1`.
@@ -285,17 +285,17 @@ standard) AND the 2 L2 fixtures flip GREEN.
       - `components[]` : sorted by `purl`, deduped.
       - `json.dumps(..., sort_keys=True, indent=2)` for
         determinism (FR-J8-075). [Story: FR-J8-072..075 / ADR-J8-001]
-- [ ] **T-SBM-006** [P] : Phase 3 emit XML when `--format xml` —
+- [x] **T-SBM-006** [P] : Phase 3 emit XML when `--format xml` —
       handcraft via `xml.etree.ElementTree` covering same
       components. [Story: FR-J8-074]
-- [ ] **T-SBM-007** : Run `j8.test.sh --level 1` ; expect SBOM
+- [x] **T-SBM-007** : Run `j8.test.sh --level 1` ; expect SBOM
       signature L1 test flip GREEN. [Story: FR-J8-070..076]
 
 ### T-PLC — `sbom-policy.md` standard
 
-- [ ] **T-PLC-001** : RED witness — convert
+- [x] **T-PLC-001** : RED witness — convert
       `_test_j8_080_sbom_policy_standard`. [Story: FR-J8-080]
-- [ ] **T-PLC-002** : Create
+- [x] **T-PLC-002** : Create
       `.forge/standards/global/sbom-policy.md` with ≥ 4 H2
       sections per FR-J8-080 : Purpose & EU compliance rationale
       (NIS2 / DORA / CRA cross-link), Format choice (CycloneDX 1.5
@@ -303,37 +303,37 @@ standard) AND the 2 L2 fixtures flip GREEN.
       guidance), Regeneration cadence (every release + on-demand),
       Out-of-scope (no signing / no transparency log this change ;
       future J.8 extension may add). [Story: FR-J8-080]
-- [ ] **T-PLC-003** [P] : Register in
+- [x] **T-PLC-003** [P] : Register in
       `.forge/standards/index.yml` under triggers like
       `[sbom, supply-chain, nis2, dora, cra, cyclonedx]`.
       [Story: FR-J8-080]
-- [ ] **T-PLC-004** : Run `j8.test.sh` ; expect sbom-policy L1
+- [x] **T-PLC-004** : Run `j8.test.sh` ; expect sbom-policy L1
       test flip GREEN. [Story: FR-J8-080]
 
 ### T-L2 — L2 fixture tests for SBOM
 
-- [ ] **T-L2-001** : RED witness — convert
+- [x] **T-L2-001** : RED witness — convert
       `_test_j8_l2_sbom_good`. [Story: FR-J8-102]
-- [ ] **T-L2-002** : Implement L2 good fixture — temp dir with
+- [x] **T-L2-002** : Implement L2 good fixture — temp dir with
       synthetic minimal `Cargo.lock` (1–2 deps) +
       `package-lock.json` (1 dep) ; run `forge-sbom.sh
       --target <tmpdir> --output <tmpdir>/sbom.cdx.json` ; assert
       exit 0, file exists, JSON contains `bomFormat:
       "CycloneDX"`, `specVersion: "1.5"`, ≥ 2 components in
       `components[]`. [Story: FR-J8-102 / FR-J8-072]
-- [ ] **T-L2-003** : RED witness — convert
+- [x] **T-L2-003** : RED witness — convert
       `_test_j8_l2_sbom_determinism`. [Story: FR-J8-102 / FR-J8-075]
-- [ ] **T-L2-004** : Implement L2 determinism fixture — same temp
+- [x] **T-L2-004** : Implement L2 determinism fixture — same temp
       dir as good fixture, run twice with `SOURCE_DATE_EPOCH=0`,
       assert byte-identical output (`diff` returns 0).
       [Story: FR-J8-075]
-- [ ] **T-L2-005** : Run `j8.test.sh --level 1,2` ; expect 18 L1
+- [x] **T-L2-005** : Run `j8.test.sh --level 1,2` ; expect 18 L1
       + 2 L2 = 20/20 GREEN, ≤ 15 s wall-clock (NFR-J8-001).
       [Story: NFR-J8-001 / FR-J8-101..102]
 
 ### T-CI — CI workflow `sbom` job
 
-- [ ] **T-CI-001** : Edit `.github/workflows/forge-ci.yml` to
+- [x] **T-CI-001** : Edit `.github/workflows/forge-ci.yml` to
       add a new `sbom` job after `harness` that :
       - `runs-on: ubuntu-latest`
       - `needs: [harness]`
@@ -345,7 +345,7 @@ standard) AND the 2 L2 fixtures flip GREEN.
         and `if-no-files-found: error`.
       Triggered on PR + main pushes (existing workflow triggers).
       [Story: FR-J8-090]
-- [ ] **T-CI-002** : Run `verify.sh` locally ; expect aggregate
+- [x] **T-CI-002** : Run `verify.sh` locally ; expect aggregate
       counter unchanged (CI workflow YAML doesn't add to the
       forge gate count).
       [Story: NFR-J8-002]
@@ -360,33 +360,33 @@ honored.
 
 ### T-DOC — Documentation
 
-- [ ] **T-DOC-001** [P] : Add a new H2 section "Forbidden
+- [x] **T-DOC-001** [P] : Add a new H2 section "Forbidden
       combinations" to `docs/ARCHETYPES.md` with a `J8-RULE-*`
       table cross-linking the standard. [Story: FR-J8-110]
-- [ ] **T-DOC-002** [P] : Document `--eu-tier` flag in the
+- [x] **T-DOC-002** [P] : Document `--eu-tier` flag in the
       existing CLI doc (located at impl time — likely
       `docs/CLI.md` if present, else create `docs/CLI-FLAGS.md`)
       with semantics, example invocation, backward-compat note,
       pointer to `compliance-tier.schema.json`. [Story: FR-J8-111]
-- [ ] **T-DOC-003** [P] : Add `## [Unreleased]` entry in
+- [x] **T-DOC-003** [P] : Add `## [Unreleased]` entry in
       `CHANGELOG.md` covering the 3 sub-modules (J.8.a + J.8.b +
       J.8.d). [Story: FR-J8-112]
 
 ### T-REV — Quality review gate
 
-- [ ] **T-REV-001** : Run `/forge:review j8-janus-rules` driving
+- [x] **T-REV-001** : Run `/forge:review j8-janus-rules` driving
       the constitutional gate review : Articles I (TDD), III +
       III.4, IV (delta), V (audit trail), VIII (CI), IX
       (security/observability), XII (governance). Block if any
       returns VIOLATION. [Story: Article V]
-- [ ] **T-REV-002** : Run the full `verify.sh` once more on a
+- [x] **T-REV-002** : Run the full `verify.sh` once more on a
       clean checkout to confirm reproducibility.
       [Story: NFR-J8-002]
-- [ ] **T-REV-003** : Verify
+- [x] **T-REV-003** : Verify
       `bin/forge-questions.sh --change j8-janus-rules --status open`
       returns empty (Q-001..Q-003 all answered post-design).
       [Story: Article III.4]
-- [ ] **T-REV-004** : Smoke test 3 BDD scenarios from `specs.md`
+- [x] **T-REV-004** : Smoke test 3 BDD scenarios from `specs.md`
       manually :
       - `forge init --archetype flutter-firebase` → exit 3 +
         `[REFUSAL: ...J8-RULE-001...]`.

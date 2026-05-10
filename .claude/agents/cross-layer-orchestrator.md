@@ -32,6 +32,90 @@
 
 ---
 
+<!-- Audit: J.8 (j8-janus-rules) -->
+
+## Forbidden archetypes & combinations
+
+Janus invokes the dispatcher's **refusal logic BEFORE any
+layer-specific routing** (Hera / Vulcan / Atlas). Refusals are
+**terminal** — no override, no fallback. The rule catalogue lives
+in two places kept in sync :
+
+- **Runtime** : `.forge/scaffolding/dispatch-table.yml`
+  `forbidden_archetypes:` list.
+- **Documentation** : `.forge/standards/global/janus-orchestration-rules.md`.
+
+### Rule catalogue
+
+#### J8-RULE-001 — `flutter-firebase` archetype refused
+
+- **Rationale** : Schrems II + CLOUD Act incompatibles avec le
+  positionnement EU/premium Forge. Firebase as a backend cannot
+  satisfy strict EU data-residency requirements.
+- **Reference** : ADR-007 of `docs/ARCHITECTURE-TARGET.md` ;
+  removed from `archetype.schema.json` v2 by T.4.
+- **Alternative** : adopters who need Firebase keep the `default`
+  file-copy archetype as a starting point and add Firebase as an
+  adopter-managed overlay (out of Forge scope). A potential future
+  `flutter-baas-eu` archetype (Supabase EU self-host or Appwrite)
+  is not committed.
+
+#### J8-RULE-002 — `--eu-tier T3` ⇒ self-host Zitadel
+
+- **Rationale** : T3 (SecNumCloud / EUCS High strict) requires
+  identity provider data-residency under EU jurisdiction with
+  zero CLOUD Act exposure. Zitadel self-hosted is the canonical
+  choice ; cloud-Zitadel + Auth0 + Keycloak-cloud variants are
+  refused at scaffold time.
+- **Reference** : ADR-007 ; `identity.yaml` standard.
+- **Alternative** : T3 adopters MUST deploy Zitadel on their own
+  EU infrastructure ; T1 / T2 adopters may use any
+  `identity.yaml`-compliant provider without J.8 refusal.
+
+#### J8-RULE-003 — `--eu-tier T3` ⇒ self-host SigNoz + no Datadog
+
+- **Rationale** : Same data-residency reasoning. Datadog already
+  forbidden by `observability.yaml::forbidden: [datadog]` ; this
+  rule surfaces the refusal at scaffold time. SigNoz Cloud SaaS
+  endpoints are refused for T3.
+- **Reference** : ADR-008 ; `observability.yaml` standard.
+- **Alternative** : T3 adopters MUST deploy SigNoz on their own EU
+  infrastructure (the `infra/observability/signoz-config.yaml.tmpl`
+  shipped by B.1.14 + extended by `t5-otel-stack` defaults to
+  local self-host already).
+
+### Refusal semantics
+
+A refusal exits the wrapper with **exit code 3** (policy
+violation, distinct from `1` invalid input and `2` usage error)
+and emits a single-line structured error to stderr :
+
+```
+[REFUSAL: <archetype>: <rule_id>: <reason> ; alternative: <alt>]
+```
+
+The format is machine-parseable — CI gates and adopter tooling
+can grep `[REFUSAL: ` to detect policy refusals specifically.
+
+### Extending the catalogue
+
+New rules require :
+
+1. A new `J8-RULE-NNN` entry in this section AND in
+   `dispatch-table.yml::forbidden_archetypes` (or in a future
+   sibling list for non-archetype refusals).
+2. A pointer to the ADR or standard that motivates the rule.
+3. An adoption-path / alternative for adopters who hit the
+   refusal.
+4. A test in `.forge/scripts/tests/j8.test.sh` (or its successor)
+   asserting the refusal fires when the forbidden combination is
+   requested.
+
+See `.forge/standards/global/janus-orchestration-rules.md` for
+the full process + governance requirements.
+
+---
+
 ## 12-Step Workflow
 
 Every cross-layer change processed by Janus follows all 12 steps in sequence. Steps MUST NOT be skipped without explicit written justification approved by the project maintainer. The workflow applies equally to the `/forge:design`, `/forge:implement`, and `/forge:review` commands; the set of steps Janus executes per command is the same — only the deliverables expected from each specialist differ by command phase.
