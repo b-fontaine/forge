@@ -7,7 +7,7 @@ Q-NNN sequential per change, zero-padded to 3 digits, never reused.
 
 ## Q-001: DPA declaration surface — ledger file vs `.forge.yaml` block vs both?
 
-- **Status**: open
+- **Status**: answered
 - **Raised in**: proposal.md ; specs.md FR-K3-DEM-040..042 (DPA
   validation cluster)
 - **Raised on**: 2026-05-10
@@ -46,11 +46,34 @@ page or a `LEGAL/` directory). The Forge declaration is a
 **proof-of-attestation**, not a re-implementation of legal
 record-keeping.
 
+### Resolution
+
+**Resolved by ADR-K3-002** in `design.md`. Decision : **Option A
+— ledger file** at `.forge/.forge-dpa-declared`. Plain text, one
+line, content `T1: <ISO-8601-date> <free-form-ref>` with
+mandatory trailing newline.
+
+The ledger MIRRORS the J.8 `.forge/.forge-tier` pattern shipped
+by ADR-J8-006 verbatim. Demeter reads via plain-text `cat` ; no
+YAML parser dependency on the consumer side. Option B
+(`.forge.yaml` structured block) was rejected because a
+schema-validatable structured block invites reviewers to add
+fields like `parties:`, `signatures:`, `expires:` which would
+creep toward legal parsing — explicitly out of scope per
+FR-K3-DEM-044. Option C (both) was rejected because doubling
+the surface invites inconsistency.
+
+Implementation : the surface is documented in
+`.claude/agents/demeter.md::Checklists::DPA Validation`, in
+`.forge/standards/global/data-stewardship-rules.md::DPA
+declaration semantics`, and in `bin/forge-demeter-scan.sh`
+(K3-RULE-002 fires when T1 + ⚠️-T1 component + ledger absent).
+
 ---
 
 ## Q-002: `cloud-act-publishers.yml` maintenance cadence — who, when, what triggers refresh?
 
-- **Status**: open
+- **Status**: answered
 - **Raised in**: proposal.md ; specs.md FR-K3-DEM-070..074 (CLOUD
   Act detection cluster) ; NFR-K3-DEM-008
 - **Raised on**: 2026-05-10
@@ -88,11 +111,35 @@ in NFR-K3-DEM-008 + the standard's "Regeneration cadence"
 section. Resolve at design time after deciding the
 interim-vs-permanent split is acceptable.
 
+### Resolution
+
+**Resolved by ADR-K3-003** in `design.md`. Decision :
+**two-phase governance** :
+
+- **Phase A — Interim (T5 → T7, ~ 8 months)** : BDFL curates
+  per `GOVERNANCE.md` ; 12-month default `expires_at` per
+  `global/standards-lifecycle.md` ; trigger on explicit
+  publisher acquisition or EDPB opinion shift.
+- **Phase B — Post-K.5 / Themis ship (T7+)** : Themis curates
+  via PR ; 6-month rolling cadence (faster than standards
+  because acquisition velocity is higher) ; same triggers as
+  Phase A plus Themis's monthly `forge review-standards`
+  cycle.
+
+The transition Phase A → Phase B is a single PR (Themis
+shipped + `cloud-act-publishers.yml::maintained_by:` edited).
+No data migration required. K.5 spec MUST reference this ADR.
+
+Implementation :
+`.forge/data/cloud-act-publishers.yml::maintained_by` records
+"BDFL (interim — see standards/global/data-stewardship-rules.md)".
+The standard's "Regeneration cadence" H2 documents both phases.
+
 ---
 
 ## Q-003: K3-RULE namespace — pre-allocate 10 rules now, or grow incrementally?
 
-- **Status**: open
+- **Status**: answered
 - **Raised in**: proposal.md ; specs.md FR-K3-DEM-100..104 (rule
   catalogue cluster)
 - **Raised on**: 2026-05-10
@@ -138,3 +185,37 @@ The candidate K.3 seed catalogue (subject to design) :
 
 5 rules cover the scoped functional requirements. Defer 006+ to
 follow-up audits.
+
+### Resolution
+
+**Resolved by ADR-K3-005** in `design.md`. Decision : **Option B
+— 5 seed rules, incremental growth**, namespace `K3-RULE-NNN`.
+Seed catalogue :
+
+- **K3-RULE-001** — US-jurisdiction publisher (FR-K3-DEM-120 ;
+  tier-scaled severity per FR-K3-DEM-068).
+- **K3-RULE-002** — DPA undeclared at T1 (FR-K3-DEM-121 ;
+  severity High).
+- **K3-RULE-003** — Tier downgrade refused (FR-K3-DEM-122 ;
+  T2 → High, T3 → Critical).
+- **K3-RULE-004** — Data classification missing (FR-K3-DEM-123 ;
+  Medium ; PII heuristic per ADR-K3-006).
+- **K3-RULE-005** — Cargo workspace drift (FR-K3-DEM-124 ;
+  Medium).
+
+Plus an operational guardrail emerging from NFR-K3-DEM-008 :
+
+- **K3-RULE-006** — publisher list staleness
+  (`expires_at < today` ; severity Medium ; FR-K3-DEM-073).
+
+Future K.3 extensions append `K3-RULE-007..` ; future audit
+modules use their own prefix (e.g. `K5-RULE-NNN` for Themis at
+T7+). Per ADR-J8-004 inheritance, IDs are NEVER reused —
+decommissioned rules carry `DEPRECATED`, the slot is not
+recycled.
+
+Implementation : the catalogue ships in three surfaces (kept in
+sync) — `.claude/agents/demeter.md::Rule Catalogue`,
+`.forge/standards/global/data-stewardship-rules.md::Rule
+catalogue`, and `bin/forge-demeter-scan.sh` (the actual rule
+firing logic).

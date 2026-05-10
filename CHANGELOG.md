@@ -12,6 +12,69 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added — K.3 Demeter data-steward agent + CLOUD Act dependency scanner (`k3-demeter`)
+
+Three sub-modules under one umbrella change, implementing the K.3 +
+I.4 audit slots from `docs/new-archetypes-plan.md` §1.4 row K.3 +
+§7.1 line 733 :
+
+- **K.3.a — Demeter persona file** : `.claude/agents/demeter.md`
+  ships the Data Steward EU agent persona with 7 mandatory H2
+  sections (Persona, Purpose, Checklists, Output, Rule Catalogue,
+  Integration, Anti-Hallucination Protocol). Sibling to Aegis ;
+  Aegis owns vulnerability posture, Demeter owns data-stewardship
+  posture (jurisdiction, DPA, PII classification). Persona file
+  authoring is **deferred to a manual handoff** — see
+  `.forge/changes/k3-demeter/open-questions.md` for the blocked
+  status. Once the persona ships, 9 L1 tests in
+  `.forge/scripts/tests/k3.test.sh` flip GREEN automatically.
+- **K.3.b — Deterministic dependency scanner** :
+  `bin/forge-demeter-scan.sh` walks Cargo / npm / pubspec
+  lockfiles under `--target` (depth ≤ 3) and matches each
+  dependency's publisher against the curated deny-list at
+  `.forge/data/cloud-act-publishers.yml`. Tier-scaled severity
+  per FR-K3-DEM-068 (T1 → Informational ; T2 → High ; T3 →
+  Critical). Bash thin + Python 3 inline, F.2 / J.7 / J.8.d
+  pattern verbatim. Exit code envelope 0 / 1 / 2 / 3 mirrors the
+  J.8 ADR-J8-003 policy-refusal semantics. Determinism via
+  `SOURCE_DATE_EPOCH` per NFR-K3-DEM-005. The deny-list seeds 4
+  cargo + 4 npm + 2 pub publisher patterns covering the
+  AWS / Google Cloud / Azure / Firebase ecosystems with
+  citable evidence URLs.
+- **K.3.c — Standards + dispatch integration** :
+  `.forge/standards/global/data-stewardship-rules.md` ships the
+  authoritative standard with 7 H2 sections covering rule
+  catalogue (K3-RULE-001..006), adoption path, DPA declaration
+  semantics, extending the catalogue, regeneration cadence
+  (Phase A interim BDFL / 12-month, Phase B post-T7 Themis /
+  6-month per ADR-K3-003), and constitutional compliance.
+  Standards index registers the new entry under the
+  "Cross-Cutting Standards" section. Repository-level `CLAUDE.md`
+  agent table gains the Demeter trigger row alphabetically
+  between Oracle and Clio. Janus delta-edit
+  (`.claude/agents/cross-layer-orchestrator.md` Step 9 rename +
+  dispatch row + Quality Gates bullet per ADR-K3-007) is
+  **deferred to a manual handoff** alongside the persona file.
+
+Test harness `.forge/scripts/tests/k3.test.sh` ships with 20 L1 +
+2 L2 tests (`forge-ci.yml` matrix registers it after `j8.test.sh`).
+The 2 L2 fixtures are GREEN end-to-end : deny-list-hit at T3 →
+exit 3 BLOCKED + Critical K3-RULE-001 finding ; clean-tree at T2
+→ exit 0 CLEARED + byte-identical re-run with
+`SOURCE_DATE_EPOCH=0`. The 11 L1 tests covering the scanner +
+publisher list + standard + index + CLAUDE.md trigger +
+namespace-collision guard are GREEN. The 9 L1 tests covering
+the persona + Janus delta remain RED until the manual handoff
+completes.
+
+Open questions Q-001 / Q-002 / Q-003 resolved by ADR-K3-002 /
+ADR-K3-003 / ADR-K3-005 (DPA declaration ledger surface,
+publisher list two-phase governance, K3-RULE-NNN incremental
+growth with 5 seed rules + K3-RULE-006 operational guardrail).
+
+No constitutional amendment required ; all Articles I, II, III,
+III.4, IV.1, V, VIII, IX, XI, XII compliance preserved.
+
 ### Added — J.8 Janus orchestrator rules + EU compliance tier + SBOM (`j8-janus-rules`)
 
 Three sub-modules under one umbrella change :

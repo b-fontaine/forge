@@ -65,6 +65,7 @@ Forge uses specialized agents. Delegation is automatic:
 | Infrastructure | **Atlas** | Infra Architect |
 | Observability | **Panoptes** | Observability Specialist |
 | AI features | **Oracle** | AI-First Brainstorm |
+| Data stewardship | **Demeter** | Data Steward EU |
 | Writing specs | **Clio** | Spec Writer |
 | Domain modeling | **Socrates** | DDD Strategist |
 | Security audit | **Aegis** | Security Auditor |

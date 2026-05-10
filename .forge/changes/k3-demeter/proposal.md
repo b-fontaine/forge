@@ -244,16 +244,23 @@ cluster at a time.
 
 User-facing flows get Gherkin scenarios in `specs.md` :
 
-- `Given a target tree at compliance_tier T2, When the scanner
-  runs, Then any us-jurisdiction publisher in Cargo.lock is
-  flagged with severity HIGH.`
-- `Given a project declaring --eu-tier T1 without a
-  .forge/.forge-dpa-declared marker, When Demeter is invoked,
-  Then it emits a [NEEDS CLARIFICATION: DPA declaration missing]
-  marker.`
-- `Given a clean target tree (no US-jurisdiction publishers,
-  T3 declared), When the scanner runs, Then it exits 0 with a
-  CLEARED verdict in the JSON report.`
+```gherkin
+Given a target tree at compliance_tier T2
+When the scanner runs
+Then any US-jurisdiction publisher in Cargo.lock is flagged
+  with severity HIGH
+
+Given a project declaring --eu-tier T1 without a
+  .forge/.forge-dpa-declared marker
+When Demeter is invoked
+Then it emits a [NEEDS CLARIFICATION: DPA declaration missing]
+  marker
+
+Given a clean target tree (no US-jurisdiction publishers,
+  T3 declared)
+When the scanner runs
+Then it exits 0 with a CLEARED verdict in the JSON report
+```
 
 ### Article III — Specs Before Code
 
