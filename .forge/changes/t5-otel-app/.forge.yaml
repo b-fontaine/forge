@@ -1,0 +1,28 @@
+name: t5-otel-app
+status: proposed
+created: 2026-05-10
+schema: full-stack-monorepo
+constitution_version: "1.1.0"
+parent_audit_items:
+  - T.5  # Phase B SDK instrumentation in flagship example (continuation of t5-otel-stack Phase A)
+depends_on:
+  - t5-otel-stack
+  - t5-connect-codegen
+layers:
+  - id: backend
+    path: examples/forge-fsm-example/backend
+  - id: frontend
+    path: examples/forge-fsm-example/frontend
+designs_per_layer:
+  backend: design.md
+  frontend: design.md
+tasks_per_layer:
+  backend: tasks.md
+  frontend: tasks.md
+timeline:
+  proposed: 2026-05-10
+  # specified: <auto-filled by /forge:specify>
+  # designed:  <auto-filled by /forge:design>
+  # planned:   <auto-filled by /forge:plan>
+  # implemented: <auto-filled by /forge:implement>
+  # archived:    <auto-filled by /forge:archive>
