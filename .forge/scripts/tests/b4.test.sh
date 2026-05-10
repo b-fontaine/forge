@@ -592,24 +592,33 @@ _test_b4_041() {
 }
 
 _test_b4_042() {
-  # Audit FR-MO-040 negative scope: B.4 commits MUST NOT touch cli/src/.
-  # Baseline = parent of the first commit that introduced .forge/changes/b4-mobile-only/.
-  # If b4 has no commits yet (pre-Phase-A run), or git history is shallow, skip.
-  local first_b4_commit
+  # Audit FR-MO-040 negative scope: the NET diff between b4's baseline
+  # and b4's archive commit MUST NOT touch cli/src/. This proves the
+  # B.5.1 dispatcher ABI (mobile-only ships with zero TS edits) at
+  # archive time. Subsequent commits (e.g. J.8 adding the
+  # forbidden_archetypes refusal check in init-archetype.ts) are
+  # outside the b4 window and out of scope.
+  #
+  # Boundary commits :
+  #   baseline = parent of FIRST commit that touched .forge/changes/b4-mobile-only/
+  #   archive  = LAST commit that touched .forge/changes/b4-mobile-only/.forge.yaml
+  #              (= the status: archived flip).
+  local first_b4_commit last_b4_commit baseline
   first_b4_commit=$(git -C "$FORGE_ROOT_REAL" log --reverse --format='%H' \
     -- .forge/changes/b4-mobile-only/ 2>/dev/null | head -1)
-  if [ -z "$first_b4_commit" ]; then
+  last_b4_commit=$(git -C "$FORGE_ROOT_REAL" log --format='%H' \
+    -- .forge/changes/b4-mobile-only/.forge.yaml 2>/dev/null | head -1)
+  if [ -z "$first_b4_commit" ] || [ -z "$last_b4_commit" ]; then
     echo "    skipped (no b4 commit in history)" >&2; return 0
   fi
-  local baseline
   baseline=$(git -C "$FORGE_ROOT_REAL" rev-parse "${first_b4_commit}^" 2>/dev/null) || {
     echo "    skipped (cannot resolve baseline parent of $first_b4_commit)" >&2; return 0
   }
   local violators
-  violators=$(git -C "$FORGE_ROOT_REAL" diff --name-only "$baseline"...HEAD 2>/dev/null \
+  violators=$(git -C "$FORGE_ROOT_REAL" diff --name-only "${baseline}..${last_b4_commit}" 2>/dev/null \
     | grep -E '^cli/src/' | head -1)
   if [ -n "$violators" ]; then
-    echo "    FR-MO-040 violation: cli/src/ touched since $baseline: $violators" >&2; return 1
+    echo "    FR-MO-040 violation: cli/src/ touched in b4 NET diff (${baseline:0:7}..${last_b4_commit:0:7}): $violators" >&2; return 1
   fi
 }
 

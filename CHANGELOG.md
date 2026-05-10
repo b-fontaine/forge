@@ -12,6 +12,57 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added — J.8 Janus orchestrator rules + EU compliance tier + SBOM (`j8-janus-rules`)
+
+Three sub-modules under one umbrella change :
+
+- **J.8.a — Janus refusal rules** : the cross-layer orchestrator agent
+  (`.claude/agents/cross-layer-orchestrator.md`) gains a "Forbidden
+  archetypes & combinations" H2 section enumerating 3 seed rules
+  (`J8-RULE-001` flutter-firebase Schrems II / CLOUD Act ;
+  `J8-RULE-002` T3 ⇒ self-host Zitadel ; `J8-RULE-003` T3 ⇒
+  self-host SigNoz + no Datadog). `.forge/scaffolding/dispatch-table.yml`
+  gains a `forbidden_archetypes:` runtime registry. New shared bash
+  helper `bin/_forge-init-helpers.sh::_refuse_if_forbidden` provides
+  defense-in-depth refusal logic ; sourced by `bin/forge-init-fsm.sh`
+  + `bin/forge-init-mobile-only.sh`. The TS dispatcher
+  (`cli/src/commands/init-archetype.ts`) is the first line of defense :
+  it consults `forbidden_archetypes` before invoking any wrapper and
+  throws an Error with the structured `[REFUSAL: ...]` prefix +
+  `exitCode: 3`. New standard
+  `.forge/standards/global/janus-orchestration-rules.md` codifies the
+  rule catalogue + extension procedure.
+- **J.8.b — `--eu-tier` flag + T3 enforcement + ledger** : `forge init`
+  gains an optional `--eu-tier T1|T2|T3` flag validated against
+  `.forge/schemas/compliance-tier.schema.json` (T.4). Validated tier
+  passed to wrapper scripts via `FORGE_EU_TIER` env var. When
+  `FORGE_EU_TIER=T3`, the fsm wrapper refuses Datadog / SigNoz Cloud /
+  cloud-managed identity ; when set to any tier, writes
+  `<target>/.forge/.forge-tier` as a one-line plain-text ledger.
+  Backward compat preserved : flag absence behaves identically to
+  pre-J.8 (NFR-J8-002).
+- **J.8.d — SBOM CycloneDX 1.5** : new
+  `bin/forge-sbom.sh` generates a CycloneDX 1.5 JSON (or XML) SBOM
+  from any combination of `Cargo.lock` / `package-lock.json` /
+  `pnpm-lock.yaml` / `yarn.lock` / `pubspec.lock` found under
+  `--target` (recursive walk, depth 4, with skip-list for
+  `node_modules` / `target` / `.dart_tool` / `.git` / etc.). Bash
+  thin + Python 3 inline (F.2 / J.7 pattern, no external CycloneDX
+  dependency — handcrafted minimum-viable per Context7-verified
+  CycloneDX 1.5 mandatory fields). Reproducible : `SOURCE_DATE_EPOCH`
+  controls timestamp + serialNumber for byte-identical output across
+  runs (FR-J8-075). New standard
+  `.forge/standards/global/sbom-policy.md` documents the format
+  choice + regeneration cadence + EU compliance rationale (NIS2 +
+  DORA + CRA).
+
+Test harness `j8.test.sh` 20/20 GREEN at `--level 1,2`. Smoke test
+on `examples/forge-fsm-example/` produces an SBOM with 74
+components (Cargo + pubspec lockfiles).
+
+`docs/ARCHETYPES.md` gains "Forbidden combinations" + "EU
+compliance tier" sections.
+
 ### Added — T.5 OTel + OBI + Coroot stack templates (`t5-otel-stack`)
 
 - **OBI eBPF DaemonSet** (`infra/k8s/base/obi-daemonset.yaml.tmpl`) for

@@ -91,6 +91,8 @@ jobs:
         run: bash .forge/scripts/tests/j7.test.sh --level 1,2
       - name: t5-otel.test.sh
         run: bash .forge/scripts/tests/t5-otel.test.sh --level 1
+      - name: j8.test.sh
+        run: bash .forge/scripts/tests/j8.test.sh --level 1,2
 
   # ─── gates ── verify.sh + constitution-linter.sh ───────────────
   gates:
@@ -107,6 +109,10 @@ jobs:
         run: bash .forge/scripts/verify.sh
       - name: constitution-linter.sh
         run: bash .forge/scripts/constitution-linter.sh
+      - name: forge-sbom.sh (J.8.d — CycloneDX 1.5)
+        run: bash bin/forge-sbom.sh --target examples/forge-fsm-example/ --output sbom.cdx.json
+      - uses: actions/upload-artifact@v4
+        with: { name: sbom-cyclonedx, path: sbom.cdx.json, if-no-files-found: error }
 
   # ─── cli ── Vitest + lint + bundle ─────────────────────────────
   cli:

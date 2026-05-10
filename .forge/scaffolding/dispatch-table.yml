@@ -74,3 +74,23 @@ archetypes:
     since: "0.0.0"
     status: removed_from_roadmap
     reason: "Schrems II + CLOUD Act per ADR-007 (t4-adr-ratification, 2026-05-04)"
+
+# ── Forbidden archetypes (J.8 j8-janus-rules — runtime refusal list) ──
+# Top-level list consulted by:
+#   - cli/src/commands/init-archetype.ts (TS dispatcher, first line of defense)
+#   - bin/_forge-init-helpers.sh::_refuse_if_forbidden (wrapper-side defense in depth)
+#
+# Rule catalogue documented in:
+#   - .claude/agents/cross-layer-orchestrator.md "Forbidden archetypes & combinations"
+#   - .forge/standards/global/janus-orchestration-rules.md
+#
+# Refusal exit code: 3 (policy violation per ADR-J8-003).
+# Refusal stderr format: [REFUSAL: <archetype>: <rule_id>: <reason> ; alternative: <alt>]
+
+forbidden_archetypes:
+  - name: flutter-firebase
+    reason: "Schrems II + CLOUD Act incompatibles avec positionnement EU/premium Forge"
+    since: "0.4.0-rc.1"
+    alternative: "default archetype + add Firebase as adopter-managed overlay (out of Forge scope)"
+    rule_id: J8-RULE-001
+

@@ -36,7 +36,16 @@ export interface InitOptions {
   projectName?: string;
   reverseDomain?: string;
   isTty?: boolean;
+  // J.8 j8-janus-rules — EU compliance tier (FR-J8-040..045 / ADR-J8-002).
+  // Optional ; absence preserves backward compat (NFR-J8-002).
+  euTier?: string;
 }
+
+/**
+ * J.8 j8-janus-rules — valid `--eu-tier` values per
+ * `.forge/schemas/compliance-tier.schema.json` v1.0.0 (T.4).
+ */
+export const EU_TIER_ENUM: readonly ["T1", "T2", "T3"] = ["T1", "T2", "T3"];
 
 export interface InitResult {
   // For default-archetype runs, mirrors the legacy shape
@@ -81,6 +90,25 @@ export async function initCommand(
       "forge init: --archetype, --auto, --wizard are mutually exclusive",
     );
     return { errors: ["mutually exclusive selection flags"], exitCode: 2 };
+  }
+
+  // ── --eu-tier validation (J.8 j8-janus-rules / FR-J8-040..043) ──
+  // Validates against compliance-tier.schema.json enum. Absence
+  // preserves backward compat (NFR-J8-002 / ADR-J8-002 — no default).
+  if (options.euTier !== undefined) {
+    if (!(EU_TIER_ENUM as readonly string[]).includes(options.euTier)) {
+      writeError(
+        deps.stderr,
+        `forge init: invalid --eu-tier '${options.euTier}'. ` +
+          `Must be one of [${EU_TIER_ENUM.join(", ")}] per ` +
+          `.forge/schemas/compliance-tier.schema.json.`,
+      );
+      return { errors: ["invalid eu-tier"], exitCode: 2 };
+    }
+    // Pass the validated tier to wrapper scripts via env var.
+    // Wrappers source bin/_forge-init-helpers.sh and gate their
+    // tier-specific blocks on `[ -n "$FORGE_EU_TIER" ]`.
+    process.env.FORGE_EU_TIER = options.euTier;
   }
 
   // ── Resolve archetype ──────────────────────────────────────

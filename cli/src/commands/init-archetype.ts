@@ -22,8 +22,22 @@ export interface DispatchTableEntry {
   since?: string;
 }
 
+/**
+ * J.8 j8-janus-rules — forbidden_archetypes entry.
+ * Documented in `.forge/standards/global/janus-orchestration-rules.md`
+ * and mirrored in `.claude/agents/cross-layer-orchestrator.md`.
+ */
+export interface ForbiddenArchetypeEntry {
+  name: string;
+  reason: string;
+  since: string;
+  alternative: string;
+  rule_id: string;
+}
+
 export interface DispatchTable {
   archetypes: Record<string, DispatchTableEntry>;
+  forbidden_archetypes?: ForbiddenArchetypeEntry[];
 }
 
 export type DispatchTableReader = (path: string) => Promise<DispatchTable>;
@@ -91,6 +105,21 @@ export interface ArchetypeInitOptions {
 export async function runArchetypeInit(
   opts: ArchetypeInitOptions,
 ): Promise<ArchetypeRunResult> {
+  // J.8 j8-janus-rules — forbidden_archetypes refusal (FR-J8-020 / ADR-J8-003).
+  // First line of defense before any wrapper invocation. Refusal exit code
+  // is 3 (policy violation) ; the wrapper-side helper provides defense in
+  // depth for cases where this dispatcher is bypassed.
+  const forbidden = (opts.dispatchTable.forbidden_archetypes ?? []).find(
+    (e) => e.name === opts.archetype,
+  );
+  if (forbidden) {
+    const err = new Error(
+      `[REFUSAL: ${forbidden.name}: ${forbidden.rule_id}: ${forbidden.reason} ; alternative: ${forbidden.alternative}]`,
+    );
+    (err as Error & { exitCode?: number }).exitCode = 3;
+    throw err;
+  }
+
   const entry = opts.dispatchTable.archetypes[opts.archetype];
   if (!entry) {
     throw new Error(
