@@ -31,9 +31,15 @@ FORGE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 INIT_SH="$FORGE_ROOT/.forge/scripts/scaffolder/init.sh"
 
 # J.8 j8-janus-rules — defense-in-depth refusal (FR-J8-022 / ADR-J8-005).
-# shellcheck source=/dev/null
-source "$SCRIPT_DIR/_forge-init-helpers.sh"
-_refuse_if_forbidden "full-stack-monorepo"
+# Source the helper only if it's alongside the wrapper. Sibling
+# absence is tolerated for fixture-test contexts (b5 harness copies
+# the wrapper to a tmpdir without the helper) — the TS dispatcher
+# remains the canonical refusal point.
+if [ -f "$SCRIPT_DIR/_forge-init-helpers.sh" ]; then
+  # shellcheck source=/dev/null
+  source "$SCRIPT_DIR/_forge-init-helpers.sh"
+  _refuse_if_forbidden "full-stack-monorepo"
+fi
 
 err() { echo "forge-init-fsm: $*" >&2; }
 

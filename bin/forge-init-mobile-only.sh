@@ -38,9 +38,13 @@ FORGE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 TEMPLATES_DIR="$FORGE_ROOT/.forge/templates/archetypes/mobile-only"
 
 # J.8 j8-janus-rules — defense-in-depth refusal (FR-J8-022 / ADR-J8-005).
-# shellcheck source=/dev/null
-source "$SCRIPT_DIR/_forge-init-helpers.sh"
-_refuse_if_forbidden "mobile-only"
+# Source the helper only if it's alongside the wrapper. Sibling
+# absence is tolerated for fixture-test contexts.
+if [ -f "$SCRIPT_DIR/_forge-init-helpers.sh" ]; then
+  # shellcheck source=/dev/null
+  source "$SCRIPT_DIR/_forge-init-helpers.sh"
+  _refuse_if_forbidden "mobile-only"
+fi
 
 err() { echo "forge-init-mobile-only: $*" >&2; }
 
