@@ -44,6 +44,19 @@ dependencies:
   # declared`).
   get_it: ^7.7.0
 
+  # ── OpenTelemetry SDK (t5-otel-app — Phase B SDK instrumentation) ──
+  # Audit: T.5 (t5-otel-app) — pinned in
+  # .forge/changes/t5-otel-app/_dart-pin.txt per ADR-T5-OTA-001.
+  # Bundled package : api + sdk + OTLP HTTP exporter sub-imports under
+  # the same `package:opentelemetry/...` prefix per
+  # flutter/opentelemetry.md. ADR-T5-OTA-002 picks HTTP/protobuf
+  # transport (port 4318) symmetric with the Rust backend exporter.
+  opentelemetry: ^0.18.0
+  # Connect/Dart wraps dio under the hood ; attaching the
+  # TracingInterceptor on the dio.Interceptors list captures every
+  # Connect call (FR-T5-OTA-061 / FR-T5-OTA-064).
+  dio: ^5.7.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

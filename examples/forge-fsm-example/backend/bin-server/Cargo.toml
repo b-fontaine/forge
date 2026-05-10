@@ -4,3 +4,13 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+# ── Workspace + telemetry (t5-otel-app) ──
+infrastructure = { path = "../crates/infrastructure" }
+opentelemetry = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+tower-http = { workspace = true }
+tokio = { workspace = true }
+anyhow = { workspace = true }
+http = { workspace = true }
+axum = { workspace = true }

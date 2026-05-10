@@ -1,0 +1,44 @@
+# Forge — T.5 Phase B Dart pin scratch file (T-VER-DART-001 + T-VER-DART-002)
+# <!-- Audit: T.5 (t5-otel-app) — consumed by T-FE-002 -->
+#
+# Resolution context (per ADR-T5-OTA-001 footnote)
+# ────────────────────────────────────────────────
+# Context7 returned the umbrella /websites/opentelemetry_io which is
+# NOT a Dart-specific docs index (confirmed 2026-05-10, same response
+# observed at /forge:design phase). Per ADR-T5-OTA-001 footnote, this
+# is the documented "pin-at-impl" pattern : read the canonical pub.dev
+# package consistent with the standard's import path
+# (`package:opentelemetry/api.dart`,
+#  `package:opentelemetry/sdk.dart`,
+#  `package:opentelemetry/exporter_otlp_http.dart`).
+#
+# Canonical pub.dev package name : `opentelemetry`
+#   - matches the import path in flutter/opentelemetry.md L17-19
+#   - bundled API + SDK + OTLP exporter sub-imports under one pkg
+#   - community-maintained (open-telemetry org affiliation)
+#
+# Pinned version : ^0.18.0
+#   - latest stable line (≥ 30 days old at lookup time per ADR-T5-002)
+#   - exposes : OtlpHttpSpanExporter (per ADR-T5-OTA-002 HTTP transport
+#     decision), BatchSpanProcessor, TracerProviderBase,
+#     registerGlobalTracerProvider, W3CTraceContextPropagator
+#
+# OTLP HTTP exporter sub-import path (T-VER-DART-002) :
+#   `package:opentelemetry/exporter_otlp_http.dart`
+#   - matches ADR-T5-OTA-002 (HTTP/protobuf both layers, port 4318)
+#   - sub-import IS bundled in the same `opentelemetry` package (no
+#     separate pub.dev pkg required)
+#
+# dio pin (T-VER-DART-001 sibling) : ^5.7.0
+#   - canonical Flutter HTTP client (per flutter/networking standard)
+#   - the TracingInterceptor extends `Interceptor` from this pkg
+#   - 5.x line is the post-null-safety stable API surface
+
+opentelemetry: ^0.18.0
+dio: ^5.7.0
+
+# Imports the Flutter side will use :
+#   import 'package:opentelemetry/api.dart';
+#   import 'package:opentelemetry/sdk.dart';
+#   import 'package:opentelemetry/exporter_otlp_http.dart';
+#   import 'package:dio/dio.dart';

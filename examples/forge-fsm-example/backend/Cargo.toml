@@ -29,7 +29,22 @@ anyhow = "1"
 
 # ── Observability (b1-delivery will wire this) ──
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# ── OpenTelemetry SDK family (t5-otel-app — Phase B SDK instrumentation)
+# Pinned per ADR-T5-OTA-001 (Context7 /open-telemetry/opentelemetry-rust 2026-05-10).
+# ADR-T5-OTA-002 deviates from rust/opentelemetry.md §Setup snippet (which uses
+# with_tonic / gRPC) : both layers ship HTTP/protobuf for symmetry with the
+# Flutter exporter and the Phase A collector :4318 receiver.
+opentelemetry = "0.31"                                                           # Audit: T.5 (t5-otel-app)
+opentelemetry_sdk = { version = "0.31", features = ["rt-tokio"] }                # Audit: T.5 (t5-otel-app)
+opentelemetry-otlp = { version = "0.31", features = ["http-proto", "reqwest-client"] }  # Audit: T.5 (t5-otel-app)
+opentelemetry-semantic-conventions = "0.31"                                      # Audit: T.5 (t5-otel-app)
+tracing-opentelemetry = "0.32"                                                   # Audit: T.5 (t5-otel-app)
+tower-http = { version = "0.6", features = ["trace"] }                           # Audit: T.5 (t5-otel-app)
+http = "1"                                                                       # Audit: T.5 (t5-otel-app)
+hostname = "0.4"                                                                 # Audit: T.5 (t5-otel-app)
+axum = "0.7"                                                                     # Audit: T.5 (t5-otel-app)
 
 # ── gRPC (rust/grpc standard) ──
 tonic = "0.12"

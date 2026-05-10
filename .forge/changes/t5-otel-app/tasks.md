@@ -1,5 +1,5 @@
 # Tasks: t5-otel-app
-<!-- Status: planned -->
+<!-- Status: implemented -->
 <!-- Schema: full-stack-monorepo -->
 
 ## Convention

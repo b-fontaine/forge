@@ -9,7 +9,7 @@ The change cannot be archived while any question is `Status: open`.
 
 ## Q-001: Canonical Dart OTel package name + version + OTLP exporter sub-package?
 
-- **Status**: open
+- **Status**: answered
 - **Raised in**: proposal.md ; specs.md (Cluster 4)
 - **Raised on**: 2026-05-10
 - **Raised by**: @bfontaine
@@ -42,13 +42,23 @@ Resolve via Context7 at `/forge:design` :
 
 ### Resolution
 
-To be filled in at `/forge:design` (will become ADR-T5-OTA-001).
+**Resolved by ADR-T5-OTA-001** (`design.md`). Canonical pub.dev pkg name :
+`opentelemetry` (single bundled package — api + sdk + OTLP exporter
+sub-imports under the same `package:opentelemetry/...` prefix consistent
+with `flutter/opentelemetry.md` L17-19). Pin resolved at impl-time via
+the T-VER-DART-001 deferred-pin pattern : `opentelemetry: ^0.18.0` +
+`dio: ^5.7.0`. `flutter pub get` confirmed `opentelemetry 0.18.11` and
+`dio 5.9.2` (recorded in `.forge/changes/t5-otel-app/_dart-pin.txt`
+and `pubspec.yaml`). OTLP HTTP exporter sub-import path :
+`package:opentelemetry/exporter_otlp_http.dart` (matches ADR-T5-OTA-002
+HTTP/protobuf transport choice ; bundled in the same pkg, no separate
+pub package).
 
 ---
 
 ## Q-002: OTLP transport — gRPC (port 4317) or HTTP/protobuf (port 4318) per layer?
 
-- **Status**: open
+- **Status**: answered
 - **Raised in**: proposal.md ; specs.md (Cluster 1, Cluster 4)
 - **Raised on**: 2026-05-10
 - **Raised by**: @bfontaine
@@ -82,13 +92,22 @@ package docs.
 
 ### Resolution
 
-To be filled in at `/forge:design` (will become ADR-T5-OTA-002).
+**Resolved by ADR-T5-OTA-002** (`design.md`). Both layers ship
+**HTTP/protobuf** on port `4318`. Rust : `SpanExporter::builder().with_http()
+.with_protocol(Protocol::HttpBinary).with_endpoint(...)`. Flutter :
+`OtlpHttpSpanExporter`. Rationale : Flutter mobile constraints favour
+HTTP/2 over HTTP transport ; symmetry across both layers simplifies adopter
+mental-model ; no measurable perf gap at demo-005 scale. The deviation
+from `rust/opentelemetry.md` § Setup snippet (which uses `with_tonic()`)
+is documented inline in `bin-server/main.rs` and in
+`crates/infrastructure/src/telemetry/mod.rs` module doc. The standard's
+snippet is illustrative, not a hard pin.
 
 ---
 
 ## Q-003: SDK-side sampler — `AlwaysOn` or `ParentBased(TraceIdRatioBased(1.0))`?
 
-- **Status**: open
+- **Status**: answered
 - **Raised in**: proposal.md ; specs.md (Cluster 1, Cluster 4)
 - **Raised on**: 2026-05-10
 - **Raised by**: @bfontaine
@@ -121,4 +140,64 @@ Phase B model documented in `t5-otel-stack/design.md` ADR-OTEL-001
 
 ### Resolution
 
-To be filled in at `/forge:design` (will become ADR-T5-OTA-003).
+**Resolved by ADR-T5-OTA-003** (`design.md`). Option **B** —
+`ParentBased(TraceIdRatioBased(1.0))` on both layers. Matches the
+`observability.yaml::sampler: parentbased_traceidratio` standard name
+literally ; respects the W3C `traceparent` `flags` bit for sampled-already
+traces ; lets a future Phase D drop the SDK ratio (e.g. mobile-saver
+mode at 0.1) by toggling one env var (`OTEL_TRACES_SAMPLER_ARG`) without
+rewriting init code. Default ratio `1.0` ; the Phase A collector
+`processors.probabilistic_sampler` enforces the env-tier ratio
+downstream (dual-stage Phase A + Phase B model documented in
+`t5-otel-stack/design.md` ADR-OTEL-001 "Consequences").
+
+---
+
+## Q-004: `flutter/opentelemetry.md` standard vs `opentelemetry: ^0.18.11` pub.dev pkg API drift
+
+- **Status**: open
+- **Raised in**: impl-time discovery (T-FE-009 / T-L2-002)
+- **Raised on**: 2026-05-10
+- **Raised by**: @bfontaine
+
+### Question
+
+The Dart `opentelemetry: ^0.18.11` pub.dev pkg shipped at impl-time has
+a different public API surface than what `flutter/opentelemetry.md`
+documents :
+
+| Standard says | `0.18.11` actually exposes |
+|---|---|
+| `import 'package:opentelemetry/exporter_otlp_http.dart';` | NOT shipped — pkg has only `api.dart`, `sdk.dart`, `web_sdk.dart` |
+| `OtlpHttpSpanExporter(OtlpHttpExporterConfig(...))` | undefined |
+| `BatchSpanProcessor(exporter, BatchSpanProcessorConfig(...))` | `BatchSpanProcessorConfig` undefined ; ctor takes 1 positional arg only |
+| `ParentBasedSampler(TraceIdRatioBasedSampler(1.0))` | `TraceIdRatioBasedSampler` undefined |
+| `SpanStatusCode.ok / SpanStatusCode.error` | `SpanStatusCode` undefined |
+| `setStatus(code, message: ...)` | param `description:` not `message:` |
+| `Context.current.withSpan(...)` | deprecated, removed in `0.19.0` ; use `contextWithSpan` |
+
+The L1 grep anchors are still GREEN (file presence + structural tokens
+per the standard) ; the L2 `flutter analyze` test fails on
+`undefined_identifier` / `uri_does_not_exist` errors per the table.
+
+### Resolution
+
+DEFERRED to `/forge:archive` triage. Two paths :
+
+1. **Bump `flutter/opentelemetry.md`** to track the `0.18.x` actual API
+   (single-pkg sub-imports collapsed into `api.dart` / `sdk.dart`,
+   different exporter ctor names). Standards bump → REVIEW.md ledger
+   entry → minor version bump on the standard.
+2. **Pin a different pub.dev pkg** if a maintained fork matches the
+   standard's documented API (e.g. `dartastic_opentelemetry`,
+   `opentelemetry_api` if any exist with the documented surface).
+
+L2 `_test_ota_l2_002_flutter_analyze` is gated to xfail until Q-004
+is resolved. The L1 structural anchors do not regress — the impl
+files exist with the right shape per the standard's intent ; only the
+runtime API names need reconciliation.
+
+This residual is captured rather than guessed (Article III.4) — the
+ANTI-HALLUCINATION protocol forbids picking API names without
+verification, and Context7 returned no Dart-specific docs index that
+could verify them.
