@@ -169,20 +169,39 @@ templates:
   - source: infra/k8s/base/ingress.yaml.tmpl
     target: infra/k8s/base/ingress.yaml
     substitute: true
+  # T.5 t5-otel-stack — OBI eBPF DaemonSet + Coroot deployment (ADR-008).
+  - source: infra/k8s/base/obi-daemonset.yaml.tmpl
+    target: infra/k8s/base/obi-daemonset.yaml
+    substitute: true
+  - source: infra/k8s/base/coroot-deployment.yaml.tmpl
+    target: infra/k8s/base/coroot-deployment.yaml
+    substitute: true
   - source: infra/k8s/base/README.md.tmpl
     target: infra/k8s/base/README.md
     substitute: true
   - source: infra/k8s/overlays/dev/kustomization.yaml.tmpl
     target: infra/k8s/overlays/dev/kustomization.yaml
     substitute: true
+  # T.5 t5-otel-stack — env-tier sampler patch (ADR-OTEL-001 / FR-OTEL-034).
+  - source: infra/k8s/overlays/dev/sampler-patch.yaml.tmpl
+    target: infra/k8s/overlays/dev/sampler-patch.yaml
+    substitute: true
   - source: infra/k8s/overlays/staging/kustomization.yaml.tmpl
     target: infra/k8s/overlays/staging/kustomization.yaml
+    substitute: true
+  # T.5 t5-otel-stack — env-tier sampler patch (FR-OTEL-033).
+  - source: infra/k8s/overlays/staging/sampler-patch.yaml.tmpl
+    target: infra/k8s/overlays/staging/sampler-patch.yaml
     substitute: true
   - source: infra/k8s/overlays/prod/kustomization.yaml.tmpl
     target: infra/k8s/overlays/prod/kustomization.yaml
     substitute: true
   - source: infra/k8s/overlays/prod/hpa.yaml.tmpl
     target: infra/k8s/overlays/prod/hpa.yaml
+    substitute: true
+  # T.5 t5-otel-stack — env-tier sampler patch (FR-OTEL-032).
+  - source: infra/k8s/overlays/prod/sampler-patch.yaml.tmpl
+    target: infra/k8s/overlays/prod/sampler-patch.yaml
     substitute: true
 
   # ── Infra observability (b1-delivery, FR-IN-007 + FR-IN-008) ────
