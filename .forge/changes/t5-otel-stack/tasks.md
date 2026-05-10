@@ -1,5 +1,5 @@
 # Tasks: t5-otel-stack
-<!-- Status: implemented -->
+<!-- Status: archived -->
 <!-- Schema: default -->
 
 ## Convention

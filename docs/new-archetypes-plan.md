@@ -15,7 +15,7 @@
 
 ---
 
-## 0.0 Status update — 2026-05-08
+## 0.0 Status update — 2026-05-10
 
 > **Mise à jour cumulative depuis la rédaction du plan le 2026-05-04.**
 > Lis cette section avant le reste du document : elle reflète l'état réel
@@ -125,23 +125,63 @@
       `ci_blocking + pre_commit_hook` reste obligatoire ; NFR-J7-002
       live-tree GREEN préservé.
 
+- **`t5-otel-stack` archivé 2026-05-10** — **infra side** du triplet
+  SigNoz + OBI eBPF + Coroot sur la flagship `full-stack-monorepo / 1.0.0`.
+  Réalise `observability.yaml` v1.1.0 (ADR-008). Spec consolidée
+  `.forge/specs/otel-stack.md` (22 ADDED FRs `FR-OTEL-001..082` +
+  5 NFRs + 7 ADRs `ADR-OTEL-001..007`). Livrables physiques :
+    - **OBI eBPF DaemonSet** (`grafana/beyla:2.0.1`) en posture
+      **unprivileged-with-capabilities** (ADR-OTEL-004) — caps
+      `BPF/SYS_PTRACE/NET_RAW/CHECKPOINT_RESTORE/DAC_READ_SEARCH/
+      PERFMON/NET_ADMIN/SYS_ADMIN`, drop ALL otherwise. RBAC dédié
+      (ServiceAccount + ClusterRole read-only sur pods/nodes/replicasets +
+      ClusterRoleBinding). Annotation `forge.dev/aegis-audit: required`.
+      `nodeSelector: forge.dev/kernel-min-58: "true"` (opt-in node label,
+      ADR-OTEL-007).
+    - **Coroot deployment** (`coroot/coroot:1.4.4`) multi-doc YAML
+      (Deployment + Service + ConfigMap, ADR-OTEL-006). Single-replica,
+      `emptyDir` local-dev (PVC swap documenté).
+    - **OTel collector sampler** : `processors.probabilistic_sampler`
+      ajouté (ADR-OTEL-001 — `mode: proportional`,
+      `attribute_source: traceID`, `hash_seed: 22`,
+      `sampling_percentage: 100` dev default). Wired into traces
+      pipeline only.
+    - **Env-tier overlays** : 3 sampler-patches
+      (`infra/k8s/overlays/{dev,staging,prod}/sampler-patch.yaml.tmpl`)
+      avec ratios 100/100/10 par `observability.yaml::ratios`.
+    - **`observability.yaml` 1.0.0 → 1.1.0** (additive) avec nouveau
+      bloc `versions:` (`beyla: "2.0.1"` + `coroot: "1.4.4"`,
+      ADR-OTEL-003, symétrique avec T.5 `transport.yaml` 1.0.0 → 1.1.0).
+      Entrée `Updated` dans REVIEW.md datée 2026-05-09.
+    - **Aegis audit doc** : 3 H2 sections dans `infra/CLAUDE.md.tmpl`
+      (Privileged DaemonSet — duty Aegis / Sampler overlay mechanism /
+      Coroot persistence) + checklist "Deployment prerequisites" dans
+      `infra/k8s/base/README.md.tmpl`.
+    - **Example mirror** : 6 fichiers rendus dans
+      `examples/forge-fsm-example/infra/`.
+    - **Snapshot tarball** régénéré : 520 KB (87 % du budget 600 KB
+      NFR-OTEL-001) ; `a7.test.sh` 29/0 PASS (forge upgrade backward
+      compat NFR-OTEL-002).
+    - **Harness** `.forge/scripts/tests/t5-otel.test.sh` 14/14 GREEN
+      à `--level 1`. Registered dans `forge-ci.yml`.
+
 ### Module en cours
 
-Aucun change en cours sur `main` au 2026-05-08. Le prochain candidat
-naturel est le scaffolding T5 résiduel (OTel + OBI + Coroot stack
-templates, J.8 Janus forbidden-list rules), ou K.3 (Demeter agent),
-à arbitrer.
+Aucun change en cours sur `main` au 2026-05-10. Le prochain candidat
+naturel est **J.8** (Janus orchestrator forbidden-list rules) ou
+**K.3** (Demeter agent — débloque I.2–I.6 compliance graduée), à
+arbitrer.
 
 ### Modules toujours en attente
 
-- **T5 (suite)** post-`j7-validate-standards-yaml` : Phase 1 OTel +
-  OBI + Coroot stack, J.8 (Janus rules forbidden-list), K.3 (Demeter
-  agent), I.2–I.6 (compliance docs + workflow + AI Act / NIS2 / DORA /
+- **T5 (suite)** post-`t5-otel-stack` : J.8 (Janus rules
+  forbidden-list), K.3 (Demeter agent), I.2–I.6 (compliance docs +
+  workflow + AI Act / NIS2 / DORA /
   CRA artefacts), validation traceparent W3C E2E.
 - **T6 / T7 / T8 / T9+** : non commencés (B.6, B.7, B.8, B.9, B.3, K.1,
   K.2, K.4, K.5, C.2–C.5, F.3, G.*, H.*).
 
-### Inventaire `.forge/changes/` (2026-05-08)
+### Inventaire `.forge/changes/` (2026-05-10)
 
 | Change                       | Status                 | Tier livré                    |
 |------------------------------|------------------------|-------------------------------|
@@ -161,8 +201,9 @@ templates, J.8 Janus forbidden-list rules), ou K.3 (Demeter agent),
 | `t4-adr-ratification`        | archived               | T4 (P-1..P-4 + J.1–J.6 + I.1) |
 | `t5-connect-codegen`         | archived               | T5 Phase 1 (Connect codegen)  |
 | `j7-validate-standards-yaml` | archived               | T5 (J.7)                      |
+| `t5-otel-stack`              | archived               | T5 (OTel + OBI + Coroot)      |
 
-**16 archivés sur `main`**, aucun change en cours. Aucun change
+**17 archivés sur `main`**, aucun change en cours. Aucun change
 orphelin, aucun `status: in_progress` bloqué, aucun marqueur
 `[NEEDS CLARIFICATION:]` non résolu inline dans les changes archivés
 (tous gates `verify.sh` + `constitution-linter.sh` PASS).
@@ -775,10 +816,10 @@ Reprise de ARCHITECTURE-TARGET §11.
 
 ## 11. Priorisation recommandée — T4 → T8 (post-v0.3.0)
 
-| Trimestre | Modules                                                                                          | Status (2026-05-08)                                                                                                                                                                                                                     | Rationale                                                                                                                                    |
+| Trimestre | Modules                                                                                          | Status (2026-05-10)                                                                                                                                                                                                                     | Rationale                                                                                                                                    |
 |-----------|--------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
 | **T4**    | **P-1, P-2, P-3, P-4, I.1, J.1–J.6**                                                             | ✅ **Done 2026-05-04** via `t4-adr-ratification` (PR #2 mergée). 35 ADDED FRs + 8 NFRs. P-5 retiré 2026-05-06 (Hera 9 sub-agents conservés).                                                                                            | Méthodologie : ADR capturés, 6 standards YAML v1.0.0, cycle 12 mois, schémas compliance.                                                     |
-| **T5**    | **Phase 1 ARCHITECTURE-TARGET, J.7, J.8, K.3 (Demeter), I.2–I.6**                                | ✅ **Connect codegen done 2026-05-06** via `t5-connect-codegen` (PR #3). ✅ **J.7 done 2026-05-08** via `j7-validate-standards-yaml` (21/21 tests, +7 PASS verify.sh, perf 122 ms). OTel+OBI+Coroot, J.8, K.3, I.2–I.6 = pending. | Observabilité + Connect contrats + standards linter + compliance graduée. Réversible.                                                        |
+| **T5**    | **Phase 1 ARCHITECTURE-TARGET, J.7, J.8, K.3 (Demeter), I.2–I.6**                                | ✅ **Connect codegen done 2026-05-06** via `t5-connect-codegen` (PR #3). ✅ **J.7 done 2026-05-08** via `j7-validate-standards-yaml` (PR #4 merged). ✅ **OTel + OBI + Coroot stack templates done 2026-05-10** via `t5-otel-stack` (14/14 tests, +6 PASS verify.sh, snapshot 520 KB, `observability.yaml` 1.0.0 → 1.1.0). J.8, K.3, I.2–I.6 = pending. | Observabilité + Connect contrats + standards linter + compliance graduée. Réversible.                                                        |
 | **T6**    | **B.8 (flagship 1.0.0 → 2.0.0), Phase 2 ARCHITECTURE-TARGET**                                    | ⏸️ Pending.                                                                                                                                                                                                                             | Migration breaking flagship. **Point de non-retour**.                                                                                        |
 | **T7**    | **B.6 (event-driven-eu), B.7 (ai-native-rag), K.1, K.2, K.4, K.5**                               | ⏸️ Pending.                                                                                                                                                                                                                             | Deux nouveaux archétypes + 4 nouveaux agents.                                                                                                |
 | **T8**    | **B.9 (mobile-pwa-first / 2.0.0), B.3 (rust-cli-tui), pédagogie C.2-C.5, F.3**                   | ⏸️ Pending.                                                                                                                                                                                                                             | Renommage mobile + dernier archétype premium + walkthrough/anti-patterns/comparison/migration + fix release script (F.3 post-mortem v0.3.0). |
@@ -905,8 +946,13 @@ et AI-native souverain.
 1. ✅ ~~**Finir `t5-connect-codegen`**~~ — **Done 2026-05-06** : 25/25 L1 PASS,
    demo-005-connect-greeting archivée, `transport.yaml` v1.1.0 ratifié, PR #3
    mergée (`ca27257`). L2 fixtures (T-L2-001..007) deferred à T6.
-2. ⏸️ **Lancer Phase 1 OTel + OBI + Coroot stack** — templates K8s/compose,
-   instrumenter `examples/forge-fsm-example/`, sampler `parentbased_traceidratio`.
+2. ✅ ~~**Lancer Phase 1 OTel + OBI + Coroot stack**~~ — **Done
+   2026-05-10** via `t5-otel-stack` (Phase A infra-only) :
+   `grafana/beyla:2.0.1` DaemonSet + `coroot/coroot:1.4.4` Deploy +
+   `processors.probabilistic_sampler` env-tier overlays, snapshot
+   regen 520 KB, 14/14 tests GREEN. Phase B (SDK instrumentation
+   `examples/forge-fsm-example/`) et Phase C (E2E traceparent) restent
+   à livrer comme changes suivants.
 3. ✅ ~~**Livrer J.7**~~ — **Done 2026-05-08** via
    `j7-validate-standards-yaml` : `bin/validate-standards-yaml.sh` +
    schéma JSON Draft 2020-12, 21/21 tests GREEN, live-tree 122 ms,
@@ -921,4 +967,4 @@ et AI-native souverain.
    `.forge/compliance/`.
 Tout le reste découle.
 
-— *Fin du nouveau plan. Mise à jour partielle 2026-05-08.*
+— *Fin du nouveau plan. Mise à jour partielle 2026-05-10.*
