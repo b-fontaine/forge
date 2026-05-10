@@ -76,6 +76,31 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
 
 ---
 
+## 2026-05-09 — Updated observability.yaml to v1.1.0 (t5-otel-stack)
+
+- **Reviewer**: @bfontaine
+- **Reviewed standards**:
+
+  | Standard           | Version | Decision           | Next review due | Notes                                                                                                |
+  |--------------------|---------|--------------------|-----------------|------------------------------------------------------------------------------------------------------|
+  | observability.yaml | 1.1.0   | KEEP-WITH-CHANGES  | 2027-05-04      | Added `versions:` map with `beyla: "2.0.1"` + `coroot: "1.4.4"` — image pins per ADR-OTEL-002.       |
+
+- **Decision**: Updated by `t5-otel-stack` (Phase 1 ARCHITECTURE-TARGET
+  ADR-008 — infra side of the SigNoz + OBI eBPF + Coroot triplet on the
+  full-stack-monorepo flagship). Additive only — `exception_constitutional:
+  false` preserved, no breaking change. Symmetric with T.5
+  `transport.yaml` 1.0.0 → 1.1.0 codegen-pinning pattern.
+- **Notes**: Pins verified via Context7 review of `/grafana/beyla` and
+  `/coroot/coroot` on 2026-05-08. Both > 30 days old per ADR-T5-002 #1
+  criterion (no waiver needed). `observability.yaml::ebpf_complement:
+  opentelemetry-obi` is satisfied by `grafana/beyla` per the upstream
+  Grafana → OpenTelemetry donation lineage (binary-compatible).
+  Realised by 6 K8s manifests + 3 overlay sampler-patches + Aegis docs
+  in `templates/full-stack-monorepo/1.0.0/infra/`. T-VER-001 + T-VER-002
+  drift verification at impl-time per the T.5 T-VER-006 pattern.
+
+---
+
 ## 2026-05-05 — Correction note on the v1.1.0 entry above (t5-connect-codegen pivot)
 
 - **Reviewer**: @bfontaine

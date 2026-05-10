@@ -1,0 +1,12 @@
+# <!-- Audit: T.5 (t5-otel-stack, FR-OTEL-032) -->
+# Sampler patch — prod env-tier ratio override.
+# Standard: .forge/standards/observability.yaml v1.1.0 ::ratios.prod = 0.1
+#
+# Apply via configMapGenerator.behavior=merge in this overlay's
+# kustomization, or via a strategic-merge patch when the OTel collector
+# ConfigMap is wired in Phase B (see infra/CLAUDE.md "Sampler overlay
+# mechanism" section).
+
+processors:
+  probabilistic_sampler:
+    sampling_percentage: 10

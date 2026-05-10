@@ -1,8 +1,13 @@
 # Forge Standard — Observability stack
-# Audit: T.4 (t4-adr-ratification, 2026-05-04)
+# Audit: T.4 (t4-adr-ratification, 2026-05-04) ; T.5 (t5-otel-stack, 2026-05-09)
 # Ratifies: ADR-008 from docs/ARCHITECTURE-TARGET.md
+#
+# v1.1.0 (t5-otel-stack 2026-05-09) : additive — no breaking change.
+#   - Added versions: map with concrete OBI + Coroot image pins
+#     (ADR-OTEL-002 in t5-otel-stack/design.md). Symmetric with T.5
+#     transport.yaml 1.0.0 → 1.1.0 codegen pinning pattern.
 
-version: "1.0.0"
+version: "1.1.0"
 last_reviewed: 2026-05-04
 expires_at: 2027-05-04
 exception_constitutional: false
@@ -32,3 +37,10 @@ kernel_min: "5.8"
 deployment_constraints:
   privileged_daemonset_required: true
   aegis_audit_required_for_prod: true
+
+versions:
+  # T.5 t5-otel-stack pins (ADR-OTEL-002, Context7 verified 2026-05-08).
+  # OBI is satisfied by `grafana/beyla` per the upstream Grafana → OTel
+  # donation lineage (binary-compatible with the OTel-branded fork).
+  beyla: "2.0.1"      # grafana/beyla
+  coroot: "1.4.4"     # coroot/coroot

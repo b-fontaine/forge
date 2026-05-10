@@ -1,11 +1,16 @@
-# <!-- Audit: B.1.14 (b1-delivery, FR-IN-007) -->
-# OpenTelemetry Collector config — local dev only.
-# Standard: .forge/standards/infra/observability-local.md
+# <!-- Audit: B.1.14 (b1-delivery, FR-IN-007) ; T.5 (t5-otel-stack, FR-OTEL-030..035) -->
+# OpenTelemetry Collector config — local dev default ; per-env-tier sampler
+# patched by `infra/k8s/overlays/{dev,staging,prod}/sampler-patch.yaml.tmpl`
+# (ADR-OTEL-001 + ADR-OTEL-005 in `.forge/changes/t5-otel-stack/design.md`).
+#
+# Standard: .forge/standards/observability.yaml v1.1.0 (sampler:
+# parentbased_traceidratio with ratios prod=0.1 / staging=1.0 / dev=1.0).
 #
 # Receivers : OTLP gRPC :4317 + OTLP HTTP :4318 (Article IX three signals)
-# Processors : memory_limiter (caps RAM) → batch (network efficiency)
+# Processors : memory_limiter (caps RAM) → probabilistic_sampler (env-tier
+#              ratio, traceID anchor) → batch (network efficiency)
 # Exporters : otlp (→ fsm-signoz-query) + debug (stdout for dev inspection)
-# Pipelines : traces, metrics, logs (one per signal)
+# Pipelines : traces (sampled), metrics, logs (always — sampler off-path)
 
 receivers:
   otlp:
@@ -20,6 +25,14 @@ processors:
     check_interval: 1s
     limit_mib: 256
     spike_limit_mib: 64
+  probabilistic_sampler:
+    # T.5 ADR-OTEL-001 — collector-side parentbased_traceidratio analogue.
+    # `sampling_percentage` defaults to 100 (dev) ; env-tier overlays patch
+    # it to 10 (prod) per `observability.yaml::ratios.prod = 0.1`.
+    sampling_percentage: 100
+    mode: proportional
+    attribute_source: traceID
+    hash_seed: 22
   batch:
     send_batch_size: 1024
     timeout: 5s
@@ -41,7 +54,7 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [memory_limiter, batch]
+      processors: [memory_limiter, probabilistic_sampler, batch]
       exporters: [otlp/signoz, debug]
     metrics:
       receivers: [otlp]

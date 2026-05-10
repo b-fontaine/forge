@@ -89,6 +89,8 @@ jobs:
         run: bash .forge/scripts/tests/t5.test.sh --level 1
       - name: j7.test.sh
         run: bash .forge/scripts/tests/j7.test.sh --level 1,2
+      - name: t5-otel.test.sh
+        run: bash .forge/scripts/tests/t5-otel.test.sh --level 1
 
   # ─── gates ── verify.sh + constitution-linter.sh ───────────────
   gates:

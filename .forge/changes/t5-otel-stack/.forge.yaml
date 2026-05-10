@@ -1,0 +1,22 @@
+name: t5-otel-stack
+status: archived
+created: 2026-05-08
+schema: default
+constitution_version: "1.1.0"
+parent_audit_items:
+  - T.5  # Phase 1 ARCHITECTURE-TARGET ADR-008 — OTel + OBI + Coroot stack templates
+archived_to:
+  - .forge/specs/otel-stack.md  # 22 ADDED FRs (FR-OTEL-001..082) + 5 NFRs + 7 ADRs (ADR-OTEL-001..007)
+schema_promotion:
+  observability.yaml: 1.0.0 → 1.1.0
+timeline:
+  proposed: 2026-05-08
+  specified: 2026-05-08
+  designed: 2026-05-09
+  planned: 2026-05-09
+  implemented: 2026-05-10
+  archived: 2026-05-10
+  # designed: <auto-filled by /forge:design>
+  # planned: <auto-filled by /forge:plan>
+  # implemented: <auto-filled by /forge:implement>
+  # archived: <auto-filled by /forge:archive>
