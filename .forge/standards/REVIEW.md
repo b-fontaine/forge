@@ -131,3 +131,55 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   also added inline next to the `=0.3.3` pins in `transport.yaml` to
   document the 13-day age waiver of ADR-T5-002 #1 visibly to reviewers
   reading the standard alone.
+
+---
+
+## 2026-05-11 — Updated flutter/opentelemetry.md to v1.1.0 (t5-otel-dart-api-realign)
+
+- **Reviewer**: @bfontaine
+- **Reviewed standards**:
+
+  | Standard                  | Version | Decision           | Next review due | Notes                                                                                                                                                                            |
+  |---------------------------|---------|--------------------|-----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+  | flutter/opentelemetry.md  | 1.1.0   | KEEP-WITH-CHANGES  | 2027-05-04      | Realigned every OTel-SDK API name to the canonical pub.dev pkg `opentelemetry: 0.18.11` (Workiva). v1.0.0 was fabricated by cross-language transposition (JS / Java / Python). Resolves `t5-otel-app::Q-004`. |
+
+- **Decision**: Updated by `t5-otel-dart-api-realign` (Q-004 follow-up
+  to `t5-otel-app`). Documentation-only — the Phase A collector
+  contract (HTTP/protobuf on `:4318`, parent-based sampler, W3C
+  traceparent, batch processor with 5 s flush) is unchanged. Only
+  the SDK-call shape in the snippets shifts to match the actual
+  pub.dev API. `last_reviewed` resets to 2026-05-11 ; `Next review
+  due` inherits the family's 2027-05-04 cadence (12 months from the
+  v1.0.0 ratification on 2026-05-04, per `standards-lifecycle.md` §
+  12-month review window — no structural exception).
+- **Notes**: Canonical pkg `opentelemetry 0.18.11` (Workiva,
+  Apache-2.0) verified 2026-05-11 via Context7
+  (`/websites/opentelemetry_io` umbrella + WebFetch against
+  `https://pub.dev/packages/opentelemetry/versions/0.18.11` and
+  `https://github.com/Workiva/opentelemetry-dart`). Six fabricated
+  identifiers + two fabricated sub-imports removed :
+  `OtlpHttpSpanExporter`, `OtlpHttpExporterConfig`,
+  `BatchSpanProcessorConfig`, `TraceIdRatioBasedSampler`,
+  `SpanStatusCode`, `Context.current.withSpan(...)` method, the
+  `setStatus(..., message:)` named-arg pattern, the
+  `package:opentelemetry/exporter_otlp_http.dart` sub-import, and
+  the `package:opentelemetry/exporter_otlp_grpc.dart` sub-import.
+  Replaced by the verified `lib/api.dart` + `lib/sdk.dart` surface :
+  `CollectorExporter(Uri)`, `BatchSpanProcessor(exporter,
+  {maxExportBatchSize, scheduledDelayMillis})`,
+  `ParentBasedSampler(AlwaysOnSampler())`, `StatusCode.{ok,error}`,
+  the top-level `contextWithSpan(Context, Span)` function, and the
+  positional `setStatus(StatusCode, [String description])`
+  signature. Ratio-sampler semantics from
+  `observability.yaml::sampler: parentbased_traceidratio` are
+  realised collector-side via `processors.probabilistic_sampler`
+  (per `t5-otel-stack` ADR-OTEL-001) because 0.18.11 does NOT ship
+  a `TraceIdRatioBasedSampler` — documented in v1.1.0's new
+  `## Sampling` section. Status callout `Traces: Beta / Metrics:
+  Alpha / Logs: Unimplemented` (per Workiva README) added at the
+  top of v1.1.0 ; v1.1.0 explicitly scopes to traces. The flip of
+  `t5-otel-app.test.sh::_test_ota_l2_002_flutter_analyze` from
+  xfail to GREEN is a follow-up commit on the `t5-otel-app` branch
+  AFTER this change merges. See
+  `.forge/changes/t5-otel-dart-api-realign/design.md` ADR-T5-FOTDA-001
+  for the per-symbol citation table.

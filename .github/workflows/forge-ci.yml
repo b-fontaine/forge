@@ -91,6 +91,11 @@ jobs:
         run: bash .forge/scripts/tests/j7.test.sh --level 1,2
       - name: t5-otel.test.sh
         run: bash .forge/scripts/tests/t5-otel.test.sh --level 1
+      - name: t5-otel-dart-api-realign.test.sh
+        # T.5 Phase B — Q-004 follow-up to t5-otel-app. Validates the
+        # flutter/opentelemetry.md v1.0.0 -> v1.1.0 realign against the
+        # actual `opentelemetry: 0.18.11` (Workiva) pub.dev API surface.
+        run: bash .forge/scripts/tests/t5-otel-dart-api-realign.test.sh --level 1
       - name: j8.test.sh
         run: bash .forge/scripts/tests/j8.test.sh --level 1,2
       - name: k3.test.sh
