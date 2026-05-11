@@ -9,7 +9,7 @@ The change cannot be archived while any question is `Status: open`.
 
 ## Q-001: Sampled-off path exporter semantics under `opentelemetry 0.31`
 
-- **Status**: open
+- **Status**: answered
 - **Raised in**: proposal.md ; specs.md (Scenario 3 — sampled-off path)
 - **Raised on**: 2026-05-11
 - **Raised by**: @bfontaine
@@ -53,16 +53,25 @@ text = future false-positive on live-run Phase D.
 
 ### Resolution
 
-To be filled at `/forge:design` time. Expected answer : **behaviour
-#1** (created, recorded, not-exported) per spec + ADR-T5-OTA-003.
-The BDD scenario text MUST use "the span is recorded but NOT
-exported" wording.
+**Resolved at `/forge:design` 2026-05-11 via ADR-T5-TPE-001.**
+
+Per the OTel spec (`https://opentelemetry.io/docs/specs/otel/trace/sdk/#parentbasedsampler`),
+the `ParentBased` sampler delegates to the parent context's
+`SampledFlag`. When `flags=00`, the sampler returns `Decision::Drop` :
+the span exists as a non-recording handle (`is_recording() == false`)
+but the `BatchSpanProcessor` skips it. Collector receives zero spans
+for that traceId.
+
+The BDD scenario text in `traceparent_e2e.feature` uses the
+"recorded by the SDK as a no-op handle / BatchSpanProcessor does NOT
+export it / collector receives zero spans" phrasing per
+ADR-T5-TPE-001 § Decision.
 
 ---
 
 ## Q-002: Envoy forward-pointer change name
 
-- **Status**: open
+- **Status**: answered
 - **Raised in**: proposal.md § Scope Out ; design.md § Out of scope
 - **Raised on**: 2026-05-11
 - **Raised by**: @bfontaine
@@ -94,7 +103,11 @@ audit trail (the citation is a free-form string, not a code link).
 
 ### Resolution
 
-To be filled at `/forge:design` time. Default if both sources
-disagree : use `b8-envoy-migration` (matches the
-ARCHITECTURE-TARGET working name) and note in design.md that the
-name is provisional.
+**Resolved at `/forge:design` 2026-05-11 via ADR-T5-TPE-002.**
+
+Working name `b8-envoy-migration` (matches
+`docs/ARCHITECTURE-TARGET.md` ADR-001 terminology). The name is
+documented as **provisional** in `design.md` § Out of scope and the
+`kong.yml.example` comment block. The future change can rename
+itself at creation time without breaking this change's audit trail
+(citations are documentation strings, not code links).
