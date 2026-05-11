@@ -1,0 +1,17 @@
+name: i2-compliance-tiers
+status: proposed
+created: 2026-05-11
+schema: default
+constitution_version: "1.1.0"
+parent_audit_items:
+  - I.2   # new-archetypes-plan §7.1 line 727 — standard global/compliance-tiers.md
+depends_on:
+  - t4-adr-ratification   # ships compliance-tier.schema.json v1.0.0 (verbatim source)
+  - k3-demeter            # Demeter persona forward-cites this standard ; severity scaling per FR-K3-DEM-068
+timeline:
+  proposed: 2026-05-11
+  # specified: <auto-filled by /forge:specify>
+  # designed: <auto-filled by /forge:design>
+  # planned: <auto-filled by /forge:plan>
+  # implemented: <auto-filled by /forge:implement>
+  # archived: <auto-filled by /forge:archive>
