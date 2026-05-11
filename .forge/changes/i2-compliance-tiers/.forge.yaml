@@ -1,5 +1,5 @@
 name: i2-compliance-tiers
-status: specified
+status: designed
 created: 2026-05-11
 schema: default
 constitution_version: "1.1.0"
@@ -11,7 +11,7 @@ depends_on:
 timeline:
   proposed: 2026-05-11
   specified: 2026-05-11
-  # designed: <auto-filled by /forge:design>
+  designed: 2026-05-11
   # planned: <auto-filled by /forge:plan>
   # implemented: <auto-filled by /forge:implement>
   # archived: <auto-filled by /forge:archive>
