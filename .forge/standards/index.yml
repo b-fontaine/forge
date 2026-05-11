@@ -385,3 +385,11 @@ standards:
     triggers: [demeter, data-steward, dpa, cloud-act, schrems, t1, t2, t3, dependency-jurisdiction, k3-rule]
     scope: all
     priority: high
+
+  # ─── I.2 — Compliance tiers (i2-compliance-tiers) ────────────────
+
+  - id: global/compliance-tiers
+    path: standards/global/compliance-tiers.md
+    triggers: [compliance, t1, t2, t3, eu-tier, dpa, schrems, cloud-act, tier-classification]
+    scope: all
+    priority: high
