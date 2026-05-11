@@ -102,6 +102,12 @@ jobs:
         # toolchain matrix entry — see T-CI-001 in
         # .forge/changes/t5-otel-app/tasks.md. L1 alone runs here.
         run: bash .forge/scripts/tests/t5-otel-app.test.sh --level 1
+      - name: t5-otel-traceparent-e2e.test.sh
+        # T.5 Phase C E2E traceparent harness (7 L1 + 2 L2). Phase C
+        # is harness + spec ; live-run leg deferred to Phase D — see
+        # .forge/changes/t5-otel-traceparent-e2e/tasks.md
+        # § "Phase D — DEFERRED" for the deferred deliverables roadmap.
+        run: bash .forge/scripts/tests/t5-otel-traceparent-e2e.test.sh --level 1
       - name: j8.test.sh
         run: bash .forge/scripts/tests/j8.test.sh --level 1,2
       - name: k3.test.sh
