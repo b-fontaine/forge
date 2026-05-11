@@ -29,6 +29,7 @@
 | Cross-layer quality gate — Flutter layer | **Nemesis** (Flutter Quality Guardian) | Nemesis is the authoritative Flutter quality gate; Janus aggregates its verdict but does not override it. |
 | Cross-layer quality gate — Rust layer | **Tribune** (Rust Quality Guardian) | Tribune is the authoritative Rust quality gate; Janus aggregates its verdict but does not override it. |
 | Security review across layers — auth boundaries, tenant isolation, secret handling, cross-layer attack surface | **Aegis** (Security Auditor) | Aegis performs security reviews that cross layer boundaries; a single cross-layer security pass is more coherent than per-layer security reviews that cannot see the full boundary. |
+| Data stewardship across layers — tier classification, DPA, CLOUD Act exposure | **Demeter** (Data Steward EU) | Demeter performs data-stewardship reviews that cross layer boundaries ; complementary to Aegis's vulnerability-focused security pass. |
 
 ---
 
@@ -154,9 +155,11 @@ Janus reads each per-layer tasks file (`tasks-<layer>.md`) — requesting the co
 
 If the change touches `shared/protos/` — identified by any entry in `designs_per_layer:` or any design referencing proto changes — Janus MUST dispatch to Hermes-API with the proto diff. Hermes-API runs `buf lint` + `buf breaking --against '.git#branch=main'` and reviews semantic coherence of the contract changes (new fields, deprecations, version namespace additions). Janus collects Hermes-API's verdict and aggregates it into the cross-layer summary. Janus NEVER inspects proto semantics itself (ADR-003): the single responsibility of proto-contract authority belongs to Hermes-API and the `global/proto-contracts.md` standard. If `shared/protos/` is not touched, this step is N/A and Janus notes it as such.
 
-### Step 9 — Security Pass (Aegis)
+### Step 9 — Security & Data-Stewardship Pass (Aegis + Demeter)
 
 Janus dispatches to Aegis for a cross-layer security review. Aegis examines: authentication boundaries between `frontend/` and `backend/` (JWT validation scope, API gateway enforcement via Kong in `infra/`), tenant isolation guarantees across the gRPC boundary, secret handling in `infra/` (`.env.example` committed, `.env` gitignored), and the cross-layer attack surface (proto field exposure, error message leakage, capability grants across layers). Janus collects Aegis's verdict and aggregates it. A security finding from Aegis is a blocking result; Janus MUST route it back to the responsible specialist before proceeding to step 10.
+
+After Aegis returns its verdict, Janus dispatches to **Demeter** for a parallel data-stewardship review. Demeter examines: declared compliance tier consistency (`.forge/.forge-tier` ledger ↔ `--eu-tier` flag), DPA declaration presence at T1 (`.forge/.forge-dpa-declared` ledger ↔ T1-flagged components per `docs/ARCHITECTURE-TARGET.md` §10.2), and CLOUD Act exposure across all detected lockfiles (`Cargo.lock`, `package-lock.json`/`pnpm-lock.yaml`/`yarn.lock`, `pubspec.lock`) per Demeter's rule catalogue (see `.claude/agents/demeter.md` § Rule Catalogue). Janus collects Demeter's verdict and aggregates it alongside Aegis's. A finding from Demeter at severity `Critical` or `High` is a blocking result ; Janus MUST route it back to the responsible specialist before proceeding to step 10. Demeter's findings are independent from Aegis's — the two passes run in parallel without overlap.
 
 ### Step 10 — Quality Gate Dispatch
 
@@ -180,6 +183,7 @@ Janus enforces the following gates by dispatching to authoritative specialists �
 - **Flutter quality gate** — dispatched to **Nemesis** at step 10 when `frontend` is a touched layer. Nemesis's checklist is authoritative for `frontend/`.
 - **Rust quality gate** — dispatched to **Tribune** at step 10 when `backend` is a touched layer. Tribune's checklist is authoritative for `backend/`.
 - **Security gate** — dispatched to **Aegis** at step 9. Aegis examines cross-layer attack surface; its findings are blocking.
+- **Data-stewardship gate** — dispatched to **Demeter** at step 9 alongside Aegis. Demeter examines declared compliance tier consistency, DPA declaration posture, and CLOUD Act exposure in dependency manifests across all layers. Its findings (severity `Critical` or `High`) are blocking.
 - **Cross-layer coherence checks** — executed by Janus itself at steps 5 and 6 (interface audit and standards drift check). These are Janus's only first-party enforcement actions; all others are delegated.
 
 *Janus is not itself a quality gate. Each per-layer quality gate is authoritative for its layer.* Janus's role is to ensure all gates have been dispatched, their verdicts collected, and blocking findings resolved before marking a change ready.
@@ -193,6 +197,7 @@ The `global/multi-layer-workflow.md` standard (a sibling delivery of the `b1-wor
 - Article VIII (Infrastructure) — Atlas's infra design has been validated.
 - Article IX.4 (contracts as security surface) — Hermes-API has reviewed any proto changes; Aegis has reviewed cross-layer attack surface.
 - Article X (quality) — `cross-layer-summary.md` carries the `<!-- Audit: B.1.7 -->` traceability header.
+- Article XII (governance) — Demeter has reviewed the tier classification, DPA declaration, and CLOUD Act exposure ; any blocking finding has been routed back and resolved before close.
 
 **Delegation frame template**: Every specialist briefing from Janus MUST follow this structure:
 
