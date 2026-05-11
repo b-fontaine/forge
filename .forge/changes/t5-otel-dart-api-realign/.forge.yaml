@@ -1,5 +1,5 @@
 name: t5-otel-dart-api-realign
-status: designed
+status: planned
 created: 2026-05-11
 schema: default
 constitution_version: "1.1.0"
@@ -12,6 +12,7 @@ timeline:
   proposed: 2026-05-11
   specified: 2026-05-11
   designed: 2026-05-11
+  planned: 2026-05-11
   # designed: <auto-filled by /forge:design>
   # planned: <auto-filled by /forge:plan>
   # implemented: <auto-filled by /forge:implement>
