@@ -209,23 +209,94 @@
       un change suivant qui livrera l'archetype `ai-native-rag` en
       T7. Aucun blocage T7 ; J.8.c se cumule avec K.1/K.2/K.4/K.5.
 
+- **`k3-demeter` archivé 2026-05-12** — **K.3 + I.4** : premier des
+  cinq nouveaux agents (Demeter, data steward EU) livré comme
+  change additif. Spec consolidée `.forge/specs/data-stewardship.md`
+  (55 ADDED FRs `FR-K3-DEM-001..124` + 9 NFRs + 7 ADRs
+  `ADR-K3-001..007`). Six livrables physiques :
+    - **K.3.a — Persona file** `.claude/agents/demeter.md` : 7 H2
+      sections (Persona, Purpose, Checklists, Output, Rule
+      Catalogue, Integration, Anti-Hallucination Protocol). Style
+      Aegis-like (severity-first, evidence-driven). Sibling à
+      Aegis ; Aegis = posture vulnérabilité, Demeter = posture
+      data-stewardship (juridiction, DPA, classification PII).
+    - **K.3.b — Scanner** `bin/forge-demeter-scan.sh` : pattern
+      F.2 / J.7 / J.8.d **verbatim** (bash thin + Python 3 inline,
+      **zero new external dep**, NFR-K3-DEM-004 + ADR-K3-004).
+      Walk lockfiles Cargo + npm + pubspec sous `--target`
+      (récursif depth ≤ 3). Match publisher contre deny-list
+      `.forge/data/cloud-act-publishers.yml::ecosystems.*`.
+      Severity tier-scaled (T1 → Informational, T2 → High, T3 →
+      Critical) per FR-K3-DEM-068. Exit code envelope **0 / 1 /
+      2 / 3** (mirrors J.8 ADR-J8-003 policy-refusal sémantique).
+      `SOURCE_DATE_EPOCH`-deterministic byte-identical output
+      (NFR-K3-DEM-005).
+    - **K.3.c — Deny-list** `.forge/data/cloud-act-publishers.yml` :
+      4 cargo + 4 npm + 2 pub publisher patterns couvrant
+      AWS / Google Cloud / Azure / Firebase écosystèmes. Chaque
+      entrée porte `evidence_url:` + `jurisdiction: US` + free-form
+      `rationale:`. Métadonnées `version:` / `last_reviewed:` /
+      `expires_at:` / `maintained_by:` per NFR-K3-DEM-008.
+    - **K.3.d — Standard** `.forge/standards/global/data-stewardship-rules.md` :
+      7 H2 sections (rule catalogue, adoption path, DPA declaration
+      semantics, extending the catalogue, regeneration cadence
+      Phase A interim BDFL / 12-month vs Phase B post-T7 Themis /
+      6-month per ADR-K3-003, constitutional compliance).
+      Standards index `.forge/standards/index.yml` registers
+      l'entrée sous "Cross-Cutting Standards".
+    - **K.3.e — Test harness** `.forge/scripts/tests/k3.test.sh` :
+      20 L1 + 2 L2 tests. **22/22 GREEN** à `--level 1,2`.
+      Registered dans `forge-ci.yml` matrix après `j8.test.sh`.
+    - **K.3.f — Janus delta** : edit chirurgical à
+      `.claude/agents/cross-layer-orchestrator.md` per ADR-K3-007 :
+      (1) Dispatch Table gagne row Demeter ; (2) H3
+      `### Step 9 — Security Pass (Aegis)` renommée
+      `### Step 9 — Security & Data-Stewardship Pass (Aegis + Demeter)`
+      ; (3) paragraphe Demeter appended (parallel pass, no overlap
+      avec Aegis) ; (4) Quality Gates H2 gagne bullet
+      data-stewardship gate.
+    - **Repo CLAUDE.md** : agent-table gagne row Demeter
+      (Data stewardship → Demeter, Data Steward EU), inséré
+      alphabétiquement entre Oracle et Clio.
+    - **K3-RULE-NNN namespace** (hérite ADR-J8-004) : 5 seed
+      rules (K3-RULE-001 US-jurisdiction publisher tier-scaled,
+      K3-RULE-002 DPA undeclared at T1 High, K3-RULE-003 tier
+      downgrade refused T2 High / T3 Critical, K3-RULE-004 data
+      classification missing Medium, K3-RULE-005 Cargo workspace
+      drift Medium) + K3-RULE-006 operational guardrail
+      (publisher list staleness, Medium). ADR-K3-005 résout
+      Q-003 (Option B incremental growth) ; IDs jamais réutilisés.
+    - **DPA ledger** `.forge/.forge-dpa-declared` plain-text
+      1-line (mirrors J.8 ADR-J8-006 `.forge-tier` ledger verbatim,
+      ADR-K3-002 résout Q-001). Demeter ne parse PAS de documents
+      légaux (FR-K3-DEM-044) — verify proof-of-attestation only.
+    - **Anti-hallucination** : NFR-K3-DEM-009 — juridiction
+      publisher ambiguë (multinational, acquisition récente)
+      ⇒ `[NEEDS CLARIFICATION:]` JSON entry au lieu d'une
+      finding. Article III.4 préservé.
+    - **Gates finaux post-archive** : `verify.sh` 158 PASS / 0 FAIL
+      / 1 WARN / RESULT: PASS ; `constitution-linter.sh` OVERALL
+      PASS ; `validate-change-yaml.sh` sur `.forge.yaml` archivé
+      exit 0 ; `open-questions.md` 0 open / 3 answered (Q-001 →
+      ADR-K3-002, Q-002 → ADR-K3-003, Q-003 → ADR-K3-005).
+
 ### Module en cours
 
-Aucun change en cours sur `main` au 2026-05-10. Le prochain candidat
-naturel est **K.3** (Demeter agent — débloque I.2–I.6 compliance
-graduée non-SBOM) ou **I.2–I.6** directement (avec K.3 en parallèle
-ou éclaté), à arbitrer.
+Aucun change en cours sur `main` au 2026-05-12. Le prochain candidat
+naturel est **I.2–I.6** (compliance docs + workflow + AI Act / NIS2 /
+DORA / CRA artefacts au-delà du SBOM livré en J.8.d et du Demeter
+agent livré en K.3).
 
 ### Modules toujours en attente
 
-- **T5 (suite)** post-`j8-janus-rules` : K.3 (Demeter agent),
-  I.2–I.6 (compliance docs + workflow + AI Act / NIS2 / DORA /
-  CRA artefacts au-delà du SBOM livré dans J.8.d), validation
+- **T5 (suite)** post-`k3-demeter` : I.2–I.6 (compliance docs +
+  workflow + AI Act / NIS2 / DORA / CRA artefacts au-delà du SBOM
+  livré dans J.8.d et de Demeter livré dans K.3), validation
   traceparent W3C E2E.
 - **T6 / T7 / T8 / T9+** : non commencés (B.6, B.7, B.8, B.9, B.3, K.1,
   K.2, K.4, K.5, C.2–C.5, F.3, G.*, H.*).
 
-### Inventaire `.forge/changes/` (2026-05-10)
+### Inventaire `.forge/changes/` (2026-05-12)
 
 | Change                       | Status                 | Tier livré                    |
 |------------------------------|------------------------|-------------------------------|
@@ -247,9 +318,11 @@ ou éclaté), à arbitrer.
 | `j7-validate-standards-yaml` | archived               | T5 (J.7)                      |
 | `t5-otel-stack`              | archived               | T5 (OTel + OBI + Coroot)      |
 | `j8-janus-rules`             | archived               | T5 (J.8.a + J.8.b + J.8.d)    |
+| `k3-demeter`                 | archived               | T5 (K.3 + I.4)                |
 
-**18 archivés sur `main`**, aucun change en cours. Aucun change
-orphelin, aucun `status: in_progress` bloqué, aucun marqueur
+**19 archivés sur `main` + branche `k3-demeter`** au 2026-05-12,
+aucun change en cours. Aucun change orphelin, aucun
+`status: in_progress` bloqué, aucun marqueur
 `[NEEDS CLARIFICATION:]` non résolu inline dans les changes archivés
 (tous gates `verify.sh` + `constitution-linter.sh` PASS).
 
@@ -350,7 +423,7 @@ sont créés. Cinq nouveaux agents Forge sont introduits. Plan de migration **4 
 | J.7 / J.8 | `validate-standards-yaml.sh` linter + Janus forbidden-list orchestrator rules + `--eu-tier` flag + CycloneDX SBOM | ARCHITECTURE-TARGET §12.1 + §12.5 | `S`–`L` | J.7 **Done 2026-05-08** via `j7-validate-standards-yaml` (PR #4 merged) ; J.8 (a + b + d) **Done 2026-05-10** via `j8-janus-rules` (20/20 tests, +6 PASS verify.sh, smoke 74 SBOM components) ; J.8.c (`ai-native-rag` LLM gateway rules) deferred to T7 |
 | K.1       | Hermes-Async (event-driven)                                                                                                                        | ARCHITECTURE-TARGET §9.2          | `M`     | Pending (T7)                                                                                                                      |
 | K.2       | Pythia (AI/RAG)                                                                                                                                    | ARCHITECTURE-TARGET §9.2          | `M`     | Pending (T7)                                                                                                                      |
-| K.3       | Demeter (data steward EU)                                                                                                                          | ARCHITECTURE-TARGET §9.2          | `M`     | Pending (T5)                                                                                                                      |
+| K.3       | Demeter (data steward EU)                                                                                                                          | ARCHITECTURE-TARGET §9.2          | `M`     | **Done 2026-05-12** via `k3-demeter` (persona + scanner + deny-list + standard + Janus delta ; 22/22 tests `k3.test.sh --level 1,2`) |
 | K.4       | Iris-Web (Qwik/SvelteKit)                                                                                                                          | ARCHITECTURE-TARGET §9.2          | `M`     | Pending (T7)                                                                                                                      |
 | K.5       | Themis (compliance officer)                                                                                                                        | ARCHITECTURE-TARGET §9.2          | `M`     | Pending (T7) — automation `forge review-standards` ; cycle 12 mois lui-même livré (P-3)                                           |
 
@@ -864,7 +937,7 @@ Reprise de ARCHITECTURE-TARGET §11.
 | Trimestre | Modules                                                                                          | Status (2026-05-10)                                                                                                                                                                                                                     | Rationale                                                                                                                                    |
 |-----------|--------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
 | **T4**    | **P-1, P-2, P-3, P-4, I.1, J.1–J.6**                                                             | ✅ **Done 2026-05-04** via `t4-adr-ratification` (PR #2 mergée). 35 ADDED FRs + 8 NFRs. P-5 retiré 2026-05-06 (Hera 9 sub-agents conservés).                                                                                            | Méthodologie : ADR capturés, 6 standards YAML v1.0.0, cycle 12 mois, schémas compliance.                                                     |
-| **T5**    | **Phase 1 ARCHITECTURE-TARGET, J.7, J.8, K.3 (Demeter), I.2–I.6**                                | ✅ **Connect codegen done 2026-05-06** via `t5-connect-codegen` (PR #3). ✅ **J.7 done 2026-05-08** via `j7-validate-standards-yaml` (PR #4 merged). ✅ **OTel + OBI + Coroot stack templates done 2026-05-10** via `t5-otel-stack` (PR #5 merged). ✅ **J.8 done 2026-05-10** via `j8-janus-rules` (refusal rules + `--eu-tier` flag + CycloneDX SBOM ; 20/20 tests, +6 PASS verify.sh ; J.8.c deferred to T7). K.3, I.2–I.6 (non-SBOM) = pending. | Observabilité + Connect contrats + standards linter + compliance graduée. Réversible.                                                        |
+| **T5**    | **Phase 1 ARCHITECTURE-TARGET, J.7, J.8, K.3 (Demeter), I.2–I.6**                                | ✅ **Connect codegen done 2026-05-06** via `t5-connect-codegen` (PR #3). ✅ **J.7 done 2026-05-08** via `j7-validate-standards-yaml` (PR #4 merged). ✅ **OTel + OBI + Coroot stack templates done 2026-05-10** via `t5-otel-stack` (PR #5 merged). ✅ **J.8 done 2026-05-10** via `j8-janus-rules` (PR #6 merged ; refusal rules + `--eu-tier` flag + CycloneDX SBOM ; 20/20 tests, +6 PASS verify.sh ; J.8.c deferred to T7). ✅ **K.3 done 2026-05-12** via `k3-demeter` (Demeter persona + dependency scanner + deny-list + standard + Janus delta ; 22/22 tests `k3.test.sh --level 1,2`, verify.sh 158 PASS / 0 FAIL / 1 WARN). I.2–I.6 (non-SBOM, non-Demeter) = pending. | Observabilité + Connect contrats + standards linter + compliance graduée. Réversible.                                                        |
 | **T6**    | **B.8 (flagship 1.0.0 → 2.0.0), Phase 2 ARCHITECTURE-TARGET**                                    | ⏸️ Pending.                                                                                                                                                                                                                             | Migration breaking flagship. **Point de non-retour**.                                                                                        |
 | **T7**    | **B.6 (event-driven-eu), B.7 (ai-native-rag), K.1, K.2, K.4, K.5**                               | ⏸️ Pending.                                                                                                                                                                                                                             | Deux nouveaux archétypes + 4 nouveaux agents.                                                                                                |
 | **T8**    | **B.9 (mobile-pwa-first / 2.0.0), B.3 (rust-cli-tui), pédagogie C.2-C.5, F.3**                   | ⏸️ Pending.                                                                                                                                                                                                                             | Renommage mobile + dernier archétype premium + walkthrough/anti-patterns/comparison/migration + fix release script (F.3 post-mortem v0.3.0). |
@@ -1009,11 +1082,21 @@ et AI-native souverain.
    Zitadel/SigNoz si T3, `--eu-tier` flag plumbing, CycloneDX SBOM
    handcrafted Python inline. J.8.c (`ai-native-rag` LLM gateway
    rules) déférée vers T7 quand l'archetype shippera.
-5. ⏸️ **Livrer K.3 (Demeter)** — premier des 5 nouveaux agents, focal pour
-   I.2–I.6 (compliance graduée).
+5. ✅ ~~**Livrer K.3 (Demeter)**~~ — **Done 2026-05-12** via `k3-demeter` :
+   premier des 5 nouveaux agents livré. Persona `.claude/agents/demeter.md`
+   (7 H2 sections sibling Aegis), scanner `bin/forge-demeter-scan.sh`
+   (F.2 / J.7 / J.8.d pattern verbatim, tier-scaled severity, exit
+   envelope 0/1/2/3, `SOURCE_DATE_EPOCH`-deterministic), deny-list
+   `cloud-act-publishers.yml` (10 publishers seeded — AWS / Google Cloud /
+   Azure / Firebase), standard `global/data-stewardship-rules.md`, Janus
+   delta Step 9, DPA ledger `.forge/.forge-dpa-declared`, 5 seed
+   K3-RULE-NNN + 1 operational guardrail (per ADR-K3-005). 22/22 tests
+   `k3.test.sh --level 1,2`. K.3 débloque I.2–I.6 (Demeter présent pour
+   adopter T1/T2/T3 sans attendre Themis).
 6. ⏸️ **Livrer I.2–I.6** — `global/compliance-tiers.md`, linter rule T3,
    `forge-compliance.yml` workflow, échéances NIS2/DORA/CRA/AI Act dans
-   `.forge/compliance/` (au-delà du SBOM CycloneDX livré dans J.8.d).
+   `.forge/compliance/` (au-delà du SBOM CycloneDX livré dans J.8.d et
+   du Demeter agent livré dans K.3).
 Tout le reste découle.
 
-— *Fin du nouveau plan. Mise à jour partielle 2026-05-10.*
+— *Fin du nouveau plan. Mise à jour partielle 2026-05-12.*
