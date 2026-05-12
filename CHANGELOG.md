@@ -195,6 +195,81 @@ REVIEW.md append-only), XI.1 (agent-native — Demeter consumes the
 standard), XI.3 (schema-driven — mirrors the JSON Schema), XII
 (governance — SemVer + REVIEW.md ledger) compliance preserved.
 
+### Added — I.6 compliance artefacts bundle (`i6-compliance-artefacts`)
+
+Deterministic `.tgz` regulatory hand-off bundle generator for EU
+auditor / regulator counter-parties. Implements the **I.6** audit
+slot from `docs/new-archetypes-plan.md` §7.1 line 738-743 and
+ships the forward-stable contract surface the future I.5
+`forge-compliance.yml` workflow consumes.
+
+- **`.forge/scripts/compliance/bundle.sh`** — bash thin + Python 3
+  inline (mirrors `bin/forge-sbom.sh` pattern per NFR-I6-CA-004).
+  Six bundle members emitted in lexicographic order : `MANIFEST` +
+  `tier-matrix/compliance-tiers.md` +
+  `templates/forge-dpa-declared.template` +
+  `audit/audit-ledger.json` + `audit/audit-ledger.md` +
+  `sbom/sbom.cdx.json`. Determinism via `SOURCE_DATE_EPOCH` :
+  per-member tar `mtime` / `uid` / `gid` / `mode` pinned, gzip
+  header `mtime` pinned via the two-step `io.BytesIO` +
+  `gzip.GzipFile(mtime=...)` idiom (ADR-I6-CA-001). Two
+  consecutive invocations against the same tree produce
+  byte-identical output (NFR-I6-CA-005).
+- **`.forge/templates/compliance/forge-dpa-declared.template`** —
+  canonical DPA declaration template mirroring K.3 ADR-K3-002
+  ledger format. Cross-references K3-RULE-002 (T1 + ⚠️-T1
+  without DPA → High finding) and K3-RULE-002a staleness window
+  (13 months + 1 month grace per RGPD Article 5(1)(e)). Canonical
+  example line `T1: 2026-04-15 LegalOps-Confluence-DPA-2026-Q2`.
+- **`.forge/standards/global/compliance-artefacts-bundle.md`
+  v1.0.0** — 6 H2 sections (Purpose & EU compliance rationale /
+  Bundle content schema / Determinism guarantee / Consumption
+  protocol / Regeneration cadence / Interdictions) + Forward
+  compatibility + Constitutional Compliance. 4 RFC-2119 MUST NOT
+  clauses (no PII / secrets ; no `--no-deterministic` escape
+  hatch ; no Themis-territory artefacts before K.5 ships ; no
+  post-emission bundle modification). Frontmatter pins
+  `version: 1.0.0`, `last_reviewed: 2026-05-12`,
+  `expires_at: 2027-05-12`, `linter_rule: null`,
+  `exception_constitutional: false`.
+- **`.forge/standards/index.yml` entry** — id
+  `global/compliance-artefacts-bundle`, 10 triggers (`compliance,
+  bundle, auditor, dpa, audit-ledger, nis2, dora, cra, ai-act,
+  regulatory-handoff`), scope `all`, priority `high`. Registered
+  under the "I.6 — Compliance artefacts bundle" section
+  immediately after the I.2 entry.
+- **`.forge/standards/REVIEW.md` append-only birth entry** dated
+  2026-05-12 (Initial ratification, KEEP, next review 2027-05-12).
+- **`docs/COMPLIANCE.md`** — new H2 `## Auditor hand-off bundle`
+  cross-linking the bundle script + the standard + the
+  determinism recipe via `SOURCE_DATE_EPOCH`.
+- **`.forge/scripts/tests/i6.test.sh`** — 14 L1 hermetic tests
+  (script presence + executable / `--help` exit 0 / audit
+  comment / bogus arg exit 2 / template presence + canonical
+  example / standard presence + frontmatter + 6 H2 + MUST NOT
+  count / index entry / REVIEW.md entry / docs/COMPLIANCE.md H2 /
+  CHANGELOG entry) plus 2 L2 fixture tests (good-fixture bundle
+  with 6 members + MANIFEST ; determinism via `SOURCE_DATE_EPOCH=0`
+  × 2 invocations + `diff -q`). Performance budget ≤ 5 s L1
+  + ≤ 10 s L2 per NFR-I6-CA-001.
+- **`.github/workflows/forge-ci.yml` matrix row** registering
+  `i6.test.sh --level 1,2` after `i2.test.sh`. File stays under
+  NFR-CI-002 300-line budget.
+
+Three ADRs resolve the design open questions :
+`.tgz` gzip POSIX tar format (ADR-I6-CA-001) ; `audit/`
+subdirectory layout (ADR-I6-CA-002) ; script location
+`.forge/scripts/compliance/bundle.sh` (ADR-I6-CA-003).
+
+Forward-stable for Themis-territory artefacts (NIS2 / DORA / CRA /
+AI Act regulatory deadlines under
+`.forge/compliance/{nis2,dora,cra,ai-act}/`) — additive expansion
+under a new `regulatory/` subdirectory + a SemVer minor bump per
+FR-I6-CA-053 when Themis (K.5, T7+) ships.
+
+No constitutional amendment required ; Articles III.4, V, XI.1,
+XI.3, XI.6, XII compliance preserved.
+
 ### Added — K.3 Demeter data-steward agent + CLOUD Act dependency scanner (`k3-demeter`)
 
 Three sub-modules under one umbrella change, implementing the K.3 +

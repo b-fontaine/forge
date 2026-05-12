@@ -110,3 +110,58 @@ eligibility matrix, read
 For regulatory deadlines (NIS2 / DORA / CRA / AI Act), see
 `docs/new-archetypes-plan.md` §7.1 line 738-742 ; the formal
 artefacts land with I.6 (deferred, Themis K.5 territory T7+).
+
+---
+
+## Auditor hand-off bundle
+
+> **Audit**: I.6 (`i6-compliance-artefacts`, 2026-05-12).
+
+Forge ships a deterministic regulatory hand-off bundle generator
+that packs every compliance-relevant artefact the framework carries
+into a single, byte-stable `.tgz` archive. Hand it to your internal
+audit team, external auditors, or regulator counter-parties without
+manually re-assembling the surface each time.
+
+### Quick start
+
+```bash
+bash .forge/scripts/compliance/bundle.sh
+# → forge-compliance-artefacts.tgz at $(pwd)
+```
+
+Optional flags : `--output <path>` (default
+`forge-compliance-artefacts.tgz`), `--target <dir>` (default
+`$(pwd)`), `--help`/`-h`.
+
+### Bundle members
+
+| Member path                              | Source                                                               |
+|------------------------------------------|----------------------------------------------------------------------|
+| `MANIFEST`                               | Script-generated index : `<sha256>  <size>  <path>` per line, sorted |
+| `tier-matrix/compliance-tiers.md`        | Copy of I.2 standard `global/compliance-tiers.md`                    |
+| `templates/forge-dpa-declared.template`  | Copy of `.forge/templates/compliance/forge-dpa-declared.template`    |
+| `audit/audit-ledger.json`                | Script-generated audit-trail snapshot (machine-parseable)            |
+| `audit/audit-ledger.md`                  | Script-generated audit-trail snapshot (human-readable)               |
+| `sbom/sbom.cdx.json`                     | Output of `bin/forge-sbom.sh` (CycloneDX 1.5 SBOM)                   |
+
+### Determinism
+
+When `SOURCE_DATE_EPOCH` is exported (POSIX-standard integer Unix
+timestamp), two consecutive bundle invocations against the same
+target tree produce **byte-identical** `.tgz` outputs. Verify
+locally :
+
+```bash
+SOURCE_DATE_EPOCH=0 bash .forge/scripts/compliance/bundle.sh --output b1.tgz
+SOURCE_DATE_EPOCH=0 bash .forge/scripts/compliance/bundle.sh --output b2.tgz
+diff -q b1.tgz b2.tgz   # exits 0 if byte-identical (NFR-I6-CA-005)
+```
+
+The bundle script
+([`.forge/scripts/compliance/bundle.sh`](../.forge/scripts/compliance/bundle.sh))
+honours the same `SOURCE_DATE_EPOCH` recipe as
+[`bin/forge-sbom.sh`](../bin/forge-sbom.sh) for the CycloneDX SBOM
+member. The full content schema, determinism recipe, consumption
+protocol, and forward-compatibility rules live in
+[`compliance-artefacts-bundle.md`](../.forge/standards/global/compliance-artefacts-bundle.md).

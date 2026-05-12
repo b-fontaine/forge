@@ -209,3 +209,31 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   ships with I.3. Three ADRs (ADR-I2-CT-001..003) resolve the
   design open questions. No constitutional amendment required ;
   Articles III.4, V, XI, XII compliance preserved.
+
+---
+
+## 2026-05-12 — Initial ratification (i6-compliance-artefacts)
+
+- **Reviewer**: @bfontaine
+- **Reviewed standards**:
+
+  | Standard                              | Version | Decision | Next review due | Notes                                                                                       |
+  |---------------------------------------|---------|----------|-----------------|---------------------------------------------------------------------------------------------|
+  | global/compliance-artefacts-bundle.md | 1.0.0   | KEEP     | 2027-05-12      | Initial ratification. Documents the deterministic .tgz hand-off bundle for EU regulators.   |
+
+- **Decision**: KEEP
+- **Next review due**: 2027-05-12
+- **Notes**: New standard at `global/compliance-artefacts-bundle.md`
+  cross-linking the bundle script
+  (`.forge/scripts/compliance/bundle.sh`), the DPA template
+  (`.forge/templates/compliance/forge-dpa-declared.template`), and
+  the audit-ledger snapshot generator (inline inside the bundle
+  script). Consumes I.2 (tier matrix), K.3 (DPA ledger format
+  ADR-K3-002), J.8 (`bin/forge-sbom.sh` CycloneDX 1.5 SBOM).
+  Forward-stable for Themis-territory artefacts (NIS2 / DORA / CRA /
+  AI Act) per FR-I6-CA-053. Three ADRs (ADR-I6-CA-001..003) resolve
+  archive format (`.tgz` gzip POSIX tar), audit ledger placement
+  (`audit/` subdirectory), and script location
+  (`.forge/scripts/compliance/bundle.sh`). No constitutional
+  amendment required ; Articles III.4, V, XI, XII compliance
+  preserved.
