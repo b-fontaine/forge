@@ -126,6 +126,11 @@ jobs:
         # I.5 reusable compliance workflow harness. L1-only by default ;
         # L2 (act-based smoke) is opt-in via FORGE_I5_ACT=1 per ADR-I5-CW-003.
         run: bash .forge/scripts/tests/i5.test.sh --level 1
+      - name: f3.test.sh
+        # F.3 release script fix harness. L1-only by default ; L2
+        # (dry-run OTP forward fixture) is opt-in via FORGE_F3_LIVE=1
+        # per ADR-F3-004 gate pattern.
+        run: bash .forge/scripts/tests/f3.test.sh --level 1
 
   # ─── gates ── verify.sh + constitution-linter.sh ───────────────
   gates:

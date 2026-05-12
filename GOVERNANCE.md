@@ -142,12 +142,33 @@ package) and on GitHub Releases. To cut a release, follow these steps:
 2. **Verify CHANGELOG.md** lists every user-facing change since the
    previous tag, under a sealed `## [X.Y.Z]` heading (no
    `## [Unreleased]` left dangling for the released entries).
-3. **Tag the release** on `main`: `git tag vX.Y.Z && git push --tags`.
-   The tag MUST exactly follow the `vX.Y.Z` pattern (no suffix, no
-   build metadata).
-4. **Publish** — `npm publish` from `cli/` (after `npm run bundle`),
-   then `gh release create vX.Y.Z` with notes pulled from
-   `CHANGELOG.md`.
+3. **Pin VERSION + cli/package.json** to the new `X.Y.Z` value (both
+   files must match the CHANGELOG heading).
+4. **Run the release helper**:
+   ```bash
+   bash scripts/release.sh --version X.Y.Z --otp 123456
+   ```
+   The helper performs pre-flight checks (on `main`, clean tree, in
+   sync with `origin`, VERSION / `cli/package.json` / CHANGELOG match,
+   tag not yet taken, `verify.sh` + `constitution-linter.sh` PASS),
+   creates the `vX.Y.Z` annotated tag, pushes it, builds and publishes
+   `@sdd-forge/cli` to npm with the supplied 2FA OTP, and creates the
+   GitHub release (via `gh` if installed). The helper script is
+   **maintainer-side only** and is not shipped to adopters by
+   `forge init` today.
+
+   The `--otp` flag is required when 2FA is enabled on the npm
+   account (it is, on the BDFL account). Three resolution paths,
+   tried in order (per ADR-F3-004) :
+   - `--otp <6-digits>` flag (preferred for automation).
+   - Interactive silent prompt on a TTY (preferred for manual runs).
+   - `$NPM_OTP` environment variable (preferred for CI / scripted
+     contexts ; export the value just before invoking the script).
+
+   The helper accepts `--dry-run` for a no-side-effect rehearsal,
+   `--skip-npm` and `--skip-gh` to skip individual steps, and
+   `--help` for the full flag list. The OTP value is never echoed
+   or logged ; dry-run traces redact it as `<redacted>`.
 
 A release MUST NOT be cut while any open Forge change is in `proposed`,
 `specified`, `designed`, `planned`, or `implemented` state on the release
