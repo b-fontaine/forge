@@ -1,0 +1,104 @@
+# <!-- Audit: K.3 (k3-demeter, FR-K3-DEM-064 / NFR-K3-DEM-008 / ADR-K3-003) -->
+#
+# Cloud-Act publisher deny-list — single source of truth for the
+# Demeter scanner (`bin/forge-demeter-scan.sh`). Encoded per
+# ADR-K3-003 governance : Phase A (interim) BDFL / 12-month cadence ;
+# Phase B (post-T7 / Themis ship) Themis / 6-month cadence.
+#
+# Schema :
+#   ecosystems.<eco>[]   — { publisher, jurisdiction, evidence }
+#   pii_field_patterns[] — case-insensitive regex anchors per ADR-K3-006
+#
+# `publisher` patterns are glob-style (`*` matches any substring).
+# Demeter scanner converts them to `^pattern$` regex at match time.
+#
+# Edits to this file MUST bump `version` per SemVer and refresh
+# `last_reviewed` + `expires_at` per the regeneration cadence
+# documented in `.forge/standards/global/data-stewardship-rules.md`.
+
+version: "1.0.0"
+last_reviewed: "2026-05-10"
+expires_at: "2027-05-10"
+maintained_by: "BDFL (interim — see standards/global/data-stewardship-rules.md)"
+
+ecosystems:
+  cargo:
+    - publisher: "aws-sdk-*"
+      jurisdiction: "US"
+      evidence: "https://crates.io/teams/github:awslabs:rust-sdk-owners (AWS Inc. — Delaware HQ)"
+    - publisher: "aws-*"
+      jurisdiction: "US"
+      evidence: "https://crates.io/teams/github:awslabs:rust-sdk-owners (AWS Inc.)"
+    - publisher: "google-cloud-*"
+      jurisdiction: "US"
+      evidence: "https://crates.io/users/google-cloud-rust (Google LLC — California HQ)"
+    - publisher: "azure_*"
+      jurisdiction: "US"
+      evidence: "https://crates.io/teams/github:azure:azure-sdk-for-rust-owners (Microsoft Corp — Washington HQ)"
+
+  npm:
+    - publisher: "@aws-sdk/*"
+      jurisdiction: "US"
+      evidence: "https://www.npmjs.com/org/aws-sdk (AWS Inc. — Delaware HQ)"
+    - publisher: "@aws-cdk/*"
+      jurisdiction: "US"
+      evidence: "https://www.npmjs.com/org/aws-cdk (AWS Inc.)"
+    - publisher: "@google-cloud/*"
+      jurisdiction: "US"
+      evidence: "https://www.npmjs.com/org/google-cloud (Google LLC — California HQ)"
+    - publisher: "@azure/*"
+      jurisdiction: "US"
+      evidence: "https://www.npmjs.com/org/azure (Microsoft Corp — Washington HQ)"
+
+  pub:
+    - publisher: "firebase_*"
+      jurisdiction: "US"
+      evidence: "https://pub.dev/publishers/firebase.google.com/packages (Google LLC — California HQ)"
+    - publisher: "cloud_firestore*"
+      jurisdiction: "US"
+      evidence: "https://pub.dev/publishers/firebase.google.com/packages (Google LLC)"
+
+# Per-ADR-K3-006 PII heuristic — case-insensitive regex anchors
+# applied to entity / DTO / proto field NAMES (not values, not
+# variables, not comments). Anglo-Saxon-biased ; non-English
+# projects MAY extend the list via PR.
+pii_field_patterns:
+  # Identity (7)
+  - "email"
+  - "e-?mail"
+  - "phone(_number)?"
+  - "ssn"
+  - "social_security"
+  - "passport"
+  - "national_id"
+
+  # Financial (5)
+  - "iban"
+  - "account_number"
+  - "card_number"
+  - "cc_number"
+  - "cvv"
+
+  # Personal (7)
+  - "first_?name"
+  - "last_?name"
+  - "full_?name"
+  - "dob"
+  - "date_of_birth"
+  - "birthday"
+  - "gender"
+
+  # Contact (5)
+  - "address"
+  - "postal_code"
+  - "zip_code"
+  - "street_address"
+  - "billing_address"
+
+  # Sensitive (6)
+  - "ip_address"
+  - "device_id"
+  - "mac_address"
+  - "geo_location"
+  - "latitude"
+  - "longitude"

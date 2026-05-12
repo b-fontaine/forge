@@ -218,6 +218,7 @@ est marqué `DONE`, et un résumé est ajouté au journal du projet.
 | Infra Architect     | Atlas    | Docker, K8s, Kong, Temporal          |
 | Observability       | Panoptes | OTel, SigNoz, ELK, Prometheus        |
 | Security Auditor    | Aegis    | Audit de sécurité, OWASP             |
+| Data Steward EU     | Demeter  | Tier classification, DPA, CLOUD Act  |
 | DevOps Engineer     | Heracles | CI/CD, déploiement                   |
 
 ---

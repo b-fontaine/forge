@@ -93,6 +93,8 @@ jobs:
         run: bash .forge/scripts/tests/t5-otel.test.sh --level 1
       - name: j8.test.sh
         run: bash .forge/scripts/tests/j8.test.sh --level 1,2
+      - name: k3.test.sh
+        run: bash .forge/scripts/tests/k3.test.sh --level 1,2
 
   # ─── gates ── verify.sh + constitution-linter.sh ───────────────
   gates:

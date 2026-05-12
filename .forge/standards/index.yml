@@ -377,3 +377,11 @@ standards:
     triggers: [sha256 pin, source document, drift detector, ARCHITECTURE-TARGET, rehash, REHASH-LOG]
     scope: all
     priority: medium
+
+  # ─── K.3 — Demeter data stewardship (k3-demeter) ─────────────────
+
+  - id: global/data-stewardship-rules
+    path: standards/global/data-stewardship-rules.md
+    triggers: [demeter, data-steward, dpa, cloud-act, schrems, t1, t2, t3, dependency-jurisdiction, k3-rule]
+    scope: all
+    priority: high
