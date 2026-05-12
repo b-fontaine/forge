@@ -708,6 +708,22 @@ sequenceDiagram
 | **Aegis** (Security)                  | Élevé      | Audits NIS2/DORA/CRA, OWASP ASVS L2, Zitadel hardening                                                                                                                                                   |
 | **Heracles** (DevOps)                 | Modéré     | Pipelines CI buf breaking-change, OVH/Scaleway providers, linter `no-state-management-alternatives` blocking                                                                                             |
 
+> **Dart OTel SDK — signal coverage status** (`opentelemetry: 0.18.11`, Workiva)
+> [source verified: 2026-05-12, from `t5-otel-dart-api-realign` FR-FOT-DA-060]
+>
+> | Signal  | Status        | Notes                                              |
+> |---------|---------------|----------------------------------------------------|
+> | Traces  | **Beta**      | Active in current Forge stack (Argus / Sentinel)   |
+> | Metrics | Alpha         | Out of scope for current Forge OTel phase          |
+> | Logs    | Unimplemented | Out of scope for current Forge OTel phase          |
+>
+> Only **Traces** are used in the current Forge OTel phase. Metrics and Logs
+> instrumentation via this package should not be relied upon until the
+> Workiva package reaches at least Beta for those signals.
+>
+> **Future-review trigger**: re-verify by **2026-11-12** or when
+> `opentelemetry` pkg bumps to **>= 0.19.0** (whichever comes first).
+
 ### 9.2 Nouveaux agents proposés
 
 | Nouvel agent     | Persona                 | Responsabilités                                                                               | Archétype concerné                        |
