@@ -1,5 +1,5 @@
 # Specifications: i6-compliance-artefacts
-<!-- Status: specified -->
+<!-- Status: archived -->
 <!-- Schema: default -->
 
 **Namespace** : `FR-I6-CA-*` / `NFR-I6-CA-*`. **Constitution** :

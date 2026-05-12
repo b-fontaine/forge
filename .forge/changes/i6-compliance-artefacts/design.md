@@ -1,5 +1,5 @@
 # Design: i6-compliance-artefacts
-<!-- Status: designed -->
+<!-- Status: archived -->
 <!-- Schema: default -->
 
 > Read alongside `specs.md` (FR-I6-CA-* / NFR-I6-CA-*) and

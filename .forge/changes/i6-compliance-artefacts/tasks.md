@@ -1,5 +1,5 @@
 # Tasks: i6-compliance-artefacts
-<!-- Status: planned -->
+<!-- Status: archived -->
 <!-- Schema: default -->
 
 ## Convention
