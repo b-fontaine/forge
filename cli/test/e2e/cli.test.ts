@@ -40,6 +40,15 @@ describe("@sdd-forge/cli (e2e — requires build)", () => {
     expect(r.stdout.trim()).toMatch(/^\d+\.\d+\.\d+(-[\w.-]+)?$/);
   });
 
+  // Regression v0.3.2 : the J.8 --eu-tier flag was declared in init.ts
+  // (EU_TIER_ENUM + validator) but never wired into commander, so users
+  // hit `error: unknown option '--eu-tier'` on v0.3.0 / v0.3.1.
+  it("`forge init --help` lists the --eu-tier flag", () => {
+    const r = run(["init", "--help"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/--eu-tier/);
+  });
+
   it("`forge init --target <tmp>` scaffolds against the repo", async () => {
     const target = await mkdtemp(join(tmpdir(), "forge-e2e-"));
     try {

@@ -165,8 +165,14 @@ main() {
   echo ""
 
   # Target-dir collision check.
-  if [ -e "$TARGET_DIR" ] && [ "$FORCE" != "true" ]; then
-    echo "init.sh: target '$TARGET_DIR' already exists (use --force to overlay)" >&2
+  # An empty dir is fine — only refuse when the dir exists AND
+  # contains entries (`ls -A` skips `.` and `..`). v0.3.2 fix : the
+  # previous `-e` test fired on freshly-created empty dirs (e.g.
+  # `mkdir foo && cd foo && forge init …`).
+  if [ -d "$TARGET_DIR" ] \
+     && [ -n "$(ls -A "$TARGET_DIR" 2>/dev/null)" ] \
+     && [ "$FORCE" != "true" ]; then
+    echo "init.sh: target '$TARGET_DIR' already exists and is not empty (use --force to overlay)" >&2
     exit 6
   fi
 

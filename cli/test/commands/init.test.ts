@@ -1,7 +1,19 @@
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { Readable, Writable } from "node:stream";
-import { describe, expect, it, vi } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
 import { initCommand } from "../../src/commands/init.js";
 import type { DispatchTable } from "../../src/commands/init-archetype.js";
+
+// v0.3.2 — the archetype dispatcher now `mkdir -p targetDir`
+// before spawning the bash scaffolder (fix for `spawn bash ENOENT`
+// when --target points to a yet-uncreated directory). Tests that
+// exercise the runArchetypeInit codepath must therefore provide a
+// writable target ; in-memory string paths like "/proj" no longer
+// suffice.
+const REAL_TARGET = mkdtempSync(join(tmpdir(), "forge-init-test-"));
+afterAll(() => rmSync(REAL_TARGET, { recursive: true, force: true }));
 
 // Tests for the b5.1 dispatcher. The legacy file-copy behavior is
 // covered by init-default.test.ts. These tests focus on dispatcher
@@ -162,7 +174,7 @@ describe("initCommand dispatcher", () => {
     const deps = baseDeps({
       options: {
         sourceDir: "/src",
-        targetDir: "/proj",
+        targetDir: REAL_TARGET,
         force: false,
         archetype: "full-stack-monorepo",
         projectName: "my-app",

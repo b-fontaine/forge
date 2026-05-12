@@ -6,7 +6,7 @@
 // per-archetype wrapper script via the stable ABI declared in
 // `global/scaffolding.md`.
 
-import { stat } from "node:fs/promises";
+import { mkdir, stat } from "node:fs/promises";
 import { join } from "node:path";
 import {
   type ArchetypeRegistration,
@@ -142,6 +142,10 @@ export async function runArchetypeInit(
     opts.reverseDomain,
   ];
   if (opts.force) args.push("--force");
+  // v0.3.2 fix : ensure targetDir exists before spawn — otherwise
+  // Node fails with `spawn bash ENOENT` (the error references bash
+  // but the underlying syscall is the missing `cwd`).
+  await mkdir(opts.targetDir, { recursive: true });
   return opts.runner({
     scaffolderPath,
     args,

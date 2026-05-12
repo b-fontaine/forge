@@ -78,6 +78,10 @@ export async function runCli(io: CliIo): Promise<number> {
     .option("--wizard", "force interactive wizard mode", false)
     .option("--org <reverse-domain>", "reverse domain (required for non-default archetypes)")
     .option("--force", "overwrite existing framework files", false)
+    .option(
+      "--eu-tier <tier>",
+      "EU compliance tier (T1|T2|T3) per J.8 j8-janus-rules",
+    )
     .action(
       async (
         projectName: string | undefined,
@@ -89,6 +93,7 @@ export async function runCli(io: CliIo): Promise<number> {
           wizard: boolean;
           org?: string;
           force: boolean;
+          euTier?: string;
         },
       ) => {
         const source = opts.source ?? assetsRoot();
@@ -103,6 +108,7 @@ export async function runCli(io: CliIo): Promise<number> {
             wizard: opts.wizard,
             projectName,
             reverseDomain: opts.org,
+            euTier: opts.euTier,
             isTty: Boolean((io.stdin as { isTTY?: boolean }).isTTY),
           },
           readDispatchTable: async (path) => {

@@ -12,6 +12,52 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+## [0.3.2] — 2026-05-13
+
+Three first-experience bug fixes uncovered when running `forge init` against
+the published v0.3.1 tarball. No spec / standard / constitution change ;
+behaviour is now what v0.3.0 / v0.3.1 already documented.
+
+### Fixed — `forge init --eu-tier` commander flag wiring
+
+The `--eu-tier <T1|T2|T3>` flag declared by J.8 (`j8-janus-rules`) was
+plumbed in `cli/src/commands/init.ts` (validator + `EU_TIER_ENUM` + env-var
+propagation) but never wired into commander in `cli/src/cli.ts`. Users
+hitting `forge init --eu-tier T2 …` on v0.3.0 / v0.3.1 got
+`error: unknown option '--eu-tier'`.
+
+This patch wires the flag :
+- `.option("--eu-tier <tier>", ...)` declaration on the `init` command
+- `euTier?: string` field on the inline `opts` type
+- `euTier: opts.euTier` propagation into `initCommand` options
+
+Regression covered by a new e2e test (`forge init --help` MUST list
+`--eu-tier`).
+
+### Fixed — `forge init --target <new-dir>` failed with `spawn bash ENOENT`
+
+When `--target` pointed to a path that did not yet exist, Node `spawn`
+inherited `cwd: opts.targetDir` and failed with `spawn bash ENOENT`. The
+error message references `bash` but the underlying syscall is the missing
+`cwd`. The bash scaffolder itself does `mkdir -p` at line 184, but that
+runs **after** the spawn, never reached.
+
+Fix : `cli/src/commands/init-archetype.ts` now does
+`await mkdir(opts.targetDir, { recursive: true })` immediately before the
+runner call. Idempotent ; no-op when the dir already exists.
+
+### Fixed — `forge init` required `--force` even in an empty target dir
+
+`.forge/scripts/scaffolder/init.sh:168` previously refused to scaffold
+when the target dir merely **existed**, regardless of contents. Users
+who did the natural `mkdir foo && cd foo && forge init …` hit the
+collision guard on a freshly-created empty dir.
+
+Fix : the check now refuses only when the dir exists **and** is
+non-empty (`ls -A` skips `.` / `..`). Empty dirs proceed without
+`--force`. The collision message also clarifies the non-empty
+condition.
+
 ## [0.3.1] — 2026-05-12
 
 ### Changed — `scripts/release.sh` (renamed + OTP support) (`f3-release-script-fix`)
