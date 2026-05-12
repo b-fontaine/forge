@@ -22,3 +22,7 @@ examples/*/coverage/
 
 # a7-forge-upgrade — session-only conflict listing, never committed (FR-UP-012)
 .merge-conflicts
+
+# Local parallel worktrees (per-feature isolation). Tracked branches live
+# in git's worktree metadata, not in the tree.
+.worktrees/
