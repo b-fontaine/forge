@@ -47,7 +47,13 @@ produces a connected span tree visible in SigNoz with a single
   `lib/main.dart` rewritten per ADR-T5-OTA-005 init order
   (`ensureInitialized` → `AppConfig.fromEnv` → `setupTelemetry` →
   `Bloc.observer` → error handlers → `runApp` with
-  `navigatorObservers`).
+  `navigatorObservers`). **Aligned to `flutter/opentelemetry.md`
+  v1.1.0** (sibling change `t5-otel-dart-api-realign` ; Q-004
+  follow-up commit `15b774c` in this change) : `CollectorExporter(Uri)`
+  exporter, positional + named `BatchSpanProcessor`,
+  `ParentBasedSampler(AlwaysOnSampler())` sampler (the
+  `TraceIdRatioBased*` class is not exported by `opentelemetry: 0.18.11`
+  — env-tier ratio remains enforced collector-side per ADR-OTEL-001).
 - **demo-005-connect-greeting traceparent round-trip** : the Greeter
   use case in `crates/application/src/greet.rs` carries a
   `#[tracing::instrument(name = "greeter.greet", fields(otel.kind = "internal", rpc.system = "connect", ...))]`
@@ -83,7 +89,15 @@ and in `crates/infrastructure/src/telemetry/mod.rs` module doc.
 
 `observability.yaml` (T.5 v1.1.0) is consumed, not amended — no
 standard bump, no REVIEW.md ledger entry per ADR-T5-OTA proposal.md
-§ Article XII.
+§ Article XII. **`flutter/opentelemetry.md` was bumped v1.0.0 → v1.1.0
+by the sibling change `t5-otel-dart-api-realign`** to resolve Q-004 ;
+this change's Q-004 follow-up commit (`15b774c`) realigned the example
+Dart code to v1.1.0 and flipped `_test_ota_l2_002_flutter_analyze`
+from xfail to expected-pass (toolchain-gated graceful skip).
+
+Spec consolidation : new `.forge/specs/otel-app.md` (56 ADDED FRs
+`FR-T5-OTA-001..103` + 7 NFRs + 7 ADRs `ADR-T5-OTA-001..007`) ships
+with the archive.
 
 ### Added — K.3 Demeter data-steward agent + CLOUD Act dependency scanner (`k3-demeter`)
 

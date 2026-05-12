@@ -1,5 +1,5 @@
 name: t5-otel-app
-status: implemented
+status: archived
 created: 2026-05-10
 schema: full-stack-monorepo
 constitution_version: "1.1.0"
@@ -8,6 +8,9 @@ parent_audit_items:
 depends_on:
   - t5-otel-stack
   - t5-connect-codegen
+  - t5-otel-dart-api-realign  # Q-004 cascade — `flutter/opentelemetry.md` v1.0.0 → v1.1.0 realign
+archived_to:
+  - .forge/specs/otel-app.md  # 56 ADDED FRs (FR-T5-OTA-001..103) + 7 NFRs + 7 ADRs (ADR-T5-OTA-001..007)
 layers:
   - id: backend
     path: examples/forge-fsm-example/backend
@@ -25,4 +28,4 @@ timeline:
   designed: 2026-05-10
   planned: 2026-05-10
   implemented: 2026-05-10
-  # archived: <auto-filled by /forge:archive>
+  archived: 2026-05-12
