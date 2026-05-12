@@ -1,5 +1,5 @@
 name: i2-compliance-tiers
-status: implemented
+status: archived
 created: 2026-05-11
 schema: default
 constitution_version: "1.1.0"
@@ -8,10 +8,12 @@ parent_audit_items:
 depends_on:
   - t4-adr-ratification   # ships compliance-tier.schema.json v1.0.0 (verbatim source)
   - k3-demeter            # Demeter persona forward-cites this standard ; severity scaling per FR-K3-DEM-068
+archived_to:
+  - .forge/specs/compliance-tiers.md  # consolidated spec — 7 clusters covering FR-I2-CT-001..112 + 7 NFRs + 3 ADRs (ADR-I2-CT-001..003)
 timeline:
   proposed: 2026-05-11
   specified: 2026-05-11
   designed: 2026-05-11
   planned: 2026-05-11
   implemented: 2026-05-11
-  # archived: <auto-filled by /forge:archive>
+  archived: 2026-05-12

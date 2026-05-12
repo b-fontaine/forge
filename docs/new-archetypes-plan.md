@@ -363,22 +363,60 @@
       traceparent à travers Envoy/Kong) reportée à T6 / B.8 avec
       le `_test_t5_l2_traceparent_dual` de `t5-connect-codegen`.
 
+- **`i2-compliance-tiers` archivé 2026-05-12** — **I.2** : seul
+  standard humain codifiant le gradient EU compliance T1 / T2 / T3,
+  depuis `compliance-tier.schema.json` v1.0.0 (T.4) et
+  `ARCHITECTURE-TARGET.md` §10. Spec consolidée
+  `.forge/specs/compliance-tiers.md` (FR-I2-CT-001..112 + 7 NFRs +
+  3 ADRs `ADR-I2-CT-001..003`). Cinq livrables physiques :
+    - **I.2.a — Standard**
+      `.forge/standards/global/compliance-tiers.md` v1.0.0 (437 LOC,
+      7 H2 sections — Purpose, Tier definitions, Component
+      eligibility matrix, Demeter integration, Adoption path,
+      Extending the matrix, Interdictions + Constitutional
+      Compliance). Citation **verbatim** du bloc
+      `x-tier-descriptions` du schéma (Article III.4 +
+      NFR-I2-CT-004, mirrors K.3 FR-K3-DEM-020 precedent).
+      Matrice 15 lignes **byte-identical** à
+      `docs/ARCHITECTURE-TARGET.md` §10.2 (ADR-I2-CT-002 +
+      NFR-I2-CT-005). 5 clauses RFC-2119 MUST NOT. Frontmatter pins
+      `linter_rule: t3-forbidden-components` (forward-pointer to I.3).
+    - **I.2.b — Index** `.forge/standards/index.yml` gagne une
+      entrée `global/compliance-tiers` (9 triggers, scope all,
+      priority high) après le bloc K.3.
+    - **I.2.c — REVIEW** `.forge/standards/REVIEW.md` gagne entrée
+      append-only 2026-05-11 (KEEP, next review 2027-05-11).
+    - **I.2.d — Doc adopter** `docs/COMPLIANCE.md` au root du repo
+      (ADR-I2-CT-003). H1 + 3 H2 sections (Quick start, Tier picker
+      avec arbre de décision, Cross-references).
+    - **I.2.e — Harness** `.forge/scripts/tests/i2.test.sh`
+      14 L1 tests grep-only hermétiques. **14/14 GREEN**.
+      Registered dans `forge-ci.yml` après `k3.test.sh`.
+    - **Forward-pointer Demeter résolu** : `.claude/agents/demeter.md`
+      cite désormais une cible existante.
+    - **Unblocks downstream** : I.3 (linter rule
+      `t3-forbidden-components`), I.5 (`forge-compliance.yml`
+      reusable workflow), I.6 (artefacts NIS2 / DORA / CRA / AI Act).
+
 ### Module en cours
 
 Aucun change en cours sur `main` au 2026-05-12 (post-archive
-`k3-demeter` + `t5-otel-dart-api-realign` + `t5-otel-app`). Le prochain
-candidat naturel est **I.2–I.6** (compliance docs + workflow + AI Act /
-NIS2 / DORA / CRA artefacts au-delà du SBOM livré en J.8.d et du
-Demeter agent livré en K.3).
+`k3-demeter` + `t5-otel-dart-api-realign` + `t5-otel-app` +
+`i2-compliance-tiers`). Le prochain candidat naturel est
+**I.3 + I.5 + I.6** (T3-forbidden linter rule + `forge-compliance.yml`
+workflow + NIS2 / DORA / CRA / AI Act artefacts sous
+`.forge/compliance/`), tous trois forward-pointés par la frontmatter
+de `global/compliance-tiers.md` v1.0.0 livré par I.2.
 
 ### Modules toujours en attente
 
-- **T5 (suite)** post-`t5-otel-app` : I.2–I.6 (compliance docs +
-  workflow + AI Act / NIS2 / DORA / CRA artefacts au-delà du SBOM
-  livré dans J.8.d et de Demeter livré dans K.3), validation
-  traceparent W3C E2E à travers Envoy / Kong (le
-  `_test_t5_l2_traceparent_dual` reporté avec les fixtures L2 vers
-  T6 / B.8).
+- **T5 (suite)** post-`i2-compliance-tiers` : I.3 (T3-forbidden
+  linter rule consommant la matrice du standard I.2), I.5
+  (`forge-compliance.yml` reusable workflow), I.6 (artefacts
+  réglementaires NIS2 / DORA / CRA / AI Act sous
+  `.forge/compliance/`), validation traceparent W3C E2E à travers
+  Envoy / Kong (le `_test_t5_l2_traceparent_dual` reporté avec les
+  fixtures L2 vers T6 / B.8).
 - **T6 / T7 / T8 / T9+** : non commencés (B.6, B.7, B.8, B.9, B.3, K.1,
   K.2, K.4, K.5, C.2–C.5, F.3, G.*, H.*).
 
@@ -407,9 +445,10 @@ Demeter agent livré en K.3).
 | `k3-demeter`                 | archived               | T5 (K.3 + I.4)                |
 | `t5-otel-dart-api-realign`   | archived               | T5 (Q-004 — flutter/opentelemetry.md v1.1.0 Workiva realign) |
 | `t5-otel-app`                | archived               | T5 (OTel App SDK — Phase B)   |
+| `i2-compliance-tiers`        | archived               | T5 (I.2)                      |
 
-**21 archivés** (20 sur `main` + branche `t5-otel-app`) au 2026-05-12,
-aucun change en cours. Aucun change orphelin, aucun
+**22 archivés** (21 sur `main` + branche `i2-compliance-tiers`) au
+2026-05-12, aucun change en cours. Aucun change orphelin, aucun
 `status: in_progress` bloqué, aucun marqueur
 `[NEEDS CLARIFICATION:]` non résolu inline dans les changes archivés
 (tous gates `verify.sh` + `constitution-linter.sh` PASS).
@@ -506,7 +545,7 @@ sont créés. Cinq nouveaux agents Forge sont introduits. Plan de migration **4 
 | B.8       | Migration flagship 1.0.0 → 2.0.0 (Envoy/DBOS/Connect/Zitadel)                                                                                      | ARCHITECTURE-TARGET §11           | `XL`    | Pending (T6 — point of no return)                                                                                                 |
 | B.9       | Migration `mobile-only / 1.0.0` → `mobile-pwa-first / 2.0.0` (PWA Qwik + Bloc renforcé)                                                            | ARCHITECTURE-TARGET §6.3          | `L`     | Pending (T8)                                                                                                                      |
 | I.1       | Compliance EU graded — JSON schemas (T1/T2/T3 + archetype v2)                                                                                      | ARCHITECTURE-TARGET §10           | `S`     | **Done 2026-05-04** via `t4-adr-ratification`                                                                                     |
-| I.2–I.6   | Compliance EU graded — standard `compliance-tiers.md`, linter rule, Demeter agent, `forge-compliance.yml` workflow, NIS2/DORA/CRA/AI Act artefacts | ARCHITECTURE-TARGET §10           | `M`–`L` | Pending (T5–T7)                                                                                                                   |
+| I.2–I.6   | Compliance EU graded — standard `compliance-tiers.md`, linter rule, Demeter agent, `forge-compliance.yml` workflow, NIS2/DORA/CRA/AI Act artefacts | ARCHITECTURE-TARGET §10           | `M`–`L` | I.2 **Done 2026-05-12** via `i2-compliance-tiers` (`global/compliance-tiers.md` v1.0.0 + index entry + REVIEW birth + `docs/COMPLIANCE.md` + 14/14 L1 tests `i2.test.sh`) ; I.3 / I.5 / I.6 still pending T5                                  |
 | J.1–J.6   | Six standards versionnés `.forge/standards/*.yaml` (transport / state-management / observability / orchestration / identity / persistence) v1.0.0  | ARCHITECTURE-TARGET §12.1         | `M`     | **Done 2026-05-04** via `t4-adr-ratification` ; J.1 `transport.yaml` bumpé en 1.1.0 le 2026-05-06 par `t5-connect-codegen` (codegen pinning, additif) |
 | J.7 / J.8 | `validate-standards-yaml.sh` linter + Janus forbidden-list orchestrator rules + `--eu-tier` flag + CycloneDX SBOM | ARCHITECTURE-TARGET §12.1 + §12.5 | `S`–`L` | J.7 **Done 2026-05-08** via `j7-validate-standards-yaml` (PR #4 merged) ; J.8 (a + b + d) **Done 2026-05-10** via `j8-janus-rules` (20/20 tests, +6 PASS verify.sh, smoke 74 SBOM components) ; J.8.c (`ai-native-rag` LLM gateway rules) deferred to T7 |
 | K.1       | Hermes-Async (event-driven)                                                                                                                        | ARCHITECTURE-TARGET §9.2          | `M`     | Pending (T7)                                                                                                                      |
@@ -1025,7 +1064,7 @@ Reprise de ARCHITECTURE-TARGET §11.
 | Trimestre | Modules                                                                                          | Status (2026-05-10)                                                                                                                                                                                                                     | Rationale                                                                                                                                    |
 |-----------|--------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
 | **T4**    | **P-1, P-2, P-3, P-4, I.1, J.1–J.6**                                                             | ✅ **Done 2026-05-04** via `t4-adr-ratification` (PR #2 mergée). 35 ADDED FRs + 8 NFRs. P-5 retiré 2026-05-06 (Hera 9 sub-agents conservés).                                                                                            | Méthodologie : ADR capturés, 6 standards YAML v1.0.0, cycle 12 mois, schémas compliance.                                                     |
-| **T5**    | **Phase 1 ARCHITECTURE-TARGET, J.7, J.8, K.3 (Demeter), I.2–I.6**                                | ✅ **Connect codegen done 2026-05-06** via `t5-connect-codegen` (PR #3). ✅ **J.7 done 2026-05-08** via `j7-validate-standards-yaml` (PR #4 merged). ✅ **OTel + OBI + Coroot stack templates done 2026-05-10** via `t5-otel-stack` (PR #5 merged). ✅ **J.8 done 2026-05-10** via `j8-janus-rules` (PR #6 merged ; refusal rules + `--eu-tier` flag + CycloneDX SBOM ; 20/20 tests, +6 PASS verify.sh ; J.8.c deferred to T7). ✅ **K.3 done 2026-05-12** via `k3-demeter` (PR #7 merged ; Demeter persona + dependency scanner + deny-list + standard + Janus delta ; 22/22 tests `k3.test.sh --level 1,2`). ✅ **Q-004 resolved 2026-05-12** via `t5-otel-dart-api-realign` (`flutter/opentelemetry.md` v1.0.0 → v1.1.0 standards realign on real Workiva `opentelemetry: 0.18.11` ; 9 fabricated symbols removed + 7 verified symbols added ; 12/12 L1 tests ; Workiva `Traces: Beta / Metrics: Alpha / Logs: Unimplemented` asymmetry noted for future ARCHITECTURE-TARGET §9 review). I.2–I.6 (non-SBOM, non-Demeter) = pending. | Observabilité + Connect contrats + standards linter + compliance graduée. Réversible.                                                        |
+| **T5**    | **Phase 1 ARCHITECTURE-TARGET, J.7, J.8, K.3 (Demeter), I.2–I.6**                                | ✅ **Connect codegen done 2026-05-06** via `t5-connect-codegen` (PR #3). ✅ **J.7 done 2026-05-08** via `j7-validate-standards-yaml` (PR #4 merged). ✅ **OTel + OBI + Coroot stack templates done 2026-05-10** via `t5-otel-stack` (PR #5 merged). ✅ **J.8 done 2026-05-10** via `j8-janus-rules` (PR #6 merged ; refusal rules + `--eu-tier` flag + CycloneDX SBOM ; 20/20 tests, +6 PASS verify.sh ; J.8.c deferred to T7). ✅ **K.3 done 2026-05-12** via `k3-demeter` (PR #7 merged ; Demeter persona + dependency scanner + deny-list + standard + Janus delta ; 22/22 tests `k3.test.sh --level 1,2`). ✅ **Q-004 resolved 2026-05-12** via `t5-otel-dart-api-realign` (PR #8 merged ; `flutter/opentelemetry.md` v1.0.0 → v1.1.0 standards realign on real Workiva `opentelemetry: 0.18.11` ; 9 fabricated symbols removed + 7 verified symbols added ; 12/12 L1 tests). ✅ **I.2 done 2026-05-12** via `i2-compliance-tiers` (single human-readable standard `global/compliance-tiers.md` v1.0.0 codifiant T1/T2/T3 — schema verbatim + matrix §10.2 byte-identical + `linter_rule: t3-forbidden-components` forward-pointer ; index entry + REVIEW birth + `docs/COMPLIANCE.md` + 14/14 L1 tests ; resolves K.3 forward-pointer). I.3 / I.5 / I.6 (T3 linter + workflow + NIS2/DORA/CRA/AI Act artefacts) = pending. | Observabilité + Connect contrats + standards linter + compliance graduée. Réversible.                                                        |
 | **T6**    | **B.8 (flagship 1.0.0 → 2.0.0), Phase 2 ARCHITECTURE-TARGET**                                    | ⏸️ Pending.                                                                                                                                                                                                                             | Migration breaking flagship. **Point de non-retour**.                                                                                        |
 | **T7**    | **B.6 (event-driven-eu), B.7 (ai-native-rag), K.1, K.2, K.4, K.5**                               | ⏸️ Pending.                                                                                                                                                                                                                             | Deux nouveaux archétypes + 4 nouveaux agents.                                                                                                |
 | **T8**    | **B.9 (mobile-pwa-first / 2.0.0), B.3 (rust-cli-tui), pédagogie C.2-C.5, F.3**                   | ⏸️ Pending.                                                                                                                                                                                                                             | Renommage mobile + dernier archétype premium + walkthrough/anti-patterns/comparison/migration + fix release script (F.3 post-mortem v0.3.0). |
@@ -1181,10 +1220,23 @@ et AI-native souverain.
    K3-RULE-NNN + 1 operational guardrail (per ADR-K3-005). 22/22 tests
    `k3.test.sh --level 1,2`. K.3 débloque I.2–I.6 (Demeter présent pour
    adopter T1/T2/T3 sans attendre Themis).
-6. ⏸️ **Livrer I.2–I.6** — `global/compliance-tiers.md`, linter rule T3,
-   `forge-compliance.yml` workflow, échéances NIS2/DORA/CRA/AI Act dans
-   `.forge/compliance/` (au-delà du SBOM CycloneDX livré dans J.8.d et
-   du Demeter agent livré dans K.3).
+6. ✅ **Livrer I.2** — DONE 2026-05-12 via `i2-compliance-tiers` :
+   single human-readable standard `global/compliance-tiers.md` v1.0.0
+   (437 LOC, 7 H2 sections) codifiant T1 / T2 / T3 depuis
+   `compliance-tier.schema.json` v1.0.0 (verbatim) et la matrice
+   §10.2 d'`ARCHITECTURE-TARGET.md` (byte-identical). Frontmatter
+   pins `linter_rule: t3-forbidden-components` (forward-pointer vers
+   I.3). `.forge/standards/index.yml` entry + REVIEW.md birth entry
+   + `docs/COMPLIANCE.md` root adopter intro + 14/14 L1 tests
+   `i2.test.sh`. Résout le forward-pointer Demeter
+   (`.claude/agents/demeter.md::Standards consumed`). I.2 débloque
+   I.3 / I.5 / I.6.
+7. ⏸️ **Livrer I.3 + I.5 + I.6** — linter rule T3
+   (`t3-forbidden-components` à shipper dans `constitution-linter.sh`,
+   lira la matrice de I.2), `forge-compliance.yml` reusable workflow,
+   échéances NIS2/DORA/CRA/AI Act dans `.forge/compliance/` (au-delà
+   du SBOM CycloneDX livré dans J.8.d, du Demeter agent livré dans
+   K.3, et du standard I.2 livré ici).
 Tout le reste découle.
 
-— *Fin du nouveau plan. Mise à jour partielle 2026-05-12.*
+— *Fin du nouveau plan. Mise à jour partielle 2026-05-12 (I.2 livré).*

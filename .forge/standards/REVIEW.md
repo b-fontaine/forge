@@ -186,7 +186,7 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
 
 ---
 
-## 2026-05-12 — Initial ratification (i2-compliance-tiers)
+## 2026-05-11 — Initial ratification (i2-compliance-tiers)
 
 - **Reviewer**: @bfontaine
 - **Reviewed standards**:
