@@ -1,0 +1,20 @@
+name: i5-compliance-workflow
+status: archived
+created: 2026-05-12
+schema: default
+constitution_version: "1.1.0"
+parent_audit_items:
+  - I.5   # new-archetypes-plan §7.1 line 962-963 — forge-compliance.yml reusable workflow
+depends_on:
+  - i2-compliance-tiers       # ships global/compliance-tiers.md + tier matrix
+  - i3-t3-forbidden-linter    # ships constitution-linter.sh::ADR-I3-001 T3-Forbidden section + tier-scaled severity envelope (T1/T2 warn Phase A, T3 fail)
+  - i6-compliance-artefacts   # ships .forge/scripts/compliance/bundle.sh deterministic .tgz bundler
+  - k3-demeter                # ships bin/forge-demeter-scan.sh dependency CLOUD-Act scanner with tier-scaled severity
+  - j8-janus-rules            # ships bin/forge-sbom.sh CycloneDX 1.5 SBOM generator + --eu-tier flag + .forge/.forge-tier ledger pattern (ADR-J8-006) + exit 3 refusal envelope (ADR-J8-003)
+timeline:
+  proposed: 2026-05-12
+  specified: 2026-05-12
+  designed: 2026-05-12
+  planned: 2026-05-12
+  implemented: 2026-05-12
+  archived: 2026-05-12

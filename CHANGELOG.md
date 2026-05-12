@@ -12,6 +12,98 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added — I.5 forge-compliance.yml reusable workflow (`i5-compliance-workflow`)
+
+Reusable GitHub Actions workflow `.github/workflows/forge-compliance.yml`
+that adopter repos invoke via a single `uses:` reference to gate
+their PR + push events against Forge's EU-compliance surface. The
+workflow orchestrates the four EU-compliance scripts already
+shipped : Demeter (`bin/forge-demeter-scan.sh`, K.3), the
+constitution linter incl. its `ADR-I3-001 T3-Forbidden Components`
+section (`.forge/scripts/constitution-linter.sh`, I.3), the
+CycloneDX 1.5 SBOM (`bin/forge-sbom.sh`, J.8.d), and the compliance
+artefacts bundle (`.forge/scripts/compliance/bundle.sh`, I.6). It
+uploads the deterministic `.tgz` as a CI artefact via
+`actions/upload-artifact@v4`.
+
+- **`.github/workflows/forge-compliance.yml`** — reusable workflow
+  triggered by `on: workflow_call:` with three inputs (`eu-tier`
+  required ; `target-dir` default `.` ; `artefact-name` default
+  `forge-compliance-artefacts`) and one output (`artefact-path`).
+  Top-level `permissions: contents: read` (Aegis hygiene per
+  NFR-I5-CW-005). Single `compliance` job on `ubuntu-latest`
+  pinning `actions/checkout@v4`, `actions/setup-python@v5`, and
+  `actions/upload-artifact@v4` (same versions as
+  `.github/workflows/forge-ci.yml`). 158 LOC ; well under the
+  NFR-I5-CW-002 200-line soft budget.
+- **`.forge/standards/global/forge-compliance-workflow.md`
+  v1.0.0** — 7 H2 sections (Purpose & EU compliance rationale /
+  Workflow inputs and outputs / Step-by-step contract /
+  Tier-scaled severity aggregation / Consumption protocol /
+  Forward compatibility / Interdictions / Constitutional
+  Compliance) + 4 RFC-2119 MUST NOT clauses. Frontmatter pins
+  `version: 1.0.0`, `last_reviewed: 2026-05-12`,
+  `expires_at: 2027-05-12`, `linter_rule: null` (advisory
+  standard ; the workflow itself is the enforcement surface).
+  284 LOC ; under the NFR-I5-CW-003 300-line soft budget.
+- **`.forge/standards/index.yml` entry** — id
+  `global/forge-compliance-workflow`, 8 triggers (`compliance`,
+  `forge-compliance.yml`, `reusable-workflow`, `workflow_call`,
+  `eu-tier`, `ci-enforcement`, `regulatory-handoff`,
+  `github-actions`), scope `all`, priority `high`.
+- **`.forge/standards/REVIEW.md` birth entry** dated 2026-05-12,
+  Initial ratification, KEEP, next review 2027-05-12.
+- **`docs/COMPLIANCE.md`** — new H2 `## Reusable compliance
+  workflow` with copy-pasteable `uses:` YAML block, tier
+  inheritance notes, and chained-output guidance.
+- **`.forge/scripts/tests/i5.test.sh`** — 16 L1 grep-based tests
+  validating workflow presence + YAML well-formedness + audit
+  comment + `on: workflow_call:` trigger + inputs/outputs schema
+  + four script invocations + three action pins + standard
+  frontmatter / H2 / MUST NOT clauses + index entry + REVIEW
+  birth + docs/COMPLIANCE H2 + CHANGELOG entry. 1 L2 opt-in
+  fixture (`FORGE_I5_ACT=1` + `command -v act` gates per
+  ADR-I5-CW-003 ; skip-when-absent semantics mirror
+  `t5-otel-live-run::FORGE_LIVE_RUN_DOCKER=1`). Registered in
+  `.github/workflows/forge-ci.yml` `harness` matrix after
+  `i3.test.sh` with `--level 1` (281 lines total, under the
+  NFR-CI-002 300-line budget).
+
+Three ADRs resolve the design open questions :
+
+- **ADR-I5-CW-001** — exit-code aggregation : trust each script's
+  tier scaling end-to-end (resolves Q-001). The workflow's
+  aggregator step inspects `steps.<id>.outcome` for
+  `demeter` / `linter` / `bundle` and exits `1` if any is not
+  `'success'`. SBOM no-lockfile (exit 1 on `bin/forge-sbom.sh`)
+  is **non-fatal at every tier** via `continue-on-error: true`
+  on the SBOM step ; the aggregator emits a `::warning::`
+  annotation instead. Mirrors I.6 FR-I6-CA-019.
+- **ADR-I5-CW-002** — `SOURCE_DATE_EPOCH` source :
+  `github.event.head_commit.timestamp` with
+  `github.run_started_at` fallback (resolves Q-002). No
+  additional `inputs.epoch` field ; the calling repo's commit
+  metadata is the canonical input, matching
+  `global/sbom-policy.md::Regeneration cadence` precedent.
+- **ADR-I5-CW-003** — L2 act-runner gating : opt-in via
+  `FORGE_I5_ACT=1` env var with skip-when-absent semantics
+  (resolves Q-003). Verbatim reuse of the
+  `t5-otel-live-run::FORGE_LIVE_RUN_DOCKER=1` precedent.
+
+Forward-stable for Themis-territory regulatory deadline steps
+(NIS2 / DORA / CRA / AI Act under `.forge/compliance/*/*`) when
+K.5 (T7+) ships — additive step additions per FR-I5-CW-083 ; no
+breaking change to the v1.0.0 inputs / outputs / step list.
+
+No constitutional amendment required ; Articles III.4
+(anti-hallucination — three Q-NNN tracked + resolved at design
+time), V (audit trail — workflow header carries `<!-- Audit:
+I.5 ... -->` ; CHANGELOG + REVIEW.md ledgers updated), VIII
+(infrastructure — declarative YAML on `ubuntu-latest` ; no
+service / daemon ; minimum-permissions block), XI (AI-first —
+Demeter / Aegis / Janus consume the uploaded bundle), XII
+(governance — SemVer + REVIEW.md ledger) compliance preserved.
+
 ### Added — T.5 OTel live-run collector contract validation (`t5-otel-live-run`)
 
 Phase D of the T.5 OTel rollout : closes the cross-layer story by adding

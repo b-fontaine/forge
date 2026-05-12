@@ -1,0 +1,158 @@
+# <!-- Audit: I.5 (i5-compliance-workflow) -->
+# Forge reusable EU-compliance workflow. Standard :
+# .forge/standards/global/forge-compliance-workflow.md
+#
+# Adopter repos invoke this workflow via a single `uses:` reference :
+#
+#   jobs:
+#     compliance:
+#       uses: forge/.github/workflows/forge-compliance.yml@<ref>
+#       with:
+#         eu-tier: T2
+#
+# The workflow orchestrates four EU-compliance scripts already shipped
+# by Forge — Demeter (K.3), constitution linter incl. I.3 T3-Forbidden
+# section, CycloneDX SBOM (J.8.d), and the compliance bundle (I.6). It
+# uploads the deterministic .tgz bundle as a CI artefact.
+#
+# Exit-code aggregation (ADR-I5-CW-001) : trust each script's
+# tier-scaled severity end-to-end. SBOM no-lockfile is non-fatal at
+# every tier ; everything else propagates to workflow failure.
+#
+# Determinism (ADR-I5-CW-002) : SOURCE_DATE_EPOCH derives from the
+# commit timestamp with run-start fallback.
+
+name: forge-compliance
+
+on:
+  workflow_call:
+    inputs:
+      eu-tier:
+        required: true
+        type: string
+        description: "EU compliance tier (T1, T2, or T3)"
+      target-dir:
+        required: false
+        default: "."
+        type: string
+        description: "Adopter repo root inside the runner workspace"
+      artefact-name:
+        required: false
+        default: forge-compliance-artefacts
+        type: string
+        description: "Name of the uploaded compliance .tgz artefact"
+    outputs:
+      artefact-path:
+        description: "Path of the uploaded compliance .tgz artefact"
+        value: ${{ jobs.compliance.outputs.artefact-path }}
+
+# Cancel-in-progress: false — compliance audits should always finish ;
+# the next push retriggers naturally (mirrors forge-ci.yml::push:main).
+concurrency:
+  group: forge-compliance-${{ github.ref }}-${{ inputs.eu-tier }}
+  cancel-in-progress: false
+
+# Minimum permission set (Aegis hygiene). No write access ; the only
+# write surface is the uploaded artefact, which the runner handles.
+permissions:
+  contents: read
+
+jobs:
+  compliance:
+    name: Forge EU compliance (tier ${{ inputs.eu-tier }})
+    runs-on: ubuntu-latest
+    outputs:
+      artefact-path: ${{ steps.bundle.outputs.path }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: Validate eu-tier input
+        env:
+          EU_TIER: ${{ inputs.eu-tier }}
+        run: |
+          set -eu
+          case "$EU_TIER" in
+            T1|T2|T3) ;;
+            *) echo "::error::invalid eu-tier '$EU_TIER' (expected T1|T2|T3)"; exit 1 ;;
+          esac
+          echo "::notice::forge-compliance running at tier $EU_TIER"
+
+      - name: Resolve SOURCE_DATE_EPOCH (commit ts || run ts)
+        env:
+          COMMIT_TS: ${{ github.event.head_commit.timestamp }}
+          RUN_TS: ${{ github.run_started_at }}
+        run: |
+          set -eu
+          TS="${COMMIT_TS:-$RUN_TS}"
+          EPOCH="$(date -u -d "$TS" +%s)"
+          echo "SOURCE_DATE_EPOCH=$EPOCH" >> "$GITHUB_ENV"
+          echo "::notice::SOURCE_DATE_EPOCH=$EPOCH (source: $TS)"
+
+      - id: demeter
+        name: Demeter — CLOUD Act dependency scan
+        run: |
+          bash bin/forge-demeter-scan.sh \
+            --target "${{ inputs.target-dir }}" \
+            --tier "${{ inputs.eu-tier }}"
+
+      - id: linter
+        name: Constitution linter (incl. T3-Forbidden Components)
+        env:
+          FORGE_EU_TIER: ${{ inputs.eu-tier }}
+        run: bash .forge/scripts/constitution-linter.sh
+
+      - id: sbom
+        name: CycloneDX 1.5 SBOM
+        continue-on-error: true
+        run: |
+          bash bin/forge-sbom.sh \
+            --target "${{ inputs.target-dir }}" \
+            --output sbom.cdx.json
+
+      - id: bundle
+        name: Compliance artefacts bundle
+        env:
+          ARTEFACT_NAME: ${{ inputs.artefact-name }}
+        run: |
+          set -eu
+          OUT="${ARTEFACT_NAME}.tgz"
+          bash .forge/scripts/compliance/bundle.sh \
+            --target "${{ inputs.target-dir }}" \
+            --output "$OUT"
+          echo "path=$OUT" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artefact-name }}
+          path: ${{ inputs.artefact-name }}.tgz
+          if-no-files-found: error
+
+      - name: Aggregate exit codes
+        env:
+          DEMETER_RESULT: ${{ steps.demeter.outcome }}
+          LINTER_RESULT: ${{ steps.linter.outcome }}
+          SBOM_RESULT: ${{ steps.sbom.outcome }}
+          BUNDLE_RESULT: ${{ steps.bundle.outcome }}
+        run: |
+          set -eu
+          # SBOM no-lockfile is non-fatal at every tier (FR-I5-CW-049 /
+          # FR-I6-CA-019). Emit a warning, never fail on it.
+          if [ "$SBOM_RESULT" != "success" ]; then
+            echo "::warning::SBOM step did not succeed (likely: no lockfile detected) — bundle ships with empty SBOM envelope"
+          fi
+          failed=()
+          [ "$DEMETER_RESULT" = "success" ] || failed+=("demeter=$DEMETER_RESULT")
+          [ "$LINTER_RESULT"  = "success" ] || failed+=("linter=$LINTER_RESULT")
+          [ "$BUNDLE_RESULT"  = "success" ] || failed+=("bundle=$BUNDLE_RESULT")
+          if [ "${#failed[@]}" -gt 0 ]; then
+            echo "::error::forge-compliance: ${failed[*]} FAILED"
+            exit 1
+          fi
+          echo "::notice::forge-compliance: 3/3 mandatory steps PASS (SBOM=$SBOM_RESULT)"
