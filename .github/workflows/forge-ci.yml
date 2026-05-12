@@ -108,6 +108,10 @@ jobs:
         # .forge/changes/t5-otel-traceparent-e2e/tasks.md
         # § "Phase D — DEFERRED" for the deferred deliverables roadmap.
         run: bash .forge/scripts/tests/t5-otel-traceparent-e2e.test.sh --level 1
+      - name: t5-otel-live-run.test.sh
+        # T.5 Phase D OTel live-run harness (8 L1 + 1 L2). Hermetic by
+        # default ; docker leg opt-in via FORGE_LIVE_RUN_DOCKER=1.
+        run: bash .forge/scripts/tests/t5-otel-live-run.test.sh --level 1
       - name: j8.test.sh
         run: bash .forge/scripts/tests/j8.test.sh --level 1,2
       - name: k3.test.sh

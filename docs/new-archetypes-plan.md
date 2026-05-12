@@ -354,7 +354,10 @@
       L1 ≤ 8 s, L2 ≤ 90 s (NFR-T5-OTA-005).
     - **BDD scenario** :
       `examples/forge-fsm-example/test/features/demo_005_traceparent.feature`
-      shipped per Article II.1 ; step bodies en Phase D scope.
+      shipped per Article II.1 ; step bodies **delivered 2026-05-12
+      via `t5-otel-live-run` (Phase D)** through the hermetic smoke
+      driver `test/live-run/run_smoke.sh` + fake OTLP collector +
+      2 golden captures + `traceparent_live_run.feature` (2 scenarios).
     - **Phase A / Phase B clarté** : la Phase A
       (`t5-otel-stack`) ratifie `observability.yaml` v1.1.0 ; la
       Phase B (`t5-otel-app`) consomme `observability.yaml` v1.1.0
@@ -468,8 +471,9 @@ consommant désormais le bundle generator livré par I.6.
 | `t5-otel-dart-api-realign`   | archived               | T5 (Q-004 — flutter/opentelemetry.md v1.1.0 Workiva realign) |
 | `t5-otel-app`                | archived               | T5 (OTel App SDK — Phase B)   |
 | `i2-compliance-tiers`        | archived               | T5 (I.2)                      |
+| `t5-otel-live-run`           | archived               | T5 Phase D (live-run collector contract validation) |
 
-**22 archivés** (21 sur `main` + branche `i2-compliance-tiers`) au
+**23 archivés** (22 sur `main` + branche `t5-otel-live-run`) au
 2026-05-12, aucun change en cours. Aucun change orphelin, aucun
 `status: in_progress` bloqué, aucun marqueur
 `[NEEDS CLARIFICATION:]` non résolu inline dans les changes archivés
