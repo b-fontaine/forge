@@ -1,6 +1,6 @@
 {
   "name": "@sdd-forge/cli",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "author": "Benoît FONTAINE",
   "description": "Install, upgrade, and verify the Forge framework in a project.",
   "license": "Apache-2.0",

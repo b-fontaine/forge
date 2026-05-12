@@ -12,6 +12,8 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+## [0.3.1] — 2026-05-12
+
 ### Changed — `scripts/release.sh` (renamed + OTP support) (`f3-release-script-fix`)
 
 The maintainer-side release helper has been renamed and refactored to
