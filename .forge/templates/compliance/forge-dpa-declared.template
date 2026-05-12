@@ -1,0 +1,50 @@
+# <!-- Audit: I.6 (i6-compliance-artefacts) -->
+# Forge — `.forge/.forge-dpa-declared` DPA declaration template
+#
+# Canonical attestation surface for adopters who declare T1 with
+# ⚠️-T1 components in scope (Schrems II / CLOUD Act residual risk
+# accepted under a DPA + SCC envelope).
+#
+# Format pinned by ADR-K3-002 (`.forge/changes/k3-demeter/design.md`).
+# Format documented by `.forge/standards/global/data-stewardship-rules.md`
+# § "DPA declaration semantics".
+#
+# Rule cross-reference :
+# - K3-RULE-002    — fires when `compliance_tier=T1` carries ⚠️-T1
+#                    components without a `.forge/.forge-dpa-declared`
+#                    ledger present (severity High).
+# - K3-RULE-002a   — staleness check : Demeter emits a Medium finding
+#                    when `today − date > 13 months` (RGPD review cycle
+#                    + 1 month grace).
+#
+# What Demeter parses :
+#   The one-line attestation
+#   `T1: <ISO-8601-date> <free-form-ref>` (mandatory trailing newline).
+#
+# What Demeter does NOT do (legal-domain work, out of K.3 scope per
+# FR-K3-DEM-044) :
+#   - parse DPA legal text ;
+#   - verify Standard Contractual Clauses ;
+#   - check signature authenticity ;
+#   - inspect counterparty identity.
+#
+# The ledger format MIRRORS the J.8 `.forge/.forge-tier` pattern
+# shipped by ADR-J8-006 verbatim. Per-project (not committed by
+# default — adopters decide).
+#
+# ─── Instructions ──────────────────────────────────────────────────
+#
+# 1. Copy this template to `.forge/.forge-dpa-declared` at the root
+#    of your Forge project.
+# 2. Replace the example line below with your attestation. The
+#    `<free-form-ref>` field is a stable handle your legal team can
+#    use to retrieve the underlying DPA document (Confluence page,
+#    SharePoint folder, ticket id — adopter choice).
+# 3. Re-attest at least every 13 months to avoid the K3-RULE-002a
+#    staleness finding (RGPD Article 5(1)(e) review cadence + 1
+#    month grace).
+# 4. Commit the ledger to your project repo if your governance
+#    allows ; otherwise keep it local + reproducible via your
+#    secret-management surface.
+#
+# Example: T1: 2026-04-15 LegalOps-Confluence-DPA-2026-Q2

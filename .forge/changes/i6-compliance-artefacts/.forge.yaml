@@ -1,0 +1,18 @@
+name: i6-compliance-artefacts
+status: proposed
+created: 2026-05-12
+schema: default
+constitution_version: "1.1.0"
+parent_audit_items:
+  - I.6   # new-archetypes-plan §7.1 line 738-743 — regulatory artefacts bundle
+depends_on:
+  - i2-compliance-tiers   # ships global/compliance-tiers.md v1.0.0 (tier matrix source)
+  - k3-demeter            # ships .forge/.forge-dpa-declared format + Demeter audit reports
+  - j8-janus-rules        # ships .forge/.forge-tier ledger pattern + bin/forge-sbom.sh determinism pattern (NFR-I6-CA-004)
+timeline:
+  proposed: 2026-05-12
+  # specified: 2026-05-12
+  # designed: 2026-05-12
+  # planned: 2026-05-12
+  # implemented: 2026-05-12
+  # archived: 2026-05-12
