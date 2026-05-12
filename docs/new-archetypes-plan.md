@@ -280,19 +280,105 @@
       exit 0 ; `open-questions.md` 0 open / 3 answered (Q-001 →
       ADR-K3-002, Q-002 → ADR-K3-003, Q-003 → ADR-K3-005).
 
+- **`t5-otel-dart-api-realign` archivé 2026-05-12** — **standard
+  realign** réagissant à Q-004 (drift API entre la v1.0.0 du
+  `flutter/opentelemetry.md` et le pkg `opentelemetry: 0.18.11`
+  Workiva effectivement publié sur pub.dev). La v1.0.0 documentait
+  une API fabriquée par transposition cross-language (JS / Java /
+  Python OTel) ; la v1.1.0 ratifie les symboles réellement exposés
+  par le pkg Workiva : `CollectorExporter(Uri)` au lieu de
+  `OtlpHttpSpanExporter`, `BatchSpanProcessor(exporter, named-args)`
+  au lieu d'un wrapping config object, `ParentBasedSampler(AlwaysOnSampler())`
+  au lieu du fabriqué `TraceIdRatioBasedSampler` (le ratio env-tier
+  reste enforced collector-side per ADR-OTEL-001), `StatusCode.*`
+  au lieu de `SpanStatusCode.*`, `setStatus(code, description)`
+  positionnel au lieu de `description:` nommé, top-level
+  `contextWithSpan(Context.current, span)` au lieu de
+  `Context.current.withSpan(...)`. Deux imports canoniques :
+  `api.dart` + `sdk.dart` (les sub-imports `exporter_otlp_*.dart`
+  n'existent pas dans ce pkg layout). Entrée `Updated` dans
+  `REVIEW.md` ledger.
+
+- **`t5-otel-app` archivé 2026-05-12** — **Phase B** du déploiement
+  T.5 OTel : SDK app-side dans `examples/forge-fsm-example/` après
+  Phase A `t5-otel-stack` (infra). Spec consolidée
+  `.forge/specs/otel-app.md` (56 ADDED FRs `FR-T5-OTA-001..103` +
+  7 NFRs + 7 ADRs `ADR-T5-OTA-001..007`). Livrables :
+    - **Rust backend** : nouveau `crates/infrastructure/src/telemetry/`
+      (`mod.rs` + `propagation.rs` + `middleware.rs`) avec
+      `setup_telemetry`, OTLP HTTP/protobuf exporter (`with_protocol(
+      Protocol::HttpBinary)`, port 4318, ADR-T5-OTA-002), 4 Resource
+      attrs mandatory (`service.name/version`, `deployment.environment`,
+      `host.name`), `ParentBased(TraceIdRatioBased(rate))` sampler
+      (ADR-T5-OTA-003), `tracing-opentelemetry` bridge,
+      `tower-http::TraceLayer` outermost avec `make_span_with`
+      extrayant W3C `traceparent` via `TraceContextPropagator`,
+      `MetadataMapCarrier` (gRPC) + `HeaderMapCarrier` (HTTP outbound).
+      Pins ADR-T5-OTA-001 : `opentelemetry 0.31` + `tracing-opentelemetry 0.32`
+      + `tower-http 0.6 [trace]`. Graceful shutdown via
+      `tokio::signal::ctrl_c()` + `provider.shutdown()`.
+    - **Flutter frontend** : nouveau `lib/core/telemetry/`
+      (`telemetry_setup.dart`, `observers/tracing_navigation_observer.dart`,
+      `observers/tracing_bloc_observer.dart`, `error_reporter.dart`,
+      `interceptors/tracing_interceptor.dart`) + `lib/core/config/app_config.dart`
+      + `main.dart` réécrit per ADR-T5-OTA-005 init order.
+      `pubspec.yaml` : `opentelemetry: ^0.18.0` + `dio: ^5.7.0`
+      (`flutter pub get` résout `0.18.11` + `5.9.2`). **Code aligné
+      à `flutter/opentelemetry.md` v1.1.0** (sibling
+      `t5-otel-dart-api-realign`).
+    - **Q-004 cascade résolu** — voir `t5-otel-dart-api-realign`
+      ci-dessus pour la bump standard ; le follow-up commit
+      `15b774c` dans ce change a réaligné les 5 fichiers Dart
+      concernés. Test L2 `_test_ota_l2_002_flutter_analyze`
+      flippé de xfail à expected-pass (gracefully skip si
+      `flutter` absent du PATH).
+    - **demo-005 traceparent round-trip** : Greeter use case avec
+      `#[tracing::instrument(name = "greeter.greet", fields(otel.kind = "internal", ...))]`.
+      Flutter `GreetingRepositoryImpl` construit un `Dio` avec
+      `TracingInterceptor` pré-attaché.
+    - **Env config** : `examples/forge-fsm-example/README.md` §
+      "Environment configuration" documente le trio
+      `OTEL_EXPORTER_OTLP_ENDPOINT` + `OTEL_SERVICE_NAME` +
+      `OTEL_RESOURCE_ATTRIBUTES` + `DEPLOYMENT_ENV` + samplers
+      (`OTEL_TRACES_SAMPLER`, `OTEL_TRACES_SAMPLER_ARG`).
+      Avertissement `NEVER PUT SECRETS HERE` explicite (Article XI.6).
+      **Note** : le target original `.env.example` est tombé sur un
+      permission gate worktree-side ; trio documenté dans README à
+      la place avec sémantique d'audit identique.
+    - **demo doc** : `docs/demo-005-connect-greeting.md` gagne H2
+      `## Trace this in SigNoz` énumérant le 4-span tree (Flutter
+      root → axum server → connectrpc handler → application use case).
+    - **Harness** `.forge/scripts/tests/t5-otel-app.test.sh` 16 L1
+      + 2 L2 ; **18/18 GREEN** à `--level 1,2` avec les deux
+      toolchains sur PATH. Registered dans `forge-ci.yml`. Perf
+      L1 ≤ 8 s, L2 ≤ 90 s (NFR-T5-OTA-005).
+    - **BDD scenario** :
+      `examples/forge-fsm-example/test/features/demo_005_traceparent.feature`
+      shipped per Article II.1 ; step bodies en Phase D scope.
+    - **Phase A / Phase B clarté** : la Phase A
+      (`t5-otel-stack`) ratifie `observability.yaml` v1.1.0 ; la
+      Phase B (`t5-otel-app`) consomme `observability.yaml` v1.1.0
+      + `rust/opentelemetry.md` v1.0.0 + `flutter/opentelemetry.md`
+      **v1.1.0** sans modifier d'autre standard. Phase C (E2E
+      traceparent à travers Envoy/Kong) reportée à T6 / B.8 avec
+      le `_test_t5_l2_traceparent_dual` de `t5-connect-codegen`.
+
 ### Module en cours
 
-Aucun change en cours sur `main` au 2026-05-12. Le prochain candidat
-naturel est **I.2–I.6** (compliance docs + workflow + AI Act / NIS2 /
-DORA / CRA artefacts au-delà du SBOM livré en J.8.d et du Demeter
-agent livré en K.3).
+Aucun change en cours sur `main` au 2026-05-12 (post-archive
+`k3-demeter` + `t5-otel-dart-api-realign` + `t5-otel-app`). Le prochain
+candidat naturel est **I.2–I.6** (compliance docs + workflow + AI Act /
+NIS2 / DORA / CRA artefacts au-delà du SBOM livré en J.8.d et du
+Demeter agent livré en K.3).
 
 ### Modules toujours en attente
 
-- **T5 (suite)** post-`k3-demeter` : I.2–I.6 (compliance docs +
+- **T5 (suite)** post-`t5-otel-app` : I.2–I.6 (compliance docs +
   workflow + AI Act / NIS2 / DORA / CRA artefacts au-delà du SBOM
   livré dans J.8.d et de Demeter livré dans K.3), validation
-  traceparent W3C E2E.
+  traceparent W3C E2E à travers Envoy / Kong (le
+  `_test_t5_l2_traceparent_dual` reporté avec les fixtures L2 vers
+  T6 / B.8).
 - **T6 / T7 / T8 / T9+** : non commencés (B.6, B.7, B.8, B.9, B.3, K.1,
   K.2, K.4, K.5, C.2–C.5, F.3, G.*, H.*).
 
@@ -316,13 +402,14 @@ agent livré en K.3).
 | `t4-adr-ratification`        | archived               | T4 (P-1..P-4 + J.1–J.6 + I.1) |
 | `t5-connect-codegen`         | archived               | T5 Phase 1 (Connect codegen)  |
 | `j7-validate-standards-yaml` | archived               | T5 (J.7)                      |
-| `t5-otel-stack`              | archived               | T5 (OTel + OBI + Coroot)      |
+| `t5-otel-stack`              | archived               | T5 (OTel + OBI + Coroot — Phase A) |
 | `j8-janus-rules`             | archived               | T5 (J.8.a + J.8.b + J.8.d)    |
 | `k3-demeter`                 | archived               | T5 (K.3 + I.4)                |
 | `t5-otel-dart-api-realign`   | archived               | T5 (Q-004 — flutter/opentelemetry.md v1.1.0 Workiva realign) |
+| `t5-otel-app`                | archived               | T5 (OTel App SDK — Phase B)   |
 
-**20 archivés** (19 sur `main` + branche `t5-otel-dart-api-realign`)
-au 2026-05-12, aucun change en cours. Aucun change orphelin, aucun
+**21 archivés** (20 sur `main` + branche `t5-otel-app`) au 2026-05-12,
+aucun change en cours. Aucun change orphelin, aucun
 `status: in_progress` bloqué, aucun marqueur
 `[NEEDS CLARIFICATION:]` non résolu inline dans les changes archivés
 (tous gates `verify.sh` + `constitution-linter.sh` PASS).

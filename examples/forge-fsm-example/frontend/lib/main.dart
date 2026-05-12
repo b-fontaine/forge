@@ -1,121 +1,74 @@
-import 'package:flutter/material.dart';
+// Audit: T.5 (t5-otel-app) — Phase B SDK instrumentation
+//
+// fsm-frontend bootstrap. Per ADR-T5-OTA-005 init order :
+//
+//   1. WidgetsFlutterBinding.ensureInitialized() — bind the framework.
+//   2. AppConfig.fromEnv() — read OTEL_* + DEPLOYMENT_ENV via
+//      `--dart-define`.
+//   3. await setupTelemetry(config: ...) — global tracer provider up.
+//   4. Bloc.observer = TracingBlocObserver() — registered BEFORE the first
+//      BlocProvider builds so events are captured from the start.
+//   5. FlutterError.onError + PlatformDispatcher.instance.onError → ErrorReporter.
+//   6. runApp(MaterialApp(navigatorObservers: [TracingNavigationObserver()])).
 
-void main() {
-  runApp(const MyApp());
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'core/config/app_config.dart';
+import 'core/telemetry/error_reporter.dart';
+import 'core/telemetry/observers/tracing_bloc_observer.dart';
+import 'core/telemetry/observers/tracing_navigation_observer.dart';
+import 'core/telemetry/telemetry_setup.dart';
+import 'features/greeting/data/repository/greeting_repository_impl.dart';
+import 'features/greeting/presentation/cubit/greeting_cubit.dart';
+import 'features/greeting/presentation/screen/greeting_screen.dart';
+
+Future<void> main() async {
+  // 1. Bind the framework before any async work.
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 2. Load env-driven config.
+  final config = AppConfig.fromEnv();
+
+  // 3. Set up the OTel SDK ; sets globalTracerProvider.
+  await setupTelemetry(config: config);
+
+  // 4. BLoC observer must be set before any BlocProvider builds.
+  Bloc.observer = TracingBlocObserver();
+
+  // 5. Wire global error handlers — uses globalTracerProvider, SDK already up.
+  final errorReporter = ErrorReporter();
+  FlutterError.onError = (FlutterErrorDetails details) {
+    errorReporter.report(details.exception, details.stack ?? StackTrace.empty);
+    FlutterError.presentError(details);
+  };
+  PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
+    errorReporter.report(error, stack);
+    return true;
+  };
+
+  // 6. Mount the app.
+  runApp(MyApp(config: config));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({super.key, required this.config});
 
-  // This widget is the root of your application.
+  final AppConfig config;
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'forge-fsm-example',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+      navigatorObservers: [TracingNavigationObserver()],
+      home: BlocProvider<GreetingCubit>(
+        create: (_) => GreetingCubit(GreetingRepositoryImpl()),
+        child: const GreetingScreen(),
       ),
     );
   }

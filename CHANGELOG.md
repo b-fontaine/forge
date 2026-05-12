@@ -12,6 +12,93 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added — T.5 OTel App SDK instrumentation in flagship example (`t5-otel-app`)
+
+Phase B of the T.5 OTel rollout : the `examples/forge-fsm-example/`
+flagship project now emits traces from end to end. Phase A
+(`t5-otel-stack`) shipped the infra side ; this change wires the
+application-side SDK init in both layers so demo-005-connect-greeting
+produces a connected span tree visible in SigNoz with a single
+`traceId`.
+
+- **Rust backend SDK init** : new
+  `crates/infrastructure/src/telemetry/` module (`mod.rs`,
+  `propagation.rs`, `middleware.rs`) with `setup_telemetry`,
+  `TelemetryConfig::from_env()`, OTLP HTTP/protobuf exporter (port
+  4318), `Resource` attributes (`service.name`, `service.version`,
+  `deployment.environment`, `host.name`), and the
+  `ParentBased(TraceIdRatioBased(1.0))` sampler per ADR-T5-OTA-003.
+  Crate pins per ADR-T5-OTA-001 : `opentelemetry 0.31` family +
+  `tracing-opentelemetry 0.32` + `tower-http 0.6 [trace]`.
+- **axum + tonic middleware composition** :
+  `tower-http::TraceLayer::new_for_http()` with a `make_span_with`
+  closure that extracts the W3C `traceparent` header via
+  `TraceContextPropagator`, creates a server-kind span, and stitches
+  the parent context. `MetadataMapCarrier` ships for tonic gRPC ;
+  `HeaderMapCarrier` ships for outbound `reqwest` calls.
+- **Flutter frontend SDK init** : new `lib/core/telemetry/`
+  (`telemetry_setup.dart`, `observers/tracing_navigation_observer.dart`,
+  `observers/tracing_bloc_observer.dart`, `error_reporter.dart`,
+  `interceptors/tracing_interceptor.dart`) plus
+  `lib/core/config/app_config.dart`. `pubspec.yaml` gains
+  `opentelemetry: ^0.18.0` + `dio: ^5.7.0` (resolved at impl-time per
+  the T-VER-DART-001 deferred-pin pattern from ADR-T5-OTA-001 ;
+  `flutter pub get` confirmed `opentelemetry 0.18.11` + `dio 5.9.2`).
+  `lib/main.dart` rewritten per ADR-T5-OTA-005 init order
+  (`ensureInitialized` → `AppConfig.fromEnv` → `setupTelemetry` →
+  `Bloc.observer` → error handlers → `runApp` with
+  `navigatorObservers`). **Aligned to `flutter/opentelemetry.md`
+  v1.1.0** (sibling change `t5-otel-dart-api-realign` ; Q-004
+  follow-up commit `15b774c` in this change) : `CollectorExporter(Uri)`
+  exporter, positional + named `BatchSpanProcessor`,
+  `ParentBasedSampler(AlwaysOnSampler())` sampler (the
+  `TraceIdRatioBased*` class is not exported by `opentelemetry: 0.18.11`
+  — env-tier ratio remains enforced collector-side per ADR-OTEL-001).
+- **demo-005-connect-greeting traceparent round-trip** : the Greeter
+  use case in `crates/application/src/greet.rs` carries a
+  `#[tracing::instrument(name = "greeter.greet", fields(otel.kind = "internal", rpc.system = "connect", ...))]`
+  annotation. The Flutter `GreetingRepositoryImpl` builds a `Dio`
+  client with `TracingInterceptor` pre-attached so the swap to a real
+  Connect/Dart client is a one-line change.
+- **Env-driven config trio** :
+  `examples/forge-fsm-example/README.md` § "Environment configuration"
+  documents `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`,
+  `OTEL_RESOURCE_ATTRIBUTES`, `OTEL_TRACES_SAMPLER`,
+  `OTEL_TRACES_SAMPLER_ARG`, `DEPLOYMENT_ENV` per ADR-T5-OTA-007
+  (W3C OTel SDK env names, no Forge-prefix surface). `NEVER PUT
+  SECRETS HERE` warning explicit (FR-T5-OTA-010 / NFR-T5-OTA-006).
+- **demo doc** :
+  `examples/forge-fsm-example/docs/demo-005-connect-greeting.md`
+  ships with a `## Trace this in SigNoz` section enumerating the
+  four-span tree (Flutter root → axum server → connectrpc handler →
+  application use case).
+- **Test harness** : new
+  `.forge/scripts/tests/t5-otel-app.test.sh` (16 L1 hermetic + 2 L2
+  toolchain-gated). Registered in
+  `.github/workflows/forge-ci.yml` `harness` job. Performance budget
+  L1 ≤ 8 s, L2 ≤ 90 s (NFR-T5-OTA-005).
+- **BDD scenario** :
+  `examples/forge-fsm-example/test/features/demo_005_traceparent.feature`
+  ships per Article II.1 ; full step bodies are Phase D scope.
+
+Deviation from `rust/opentelemetry.md` § Setup snippet : the standard
+shows `with_tonic()` (gRPC). ADR-T5-OTA-002 picks HTTP/protobuf both
+layers for symmetry with the Flutter exporter and the Phase A
+collector :4318 receiver. Documented inline in `bin-server/main.rs`
+and in `crates/infrastructure/src/telemetry/mod.rs` module doc.
+
+`observability.yaml` (T.5 v1.1.0) is consumed, not amended — no
+standard bump, no REVIEW.md ledger entry per ADR-T5-OTA proposal.md
+§ Article XII. **`flutter/opentelemetry.md` was bumped v1.0.0 → v1.1.0
+by the sibling change `t5-otel-dart-api-realign`** to resolve Q-004 ;
+this change's Q-004 follow-up commit (`15b774c`) realigned the example
+Dart code to v1.1.0 and flipped `_test_ota_l2_002_flutter_analyze`
+from xfail to expected-pass (toolchain-gated graceful skip).
+
+Spec consolidation : new `.forge/specs/otel-app.md` (56 ADDED FRs
+`FR-T5-OTA-001..103` + 7 NFRs + 7 ADRs `ADR-T5-OTA-001..007`) ships
+with the archive.
+
 ### Added — K.3 Demeter data-steward agent + CLOUD Act dependency scanner (`k3-demeter`)
 
 Three sub-modules under one umbrella change, implementing the K.3 +

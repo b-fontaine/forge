@@ -141,3 +141,32 @@ To reproduce the example tree from scratch :
    The compose file boots backend + Kong + Postgres + OTel
    collector + SigNoz. Open <http://localhost:3301> for the
    SigNoz UI.
+
+## Environment configuration
+
+<!-- Audit: T.5 (t5-otel-app) — Phase B SDK instrumentation -->
+
+Both layers (Rust backend + Flutter frontend) honour the W3C OpenTelemetry
+SDK environment variable names. Per ADR-T5-OTA-007, no Forge-prefixed env
+var is introduced — adopters who already run an OTel stack at home
+recognise every name. Defaults match the in-cluster Phase A collector
+(`infra/observability/otel-collector-config.yaml` :4318 HTTP receiver).
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://fsm-otel-collector:4318` | OTLP HTTP/protobuf collector base URL (ADR-T5-OTA-002 — both layers HTTP/protobuf, port 4318). |
+| `OTEL_EXPORTER_OTLP_PROTOCOL` | `http/protobuf` | Wire format ; symmetric with the Rust + Flutter exporters. |
+| `OTEL_SERVICE_NAME` | `fsm-backend` / `fsm-frontend` | Per-layer service identity ; populates the `service.name` resource attribute. Set in each app's process env. |
+| `OTEL_RESOURCE_ATTRIBUTES` | `service.namespace=forge-fsm,service.instance.id=local` | Comma-separated `key=value` list passed through to the resource builder. **NEVER PUT SECRETS HERE** (FR-T5-OTA-010 / NFR-T5-OTA-006 — privacy / data minimisation). |
+| `OTEL_TRACES_SAMPLER` | `parentbased_traceidratio` | Sampler shape per ADR-T5-OTA-003 (`ParentBased(TraceIdRatioBased(rate))` on both layers). |
+| `OTEL_TRACES_SAMPLER_ARG` | `1.0` | Head-side ratio ; the Phase A collector reduces to env-tier ratio downstream. |
+| `DEPLOYMENT_ENV` | `dev` | Forge-specific tier (`dev` / `staging` / `prod`) ; populates `deployment.environment` and flips `insecure: true|false` in the Flutter exporter. |
+
+The Flutter mobile build pipeline reads these via
+`--dart-define=KEY=VALUE` (forwarded by `flutter run` and `flutter build`).
+Native env-var reading on mobile is deferred to a future change
+(ADR-T5-OTA-007 Consequences).
+
+To trace the full demo-005 round trip in SigNoz, see
+[`docs/demo-005-connect-greeting.md`](docs/demo-005-connect-greeting.md)
+§ "Trace this in SigNoz".

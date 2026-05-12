@@ -5,3 +5,8 @@ edition = "2024"
 
 [dependencies]
 domain = { path = "../domain" }
+# ── Tracing (t5-otel-app) — #[tracing::instrument] on use cases ──
+# Audit: T.5 (t5-otel-app) — application crate gains ONLY the tracing
+# macro surface ; no opentelemetry-* crate import per Article VII.1
+# (application layer stays pure ; OTel bridge lives in infrastructure).
+tracing = { workspace = true }

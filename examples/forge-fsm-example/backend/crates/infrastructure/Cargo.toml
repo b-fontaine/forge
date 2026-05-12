@@ -4,3 +4,17 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+# ── Telemetry (t5-otel-app — Phase B SDK instrumentation) ──
+# Audit: T.5 (t5-otel-app) — pinned in workspace per ADR-T5-OTA-001.
+opentelemetry = { workspace = true }
+opentelemetry_sdk = { workspace = true }
+opentelemetry-otlp = { workspace = true }
+opentelemetry-semantic-conventions = { workspace = true }
+tracing = { workspace = true }
+tracing-opentelemetry = { workspace = true }
+tracing-subscriber = { workspace = true }
+tower-http = { workspace = true }
+http = { workspace = true }
+hostname = { workspace = true }
+tonic = { workspace = true }
+anyhow = { workspace = true }
