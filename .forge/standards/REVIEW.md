@@ -237,3 +237,35 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   (`.forge/scripts/compliance/bundle.sh`). No constitutional
   amendment required ; Articles III.4, V, XI, XII compliance
   preserved.
+
+---
+
+## 2026-05-12 — Initial ratification (i3-t3-forbidden-linter)
+
+- **Reviewer**: @bfontaine
+- **Reviewed standards**:
+
+  | Standard                                  | Version | Decision | Next review due | Notes                                                                                                                                     |
+  |-------------------------------------------|---------|----------|-----------------|-------------------------------------------------------------------------------------------------------------------------------------------|
+  | global/forbidden-components-rules.md      | 1.0.0   | KEEP     | 2027-05-12      | Initial ratification. T3-RULE-NNN catalogue (7 seed rules) for the generic forbidden-components linter section ADR-I3-001.                |
+  | global/compliance-tiers.md                | 1.0.0   | KEEP-WITH-CHANGES | 2027-05-11 | Frontmatter `enforcement: review` → `enforcement: ci` (forward-pointer resolved). Status note paragraph delta. Article IV.1 delta only.    |
+
+- **Decision**: KEEP / KEEP-WITH-CHANGES
+- **Next review due**: 2027-05-12 (new standard) ; 2027-05-11
+  (compliance-tiers.md unchanged from I.2 birth)
+- **Notes**: New Markdown standard `global/forbidden-components-rules.md`
+  catalogues T3-RULE-001..007 (FR-I3-T3F-120..126 ; ADR-I3-002).
+  Resolves the `linter_rule: t3-forbidden-components` forward-pointer
+  shipped by I.2 on 2026-05-12. Four ADRs (ADR-I3-001..004) resolve
+  the design open questions. The
+  `constitution-linter.sh::ADR-I3-001 section` is the **first** Forge
+  generic enforcement surface of Article XII §enforce on standards'
+  `forbidden:` blocks beyond the hard-coded ADR-006 NSMA section
+  (`f4-linter-extension`). Sibling rule-catalogue to
+  `global/janus-orchestration-rules.md` (J.8) and
+  `global/data-stewardship-rules.md` (K.3) ; T3-RULE-NNN namespace
+  inherits ADR-J8-004 numbering invariant. Tier-scaled severity per
+  ADR-I3-003 (T1/T2 → WARN Phase A ; T3 → FAIL). Phase A → B flip
+  at B.8 (T6) via SemVer minor bump 1.0.0 → 1.1.0. No
+  constitutional amendment required ; Articles III.4, V, XI, XII
+  compliance preserved.

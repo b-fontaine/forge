@@ -143,6 +143,36 @@ parsing. Known limitations :
 - **V.1** : doesn't cross-validate that referenced FR-XXX exist in
   specs.md (a future F.5+ rule).
 
+## ADR-I3-001 — T3-Forbidden Components
+
+The T3-Forbidden section of `constitution-linter.sh` walks every
+`.forge/standards/*.yaml` manifest and parses the optional
+`forbidden:` list in the frontmatter. Each forbidden token is
+matched against the manifest body, every other standard's body,
+and ADR text. Violations are reported with rule IDs
+`T3-RULE-001..NNN` documented in
+[`forbidden-components-rules.md`](../.forge/standards/global/forbidden-components-rules.md).
+
+**Severity scaling** (resolved by ADR-I3-002 — see
+`design.md` in the i3 change archive) :
+
+| Tier (from `.forge/.forge-tier`) | Severity         |
+|----------------------------------|------------------|
+| absent / N/A                     | skipped          |
+| T1                               | `WARN` (Phase A) |
+| T2                               | `WARN` (Phase A) |
+| T3                               | `FAIL` (immediate, no rollout) |
+
+The Phase A → B flip will happen at the B.8 / T6 milestone via a
+SemVer minor bump of `forbidden-components-rules.md`
+(`1.0.0 → 1.1.0`). T3 is `FAIL` from day one because the tier
+declares 100 % EU jurisdiction — a forbidden component is by
+definition unacceptable in that context.
+
+**Opt-out** : `FORGE_LINTER_SKIP_T3_FORBIDDEN=1` skips the entire
+section. Intended for incremental adoption only ; document the
+rationale in your project's `CLAUDE.md`.
+
 ## See also
 
 - Standard : [`linting-rules.md`](../.forge/standards/global/linting-rules.md)
