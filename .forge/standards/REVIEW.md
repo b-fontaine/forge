@@ -183,3 +183,29 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   AFTER this change merges. See
   `.forge/changes/t5-otel-dart-api-realign/design.md` ADR-T5-FOTDA-001
   for the per-symbol citation table.
+
+---
+
+## 2026-05-11 — Initial ratification (i2-compliance-tiers)
+
+- **Reviewer**: @bfontaine
+- **Reviewed standards**:
+
+  | Standard                   | Version | Decision | Next review due | Notes                                                                                       |
+  |----------------------------|---------|----------|-----------------|---------------------------------------------------------------------------------------------|
+  | global/compliance-tiers.md | 1.0.0   | KEEP     | 2027-05-11      | Initial ratification. Codifies EU compliance gradient T1/T2/T3 from ARCHITECTURE-TARGET §10. |
+
+- **Decision**: KEEP
+- **Next review due**: 2027-05-11
+- **Notes**: New Markdown standard at `global/compliance-tiers.md`
+  mirroring `.forge/schemas/compliance-tier.schema.json` v1.0.0
+  (T.4) verbatim and `docs/ARCHITECTURE-TARGET.md` §10.2 byte-for-byte
+  (15-row matrix). Resolves the Demeter forward-pointer (K.3,
+  archived 2026-05-12) and unblocks I.3 (T3-forbidden linter rule),
+  I.5 (`forge-compliance.yml` workflow), I.6 (regulatory artefacts —
+  NIS2 / DORA / CRA / AI Act) per `docs/new-archetypes-plan.md`
+  §7.1 line 727-729. `linter_rule: t3-forbidden-components` is a
+  forward-pointer ; matching `constitution-linter.sh` section anchor
+  ships with I.3. Three ADRs (ADR-I2-CT-001..003) resolve the
+  design open questions. No constitutional amendment required ;
+  Articles III.4, V, XI, XII compliance preserved.

@@ -106,6 +106,8 @@ jobs:
         run: bash .forge/scripts/tests/j8.test.sh --level 1,2
       - name: k3.test.sh
         run: bash .forge/scripts/tests/k3.test.sh --level 1,2
+      - name: i2.test.sh
+        run: bash .forge/scripts/tests/i2.test.sh --level 1
 
   # ─── gates ── verify.sh + constitution-linter.sh ───────────────
   gates:

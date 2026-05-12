@@ -99,6 +99,71 @@ Spec consolidation : new `.forge/specs/otel-app.md` (56 ADDED FRs
 `FR-T5-OTA-001..103` + 7 NFRs + 7 ADRs `ADR-T5-OTA-001..007`) ships
 with the archive.
 
+### Added — I.2 compliance-tiers standard (`i2-compliance-tiers`)
+
+Single human-readable standard codifying the EU compliance gradient
+T1 / T2 / T3 from `.forge/schemas/compliance-tier.schema.json`
+v1.0.0 (T.4) and `docs/ARCHITECTURE-TARGET.md` §10. Implements the
+**I.2** audit slot from `docs/new-archetypes-plan.md` §7.1 line
+727-729 + resolves the Demeter forward-pointer shipped by K.3 on
+2026-05-10.
+
+- **`.forge/standards/global/compliance-tiers.md` v1.0.0** — 7 H2
+  sections (Purpose / Tier definitions / Component eligibility
+  matrix / Demeter integration / Adoption path / Extending the
+  matrix / Interdictions + Constitutional Compliance). Verbatim
+  citation of the schema's `x-tier-descriptions` block (T1 / T2 /
+  T3 strings byte-identical to the schema per K.3
+  Anti-Hallucination Protocol FR-K3-DEM-020 precedent). 15-row
+  component matrix mirroring `ARCHITECTURE-TARGET.md` §10.2
+  byte-for-byte (ADR-I2-CT-002). Five RFC-2119 MUST NOT clauses
+  under Interdictions (no paraphrase ; no new tier without
+  Article XII ; no silent T3 downgrade ; no certification-scheme
+  coupling beyond SecNumCloud / HDS / EUCS High ; matrix
+  byte-identical to §10.2). Frontmatter pins
+  `linter_rule: t3-forbidden-components` as a forward-pointer to
+  I.3 (ADR-I2-CT-001 — the matching `constitution-linter.sh`
+  section anchor ships with I.3).
+- **`.forge/standards/index.yml` entry** — id
+  `global/compliance-tiers`, 9 triggers (`compliance, t1, t2, t3,
+  eu-tier, dpa, schrems, cloud-act, tier-classification`), scope
+  `all`, priority `high`. Registered under the "I.2 — Compliance
+  tiers" section immediately after the K.3 entry.
+- **`.forge/standards/REVIEW.md` append-only entry** dated
+  2026-05-11 (Initial ratification). KEEP decision, next review
+  due 2027-05-11.
+- **`docs/COMPLIANCE.md`** — adopter-facing intro with 3 H2
+  sections (Quick start / Tier picker / Cross-references) +
+  decision tree for tier selection. Root placement per
+  ADR-I2-CT-003 ; future I.6 grouping into `docs/compliance/`
+  deferred to Themis (K.5).
+- **`.forge/scripts/tests/i2.test.sh`** — 14 L1 hermetic
+  grep-based tests covering frontmatter (audit + trigger
+  comments, H1, version, dates, linter_rule), body H2 count,
+  schema verbatim citation, 15-row matrix presence, Demeter
+  cross-link + FR-K3-DEM-068 citation, ≥ 3 MUST NOT clauses,
+  index.yml entry, REVIEW.md entry, docs/COMPLIANCE.md presence
+  + H1 + 3 H2 sections, CHANGELOG entry. Performance budget
+  ≤ 3 s wall-clock per NFR-I2-CT-001.
+- **`.github/workflows/forge-ci.yml` matrix row** registering
+  `i2.test.sh --level 1` after `k3.test.sh`.
+
+Three ADRs resolve the design open questions :
+ADR-I2-CT-001 (`linter_rule` kebab-case forward-pointer) ;
+ADR-I2-CT-002 (verbatim 15-row matrix) ; ADR-I2-CT-003 (root
+`docs/COMPLIANCE.md` placement).
+
+Unblocks **I.3** (T3-forbidden linter rule), **I.5**
+(`forge-compliance.yml` workflow), **I.6** (regulatory artefacts
+— NIS2 / DORA / CRA / AI Act) per `docs/new-archetypes-plan.md`
+§7.1 + §10.
+
+No constitutional amendment required ; Articles III.4
+(anti-hallucination — verbatim citation), V (audit trail —
+REVIEW.md append-only), XI.1 (agent-native — Demeter consumes the
+standard), XI.3 (schema-driven — mirrors the JSON Schema), XII
+(governance — SemVer + REVIEW.md ledger) compliance preserved.
+
 ### Added — K.3 Demeter data-steward agent + CLOUD Act dependency scanner (`k3-demeter`)
 
 Three sub-modules under one umbrella change, implementing the K.3 +
