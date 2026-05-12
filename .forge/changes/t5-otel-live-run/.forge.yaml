@@ -1,5 +1,5 @@
 name: t5-otel-live-run
-status: planned
+status: archived
 created: 2026-05-12
 schema: full-stack-monorepo
 constitution_version: "1.1.0"
@@ -30,5 +30,5 @@ timeline:
   specified: 2026-05-12
   designed: 2026-05-12
   planned: 2026-05-12
-  # implemented: <set on impl gate>
-  # archived: <auto-filled by /forge:archive>
+  implemented: 2026-05-12
+  archived: 2026-05-12

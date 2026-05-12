@@ -1,0 +1,10 @@
+{
+  "body_size_bytes": 35,
+  "host_name": "",
+  "method": "POST",
+  "path": "/v1/traces",
+  "resource_spans_count": 1,
+  "service_name": "fsm-backend",
+  "timestamp": "<ts:redacted>",
+  "traceparent": "00-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-bbbbbbbbbbbbbbbb-01"
+}

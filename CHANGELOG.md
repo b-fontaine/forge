@@ -12,6 +12,46 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added — T.5 OTel live-run collector contract validation (`t5-otel-live-run`)
+
+Phase D of the T.5 OTel rollout : closes the cross-layer story by adding
+a deterministic local-runner that proves a well-formed
+`ExportTraceServiceRequest` reaches the collector boundary carrying the
+expected `service.name` + W3C `traceparent` (the ADR-T5-OTA-002
+contract). Hermetic-by-default (ADR-T5-OLR-002) — no Docker required
+in CI ; an opt-in L2 leg gated by `FORGE_LIVE_RUN_DOCKER=1` exercises a
+real otel-collector container for adopters.
+
+- **Fake OTLP collector**
+  `examples/forge-fsm-example/test/live-run/fake_otlp_collector.py` —
+  Python stdlib varint + length-delimited tag walker (ADR-T5-OLR-001),
+  no `protobuf` / `grpc` / `requests` pip dep, sanitiser collapses
+  timestamps → `<ts:redacted>`, IPv4 → `<ip:redacted>`,
+  `host.name` → `<host:redacted>` (ADR-T5-OLR-003).
+- **Smoke driver**
+  `examples/forge-fsm-example/test/live-run/run_smoke.sh` — boots the
+  collector, posts a hex-canned `ExportTraceServiceRequest`
+  (ADR-T5-OLR-004), asserts service_name + traceparent +
+  resource_spans_count via grep. Exit codes 0 / 1 / 2.
+- **Golden captures**
+  `.forge/changes/t5-otel-live-run/captures/direct.golden.json` +
+  `kong.golden.json` + `captures/README.md` documenting determinism +
+  sanitiser + regen flow.
+- **BDD feature**
+  `examples/forge-fsm-example/test/features/traceparent_live_run.feature`
+  — 2 Gherkin scenarios (direct + Kong-hop), Phase B
+  `HeaderMapExtractor` symbol forward-pointer, cross-reference to
+  Phase C `traceparent_e2e.feature`.
+- **Harness** `.forge/scripts/tests/t5-otel-live-run.test.sh` — 8 L1
+  + 1 L2 docker leg ; **9/9 GREEN** at `--level 1,2` (L2 skips when
+  `FORGE_LIVE_RUN_DOCKER` ≠ `1`). Registered in `forge-ci.yml` matrix
+  after `t5-otel-traceparent-e2e.test.sh`.
+- **Out of scope** : Envoy gateway live-run (deferred to T6 / B.8 per
+  ADR-T5-OLR-005). Zero `.rs` / `.dart` changes (NFR-T5-OLR-004).
+
+New consolidated spec `.forge/changes/t5-otel-live-run/specs.md`
+(FR-T5-OLR-001..142 + 6 NFRs + 6 ADRs `ADR-T5-OLR-001..006`).
+
 ### Added — T.5 OTel W3C traceparent E2E validation (`t5-otel-traceparent-e2e`)
 
 Phase C of the T.5 OTel rollout : closes the W3C `traceparent` E2E
