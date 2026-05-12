@@ -401,3 +401,11 @@ standards:
     triggers: [compliance, bundle, auditor, dpa, audit-ledger, nis2, dora, cra, ai-act, regulatory-handoff]
     scope: all
     priority: high
+
+  # ─── I.3 — T3-Forbidden Components linter rule (i3-t3-forbidden-linter) ──
+
+  - id: global/forbidden-components-rules
+    path: standards/global/forbidden-components-rules.md
+    triggers: [forbidden, t3-forbidden, t3-rule, linter, t1, t2, t3, eu-tier, ci-enforcement, forbidden-components]
+    scope: all
+    priority: high

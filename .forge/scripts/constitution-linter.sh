@@ -729,6 +729,384 @@ else
   fi
 fi
 
+# ── ADR-I3-001: T3-Forbidden Components — generic forbidden discovery ──
+# I.3 (i3-t3-forbidden-linter). Generic enforcement of the `forbidden:`
+# blocks declared in `.forge/standards/**/*.yaml` and `**/*.md`
+# (Article XII §enforce). Tier-scaled severity per ADR-I3-003 :
+# T1/T2 → warn (Phase A — flips to fail at B.8/T6), T3 → fail.
+# Opt-out : FORGE_LINTER_SKIP_T3_FORBIDDEN=1 skips the section.
+# Interlocks with the ADR-006 NSMA section above (NFR-I3-T3F-001) :
+# `state-management.yaml` is always excluded from the generic walk to
+# avoid double-fire — that standard is enforced solely by the ADR-006
+# block. T3-RULE-NNN catalogue ships in
+# `.forge/standards/global/forbidden-components-rules.md`.
+echo ""
+echo "T3-Forbidden Components (I.3 — generic forbidden enforcement):"
+
+if [ "${FORGE_LINTER_SKIP_T3_FORBIDDEN:-0}" = "1" ]; then
+  not_applicable "  skipped via FORGE_LINTER_SKIP_T3_FORBIDDEN"
+else
+  # ─── Tier discovery (FR-I3-T3F-003) ─────────────────────────
+  t3f_tier=""
+  if [ -f "$FORGE_ROOT/.forge/.forge-tier" ]; then
+    t3f_tier="$(head -1 "$FORGE_ROOT/.forge/.forge-tier" 2>/dev/null \
+                  | tr -d ' \t\r\n')"
+  fi
+  if [ -z "$t3f_tier" ] && [ -n "${FORGE_EU_TIER:-}" ]; then
+    t3f_tier="$FORGE_EU_TIER"
+  fi
+  case "$t3f_tier" in
+    T1|T2|T3) ;;
+    *) t3f_tier="" ;;
+  esac
+
+  if [ -z "$t3f_tier" ]; then
+    not_applicable "  no compliance tier declared (set .forge/.forge-tier or export FORGE_EU_TIER) — T3-RULE-007"
+  else
+    # ─── Standards + tree scan (FR-I3-T3F-004..008 / 020..026) ─
+    # Python 3 inline (F.2 / J.7 / J.8.d / K.3 pattern verbatim).
+    # Emits one line per finding on stdout, prefixed by severity tag
+    # `FAIL<TAB>...` / `WARN<TAB>...` / `PASS<TAB>...`. The bash side
+    # walks the lines and calls `fail` / `warn` / `pass` accordingly.
+    # Exporting FORGE_ROOT + FORGE_REPO_DETECTED for the subshell.
+    t3f_output="$(python3 - "$FORGE_ROOT" "$t3f_tier" "$FORGE_REPO_DETECTED" <<'PY' 2>/dev/null
+import os, re, sys, glob
+
+FORGE_ROOT = sys.argv[1]
+TIER       = sys.argv[2]
+FRAMEWORK  = sys.argv[3] == "1"
+
+STANDARDS_DIR = os.path.join(FORGE_ROOT, ".forge", "standards")
+
+# NSMA interlock per NFR-I3-T3F-001 — always exclude state-management.yaml.
+EXCLUDE_STANDARDS = {"state-management.yaml"}
+# Catalogue standard documents the tokens by design — never scan it.
+EXCLUDE_FROM_DOC_SCAN_BASENAMES = {"forbidden-components-rules.md"}
+
+# Rule-ID mapping per ADR-I3-002 / FR-I3-T3F-120..125.
+RULE_ID_BY_STANDARD = {
+    "identity.yaml":         "T3-RULE-001",
+    "observability.yaml":    "T3-RULE-002",
+    "orchestration.yaml":    "T3-RULE-003",
+    "state-management.yaml": "T3-RULE-004",   # never used (interlock)
+    "global/compliance-tiers.md": "T3-RULE-005",
+}
+DEFAULT_RULE_ID = "T3-RULE-005"  # extensible MD standards default
+
+# Remediation hints per token (small inline map ; extensible in future
+# minor bumps of forbidden-components-rules.md).
+REMEDIATION = {
+    "firebase-auth":   "replace with Zitadel (identity.yaml::default) or downgrade tier",
+    "auth0-saas-us":   "replace with Zitadel or self-hosted Keycloak / Authentik",
+    "datadog":         "replace with SigNoz + OBI eBPF (observability.yaml::backend) or downgrade tier",
+    "inngest":         "replace with DBOS (orchestration.yaml::default) or Temporal fallback",
+    "firebase":        "remove ; Firebase disqualified at all EU tiers per compliance-tiers.md §10.2",
+    "aws-managed":     "replace with self-host EU / OVHcloud / Scaleway / Outscale (T3)",
+}
+
+def discover_standards():
+    """Walk standards/, return list of (relpath, abs_path, forbidden_tokens)."""
+    out = []
+    if not os.path.isdir(STANDARDS_DIR):
+        return out
+    for root, dirs, files in os.walk(STANDARDS_DIR):
+        # Stable traversal order.
+        dirs.sort()
+        files.sort()
+        for f in files:
+            if not (f.endswith(".yaml") or f.endswith(".md")):
+                continue
+            relroot = os.path.relpath(root, STANDARDS_DIR)
+            relpath = f if relroot == "." else os.path.join(relroot, f)
+            if relpath in EXCLUDE_STANDARDS:
+                continue
+            abs_path = os.path.join(root, f)
+            tokens = parse_forbidden_block(abs_path)
+            if tokens:
+                out.append((relpath, abs_path, tokens))
+    return out
+
+def parse_forbidden_block(path):
+    """Extract `forbidden:` list from a YAML file or MD frontmatter.
+    Returns the list of string tokens (possibly empty)."""
+    try:
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            content = fh.read()
+    except OSError:
+        return []
+    # Strip MD frontmatter fences if present (```yaml ... ``` or --- ... ---).
+    # We just scan the whole file for a top-level `forbidden:` block — both
+    # YAML files and MD frontmatter use the same `^forbidden:` syntax.
+    lines = content.splitlines()
+    tokens = []
+    in_block = False
+    inline_match = re.compile(r'^forbidden:\s*\[(.*)\]\s*$')
+    block_start  = re.compile(r'^forbidden:\s*$')
+    block_item   = re.compile(r'^\s+-\s+([^\s#]+)')
+    block_end    = re.compile(r'^[A-Za-z_]')
+    for line in lines:
+        m = inline_match.match(line)
+        if m:
+            raw = m.group(1).strip()
+            if raw:
+                for tok in raw.split(","):
+                    tok = tok.strip().strip('"').strip("'")
+                    if tok:
+                        tokens.append(tok)
+            return tokens
+        if in_block:
+            mi = block_item.match(line)
+            if mi:
+                tokens.append(mi.group(1).strip())
+                continue
+            # Blank lines + comments are tolerated.
+            if line.strip() == "" or line.lstrip().startswith("#"):
+                continue
+            if block_end.match(line):
+                in_block = False
+                # fall through ; same line is not an item.
+        if block_start.match(line):
+            in_block = True
+    return tokens
+
+# ─── Scanners ──────────────────────────────────────────────────
+
+def is_under_excluded(path):
+    rel = os.path.relpath(path, FORGE_ROOT)
+    parts = rel.split(os.sep)
+    if rel.startswith(".."):
+        return True
+    excluded_prefixes = (".forge", ".git", "node_modules", "target",
+                         "build", ".dart_tool", "dist")
+    if parts and parts[0] in excluded_prefixes:
+        return True
+    if FRAMEWORK and parts and parts[0] == "examples":
+        return True
+    return False
+
+def walk_manifests(suffix_set):
+    out = []
+    for root, dirs, files in os.walk(FORGE_ROOT):
+        # Prune excluded dirs in-place for speed.
+        rel = os.path.relpath(root, FORGE_ROOT)
+        parts = rel.split(os.sep) if rel != "." else []
+        if parts and parts[0] in (".forge", ".git", "node_modules",
+                                  "target", "build", ".dart_tool", "dist"):
+            dirs[:] = []
+            continue
+        if FRAMEWORK and parts and parts[0] == "examples":
+            dirs[:] = []
+            continue
+        dirs.sort()
+        files.sort()
+        for f in files:
+            if f in suffix_set:
+                out.append(os.path.join(root, f))
+    return out
+
+def walk_docs():
+    """Yield doc body paths : docs/**/*.md + .forge/changes/**/*.md
+    excluding the I.3 self-authoring change."""
+    out = []
+    docs_dir = os.path.join(FORGE_ROOT, "docs")
+    if os.path.isdir(docs_dir):
+        for root, dirs, files in os.walk(docs_dir):
+            dirs.sort(); files.sort()
+            for f in files:
+                if f.endswith(".md"):
+                    out.append(os.path.join(root, f))
+    changes_dir = os.path.join(FORGE_ROOT, ".forge", "changes")
+    if os.path.isdir(changes_dir):
+        for root, dirs, files in os.walk(changes_dir):
+            dirs.sort(); files.sort()
+            # Self-exclusion (FR-I3-T3F-022).
+            if "i3-t3-forbidden-linter" in root.split(os.sep):
+                dirs[:] = []
+                continue
+            for f in files:
+                if f.endswith(".md"):
+                    out.append(os.path.join(root, f))
+    return out
+
+def walk_standards_md(owner_relpath):
+    """Yield standards body paths excluding the standard owning the token
+    and the catalogue standard."""
+    out = []
+    if not os.path.isdir(STANDARDS_DIR):
+        return out
+    for root, dirs, files in os.walk(STANDARDS_DIR):
+        dirs.sort(); files.sort()
+        for f in files:
+            if not f.endswith(".md"):
+                continue
+            if f in EXCLUDE_FROM_DOC_SCAN_BASENAMES:
+                continue
+            rel = os.path.relpath(os.path.join(root, f), STANDARDS_DIR)
+            if rel == owner_relpath:
+                continue
+            out.append(os.path.join(root, f))
+    return out
+
+# Build manifest file list once (per ecosystem grammar).
+PUBSPECS    = walk_manifests({"pubspec.yaml"})
+PACKAGEJSON = walk_manifests({"package.json"})
+CARGOTOMLS  = walk_manifests({"Cargo.toml"})
+REQUIREMENTS = walk_manifests({"requirements.txt"})
+GOMODS      = walk_manifests({"go.mod"})
+DOCS        = walk_docs()
+
+def grep_manifest_key(path, token):
+    """Exact-key match per ecosystem. Tokens with hyphens map to keys
+    with hyphens OR underscores (e.g. firebase-auth ↔ firebase_auth)."""
+    tok_variants = {token}
+    if "-" in token:
+        tok_variants.add(token.replace("-", "_"))
+    if "_" in token:
+        tok_variants.add(token.replace("_", "-"))
+    try:
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            content = fh.read()
+    except OSError:
+        return []
+    hits = []
+    for ln, line in enumerate(content.splitlines(), start=1):
+        for tok in tok_variants:
+            # pubspec / Cargo / package.json / go.mod / requirements.txt
+            # all use the dependency name as a left-anchored token (with
+            # optional leading whitespace + optional quotes).
+            pat = re.compile(
+                r'^\s*"?\b' + re.escape(tok) + r'\b"?\s*[:=]'
+            )
+            if pat.match(line):
+                hits.append((ln, line.strip()[:120]))
+                break
+    return hits
+
+# Whole-word boundary regex for doc bodies (NFR-I3-T3F-007).
+def grep_doc_body(path, token):
+    try:
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            content = fh.read()
+    except OSError:
+        return []
+    boundary = r'(?:^|[^a-zA-Z0-9_-])'
+    end      = r'(?:$|[^a-zA-Z0-9_-])'
+    pat = re.compile(boundary + re.escape(token) + end, re.IGNORECASE)
+    hits = []
+    for ln, line in enumerate(content.splitlines(), start=1):
+        if pat.search(line):
+            hits.append((ln, line.strip()[:120]))
+    return hits
+
+# Severity scaling (ADR-I3-003 / FR-I3-T3F-006).
+def severity_for(tier):
+    if tier == "T3":
+        return "FAIL"
+    return "WARN"
+
+# ─── Main scan loop ─────────────────────────────────────────────
+
+standards = discover_standards()
+findings = []  # (severity, rule_id, token, tier, standard_relpath, remediation)
+scanned_files = 0
+
+for relpath, abs_path, tokens in standards:
+    rule_id = RULE_ID_BY_STANDARD.get(relpath, DEFAULT_RULE_ID)
+    sev = severity_for(TIER)
+    standards_md_paths = walk_standards_md(relpath)
+    for token in tokens:
+        rem = REMEDIATION.get(token, "remove or replace with EU-jurisdiction equivalent")
+        hit_emitted = False
+        # Manifest scan.
+        for mlist in (PUBSPECS, PACKAGEJSON, CARGOTOMLS,
+                      REQUIREMENTS, GOMODS):
+            for m in mlist:
+                hits = grep_manifest_key(m, token)
+                if hits:
+                    findings.append((sev, rule_id, token, TIER,
+                                     relpath, rem,
+                                     os.path.relpath(m, FORGE_ROOT)))
+                    hit_emitted = True
+                    break
+            if hit_emitted:
+                break
+        if hit_emitted:
+            continue
+        # Doc-body scan (whole-word).
+        # Cap per-token noise : emit one finding per token max ; first
+        # doc match wins. Standards self-scan is treated as T3-RULE-006
+        # cross-standard mention (capped at WARN).
+        cross_emitted = False
+        for s in standards_md_paths:
+            hits = grep_doc_body(s, token)
+            if hits:
+                findings.append(("WARN", "T3-RULE-006", token, TIER,
+                                 relpath, "cross-standard mention — refactor cross-reference to cite the standard ID",
+                                 os.path.relpath(s, FORGE_ROOT)))
+                cross_emitted = True
+                break
+        if cross_emitted:
+            continue
+        for d in DOCS:
+            hits = grep_doc_body(d, token)
+            if hits:
+                findings.append((sev, rule_id, token, TIER,
+                                 relpath, rem,
+                                 os.path.relpath(d, FORGE_ROOT)))
+                break
+
+scanned_files = (len(PUBSPECS) + len(PACKAGEJSON) + len(CARGOTOMLS)
+                 + len(REQUIREMENTS) + len(GOMODS) + len(DOCS))
+
+# Determinism (NFR-I3-T3F-005) : sort by (severity_rank, rule_id, token,
+# location). FAIL > WARN > PASS in severity_rank.
+SEV_RANK = {"FAIL": 0, "WARN": 1, "PASS": 2}
+findings.sort(key=lambda x: (SEV_RANK.get(x[0], 9), x[1], x[2], x[6]))
+
+# Emit one line per finding ; first 7 fields tab-separated.
+for f in findings:
+    print("\t".join(f))
+
+# Clean-tree sentinel (consumed by bash side).
+if not findings:
+    print("PASS\t" + str(len(standards)) + "\t" + str(scanned_files))
+PY
+)"
+
+    if [ -z "$t3f_output" ]; then
+      # Python error or no output — defensively skip with N/A.
+      not_applicable "  T3-forbidden discovery emitted no output (python error?)"
+    else
+      # Parse output : findings or PASS sentinel.
+      t3f_fail_count=0
+      t3f_warn_count=0
+      while IFS=$'\t' read -r sev field2 field3 tier_f standard_f rem_f loc_f; do
+        case "$sev" in
+          PASS)
+            pass "  no forbidden components detected at $t3f_tier across $field2 standards / $field3 scanned files"
+            ;;
+          FAIL)
+            fail "  [REFUSAL: $field2: $field3 forbidden at $tier_f ($standard_f::forbidden) ; location: $loc_f ; remediation: $rem_f]"
+            t3f_fail_count=$((t3f_fail_count + 1))
+            ;;
+          WARN)
+            warn "  [REFUSAL: $field2: $field3 forbidden at $tier_f ($standard_f::forbidden) ; location: $loc_f ; remediation: $rem_f]"
+            t3f_warn_count=$((t3f_warn_count + 1))
+            ;;
+        esac
+      done <<EOF_T3F
+$t3f_output
+EOF_T3F
+      # If any findings were FAIL/WARN but no PASS sentinel emitted,
+      # leave the per-finding pass/fail/warn calls speak for themselves.
+      if [ "$t3f_fail_count" = "0" ] && [ "$t3f_warn_count" = "0" ]; then
+        # Already emitted by the PASS branch above ; nothing to add.
+        :
+      fi
+    fi
+  fi
+fi
+
 # ── Article III.4: No NEEDS CLARIFICATION inline in implemented/archived ───
 # F.1 (f1-open-questions, FR-OQ-013, FR-OQ-014). Once a change reaches
 # `implemented` or `archived` status, every `[NEEDS CLARIFICATION:`

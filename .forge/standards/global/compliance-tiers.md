@@ -9,21 +9,24 @@ last_reviewed: 2026-05-11
 expires_at: 2027-05-11
 exception_constitutional: false
 linter_rule: t3-forbidden-components
-enforcement: review     # becomes 'ci' when I.3 lands
-forbidden: []           # this standard DOCUMENTS — I.3 ENFORCES
+enforcement: ci         # flipped from 'review' by i3-t3-forbidden-linter, 2026-05-12
+forbidden: []           # this standard DOCUMENTS ; I.3 (i3-t3-forbidden-linter) ENFORCES
 rationale: >-
   Codifies the EU compliance gradient T1/T2/T3 from
   docs/ARCHITECTURE-TARGET.md §10 so adopters and Demeter share a
   single human-readable reference.
 ```
 
-> **Status note** — `linter_rule: t3-forbidden-components` is a
-> forward-pointer to the I.3 linter rule that has not shipped yet.
-> The matching section anchor in `.forge/scripts/constitution-linter.sh`
-> ships with I.3. Until then, this standard's `enforcement` is
-> `review` (humans cite it during PR review) ; once I.3 lands,
-> `enforcement` flips to `ci` and the linter rule deterministically
-> refuses T3 declarations that scaffold forbidden components.
+> **Status note** — `linter_rule: t3-forbidden-components` is the
+> **resolved** pointer to the I.3 linter rule shipped 2026-05-12 via
+> `i3-t3-forbidden-linter`. The matching section anchor in
+> `.forge/scripts/constitution-linter.sh::ADR-I3-001` enforces this
+> standard's forward-pointer deterministically. The standard's
+> `enforcement` is now `ci` (was `review` until 2026-05-12) — the
+> linter rule refuses T3 declarations that scaffold forbidden
+> components per the §10.2 matrix encoded in
+> `.forge/standards/global/forbidden-components-rules.md`
+> (T3-RULE-NNN catalogue).
 
 ---
 

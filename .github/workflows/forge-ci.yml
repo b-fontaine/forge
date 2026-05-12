@@ -116,6 +116,8 @@ jobs:
         run: bash .forge/scripts/tests/i2.test.sh --level 1
       - name: i6.test.sh
         run: bash .forge/scripts/tests/i6.test.sh --level 1,2
+      - name: i3.test.sh
+        run: bash .forge/scripts/tests/i3.test.sh --level 1,2
 
   # ─── gates ── verify.sh + constitution-linter.sh ───────────────
   gates:

@@ -1,0 +1,20 @@
+name: i3-t3-forbidden-linter
+status: archived
+created: 2026-05-12
+schema: default
+constitution_version: "1.1.0"
+parent_audit_items:
+  - I.3   # new-archetypes-plan §7.1 line 727-731 — T3-forbidden linter rule
+depends_on:
+  - i2-compliance-tiers       # ships global/compliance-tiers.md + linter_rule: t3-forbidden-components forward-pointer
+  - j8-janus-rules            # ships .forge/.forge-tier plain-text ledger pattern (ADR-J8-006) + J8-RULE-NNN format (ADR-J8-004)
+  - k3-demeter                # ships K3-RULE-NNN namespace per ADR-J8-004 inheritance ; T3-RULE-NNN extends the protocol
+  - t4-adr-ratification       # ships .forge/standards/*.yaml frontmatter contract (forbidden: + linter_rule: + enforcement:)
+  - f4-linter-extension       # ships constitution-linter.sh extension protocol (FORGE_LINTER_SKIP_* env vars, warn helper)
+timeline:
+  proposed: 2026-05-12
+  specified: 2026-05-12
+  designed: 2026-05-12
+  planned: 2026-05-12
+  implemented: 2026-05-12
+  archived: 2026-05-12
