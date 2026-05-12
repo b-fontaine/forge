@@ -12,6 +12,37 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added — T.5 OTel W3C traceparent E2E validation (`t5-otel-traceparent-e2e`)
+
+Phase C of the T.5 OTel rollout : closes the W3C `traceparent` E2E
+validation matrix for the `examples/forge-fsm-example/` flagship.
+Phase A (`t5-otel-stack`) shipped infra ; Phase B (`t5-otel-app`)
+shipped SDK init + middleware + interceptor ; this change closes the
+evidence loop for the gateway hop.
+
+- **BDD feature file**
+  `examples/forge-fsm-example/test/features/traceparent_e2e.feature`
+  with three Gherkin scenarios (Direct / Kong / Sampled-off).
+- **Kong traceparent preservation contract comment** in
+  `examples/forge-fsm-example/infra/kong/kong.yml.example` —
+  declarative anchor + forward-pointer to the future
+  `b8-envoy-migration` change.
+- **Harness**
+  `.forge/scripts/tests/t5-otel-traceparent-e2e.test.sh` (7 L1
+  hermetic + 2 L2 inherited toolchain smoke ; L2 inherits the Phase B
+  Q-004 `flutter analyze` xfail until `t5-otel-dart-api-realign`
+  resolves the standard ↔ pub.dev API drift). CI matrix entry added
+  after `t5-otel-app.test.sh` in `.github/workflows/forge-ci.yml`.
+- **Phase D (live-run) explicitly deferred** — `docker compose up`
+  driver, stub OTLP receiver, programmatic traceId assertion, and
+  SigNoz API verification are documented in `tasks.md`
+  § "Phase D — DEFERRED" but NOT shipped here. Phase C is harness +
+  spec, not live-run.
+
+Spec : `.forge/changes/t5-otel-traceparent-e2e/`
+(`FR-T5-TPE-001..091` + `NFR-T5-TPE-001..007` +
+`ADR-T5-TPE-001..006`).
+
 ### Added — T.5 OTel App SDK instrumentation in flagship example (`t5-otel-app`)
 
 Phase B of the T.5 OTel rollout : the `examples/forge-fsm-example/`

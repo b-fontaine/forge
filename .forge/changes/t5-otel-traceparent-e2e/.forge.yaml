@@ -1,0 +1,33 @@
+name: t5-otel-traceparent-e2e
+status: implemented
+created: 2026-05-11
+schema: full-stack-monorepo
+constitution_version: "1.1.0"
+parent_audit_items:
+  - T.5  # Phase C — W3C traceparent E2E validation through the Kong gateway
+depends_on:
+  - t5-otel-stack       # Phase A — infra (collector + sampler + signoz)
+  - t5-otel-app         # Phase B — SDK init + middleware + interceptor + demo-005
+  - t5-connect-codegen  # Phase 0 — connect transport (host of the deferred _test_t5_l2_traceparent_dual)
+layers:
+  - id: backend
+    path: examples/forge-fsm-example/backend
+  - id: frontend
+    path: examples/forge-fsm-example/frontend
+  - id: infra
+    path: examples/forge-fsm-example/infra
+designs_per_layer:
+  backend: design.md
+  frontend: design.md
+  infra: design.md
+tasks_per_layer:
+  backend: tasks.md
+  frontend: tasks.md
+  infra: tasks.md
+timeline:
+  proposed: 2026-05-11
+  specified: 2026-05-11
+  designed: 2026-05-11
+  planned: 2026-05-11
+  implemented: 2026-05-11
+  # archived: <auto-filled by /forge:archive>

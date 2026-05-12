@@ -51,6 +51,25 @@ services:
               policy: local
               fault_tolerant: true
 
+# ── W3C trace context preservation (T.5 Phase C, t5-otel-traceparent-e2e) ──
+#
+# This gateway MUST forward incoming `traceparent` and `tracestate`
+# headers verbatim to the upstream service. Kong's default behaviour
+# (no `request_transformer` plugin asks to remove them) preserves
+# them. DO NOT add a `request_transformer.remove.headers` entry
+# stripping these headers.
+#
+# Why : the example flagship ships an OTel SDK on both layers
+# (Rust backend via `tracing-opentelemetry` + Flutter frontend via
+# `TracingInterceptor`). A connected trace tree across the gateway
+# hop requires `traceparent` to survive the proxy verbatim. See
+# `.forge/changes/t5-otel-traceparent-e2e/specs.md` FR-T5-TPE-020..025.
+#
+# Forward-pointer : the Envoy migration (`b8-envoy-migration`,
+# provisional name per `docs/ARCHITECTURE-TARGET.md` ADR-001) will
+# ship the same contract with Envoy's `tracing` config block. Until
+# then, Kong is the gateway in play.
+
 # Plugins — example: rate limiting applied globally.
 # Uncomment and tune for your project.
 #
