@@ -9,9 +9,9 @@ This change ratifies decisions from a single source document.
 | Field                  | Value                                                              |
 |------------------------|--------------------------------------------------------------------|
 | **Path**               | `docs/ARCHITECTURE-TARGET.md`                                      |
-| **Line count**         | 1116                                                               |
-| **sha256**             | `cd8fef37ed01de981c8779a79d40234a70a4411387235dd990a86b705f3de925` |
-| **Last verified**      | 2026-05-04                                                         |
+| **Line count**         | 1132                                                               |
+| **sha256**             | `502bd8a27015029204624ff3b4f1b8de6b8aa7e0b957e4a093c93a0e2fbd895d` |
+| **Last verified**      | 2026-05-12                                                         |
 | **Drift gate**         | `t4.test.sh::test_architecture_doc_hash_unchanged`                 |
 | **Rehash escape hatch**| `bin/forge-rehash-architecture-doc.sh` (creates a new t4 hash entry, not a Forge re-archival) |
 

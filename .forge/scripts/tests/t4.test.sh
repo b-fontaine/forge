@@ -282,7 +282,7 @@ _test_t4_023() {
   local actual
   actual="$(shasum -a 256 "$ARCH_DOC" | awk '{print $1}')"
   local expected
-  expected="$(grep -oE 'cd[a-f0-9]{62}' "$SPECS_MD" | head -1 || true)"
+  expected="$(grep -oE '[a-f0-9]{64}' "$SPECS_MD" | head -1 || true)"
   if [ -z "$expected" ]; then
     echo "    pinned hash not found in specs.md" >&2
     return 1
@@ -376,7 +376,7 @@ _test_t4_l2_drift_fail_byte() {
   local edited_hash
   edited_hash="$(shasum -a 256 "$L2_TMP/edited.md" | awk '{print $1}')"
   local expected
-  expected="$(grep -oE 'cd[a-f0-9]{62}' "$SPECS_MD" | head -1)"
+  expected="$(grep -oE '[a-f0-9]{64}' "$SPECS_MD" | head -1)"
   if [ "$edited_hash" = "$expected" ]; then
     echo "    drift not detected (hash unchanged after mutation — improbable)" >&2
     return 1
@@ -392,7 +392,7 @@ _test_t4_l2_drift_pass_rehash() {
   local copy_hash
   copy_hash="$(shasum -a 256 "$L2_TMP/copy.md" | awk '{print $1}')"
   local expected
-  expected="$(grep -oE 'cd[a-f0-9]{62}' "$SPECS_MD" | head -1)"
+  expected="$(grep -oE '[a-f0-9]{64}' "$SPECS_MD" | head -1)"
   if [ "$copy_hash" != "$expected" ]; then
     echo "    unchanged copy hash differs from pinned hash" >&2
     return 1
