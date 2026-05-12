@@ -20,14 +20,14 @@
 use std::time::Duration;
 
 use anyhow::Context;
-use opentelemetry::{trace::TracerProvider as _, KeyValue};
+use opentelemetry::{KeyValue, trace::TracerProvider as _};
 use opentelemetry_otlp::{Protocol, WithExportConfig};
 use opentelemetry_sdk::{
+    Resource,
     propagation::TraceContextPropagator,
     trace::{Sampler, SdkTracerProvider},
-    Resource,
 };
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
+use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
 pub mod middleware;
 pub mod propagation;
@@ -54,8 +54,8 @@ impl TelemetryConfig {
     /// Read W3C-standard OTel env vars + Forge-specific `DEPLOYMENT_ENV` per
     /// ADR-T5-OTA-007.
     pub fn from_env() -> Self {
-        let service_name = std::env::var("OTEL_SERVICE_NAME")
-            .unwrap_or_else(|_| "fsm-backend".to_string());
+        let service_name =
+            std::env::var("OTEL_SERVICE_NAME").unwrap_or_else(|_| "fsm-backend".to_string());
         let service_version =
             std::env::var("CARGO_PKG_VERSION").unwrap_or_else(|_| "0.1.0".to_string());
         let environment = std::env::var("DEPLOYMENT_ENV").unwrap_or_else(|_| "dev".to_string());
@@ -137,8 +137,7 @@ pub fn setup_telemetry(config: &TelemetryConfig) -> anyhow::Result<SdkTracerProv
     let tracer = provider.tracer(config.service_name.clone());
     let otel_layer = tracing_opentelemetry::layer().with_tracer(tracer);
 
-    let env_filter =
-        EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
+    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
     let fmt_layer = tracing_subscriber::fmt::layer()
         .json()
         .with_current_span(true)
@@ -161,20 +160,27 @@ mod tests {
     #[test]
     fn from_env_defaults_when_unset() {
         // Save+restore env so parallel tests don't pollute each other.
+        // SAFETY: Rust 2024 marks env mutation as unsafe due to multi-thread
+        // race risk ; this test mutates a known set of vars and restores
+        // them within the same fn ; tests run with `--test-threads=1` in CI.
         let old_name = std::env::var("OTEL_SERVICE_NAME").ok();
         let old_env = std::env::var("DEPLOYMENT_ENV").ok();
-        std::env::remove_var("OTEL_SERVICE_NAME");
-        std::env::remove_var("DEPLOYMENT_ENV");
+        unsafe {
+            std::env::remove_var("OTEL_SERVICE_NAME");
+            std::env::remove_var("DEPLOYMENT_ENV");
+        }
 
         let cfg = TelemetryConfig::from_env();
         assert_eq!(cfg.service_name, "fsm-backend");
         assert_eq!(cfg.environment, "dev");
 
-        if let Some(v) = old_name {
-            std::env::set_var("OTEL_SERVICE_NAME", v);
-        }
-        if let Some(v) = old_env {
-            std::env::set_var("DEPLOYMENT_ENV", v);
+        unsafe {
+            if let Some(v) = old_name {
+                std::env::set_var("OTEL_SERVICE_NAME", v);
+            }
+            if let Some(v) = old_env {
+                std::env::set_var("DEPLOYMENT_ENV", v);
+            }
         }
     }
 

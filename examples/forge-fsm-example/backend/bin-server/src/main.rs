@@ -31,7 +31,7 @@
 use anyhow::Context;
 use http::Request;
 use infrastructure::telemetry::{
-    otel_make_span_with_traceparent_extraction, setup_telemetry, TelemetryConfig,
+    TelemetryConfig, otel_make_span_with_traceparent_extraction, setup_telemetry,
 };
 use tower_http::trace::TraceLayer;
 use tracing::Level;

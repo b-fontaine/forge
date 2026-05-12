@@ -22,10 +22,10 @@ pub struct HeaderMapCarrier<'a>(pub &'a mut HeaderMap);
 
 impl Injector for HeaderMapCarrier<'_> {
     fn set(&mut self, key: &str, value: String) {
-        if let Ok(name) = http::header::HeaderName::from_bytes(key.as_bytes()) {
-            if let Ok(val) = http::header::HeaderValue::from_str(&value) {
-                self.0.insert(name, val);
-            }
+        if let Ok(name) = http::header::HeaderName::from_bytes(key.as_bytes())
+            && let Ok(val) = http::header::HeaderValue::from_str(&value)
+        {
+            self.0.insert(name, val);
         }
     }
 }
@@ -54,10 +54,13 @@ impl Extractor for MetadataMapCarrier<'_> {
     }
 
     fn keys(&self) -> Vec<&str> {
-        self.0.keys().map(|k| match k {
-            tonic::metadata::KeyRef::Ascii(k) => k.as_str(),
-            tonic::metadata::KeyRef::Binary(k) => k.as_str(),
-        }).collect()
+        self.0
+            .keys()
+            .map(|k| match k {
+                tonic::metadata::KeyRef::Ascii(k) => k.as_str(),
+                tonic::metadata::KeyRef::Binary(k) => k.as_str(),
+            })
+            .collect()
     }
 }
 
@@ -94,6 +97,6 @@ mod tests {
             carrier.get("traceparent"),
             Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
         );
-        assert!(carrier.keys().iter().any(|k| *k == "traceparent"));
+        assert!(carrier.keys().contains(&"traceparent"));
     }
 }

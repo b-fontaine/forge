@@ -20,10 +20,7 @@ class TracingNavigationObserver extends NavigatorObserver {
     _currentRouteSpan = _tracer.startSpan(
       'navigation.push ${route.settings.name ?? "unknown"}',
       attributes: [
-        Attribute.fromString(
-          'screen.name',
-          route.settings.name ?? 'unknown',
-        ),
+        Attribute.fromString('screen.name', route.settings.name ?? 'unknown'),
         Attribute.fromString('navigation.action', 'push'),
       ],
     );

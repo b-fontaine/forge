@@ -46,9 +46,14 @@ pub fn otel_make_span_with_traceparent_extraction<B>(req: &Request<B>) -> tracin
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tracing_subscriber::util::SubscriberInitExt;
 
     #[test]
     fn make_span_creates_server_kind_span_for_request_without_traceparent() {
+        // A default subscriber must be active for `info_span!` to produce
+        // an enabled span — without one, `is_disabled()` is unconditionally
+        // true. Phase C E2E will validate cross-process linkage end-to-end.
+        let _guard = tracing_subscriber::registry().set_default();
         let req = Request::builder()
             .method("POST")
             .uri("/connect/greeting.v1.GreeterService/Greet")
@@ -60,6 +65,7 @@ mod tests {
 
     #[test]
     fn make_span_picks_up_inbound_traceparent() {
+        let _guard = tracing_subscriber::registry().set_default();
         let req = Request::builder()
             .method("POST")
             .uri("/connect/greeting.v1.GreeterService/Greet")

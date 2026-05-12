@@ -23,10 +23,7 @@ class TracingInterceptor extends Interceptor {
   final Tracer _tracer;
 
   @override
-  void onRequest(
-    RequestOptions options,
-    RequestInterceptorHandler handler,
-  ) {
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     final span = _tracer.startSpan(
       '${options.method} ${_sanitizePath(options.path)}',
       kind: SpanKind.client,

@@ -41,10 +41,7 @@ Future<void> setupTelemetry({required AppConfig config}) async {
       config.environment,
     ),
     Attribute.fromString('device.platform', Platform.operatingSystem),
-    Attribute.fromString(
-      'device.os.version',
-      Platform.operatingSystemVersion,
-    ),
+    Attribute.fromString('device.os.version', Platform.operatingSystemVersion),
   ]);
 
   // 2. Exporter — OTLP HTTP/protobuf to the collector :4318 receiver
