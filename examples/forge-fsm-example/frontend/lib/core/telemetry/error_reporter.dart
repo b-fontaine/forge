@@ -31,7 +31,11 @@ class ErrorReporter {
       ],
     );
     span.recordException(error, stackTrace: stackTrace);
-    span.setStatus(SpanStatusCode.error);
+    // setStatus signature in opentelemetry 0.18.11 :
+    //   void setStatus(StatusCode, [String description])
+    // The description is optional and positional — pass the error string
+    // so SigNoz / Coroot pivot the error analytics UI on the right field.
+    span.setStatus(StatusCode.error, error.toString());
     span.end();
   }
 }

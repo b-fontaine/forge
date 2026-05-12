@@ -19,6 +19,12 @@ import '../../domain/repository/greeting_repository.dart';
 class GreetingRepositoryImpl implements GreetingRepository {
   GreetingRepositoryImpl({Dio? client}) : _client = _build(client);
 
+  // The `_client` field is intentionally retained even though `greet`
+  // currently returns an in-process fake — the field-with-TracingInterceptor
+  // wiring is the audit anchor for FR-T5-OTA-061 (every Connect call carries
+  // the W3C `traceparent` header). The field will be wired into a real
+  // Connect/Dart call once `task proto` ships the generated `GreeterClient`.
+  // ignore: unused_field
   final Dio _client;
 
   // The Connect/Dart client is built from this dio instance once the

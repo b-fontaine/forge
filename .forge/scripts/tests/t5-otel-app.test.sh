@@ -375,27 +375,31 @@ _test_ota_l2_001_cargo_build_bin_server() {
 
 # FR-T5-OTA-047 / NFR-T5-OTA-002 — flutter analyze passes.
 #
-# DEFERRED 2026-05-10 (Q-004 in open-questions.md) :
-# The `opentelemetry` pub.dev pkg pinned at impl-time (`0.18.11`) ships
-# a different public API surface than what `flutter/opentelemetry.md`
-# documents (the standard's `exporter_otlp_http.dart` sub-import,
-# `OtlpHttpSpanExporter`, `OtlpHttpExporterConfig`,
-# `BatchSpanProcessorConfig`, `TraceIdRatioBasedSampler`,
-# `SpanStatusCode` are NOT exposed by the bundled pkg's `api.dart` /
-# `sdk.dart` / `web_sdk.dart`). The Dart standard predates an API
-# realignment that hasn't yet happened on the pub.dev side.
+# Q-004 RESOLVED 2026-05-12 : `flutter/opentelemetry.md` was realigned to
+# the actual `opentelemetry: 0.18.11` (Workiva) API surface in the sibling
+# change `t5-otel-dart-api-realign` (standard v1.0.0 → v1.1.0). The Dart
+# example code in this worktree was realigned in the Q-004 follow-up
+# commit : `CollectorExporter(Uri)` replaces fabricated `OtlpHttpSpanExporter`,
+# `BatchSpanProcessor` takes positional exporter + named params,
+# `ParentBasedSampler(AlwaysOnSampler())` replaces fabricated
+# `TraceIdRatioBasedSampler(1.0)`, `StatusCode.{ok,error}` replaces
+# fabricated `SpanStatusCode.*`, `setStatus(code, description)` is now
+# positional (not `description:` named), and `contextWithSpan(Context, Span)`
+# replaces the JS/Java-style `Context.current.withSpan(...)`. The legacy
+# `exporter_otlp_*.dart` sub-imports are removed in favour of the two
+# canonical entry points `api.dart` + `sdk.dart`.
 #
-# Per ANTI-HALLUCINATION protocol (CLAUDE.md rule #5), this test
-# gracefully xfails until the standard is reconciled with the pkg's
-# actual API (Q-004 — to be triaged at /forge:archive). The L1 grep
-# anchors remain GREEN ; the structural shape of the impl matches the
-# standard's intent verbatim. A follow-up change either bumps the
-# standard to match `opentelemetry 0.18.x` or pins a different pkg.
+# This test now runs `flutter analyze` against the realigned example and
+# expects exit 0. It skips cleanly when `flutter` is not on PATH so the
+# CI L1 matrix (no toolchain) and dev hosts without Flutter installed do
+# not regress. The L2 matrix entry in `forge-ci.yml` runs this with the
+# Flutter toolchain installed.
 _test_ota_l2_002_flutter_analyze() {
   if _skip_if_no_toolchain flutter; then return 0; fi
-  echo "    deferred — flutter analyze fails on standard-vs-pkg API drift (see Q-004)" >&2
-  echo "    L1 anchors GREEN ; this L2 reactivates once Q-004 is resolved" >&2
-  return 0
+  if ! (cd "$FRONTEND" && flutter analyze >/dev/null 2>&1); then
+    echo "    flutter analyze failed in $FRONTEND" >&2
+    return 1
+  fi
 }
 
 # ─── Main ────────────────────────────────────────────────────────

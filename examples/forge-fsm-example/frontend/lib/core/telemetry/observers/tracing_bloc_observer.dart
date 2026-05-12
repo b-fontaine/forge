@@ -32,7 +32,10 @@ class TracingBlocObserver extends BlocObserver {
     super.onError(bloc, error, stackTrace);
     final span = _tracer.startSpan('${bloc.runtimeType}.error');
     span.recordException(error, stackTrace: stackTrace);
-    span.setStatus(SpanStatusCode.error, description: error.toString());
+    // setStatus signature in opentelemetry 0.18.11 :
+    //   void setStatus(StatusCode, [String description])
+    // — second argument is POSITIONAL, not named `description:` / `message:`.
+    span.setStatus(StatusCode.error, error.toString());
     span.end();
   }
 }

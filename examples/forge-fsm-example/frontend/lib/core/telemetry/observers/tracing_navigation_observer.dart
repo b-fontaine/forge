@@ -56,7 +56,7 @@ class TracingNavigationObserver extends NavigatorObserver {
   void _endCurrentSpan() {
     final span = _currentRouteSpan;
     if (span != null) {
-      span.setStatus(SpanStatusCode.ok);
+      span.setStatus(StatusCode.ok);
       span.end();
     }
     _currentRouteSpan = null;

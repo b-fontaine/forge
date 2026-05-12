@@ -39,9 +39,13 @@ class TracingInterceptor extends Interceptor {
     );
 
     // Inject the W3C `traceparent` header into the outbound request.
+    // `contextWithSpan` is the top-level helper from `api.dart`. The
+    // JS/Java-style `Context.current.withSpan(span)` method does NOT exist
+    // in `opentelemetry: 0.18.11` (Workiva) — see flutter/opentelemetry.md
+    // v1.1.0 § Context Propagation.
     final propagator = W3CTraceContextPropagator();
     propagator.inject(
-      Context.current.withSpan(span),
+      contextWithSpan(Context.current, span),
       options.headers,
       _HttpHeadersSetter(),
     );
@@ -62,7 +66,7 @@ class TracingInterceptor extends Interceptor {
       span.setAttribute(
         Attribute.fromInt('http.status_code', response.statusCode ?? 0),
       );
-      span.setStatus(SpanStatusCode.ok);
+      span.setStatus(StatusCode.ok);
       span.end();
     }
     handler.next(response);
@@ -82,7 +86,10 @@ class TracingInterceptor extends Interceptor {
           Attribute.fromString('exception.message', err.message ?? ''),
         ],
       );
-      span.setStatus(SpanStatusCode.error, description: err.message);
+      // setStatus signature in opentelemetry 0.18.11 :
+      //   void setStatus(StatusCode, [String description])
+      // — second argument is POSITIONAL, not named `description:` / `message:`.
+      span.setStatus(StatusCode.error, err.message ?? '');
       span.end();
     }
     handler.next(err);

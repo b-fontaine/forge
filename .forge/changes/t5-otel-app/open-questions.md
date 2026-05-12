@@ -155,10 +155,12 @@ downstream (dual-stage Phase A + Phase B model documented in
 
 ## Q-004: `flutter/opentelemetry.md` standard vs `opentelemetry: ^0.18.11` pub.dev pkg API drift
 
-- **Status**: open
+- **Status**: answered
 - **Raised in**: impl-time discovery (T-FE-009 / T-L2-002)
 - **Raised on**: 2026-05-10
 - **Raised by**: @bfontaine
+- **Resolved on**: 2026-05-12
+- **Resolved by**: sibling change `t5-otel-dart-api-realign` (commit `280e39e`) + this change's Q-004 follow-up commit
 
 ### Question
 
@@ -182,22 +184,44 @@ per the standard) ; the L2 `flutter analyze` test fails on
 
 ### Resolution
 
-DEFERRED to `/forge:archive` triage. Two paths :
+**Resolved by path #1** — `flutter/opentelemetry.md` bumped to v1.1.0 in
+the sibling change `t5-otel-dart-api-realign` (commit `280e39e`),
+ratifying the actual `opentelemetry: 0.18.11` (Workiva) public API
+surface. The realign change replaced the fabricated v1.0.0 identifiers
+listed in the table above with the actually-exported names :
 
-1. **Bump `flutter/opentelemetry.md`** to track the `0.18.x` actual API
-   (single-pkg sub-imports collapsed into `api.dart` / `sdk.dart`,
-   different exporter ctor names). Standards bump → REVIEW.md ledger
-   entry → minor version bump on the standard.
-2. **Pin a different pub.dev pkg** if a maintained fork matches the
-   standard's documented API (e.g. `dartastic_opentelemetry`,
-   `opentelemetry_api` if any exist with the documented surface).
+| v1.0.0 (fabricated) | v1.1.0 (Workiva 0.18.11) |
+|---|---|
+| `import 'package:opentelemetry/exporter_otlp_http.dart';` | dropped — `api.dart` + `sdk.dart` are the only entry points |
+| `OtlpHttpSpanExporter(OtlpHttpExporterConfig(...))` | `CollectorExporter(Uri.parse(...))` (from `sdk.dart`) |
+| `BatchSpanProcessor(exporter, BatchSpanProcessorConfig(...))` | `BatchSpanProcessor(exporter, maxExportBatchSize: 512, scheduledDelayMillis: 5000)` |
+| `ParentBasedSampler(TraceIdRatioBasedSampler(1.0))` | `ParentBasedSampler(AlwaysOnSampler())` |
+| `SpanStatusCode.ok` / `SpanStatusCode.error` | `StatusCode.ok` / `StatusCode.error` |
+| `setStatus(code, description: ...)` | `setStatus(code, '...')` — positional 2nd arg |
+| `Context.current.withSpan(span)` | `contextWithSpan(Context.current, span)` — top-level helper |
 
-L2 `_test_ota_l2_002_flutter_analyze` is gated to xfail until Q-004
-is resolved. The L1 structural anchors do not regress — the impl
-files exist with the right shape per the standard's intent ; only the
-runtime API names need reconciliation.
+This Q-004 follow-up commit in `t5-otel-app` then realigns the example
+Dart code at `examples/forge-fsm-example/frontend/lib/core/telemetry/`
+to the v1.1.0 standard. The `pubspec.yaml` pin is unchanged
+(`opentelemetry: ^0.18.0` ; `flutter pub get` resolves to `0.18.11`).
+Six files touched : `telemetry_setup.dart` (drop `exporter_otlp_http.dart`
+import + symbol replacements), `interceptors/tracing_interceptor.dart`
+(`contextWithSpan` + `StatusCode`), `observers/tracing_navigation_observer.dart`
++ `observers/tracing_bloc_observer.dart` (`StatusCode`),
+`error_reporter.dart` (`StatusCode`). `main.dart` carried no direct OTel
+symbol references, no edit needed there.
 
-This residual is captured rather than guessed (Article III.4) — the
-ANTI-HALLUCINATION protocol forbids picking API names without
-verification, and Context7 returned no Dart-specific docs index that
-could verify them.
+L2 `_test_ota_l2_002_flutter_analyze` flipped from `xfail` to
+expected-pass with toolchain-gated graceful skip. The L1 structural
+anchors remain GREEN and now match the v1.1.0 standard verbatim.
+
+The dual-stage Phase A + Phase B sampling model is preserved : the
+SDK still emits every span (now via `AlwaysOn` instead of the
+fabricated `TraceIdRatioBased(1.0)`), the collector still enforces the
+env-tier ratio downstream via `processors.probabilistic_sampler`
+(ADR-OTEL-001). A future `opentelemetry: 0.19.x` shipping a
+ratio-based sampler class would be the trigger for a v1.2.0 bump of
+the Flutter standard.
+
+The Article III.4 "open questions" gate now reports zero open questions
+on this change — archive unblocked.
