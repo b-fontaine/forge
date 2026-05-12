@@ -422,26 +422,50 @@
   generator + content schema ship now ; the NIS2/DORA/CRA/AI Act
   deadlines artefacts themselves stay deferred to Themis territory.
 
+- **`i5-compliance-workflow` archivé 2026-05-12** — **I.5 Done** :
+  reusable GitHub Actions workflow `.github/workflows/forge-compliance.yml`
+  (158 LOC, `on: workflow_call:` trigger ; 3 inputs `eu-tier` /
+  `target-dir` / `artefact-name` ; 1 output `artefact-path` ;
+  `permissions: contents: read` ; concurrency keyed on ref + tier
+  with `cancel-in-progress: false`). Orchestrates les quatre
+  scripts EU-compliance déjà livrés : Demeter
+  (`bin/forge-demeter-scan.sh`, K.3) + constitution linter incl. la
+  section ADR-I3-001 T3-Forbidden (`.forge/scripts/constitution-linter.sh`,
+  I.3) + CycloneDX SBOM (`bin/forge-sbom.sh`, J.8.d) + bundle
+  generator (`.forge/scripts/compliance/bundle.sh`, I.6). Upload
+  via `actions/upload-artifact@v4`. Standard
+  `global/forge-compliance-workflow.md` v1.0.0 (284 LOC, 7 H2 + 4
+  MUST NOT, frontmatter `linter_rule: null`), index entry (8
+  triggers), REVIEW.md birth entry, `docs/COMPLIANCE.md` H2
+  `## Reusable compliance workflow` + copy-pasteable `uses:` block.
+  Trois ADRs (ADR-I5-CW-001..003) résolvent l'agrégation des exit
+  codes (trust each script's tier scaling end-to-end ; SBOM
+  no-lockfile non-fatal via `continue-on-error: true`), la source
+  `SOURCE_DATE_EPOCH` (commit timestamp + fallback run timestamp,
+  no input field), et le gating L2 act-runner (opt-in
+  `FORGE_I5_ACT=1` avec skip-when-absent, mirroring
+  `t5-otel-live-run::FORGE_LIVE_RUN_DOCKER=1`). 17/17 tests
+  `i5.test.sh --level 1,2` (16 L1 grep-based + 1 L2 skip-pass).
+  Forward-stable pour les artefacts réglementaires Themis-territory
+  (NIS2 / DORA / CRA / AI Act sous `.forge/compliance/`) lorsque
+  K.5 (T7+) livrera — additive step additions per FR-I5-CW-083.
+
 ### Module en cours
 
 Aucun change en cours sur `main` au 2026-05-12 (post-archive
 `k3-demeter` + `t5-otel-dart-api-realign` + `t5-otel-app` +
-`i2-compliance-tiers` + `i6-compliance-artefacts`). Le prochain
-candidat naturel est **I.3 + I.5** (T3-forbidden linter rule +
-`forge-compliance.yml` workflow), tous deux forward-pointés par la
-frontmatter de `global/compliance-tiers.md` v1.0.0 livré par I.2 et
-consommant désormais le bundle generator livré par I.6.
+`i2-compliance-tiers` + `i6-compliance-artefacts` +
+`i3-t3-forbidden-linter` + `i5-compliance-workflow`). Tous les
+forward-pointers de la frontmatter `global/compliance-tiers.md`
+v1.0.0 sont désormais résolus.
 
 ### Modules toujours en attente
 
-- **T5 (suite)** post-`i6-compliance-artefacts` : I.3 (T3-forbidden
-  linter rule consommant la matrice du standard I.2), I.5
-  (`forge-compliance.yml` reusable workflow consommant le bundle I.6),
-  artefacts réglementaires NIS2 / DORA / CRA / AI Act sous
-  `.forge/compliance/` (déferrés au territoire Themis K.5, T7+),
-  validation traceparent W3C E2E à travers Envoy / Kong (le
-  `_test_t5_l2_traceparent_dual` reporté avec les fixtures L2 vers
-  T6 / B.8).
+- **T5 (suite)** post-`i5-compliance-workflow` : artefacts
+  réglementaires NIS2 / DORA / CRA / AI Act sous `.forge/compliance/`
+  (déferrés au territoire Themis K.5, T7+), validation traceparent
+  W3C E2E à travers Envoy / Kong (le `_test_t5_l2_traceparent_dual`
+  reporté avec les fixtures L2 vers T6 / B.8).
 - **T6 / T7 / T8 / T9+** : non commencés (B.6, B.7, B.8, B.9, B.3, K.1,
   K.2, K.4, K.5, C.2–C.5, F.3, G.*, H.*).
 
@@ -571,7 +595,7 @@ sont créés. Cinq nouveaux agents Forge sont introduits. Plan de migration **4 
 | B.8       | Migration flagship 1.0.0 → 2.0.0 (Envoy/DBOS/Connect/Zitadel)                                                                                      | ARCHITECTURE-TARGET §11           | `XL`    | Pending (T6 — point of no return)                                                                                                 |
 | B.9       | Migration `mobile-only / 1.0.0` → `mobile-pwa-first / 2.0.0` (PWA Qwik + Bloc renforcé)                                                            | ARCHITECTURE-TARGET §6.3          | `L`     | Pending (T8)                                                                                                                      |
 | I.1       | Compliance EU graded — JSON schemas (T1/T2/T3 + archetype v2)                                                                                      | ARCHITECTURE-TARGET §10           | `S`     | **Done 2026-05-04** via `t4-adr-ratification`                                                                                     |
-| I.2–I.6   | Compliance EU graded — standard `compliance-tiers.md`, linter rule, Demeter agent, `forge-compliance.yml` workflow, NIS2/DORA/CRA/AI Act artefacts | ARCHITECTURE-TARGET §10           | `M`–`L` | I.2 **Done 2026-05-12** via `i2-compliance-tiers` (`global/compliance-tiers.md` v1.0.0 + index entry + REVIEW birth + `docs/COMPLIANCE.md` + 14/14 L1 tests `i2.test.sh`). I.6 **Done 2026-05-12** via `i6-compliance-artefacts` (`.forge/scripts/compliance/bundle.sh` deterministic .tgz + DPA template + standard `global/compliance-artefacts-bundle.md` v1.0.0 + 16/16 tests `i6.test.sh --level 1,2`). I.3 **Done 2026-05-12** via `i3-t3-forbidden-linter` (`constitution-linter.sh::ADR-I3-001` section + standard `global/forbidden-components-rules.md` v1.0.0 with 10 `T3-RULE-001..010` rules + tier-scaled severity T1/T2 warn → T3 fail immediate + 14/14 L1 tests `i3.test.sh` ; resolves I.2 `linter_rule:` forward-pointer ; unblocks I.5). I.5 still pending T5 ; NIS2/DORA/CRA/AI Act regulatory deadline artefacts deferred to Themis (K.5, T7+) — bundle layout forward-stable. |
+| I.2–I.6   | Compliance EU graded — standard `compliance-tiers.md`, linter rule, Demeter agent, `forge-compliance.yml` workflow, NIS2/DORA/CRA/AI Act artefacts | ARCHITECTURE-TARGET §10           | `M`–`L` | I.2 **Done 2026-05-12** via `i2-compliance-tiers` (`global/compliance-tiers.md` v1.0.0 + index entry + REVIEW birth + `docs/COMPLIANCE.md` + 14/14 L1 tests `i2.test.sh`). I.6 **Done 2026-05-12** via `i6-compliance-artefacts` (`.forge/scripts/compliance/bundle.sh` deterministic .tgz + DPA template + standard `global/compliance-artefacts-bundle.md` v1.0.0 + 16/16 tests `i6.test.sh --level 1,2`). I.3 **Done 2026-05-12** via `i3-t3-forbidden-linter` (`constitution-linter.sh::ADR-I3-001` section + standard `global/forbidden-components-rules.md` v1.0.0 with 10 `T3-RULE-001..010` rules + tier-scaled severity T1/T2 warn → T3 fail immediate + 14/14 L1 tests `i3.test.sh` ; resolves I.2 `linter_rule:` forward-pointer ; unblocks I.5). I.5 **Done 2026-05-12** via `i5-compliance-workflow` (reusable `.github/workflows/forge-compliance.yml` `on: workflow_call:` with 3 inputs / 1 output, orchestrant Demeter + linter + SBOM + bundle, upload `.tgz` via `actions/upload-artifact@v4`, standard `global/forge-compliance-workflow.md` v1.0.0 7 H2 + 4 MUST NOT + 8 triggers, 17/17 tests `i5.test.sh --level 1,2` incl. L2 act-opt-in skip-pass ; trois ADRs résolvent exit-code aggregation + SOURCE_DATE_EPOCH source + L2 gating). NIS2/DORA/CRA/AI Act regulatory deadline artefacts encore en attente — déférés à Themis (K.5, T7+) ; le bundle I.6 + workflow I.5 sont forward-stable pour les absorber additivement. |
 | J.1–J.6   | Six standards versionnés `.forge/standards/*.yaml` (transport / state-management / observability / orchestration / identity / persistence) v1.0.0  | ARCHITECTURE-TARGET §12.1         | `M`     | **Done 2026-05-04** via `t4-adr-ratification` ; J.1 `transport.yaml` bumpé en 1.1.0 le 2026-05-06 par `t5-connect-codegen` (codegen pinning, additif) |
 | J.7 / J.8 | `validate-standards-yaml.sh` linter + Janus forbidden-list orchestrator rules + `--eu-tier` flag + CycloneDX SBOM | ARCHITECTURE-TARGET §12.1 + §12.5 | `S`–`L` | J.7 **Done 2026-05-08** via `j7-validate-standards-yaml` (PR #4 merged) ; J.8 (a + b + d) **Done 2026-05-10** via `j8-janus-rules` (20/20 tests, +6 PASS verify.sh, smoke 74 SBOM components) ; J.8.c (`ai-native-rag` LLM gateway rules) deferred to T7 |
 | K.1       | Hermes-Async (event-driven)                                                                                                                        | ARCHITECTURE-TARGET §9.2          | `M`     | Pending (T7)                                                                                                                      |
@@ -1090,7 +1114,7 @@ Reprise de ARCHITECTURE-TARGET §11.
 | Trimestre | Modules                                                                                          | Status (2026-05-10)                                                                                                                                                                                                                     | Rationale                                                                                                                                    |
 |-----------|--------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
 | **T4**    | **P-1, P-2, P-3, P-4, I.1, J.1–J.6**                                                             | ✅ **Done 2026-05-04** via `t4-adr-ratification` (PR #2 mergée). 35 ADDED FRs + 8 NFRs. P-5 retiré 2026-05-06 (Hera 9 sub-agents conservés).                                                                                            | Méthodologie : ADR capturés, 6 standards YAML v1.0.0, cycle 12 mois, schémas compliance.                                                     |
-| **T5**    | **Phase 1 ARCHITECTURE-TARGET, J.7, J.8, K.3 (Demeter), I.2–I.6**                                | ✅ **Connect codegen done 2026-05-06** via `t5-connect-codegen` (PR #3). ✅ **J.7 done 2026-05-08** via `j7-validate-standards-yaml` (PR #4 merged). ✅ **OTel + OBI + Coroot stack templates done 2026-05-10** via `t5-otel-stack` (PR #5 merged). ✅ **J.8 done 2026-05-10** via `j8-janus-rules` (PR #6 merged ; refusal rules + `--eu-tier` flag + CycloneDX SBOM ; 20/20 tests, +6 PASS verify.sh ; J.8.c deferred to T7). ✅ **K.3 done 2026-05-12** via `k3-demeter` (PR #7 merged ; Demeter persona + dependency scanner + deny-list + standard + Janus delta ; 22/22 tests `k3.test.sh --level 1,2`). ✅ **Q-004 resolved 2026-05-12** via `t5-otel-dart-api-realign` (PR #8 merged ; `flutter/opentelemetry.md` v1.0.0 → v1.1.0 standards realign on real Workiva `opentelemetry: 0.18.11` ; 9 fabricated symbols removed + 7 verified symbols added ; 12/12 L1 tests). ✅ **I.2 done 2026-05-12** via `i2-compliance-tiers` (single human-readable standard `global/compliance-tiers.md` v1.0.0 codifiant T1/T2/T3 — schema verbatim + matrix §10.2 byte-identical + `linter_rule: t3-forbidden-components` forward-pointer ; index entry + REVIEW birth + `docs/COMPLIANCE.md` + 14/14 L1 tests ; resolves K.3 forward-pointer). ✅ **I.6 done 2026-05-12** via `i6-compliance-artefacts` (deterministic `.tgz` compliance bundle generator `.forge/scripts/compliance/bundle.sh` + DPA template + standard `global/compliance-artefacts-bundle.md` v1.0.0 6 H2 + 4 MUST NOT ; six-member bundle MANIFEST/tier-matrix/dpa-template/audit-ledger×2/SBOM ; `SOURCE_DATE_EPOCH` determinism asserted by L2 fixture ; 16/16 tests `i6.test.sh --level 1,2` ; bundle layout forward-stable for Themis-territory artefacts). ✅ **I.3 done 2026-05-12** via `i3-t3-forbidden-linter` (`constitution-linter.sh::ADR-I3-001` section + standard `global/forbidden-components-rules.md` v1.0.0 with 10 `T3-RULE-001..010` rules + tier-scaled severity T1/T2 warn → T3 fail immediate + 14/14 L1 tests `i3.test.sh` ; resolves I.2 `linter_rule:` forward-pointer ; unblocks I.5). I.5 (`forge-compliance.yml` workflow) + NIS2/DORA/CRA/AI Act regulatory deadline artefacts (Themis K.5, T7+) = pending. | Observabilité + Connect contrats + standards linter + compliance graduée. Réversible.                                                        |
+| **T5**    | **Phase 1 ARCHITECTURE-TARGET, J.7, J.8, K.3 (Demeter), I.2–I.6**                                | ✅ **Connect codegen done 2026-05-06** via `t5-connect-codegen` (PR #3). ✅ **J.7 done 2026-05-08** via `j7-validate-standards-yaml` (PR #4 merged). ✅ **OTel + OBI + Coroot stack templates done 2026-05-10** via `t5-otel-stack` (PR #5 merged). ✅ **J.8 done 2026-05-10** via `j8-janus-rules` (PR #6 merged ; refusal rules + `--eu-tier` flag + CycloneDX SBOM ; 20/20 tests, +6 PASS verify.sh ; J.8.c deferred to T7). ✅ **K.3 done 2026-05-12** via `k3-demeter` (PR #7 merged ; Demeter persona + dependency scanner + deny-list + standard + Janus delta ; 22/22 tests `k3.test.sh --level 1,2`). ✅ **Q-004 resolved 2026-05-12** via `t5-otel-dart-api-realign` (PR #8 merged ; `flutter/opentelemetry.md` v1.0.0 → v1.1.0 standards realign on real Workiva `opentelemetry: 0.18.11` ; 9 fabricated symbols removed + 7 verified symbols added ; 12/12 L1 tests). ✅ **I.2 done 2026-05-12** via `i2-compliance-tiers` (single human-readable standard `global/compliance-tiers.md` v1.0.0 codifiant T1/T2/T3 — schema verbatim + matrix §10.2 byte-identical + `linter_rule: t3-forbidden-components` forward-pointer ; index entry + REVIEW birth + `docs/COMPLIANCE.md` + 14/14 L1 tests ; resolves K.3 forward-pointer). ✅ **I.6 done 2026-05-12** via `i6-compliance-artefacts` (deterministic `.tgz` compliance bundle generator `.forge/scripts/compliance/bundle.sh` + DPA template + standard `global/compliance-artefacts-bundle.md` v1.0.0 6 H2 + 4 MUST NOT ; six-member bundle MANIFEST/tier-matrix/dpa-template/audit-ledger×2/SBOM ; `SOURCE_DATE_EPOCH` determinism asserted by L2 fixture ; 16/16 tests `i6.test.sh --level 1,2` ; bundle layout forward-stable for Themis-territory artefacts). ✅ **I.3 done 2026-05-12** via `i3-t3-forbidden-linter` (`constitution-linter.sh::ADR-I3-001` section + standard `global/forbidden-components-rules.md` v1.0.0 with 10 `T3-RULE-001..010` rules + tier-scaled severity T1/T2 warn → T3 fail immediate + 14/14 L1 tests `i3.test.sh` ; resolves I.2 `linter_rule:` forward-pointer ; unblocks I.5). ✅ **I.5 done 2026-05-12** via `i5-compliance-workflow` (reusable `.github/workflows/forge-compliance.yml` `on: workflow_call:` 158 LOC orchestrant Demeter + linter + SBOM + bundle ; 3 inputs `eu-tier` / `target-dir` / `artefact-name` + 1 output `artefact-path` ; upload `.tgz` via `actions/upload-artifact@v4` ; standard `global/forge-compliance-workflow.md` v1.0.0 284 LOC 7 H2 + 4 MUST NOT + 8 triggers ; 17/17 tests `i5.test.sh --level 1,2` ; trois ADRs ADR-I5-CW-001..003 — exit-code aggregation trust-each-script + SOURCE_DATE_EPOCH commit-ts source + L2 act-opt-in `FORGE_I5_ACT=1`). NIS2/DORA/CRA/AI Act regulatory deadline artefacts (Themis K.5, T7+) = pending. | Observabilité + Connect contrats + standards linter + compliance graduée. Réversible.                                                        |
 | **T6**    | **B.8 (flagship 1.0.0 → 2.0.0), Phase 2 ARCHITECTURE-TARGET**                                    | ⏸️ Pending.                                                                                                                                                                                                                             | Migration breaking flagship. **Point de non-retour**.                                                                                        |
 | **T7**    | **B.6 (event-driven-eu), B.7 (ai-native-rag), K.1, K.2, K.4, K.5**                               | ⏸️ Pending.                                                                                                                                                                                                                             | Deux nouveaux archétypes + 4 nouveaux agents.                                                                                                |
 | **T8**    | **B.9 (mobile-pwa-first / 2.0.0), B.3 (rust-cli-tui), pédagogie C.2-C.5, F.3**                   | ⏸️ Pending.                                                                                                                                                                                                                             | Renommage mobile + dernier archétype premium + walkthrough/anti-patterns/comparison/migration + fix release script (F.3 post-mortem v0.3.0). |
@@ -1267,13 +1291,20 @@ et AI-native souverain.
    par `SOURCE_DATE_EPOCH` (NFR-I6-CA-005). 16/16 tests `i6.test.sh
    --level 1,2`. Bundle layout forward-stable pour les artefacts
    Themis-territory (NIS2 / DORA / CRA / AI Act) lorsque K.5 livrera.
-8. ⏸️ **Livrer I.3 + I.5** — linter rule T3
-   (`t3-forbidden-components` à shipper dans `constitution-linter.sh`,
-   lira la matrice de I.2), `forge-compliance.yml` reusable workflow
-   (consommera le bundle I.6 livré ici). Les échéances réglementaires
+8. ✅ **I.3 + I.5 livrés 2026-05-12** — linter rule T3
+   (`i3-t3-forbidden-linter` : `constitution-linter.sh::ADR-I3-001`
+   section + standard `global/forbidden-components-rules.md` v1.0.0
+   + 10 `T3-RULE-001..010` + tier-scaled severity ; 14/14 L1 tests
+   `i3.test.sh`) ; `forge-compliance.yml` reusable workflow
+   (`i5-compliance-workflow` : `.github/workflows/forge-compliance.yml`
+   158 LOC `on: workflow_call:` orchestrant Demeter + linter +
+   SBOM + bundle, upload `.tgz` via `actions/upload-artifact@v4`,
+   standard `global/forge-compliance-workflow.md` v1.0.0 ; 17/17
+   tests `i5.test.sh --level 1,2`). Les échéances réglementaires
    NIS2/DORA/CRA/AI Act dans `.forge/compliance/` restent dans le
-   territoire Themis (K.5, T7+) — le bundle layout I.6 est
-   forward-stable pour les absorber additivement quand Themis livrera.
+   territoire Themis (K.5, T7+) — le bundle layout I.6 et le
+   workflow I.5 sont forward-stable pour les absorber additivement
+   quand Themis livrera.
 Tout le reste découle.
 
-— *Fin du nouveau plan. Mise à jour partielle 2026-05-12 (I.2 + I.6 livrés).*
+— *Fin du nouveau plan. Mise à jour partielle 2026-05-12 (I.2 + I.3 + I.5 + I.6 livrés).*

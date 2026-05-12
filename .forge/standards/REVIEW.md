@@ -269,3 +269,40 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   at B.8 (T6) via SemVer minor bump 1.0.0 → 1.1.0. No
   constitutional amendment required ; Articles III.4, V, XI, XII
   compliance preserved.
+
+---
+
+## 2026-05-12 — Initial ratification (i5-compliance-workflow)
+
+- **Reviewer**: @bfontaine
+- **Reviewed standards**:
+
+  | Standard                                  | Version | Decision | Next review due | Notes                                                                                                                              |
+  |-------------------------------------------|---------|----------|-----------------|------------------------------------------------------------------------------------------------------------------------------------|
+  | global/forge-compliance-workflow.md       | 1.0.0   | KEEP     | 2027-05-12      | Initial ratification. Documents the reusable `.github/workflows/forge-compliance.yml` workflow contract for adopter repos.         |
+
+- **Decision**: KEEP
+- **Next review due**: 2027-05-12
+- **Notes**: New Markdown standard at
+  `global/forge-compliance-workflow.md` documenting the I.5 reusable
+  GitHub Actions workflow `.github/workflows/forge-compliance.yml`.
+  The workflow is triggered by `on: workflow_call:` and exposes three
+  inputs (`eu-tier` required ; `target-dir` default `.` ;
+  `artefact-name` default `forge-compliance-artefacts`) and one output
+  (`artefact-path`). It orchestrates the four EU-compliance scripts
+  shipped by I.3 (`constitution-linter.sh::ADR-I3-001 T3-Forbidden
+  Components` section), I.6 (`.forge/scripts/compliance/bundle.sh`),
+  K.3 (`bin/forge-demeter-scan.sh`), and J.8.d (`bin/forge-sbom.sh`),
+  uploading the deterministic `.tgz` via
+  `actions/upload-artifact@v4`. Three ADRs (ADR-I5-CW-001..003) lock
+  the exit-code aggregation envelope (trust each script's tier
+  scaling end-to-end ; SBOM no-lockfile non-fatal),
+  `SOURCE_DATE_EPOCH` source (commit timestamp with run-start
+  fallback ; no `inputs.epoch`), and L2 act-runner gating (opt-in
+  `FORGE_I5_ACT=1` with skip-when-absent semantics mirroring the
+  `t5-otel-live-run::FORGE_LIVE_RUN_DOCKER=1` precedent).
+  Forward-stable for Themis-territory regulatory deadline steps
+  (NIS2 / DORA / CRA / AI Act) when K.5 (T7+) ships — additive
+  expansion. `linter_rule: null` (advisory standard ; the workflow
+  itself is the enforcement surface). No constitutional amendment
+  required ; Articles III.4, V, XI, XII compliance preserved.

@@ -122,6 +122,10 @@ jobs:
         run: bash .forge/scripts/tests/i6.test.sh --level 1,2
       - name: i3.test.sh
         run: bash .forge/scripts/tests/i3.test.sh --level 1,2
+      - name: i5.test.sh
+        # I.5 reusable compliance workflow harness. L1-only by default ;
+        # L2 (act-based smoke) is opt-in via FORGE_I5_ACT=1 per ADR-I5-CW-003.
+        run: bash .forge/scripts/tests/i5.test.sh --level 1
 
   # ─── gates ── verify.sh + constitution-linter.sh ───────────────
   gates:

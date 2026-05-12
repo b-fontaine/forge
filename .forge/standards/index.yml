@@ -409,3 +409,11 @@ standards:
     triggers: [forbidden, t3-forbidden, t3-rule, linter, t1, t2, t3, eu-tier, ci-enforcement, forbidden-components]
     scope: all
     priority: high
+
+  # ─── I.5 — Forge compliance workflow (i5-compliance-workflow) ────────────
+
+  - id: global/forge-compliance-workflow
+    path: standards/global/forge-compliance-workflow.md
+    triggers: [compliance, forge-compliance.yml, reusable-workflow, workflow_call, eu-tier, ci-enforcement, regulatory-handoff, github-actions]
+    scope: all
+    priority: high

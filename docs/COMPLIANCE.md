@@ -165,3 +165,77 @@ honours the same `SOURCE_DATE_EPOCH` recipe as
 member. The full content schema, determinism recipe, consumption
 protocol, and forward-compatibility rules live in
 [`compliance-artefacts-bundle.md`](../.forge/standards/global/compliance-artefacts-bundle.md).
+
+---
+
+## Reusable compliance workflow
+
+> **Audit**: I.5 (`i5-compliance-workflow`, 2026-05-12).
+
+Forge ships a **reusable** GitHub Actions workflow at
+[`.github/workflows/forge-compliance.yml`](../.github/workflows/forge-compliance.yml)
+so adopter repos can gate their PRs + pushes against the framework's
+EU-compliance surface with one `uses:` reference, no per-repo
+orchestration boilerplate.
+
+The workflow orchestrates the four EU-compliance checks Forge already
+ships : Demeter (`bin/forge-demeter-scan.sh`), the constitution
+linter incl. its I.3 ADR-I3-001 T3-Forbidden Components section
+(`.forge/scripts/constitution-linter.sh`), the CycloneDX 1.5 SBOM
+(`bin/forge-sbom.sh`), and the compliance artefacts bundle
+(`.forge/scripts/compliance/bundle.sh`). It uploads the deterministic
+`.tgz` produced by the bundle script as a CI artefact for hand-off
+to auditors and regulators.
+
+### Quick start
+
+In your adopter repo, create a workflow that calls the reusable one :
+
+```yaml
+# Adopter repo: .github/workflows/eu-compliance.yml
+name: eu-compliance
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  compliance:
+    uses: <forge-repo>/.github/workflows/forge-compliance.yml@<ref>
+    with:
+      eu-tier: T2          # required ; T1 | T2 | T3
+      target-dir: .        # optional ; default '.'
+      artefact-name: forge-compliance-artefacts   # optional
+```
+
+Replace `<forge-repo>` with the Forge repo coordinate (e.g.
+`bfontaine/forge` or your fork) and `<ref>` with a tag, branch, or
+SHA (e.g. `v0.4.0`, `main`, or a commit hash).
+
+### Tier inheritance
+
+The `eu-tier` input is **per-call** : it is passed explicitly into
+the workflow as a string. It is independent of any
+`.forge/.forge-tier` ledger that may live inside the calling repo —
+the workflow's I.3 linter step receives the tier via
+`FORGE_EU_TIER=<eu-tier>` so it works even when the calling repo has
+no ledger file (e.g. early adoption).
+
+When a `.forge/.forge-tier` ledger IS present in the calling repo,
+adopters SHOULD pass `eu-tier:` matching its content to keep the two
+signals coherent. A mismatch is allowed (the per-call value wins) but
+typically signals a misconfiguration adopters should resolve.
+
+### Outputs
+
+The workflow exposes one output `artefact-path` carrying the
+relative path of the uploaded `.tgz` artefact (default
+`forge-compliance-artefacts.tgz`). Adopter workflows can chain the
+artefact downstream (e.g. attach it to a release, upload it to S3,
+or re-sign it via Sigstore).
+
+The full step-by-step contract, tier-scaled severity aggregation
+recipe, consumption protocol, and interdictions live in
+[`forge-compliance-workflow.md`](../.forge/standards/global/forge-compliance-workflow.md).
