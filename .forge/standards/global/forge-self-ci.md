@@ -40,7 +40,7 @@ Shape constraints :
 - No `continue-on-error: true` anywhere.
 - Every `uses:` reference pinned to a tag (no `@main` / `@master`
   / `@HEAD` / `:latest`).
-- Workflow file ≤ 250 lines (NFR-CI-002).
+- Workflow file ≤ 300 lines (NFR-CI-002 ; bumped from 250 on 2026-05-12 to accommodate the linear growth of harness entries across T5 — 18+ harnesses today vs ~10 at G.1 ship time).
 
 ## What's intentionally different from infra/ci-workflows.md
 

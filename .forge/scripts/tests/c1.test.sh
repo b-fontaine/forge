@@ -728,15 +728,15 @@ if "skipped" not in joined_run:
 PY
 }
 
-# NFR-CI-002 + FR-CI-013 — workflow ≤ 250 lines.
+# NFR-CI-002 + FR-CI-013 — workflow ≤ 300 lines (bumped 2026-05-12).
 test_forge_ci_under_size_budget() {
   if [ ! -f "$WORKFLOW_FILE" ]; then
     echo "    workflow file missing" >&2; return 1
   fi
   local lines
   lines=$(wc -l < "$WORKFLOW_FILE" | tr -d ' ')
-  if [ "$lines" -gt 250 ]; then
-    echo "    forge-ci.yml is $lines lines (> 250 NFR-CI-002 budget)" >&2
+  if [ "$lines" -gt 300 ]; then
+    echo "    forge-ci.yml is $lines lines (> 300 NFR-CI-002 budget)" >&2
     return 1
   fi
 }

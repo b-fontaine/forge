@@ -338,8 +338,8 @@ test_forge_ci_under_size_budget() {
     echo "    workflow file missing" >&2; return 1
   fi
   local lines; lines=$(wc -l < "$WORKFLOW_FILE")
-  if [ "$lines" -gt 250 ]; then
-    echo "    workflow $lines lines > 250 (NFR-CI-002)" >&2; return 1
+  if [ "$lines" -gt 300 ]; then
+    echo "    workflow $lines lines > 300 (NFR-CI-002)" >&2; return 1
   fi
 }
 
