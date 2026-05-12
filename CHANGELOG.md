@@ -12,6 +12,67 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Changed — `scripts/release.sh` (renamed + OTP support) (`f3-release-script-fix`)
+
+The maintainer-side release helper has been renamed and refactored to
+fix two latent defects discovered during the v0.3.0 release :
+
+- **Renamed** `scripts/release-v0.3.0.sh` → `scripts/release.sh`.
+  The new script is generic and accepts a required
+  `--version <X.Y.Z>` flag instead of pinning the version in its
+  filename. The old file has been **deleted** (no symlink ;
+  ADR-F3-001).
+- **Subshell isolation (bug 1)**. The original `run()` helper used
+  bash `eval` which leaked cumulative `cd` operations into the
+  parent shell. Every directory change is now scoped to a subshell
+  (`( cd cli && ... )` or `run()` wrapping in `( eval "$@" )`), so
+  the script's working directory is invariant across the entire
+  run.
+- **2FA OTP handling (bug 2)**. `npm publish` now receives the OTP
+  via `--otp="$OTP"`. The OTP is resolved through a three-tier
+  fallback chain (ADR-F3-004) :
+  1. Explicit `--otp <6-digits>` flag (preferred for automation).
+  2. Interactive silent `read -rsp` prompt when stdin is a TTY.
+  3. `$NPM_OTP` environment variable (CI / scripted contexts).
+  The script exits 2 with a clear message if all three sources are
+  absent and the publish step is not being skipped. The OTP value
+  is never echoed or logged ; dry-run traces redact it as
+  `<redacted>`.
+- **`GOVERNANCE.md § Release Process`** updated to document the new
+  invocation form, the `--otp` fallback chain, and the maintainer-
+  only nature of the helper script.
+- **Test harness** `.forge/scripts/tests/f3.test.sh` ships 10 L1
+  grep-based tests covering : script presence + executable bit +
+  audit comment + `set -euo pipefail` + `--version` plumbing +
+  `--otp` plumbing + `NPM_OTP` fallback + no bare `eval cd` +
+  top-level `cd` count = 1 + `npm publish --otp` forwarding +
+  CHANGELOG entry. 1 L2 opt-in fixture (`FORGE_F3_LIVE=1`) drives
+  the script in `--dry-run` mode and asserts the OTP literal is
+  redacted from the trace. Registered in `forge-ci.yml` `harness`
+  matrix after `i5.test.sh` with `--level 1`.
+
+Four ADRs resolve the design open questions :
+
+- **ADR-F3-001** — Old script handling : **delete**, no symlink
+  (the new script's required `--version` flag makes a symlink fail
+  with the same usage error a missing-file error produces).
+- **ADR-F3-002** — `cli/assets/scripts/` adopter template : **out
+  of scope** (verified 2026-05-12 — the template does not exist in
+  the current tree ; if a future change ships a release helper to
+  adopters via `forge init`, it owns the template).
+- **ADR-F3-003** — Flag form : **`--version <X.Y.Z>`** over
+  `--bump <level>` (the maintainer pins VERSION + CHANGELOG by hand
+  at archive time ; the script verifies, it does not decide).
+- **ADR-F3-004** — OTP fallback chain : **flag → TTY → env-var**,
+  fail loudly with exit 2 if all three absent and publish is not
+  skipped (silent OTP omission would re-hang the script on stdin —
+  the exact bug F.3 fixes).
+
+This change was **pulled forward from T8** (per the original
+`.forge/product/roadmap.md` Phase 3 detail row) so the next v0.3.x
+release can be cut with a working release helper. No constitutional
+amendment required ; Articles III.4, V, XII compliance preserved.
+
 ### Added — I.5 forge-compliance.yml reusable workflow (`i5-compliance-workflow`)
 
 Reusable GitHub Actions workflow `.github/workflows/forge-compliance.yml`
