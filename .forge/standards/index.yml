@@ -393,3 +393,11 @@ standards:
     triggers: [compliance, t1, t2, t3, eu-tier, dpa, schrems, cloud-act, tier-classification]
     scope: all
     priority: high
+
+  # ─── I.6 — Compliance artefacts bundle (i6-compliance-artefacts) ────────────
+
+  - id: global/compliance-artefacts-bundle
+    path: standards/global/compliance-artefacts-bundle.md
+    triggers: [compliance, bundle, auditor, dpa, audit-ledger, nis2, dora, cra, ai-act, regulatory-handoff]
+    scope: all
+    priority: high
