@@ -1,0 +1,34 @@
+name: t5-otel-live-run
+status: planned
+created: 2026-05-12
+schema: full-stack-monorepo
+constitution_version: "1.1.0"
+parent_audit_items:
+  - T.5  # Phase D — OTel live-run validation (collector boundary contract)
+depends_on:
+  - t5-otel-stack             # Phase A — infra (collector contract :4318)
+  - t5-otel-app               # Phase B — SDK init + middleware + demo-005
+  - t5-otel-traceparent-e2e   # Phase C — BDD spec + Kong gateway grep
+  - t5-otel-dart-api-realign  # Q-004 — Workiva pkg API ratified
+layers:
+  - id: backend
+    path: examples/forge-fsm-example/backend
+  - id: frontend
+    path: examples/forge-fsm-example/frontend
+  - id: infra
+    path: examples/forge-fsm-example/infra
+designs_per_layer:
+  backend: design.md
+  frontend: design.md
+  infra: design.md
+tasks_per_layer:
+  backend: tasks.md
+  frontend: tasks.md
+  infra: tasks.md
+timeline:
+  proposed: 2026-05-12
+  specified: 2026-05-12
+  designed: 2026-05-12
+  planned: 2026-05-12
+  # implemented: <set on impl gate>
+  # archived: <auto-filled by /forge:archive>
