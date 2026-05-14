@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1778610596737,
+  "lastScanned": 1778772001752,
   "projectRoot": "/Users/bfontaine/git/github/forge",
   "techStack": {
     "languages": [],
@@ -41,7 +41,7 @@
       "path": "bin",
       "purpose": "Executable scripts",
       "fileCount": 12,
-      "lastAccessed": 1778610596708,
+      "lastAccessed": 1778772001723,
       "keyFiles": [
         "_forge-init-helpers.sh",
         "forge-demeter-scan.sh",
@@ -54,7 +54,7 @@
       "path": "cli",
       "purpose": null,
       "fileCount": 8,
-      "lastAccessed": 1778610596709,
+      "lastAccessed": 1778772001724,
       "keyFiles": [
         "README.md",
         "VERSION",
@@ -67,7 +67,7 @@
       "path": "docs",
       "purpose": "Documentation",
       "fileCount": 15,
-      "lastAccessed": 1778610596710,
+      "lastAccessed": 1778772001724,
       "keyFiles": [
         "ARCHETYPES.md",
         "ARCHITECTURE-TARGET.md",
@@ -80,7 +80,7 @@
       "path": "examples",
       "purpose": "Example code",
       "fileCount": 1,
-      "lastAccessed": 1778610596710,
+      "lastAccessed": 1778772001725,
       "keyFiles": [
         "README.md"
       ]
@@ -89,16 +89,16 @@
       "path": "scripts",
       "purpose": "Build/utility scripts",
       "fileCount": 1,
-      "lastAccessed": 1778610596711,
+      "lastAccessed": 1778772001725,
       "keyFiles": [
-        "release-v0.3.0.sh"
+        "release.sh"
       ]
     },
     "cli/assets": {
       "path": "cli/assets",
       "purpose": "Static assets",
-      "fileCount": 15,
-      "lastAccessed": 1778610596712,
+      "fileCount": 16,
+      "lastAccessed": 1778772001726,
       "keyFiles": [
         "CHANGELOG.md",
         "CLAUDE.md",
@@ -109,7 +109,7 @@
       "path": "cli/dist",
       "purpose": "Distribution/build output",
       "fileCount": 6,
-      "lastAccessed": 1778610596712,
+      "lastAccessed": 1778772001727,
       "keyFiles": [
         "cli.d.ts",
         "cli.js",
@@ -120,21 +120,21 @@
       "path": "cli/node_modules",
       "purpose": "Dependencies",
       "fileCount": 1,
-      "lastAccessed": 1778610596713,
+      "lastAccessed": 1778772001727,
       "keyFiles": []
     }
   },
   "hotPaths": [
     {
       "path": "docs/new-archetypes-plan.md",
-      "accessCount": 18,
-      "lastAccessed": 1778429315535,
+      "accessCount": 27,
+      "lastAccessed": 1778773783953,
       "type": "file"
     },
     {
       "path": ".forge/product/roadmap.md",
-      "accessCount": 7,
-      "lastAccessed": 1778429294451,
+      "accessCount": 13,
+      "lastAccessed": 1778773830994,
       "type": "file"
     },
     {
@@ -150,27 +150,27 @@
       "type": "file"
     },
     {
-      "path": "cli/src/commands/init-archetype.ts",
-      "accessCount": 4,
-      "lastAccessed": 1778423526562,
+      "path": "cli/src/commands/init.ts",
+      "accessCount": 5,
+      "lastAccessed": 1778772794787,
       "type": "file"
     },
     {
-      "path": "cli/src/commands/init.ts",
-      "accessCount": 4,
-      "lastAccessed": 1778423611657,
+      "path": "cli/src/commands/init-archetype.ts",
+      "accessCount": 5,
+      "lastAccessed": 1778772800700,
+      "type": "file"
+    },
+    {
+      "path": "bin/forge-init-fsm.sh",
+      "accessCount": 5,
+      "lastAccessed": 1778772815409,
       "type": "file"
     },
     {
       "path": ".forge/scripts/tests/j8.test.sh",
       "accessCount": 4,
       "lastAccessed": 1778423902412,
-      "type": "file"
-    },
-    {
-      "path": "bin/forge-init-fsm.sh",
-      "accessCount": 4,
-      "lastAccessed": 1778425362682,
       "type": "file"
     },
     {

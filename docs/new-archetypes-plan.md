@@ -508,6 +508,158 @@ v1.0.0 sont désormais résolus.
 
 ---
 
+## 0.1 Status update — 2026-05-14 (T5.1 — CLI Trust Harness planned)
+
+> **Lis cette section avant §11.** Elle introduit un nouveau lot **T5.1**
+> intercalé entre T5 (clos) et T6 (B.8 flagship migration). T5 est
+> considéré **terminé** au 2026-05-12 (tous les items attendus archivés ;
+> items résiduels explicitement déférés à T6 / T7+). T5.1 reste sous le
+> bandeau T5 parce qu'il finalise la **confiance dans le binaire publié**
+> avant que B.8 ne commence à toucher au flagship, et corrige des
+> régressions d'expérience-utilisateur découvertes après v0.3.0 / v0.3.1.
+
+### Origine — trois symptômes, une cause commune
+
+Après publication des tarballs npm `@sdd-forge/cli@0.3.0` (2026-05-02),
+`0.3.1` (2026-05-12, `f3-release-script-fix`), `0.3.2` (2026-05-13, trois
+fixes first-experience), le mainteneur a constaté **trois défauts récurrents**
+à l'usage du binaire publié :
+
+1. **Deux patches en moins de 24 h après une release stable** — `--eu-tier`
+   non wiré dans commander (`cli/src/cli.ts`), `spawn bash ENOENT` quand
+   `--target` pointe sur un répertoire inexistant
+   (`cli/src/commands/init-archetype.ts:148`), `init.sh` refuse de
+   scaffolder dans un dir merely-existant (vs non-empty). Les trois fixes
+   livrés en v0.3.2 sont des **régressions de surface CLI** non
+   détectables par les unit tests vitest existants — seul un test
+   exécutant le binaire publié dans une `mkdtemp` les expose.
+2. **Paramètres d'invocation `forge init` non maîtrisés** — l'ABI complète
+   (`<project-name>` positionnel, `--archetype`, `--org`, `--target`,
+   `--force`, `--eu-tier`) n'est documentée que dans `init.ts` lui-même.
+   La discussion GitHub d'annonce v0.3.0 a oublié `--org` et `--eu-tier`,
+   parce qu'aucune source-of-truth copiable n'existe.
+3. **`task dev:up` échoue après scaffold full-stack-monorepo** — le
+   template `.forge/templates/archetypes/full-stack-monorepo/Taskfile.yml.tmpl:67`
+   contient `- echo "infra tests: delegated to b1-delivery workflows"`.
+   Dans un scalaire plain YAML (pas quoté au début), `: ` (deux-points +
+   espace) est un séparateur key/value : go-task reçoit donc un mapping
+   `{"echo \"infra tests": "delegated to b1-delivery workflows\""}` au
+   lieu d'une string → `invalid keys in command`. Le template est cassé
+   **depuis B.1 (2026-04-21)** mais aucun test n'exécute `task --list-all`
+   sur un projet fraîchement scaffoldé.
+
+**Cause racine commune** : le pipeline de tests CLI valide les choses
+faciles à vérifier (fichiers présents, code de retour 0) mais **jamais
+l'exécutabilité du scaffold rendu**. `cli/test/e2e/cli.test.ts` couvre
+uniquement l'archétype `default` + l'existence de quelques paths ;
+aucune assertion sur le contenu fonctionnel.
+
+### T5.1 — items proposés
+
+Quatre items, ordonnés par dépendance + valeur défensive. Effort total
+**`M`**. Critère de release **v0.3.3** : T5.1 done + couches A+B+C green
+en CI.
+
+- **T5.1.0 — Fix `Taskfile.yml.tmpl` + sweep templates.** Single-quote
+  toute commande shell contenant `: ` dans les `cmds:` go-task. Sweep
+  `grep -rn 'echo "[^"]*: [^"]*"' .forge/templates/ examples/` pour
+  attraper les autres occurrences. Critère de réussite : `task --list-all`
+  sur un projet fraîchement scaffoldé (`forge init <slug> --archetype
+  full-stack-monorepo --org dev.forge.test --target /tmp/probe`) sort en
+  exit 0. Effort : `XS` (1 ligne minimum, plusieurs probable). **Prérequis
+  T5.1.B** — le smoke test détectera toute régression future de ce type.
+- **T5.1.A — Golden snapshot des flags CLI.** Nouveau
+  `cli/test/e2e/help-snapshots.test.ts` qui capture l'output de
+  `forge --help`, `forge init --help`, `forge upgrade --help`,
+  `forge verify --help`, `forge version --help` dans
+  `cli/test/e2e/__snapshots__/help/`. Tout changement de surface met à
+  jour le snapshot → revue forcée. Assertion supplémentaire : chaque
+  archétype actif de `.forge/scaffolding/dispatch-table.yml` (sauf
+  `flutter-firebase` `status: removed_from_roadmap`) doit apparaître
+  dans le `--help` `forge init` quelque part (description ou exemple).
+  **Bloque** : le bug `--eu-tier` v0.3.0 / v0.3.1, ton oubli `--org`
+  dans la discussion GitHub. Effort : `S`.
+- **T5.1.B — Smoke test par archétype.** Nouveau
+  `cli/test/e2e/archetypes-smoke.test.ts` qui itère sur
+  `dispatch-table.yml::archetypes` (skip `default` déjà couvert ;
+  skip `flutter-firebase` `status: removed_from_roadmap` ; skip
+  `mobile-only` `status: legacy_alias` si target = `mobile-pwa-first`
+  livré). Pour chaque archétype actif :
+  1. `mkdtemp` dans un path **non-existant** (pour exercer le mkdir
+     parent du fix v0.3.2 `spawn bash ENOENT`).
+  2. `forge init <slug> --archetype <name> --org dev.forge.test
+     --target <tmp>` ; exit 0.
+  3. Assertion d'une **matrice de fichiers attendus** déclarée
+     dans une fixture YAML voisine
+     (`cli/test/e2e/archetype-fixtures/<name>.yml`), **pas** en dur dans
+     le test. Format suggéré : liste de paths obligatoires + liste de
+     paths interdits (cf. `cli/` qui ne doit jamais leaker dans target).
+  4. `task --list-all` dans le tmpdir → exit 0 (aurait attrapé le bug
+     ligne 67 immédiatement). Skip-pass si `task` absent du PATH, comme
+     `t5-otel-app.test.sh` skip-pass `flutter`. La validation YAML
+     intégrée à go-task suffit ; pas besoin d'exécuter les tasks.
+  5. **Opt-in tighter checks** via `FORGE_E2E_TOOLCHAINS=1` :
+     `cargo check --workspace` (full-stack-monorepo, rust-cli-tui),
+     `flutter analyze` (full-stack-monorepo, mobile-only / mobile-pwa-first).
+     Off par défaut (toolchains absentes en CI minimal).
+
+  Effort : `M`. **Bloque** : tous les bugs v0.3.2 + le bug Taskfile +
+  toute régression future de scaffold rendu.
+- **T5.1.C — Pre-publish tarball gate.** Nouveau
+  `cli/scripts/prepublish-smoke.mjs` qui :
+  1. Lance `npm pack` dans `cli/`, capture le tarball produit.
+  2. Extrait le tarball dans un tmpdir isolé.
+  3. Installe le tarball globalement dans un volume isolé
+     (`npm install -g <tarball>` dans un `prefix` tmpdir, ou
+     équivalent `npx --no-install <tarball>`).
+  4. Relance T5.1.B contre le **binaire installé**, pas contre `dist/`.
+
+  Wiré dans `package.json::prepublishOnly` après `lint && test && bundle`.
+  **Bloque** : tout bug d'assets manquants dans `cli/assets/`, tout bug
+  qui n'apparaît qu'au binaire publié (ex. : v0.3.0 / v0.3.1 `--eu-tier`).
+  Effort : `M`.
+
+### T5.1 — couche D différée à T6 / B.8
+
+La 4ème couche (`forge upgrade` matrix test) est planifiée comme
+**B.8.15** (cf. §4.2 ci-dessous) parce qu'elle dépend du snapshot
+`full-stack-monorepo / 2.0.0` produit par B.8.2, et que sa vraie valeur
+est de couvrir la paire 1.0.0 → 2.0.0 du flagship. Elle reste utile pour
+les paires N-1 → N intra-1.x.x mais avec une priorité plus faible que
+les couches A/B/C qui débloquent les releases courantes.
+
+### T5.1 — non-objectifs
+
+- **Pas de nouveau standard** versionné (`.forge/standards/*.yaml`) — T5.1
+  est de l'outillage CLI, pas une décision architecturale. Le change
+  archivé portera `constitution_version: 1.1.0` inchangé.
+- **Pas de nouveau Forge agent** — outillage de niveau plomberie, hors
+  du périmètre K.x.
+- **Pas de toolchain bundle** — les tighter checks (`cargo`, `flutter`,
+  `task`) restent opt-in via env-var, jamais installés par le test
+  harness lui-même (NFR équivalent à NFR-J7-001 / NFR-K3-DEM-005 :
+  zero new external dep + budget ≤ 5 s wall-clock pour T5.1.B sans
+  toolchains).
+
+### T5.1 — critères de réussite et release
+
+| Critère                                                      | Outcome                                                              |
+|--------------------------------------------------------------|----------------------------------------------------------------------|
+| `Taskfile.yml.tmpl:67` corrigé + sweep templates             | `task --list-all` sur scaffold flagship sort en 0                    |
+| Golden snapshots flags CLI                                   | `forge {init,upgrade,verify,version} --help` capturés et asserts     |
+| Smoke par archétype                                          | Pour chaque archetype non-`removed_from_roadmap`, scaffold + matrice |
+| Pre-publish gate                                             | `npm pack` → installation isolée → smoke green avant `npm publish`   |
+| Harness `t5-1.test.sh` enregistré dans `forge-ci.yml`         | Matrix CI green sur la PR T5.1                                       |
+| Release **v0.3.3** publiée                                    | Tarball `@sdd-forge/cli@0.3.3` + GH release notes                    |
+
+> **Mentor note** : ne sois pas tenté de fusionner T5.1 dans la branche
+> `optim` qui accumule P1+P2 vers v0.3.x (cf. ta memory
+> `no_pr_before_t2_p1_p2.md`). T5.1 est **additif** sur le CLI, sans
+> nouveau archétype ni standard — il peut être livré sur `main` directement
+> via une release patch v0.3.3, sans interférer avec la règle d'accumulation.
+
+---
+
 ## 0. Executive Summary (1 page)
 
 À la sortie de **v0.3.0** (2026-05-02), Forge a clos T0, T1, T2 P1, T2 P2 et T3 robustesse :
@@ -601,6 +753,7 @@ sont créés. Cinq nouveaux agents Forge sont introduits. Plan de migration **4 
 | I.2–I.6   | Compliance EU graded — standard `compliance-tiers.md`, linter rule, Demeter agent, `forge-compliance.yml` workflow, NIS2/DORA/CRA/AI Act artefacts | ARCHITECTURE-TARGET §10           | `M`–`L` | I.2 **Done 2026-05-12** via `i2-compliance-tiers` (`global/compliance-tiers.md` v1.0.0 + index entry + REVIEW birth + `docs/COMPLIANCE.md` + 14/14 L1 tests `i2.test.sh`). I.6 **Done 2026-05-12** via `i6-compliance-artefacts` (`.forge/scripts/compliance/bundle.sh` deterministic .tgz + DPA template + standard `global/compliance-artefacts-bundle.md` v1.0.0 + 16/16 tests `i6.test.sh --level 1,2`). I.3 **Done 2026-05-12** via `i3-t3-forbidden-linter` (`constitution-linter.sh::ADR-I3-001` section + standard `global/forbidden-components-rules.md` v1.0.0 with 10 `T3-RULE-001..010` rules + tier-scaled severity T1/T2 warn → T3 fail immediate + 14/14 L1 tests `i3.test.sh` ; resolves I.2 `linter_rule:` forward-pointer ; unblocks I.5). I.5 **Done 2026-05-12** via `i5-compliance-workflow` (reusable `.github/workflows/forge-compliance.yml` `on: workflow_call:` with 3 inputs / 1 output, orchestrant Demeter + linter + SBOM + bundle, upload `.tgz` via `actions/upload-artifact@v4`, standard `global/forge-compliance-workflow.md` v1.0.0 7 H2 + 4 MUST NOT + 8 triggers, 17/17 tests `i5.test.sh --level 1,2` incl. L2 act-opt-in skip-pass ; trois ADRs résolvent exit-code aggregation + SOURCE_DATE_EPOCH source + L2 gating). NIS2/DORA/CRA/AI Act regulatory deadline artefacts encore en attente — déférés à Themis (K.5, T7+) ; le bundle I.6 + workflow I.5 sont forward-stable pour les absorber additivement. |
 | J.1–J.6   | Six standards versionnés `.forge/standards/*.yaml` (transport / state-management / observability / orchestration / identity / persistence) v1.0.0  | ARCHITECTURE-TARGET §12.1         | `M`     | **Done 2026-05-04** via `t4-adr-ratification` ; J.1 `transport.yaml` bumpé en 1.1.0 le 2026-05-06 par `t5-connect-codegen` (codegen pinning, additif) |
 | J.7 / J.8 | `validate-standards-yaml.sh` linter + Janus forbidden-list orchestrator rules + `--eu-tier` flag + CycloneDX SBOM | ARCHITECTURE-TARGET §12.1 + §12.5 | `S`–`L` | J.7 **Done 2026-05-08** via `j7-validate-standards-yaml` (PR #4 merged) ; J.8 (a + b + d) **Done 2026-05-10** via `j8-janus-rules` (20/20 tests, +6 PASS verify.sh, smoke 74 SBOM components) ; J.8.c (`ai-native-rag` LLM gateway rules) deferred to T7 |
+| T5.1 | **CLI Trust Harness** — fix `Taskfile.yml.tmpl` + couches A (golden flags) + B (smoke par archétype) + C (pre-publish tarball gate). Couche D différée à B.8.15.                                                  | Issue post-v0.3.0 / v0.3.1 / v0.3.2 release pain | `M`     | **Planned 2026-05-14** — pre-v0.3.3 release. Détails §0.1.                                                                       |
 | K.1       | Hermes-Async (event-driven)                                                                                                                        | ARCHITECTURE-TARGET §9.2          | `M`     | Pending (T7)                                                                                                                      |
 | K.2       | Pythia (AI/RAG)                                                                                                                                    | ARCHITECTURE-TARGET §9.2          | `M`     | Pending (T7)                                                                                                                      |
 | K.3       | Demeter (data steward EU)                                                                                                                          | ARCHITECTURE-TARGET §9.2          | `M`     | **Done 2026-05-12** via `k3-demeter` (persona + scanner + deny-list + standard + Janus delta ; 22/22 tests `k3.test.sh --level 1,2`) |
@@ -851,6 +1004,25 @@ Migration **additive d'abord, breaking ensuite** :
 - **B.8.14.** Bump schema `1.0.0` → `2.0.0` + amendement Constitution si nécessaire
   (Article XII). Annoncer la deprecation 1.0.0 à T+6 mois (CHANGELOG + `GOVERNANCE.md`
   release process). Effort : `S`.
+- **B.8.15.** **T5.1 couche D — `forge upgrade` matrix test.** Test e2e matriciel
+  couvrant chaque paire N-1 → N de la flagship (et symétriquement pour les autres
+  archétypes shippés). Prérequis : T5.1.0 / .A / .B / .C livrés (cf. §0.1). Une
+  cellule par paire dans une matrice GitHub Actions :
+    1. Scaffold d'un projet sur le tarball snapshot `full-stack-monorepo/1.0.0.tar.gz`
+       (réutilise B.8.2 + l'API A.7 `forge-upgrade.sh`).
+    2. `forge upgrade --target <tmp>` vers la version HEAD du framework.
+    3. Assertion : `upgrade_history` ledger append-only, `.merge-conflicts` vide,
+       `scaffold-manifest.yaml::archetype_version` bumpé, **smoke T5.1.B re-run**
+       sur l'arbre upgradé (matrice de fichiers + `task --list-all`).
+    4. Cas négatif explicite : tentative d'upgrade 1.0.0 → 2.0.0 sans `--force`
+       doit produire `[NEEDS MIGRATION:]` et exit non-zéro (mécanisme A.7 déjà
+       en place). Cas négatif `force` : `--force` sur Git tree sale doit refuser
+       (déjà testé dans `a7.test.sh` mais re-validé en e2e contre le binaire).
+  Bloque toute régression silencieuse de migration. Particulièrement critique
+  pour B.8 (1.0.0 → 2.0.0, point de non-retour). Effort : `M`. Critère de
+  réussite : matrice cellules `1.0.0→2.0.0`, `mobile-only/1.0.0→mobile-pwa-first/2.0.0`
+  (depuis B.9), et `event-driven-eu` / `ai-native-rag` une fois shippés en T7,
+  toutes green en CI avant `npm publish` v0.4.0.
 
 **Total B.8 : `XL`**, ~10–12 semaines pour 1 dev senior + revues Atlas/Aegis.
 
@@ -1118,7 +1290,8 @@ Reprise de ARCHITECTURE-TARGET §11.
 |-----------|--------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
 | **T4**    | **P-1, P-2, P-3, P-4, I.1, J.1–J.6**                                                             | ✅ **Done 2026-05-04** via `t4-adr-ratification` (PR #2 mergée). 35 ADDED FRs + 8 NFRs. P-5 retiré 2026-05-06 (Hera 9 sub-agents conservés).                                                                                            | Méthodologie : ADR capturés, 6 standards YAML v1.0.0, cycle 12 mois, schémas compliance.                                                     |
 | **T5**    | **Phase 1 ARCHITECTURE-TARGET, J.7, J.8, K.3 (Demeter), I.2–I.6**                                | ✅ **Connect codegen done 2026-05-06** via `t5-connect-codegen` (PR #3). ✅ **J.7 done 2026-05-08** via `j7-validate-standards-yaml` (PR #4 merged). ✅ **OTel + OBI + Coroot stack templates done 2026-05-10** via `t5-otel-stack` (PR #5 merged). ✅ **J.8 done 2026-05-10** via `j8-janus-rules` (PR #6 merged ; refusal rules + `--eu-tier` flag + CycloneDX SBOM ; 20/20 tests, +6 PASS verify.sh ; J.8.c deferred to T7). ✅ **K.3 done 2026-05-12** via `k3-demeter` (PR #7 merged ; Demeter persona + dependency scanner + deny-list + standard + Janus delta ; 22/22 tests `k3.test.sh --level 1,2`). ✅ **Q-004 resolved 2026-05-12** via `t5-otel-dart-api-realign` (PR #8 merged ; `flutter/opentelemetry.md` v1.0.0 → v1.1.0 standards realign on real Workiva `opentelemetry: 0.18.11` ; 9 fabricated symbols removed + 7 verified symbols added ; 12/12 L1 tests). ✅ **I.2 done 2026-05-12** via `i2-compliance-tiers` (single human-readable standard `global/compliance-tiers.md` v1.0.0 codifiant T1/T2/T3 — schema verbatim + matrix §10.2 byte-identical + `linter_rule: t3-forbidden-components` forward-pointer ; index entry + REVIEW birth + `docs/COMPLIANCE.md` + 14/14 L1 tests ; resolves K.3 forward-pointer). ✅ **I.6 done 2026-05-12** via `i6-compliance-artefacts` (deterministic `.tgz` compliance bundle generator `.forge/scripts/compliance/bundle.sh` + DPA template + standard `global/compliance-artefacts-bundle.md` v1.0.0 6 H2 + 4 MUST NOT ; six-member bundle MANIFEST/tier-matrix/dpa-template/audit-ledger×2/SBOM ; `SOURCE_DATE_EPOCH` determinism asserted by L2 fixture ; 16/16 tests `i6.test.sh --level 1,2` ; bundle layout forward-stable for Themis-territory artefacts). ✅ **I.3 done 2026-05-12** via `i3-t3-forbidden-linter` (`constitution-linter.sh::ADR-I3-001` section + standard `global/forbidden-components-rules.md` v1.0.0 with 10 `T3-RULE-001..010` rules + tier-scaled severity T1/T2 warn → T3 fail immediate + 14/14 L1 tests `i3.test.sh` ; resolves I.2 `linter_rule:` forward-pointer ; unblocks I.5). ✅ **I.5 done 2026-05-12** via `i5-compliance-workflow` (reusable `.github/workflows/forge-compliance.yml` `on: workflow_call:` 158 LOC orchestrant Demeter + linter + SBOM + bundle ; 3 inputs `eu-tier` / `target-dir` / `artefact-name` + 1 output `artefact-path` ; upload `.tgz` via `actions/upload-artifact@v4` ; standard `global/forge-compliance-workflow.md` v1.0.0 284 LOC 7 H2 + 4 MUST NOT + 8 triggers ; 17/17 tests `i5.test.sh --level 1,2` ; trois ADRs ADR-I5-CW-001..003 — exit-code aggregation trust-each-script + SOURCE_DATE_EPOCH commit-ts source + L2 act-opt-in `FORGE_I5_ACT=1`). NIS2/DORA/CRA/AI Act regulatory deadline artefacts (Themis K.5, T7+) = pending. | Observabilité + Connect contrats + standards linter + compliance graduée. Réversible.                                                        |
-| **T6**    | **B.8 (flagship 1.0.0 → 2.0.0), Phase 2 ARCHITECTURE-TARGET**                                    | ⏸️ Pending.                                                                                                                                                                                                                             | Migration breaking flagship. **Point de non-retour**.                                                                                        |
+| **T5.1**  | **CLI Trust Harness — fix Taskfile + couches A/B/C**                                              | ⏸️ Planned 2026-05-14. Pre-release v0.3.3. Détails §0.1.                                                                                                                                                                                | Garantit qu'un tarball npm `@sdd-forge/cli@X` ne shippe pas un scaffold cassé. Couche D différée à T6 / B.8.15.                              |
+| **T6**    | **B.8 (flagship 1.0.0 → 2.0.0), Phase 2 ARCHITECTURE-TARGET, B.8.15 couche D upgrade-matrix**     | ⏸️ Pending.                                                                                                                                                                                                                             | Migration breaking flagship. **Point de non-retour**. B.8.15 ferme la dernière couche de T5.1 (upgrade matrix N-1 → N).                      |
 | **T7**    | **B.6 (event-driven-eu), B.7 (ai-native-rag), K.1, K.2, K.4, K.5**                               | ⏸️ Pending.                                                                                                                                                                                                                             | Deux nouveaux archétypes + 4 nouveaux agents.                                                                                                |
 | **T8**    | **B.9 (mobile-pwa-first / 2.0.0), B.3 (rust-cli-tui), pédagogie C.2-C.5**                        | ⏸️ Pending. **F.3 pulled forward, delivered 2026-05-12 via `f3-release-script-fix`.**                                                                                                                                                                | Renommage mobile + dernier archétype premium + walkthrough/anti-patterns/comparison/migration. F.3 release script fix shipped early (T5).    |
 | **T9+**   | **G.* (Forge Guardian, VSCode, pre-commit), H.* (multi-tenant, télémétrie, compliance reports)** | ⏸️ Pending.                                                                                                                                                                                                                             | Outillage périphérique et enterprise après que les 5 archétypes soient stables.                                                              |
