@@ -499,9 +499,12 @@ v1.0.0 sont désormais résolus.
 | `i2-compliance-tiers`        | archived               | T5 (I.2)                      |
 | `t5-otel-live-run`           | archived               | T5 Phase D (live-run collector contract validation) |
 | `f3-release-script-fix`      | archived               | T8 / F.3 (pulled forward) — release script fix |
+| `cli-trust-harness`          | archived               | T5.1 (CLI Trust Harness)                       |
+| `t5-cargo-pin-refresh`       | archived               | T5.1.E (Cargo pin correction)                  |
+| `t5-bin-server-deps`         | archived               | T5.1.E (bin-server deps + grpc-api API realign) |
 
-**24 archivés** (incluant `f3-release-script-fix` 2026-05-12) au
-2026-05-12, aucun change en cours. Aucun change orphelin, aucun
+**27 archivés** (incluant `t5-bin-server-deps` 2026-05-16) au
+2026-05-16, aucun change en cours. Aucun change orphelin, aucun
 `status: in_progress` bloqué, aucun marqueur
 `[NEEDS CLARIFICATION:]` non résolu inline dans les changes archivés
 (tous gates `verify.sh` + `constitution-linter.sh` PASS).
@@ -658,6 +661,300 @@ les couches A/B/C qui débloquent les releases courantes.
 > nouveau archétype ni standard — il peut être livré sur `main` directement
 > via une release patch v0.3.3, sans interférer avec la règle d'accumulation.
 
+### T5.1 — extension post-implementation (Option B, 2026-05-16)
+
+> **Lis cette sous-section après §0.1 originale.** Le premier run de
+> `task validate` (2026-05-16, le jour-même où le Taskfile est livré) a
+> remonté **trois bugs réels** que les couches A/B/C ne pouvaient pas
+> attraper par construction. T5.1 est donc **étendu** pour inclure les
+> tactical fix-forwards avant la release v0.3.3 (Option B retenue par
+> le mainteneur 2026-05-16).
+
+**Bugs détectés par `task validate`** :
+
+1. **Cargo `buffa = "=0.3.3"` pin mort** — crates.io n'a plus que les
+   versions 0.5.x / 0.6.0. Pin posé par `t5-connect-codegen`
+   (2026-05-06) ; upstream a yank / bumpé en 10 jours. Bloque
+   `cargo build` sur tout scaffold flagship frais. Détecté par
+   `task smoke-with-toolchains` (FORGE_E2E_TOOLCHAINS=1).
+2. **`opentelemetry_sdk` package fantôme** dans le template mobile-only —
+   le pkg n'existe pas sur pub.dev. Bloque `flutter pub get` sur tout
+   scaffold mobile-only. Découverte adjacente : le pkg réel
+   `opentelemetry` (Workiva) est **web-only** — donc inadapté à
+   mobile-only ET au frontend Flutter mobile du flagship. Cette
+   découverte est plus profonde et est déplacée vers **T5.3**
+   ci-dessous (`t5-otel-dartastic-realign`), pas dans T5.1.
+3. **Label cosmétique** `✓ version` au lieu de
+   `_test_t51_l1_004_snapshots_dir_5files` dans la sortie du harness —
+   bash dynamic scoping leak (`for name in …` non-`local`). Patch
+   inline dans `cli-trust-harness` (pré-archive).
+
+**Scope ajouté à T5.1** :
+
+- **T5.1.E — `t5-cargo-pin-refresh`** **Done 2026-05-16**. Investigation
+  upstream via crates.io REST API a montré que `buffa 0.3.x` s'arrête à
+  `=0.3.0` (les versions 0.3.1/0.3.2/0.3.3 n'ont jamais été publiées) ;
+  `connectrpc 0.3.3` requiert `buffa = "^0.3"`, donc `=0.3.0` est l'unique
+  pin exact satisfaisant. Bumpé `transport.yaml` v1.1.0 → v1.2.0 (additif,
+  ADR-T5CPR-002) avec WAIVER comment block rewriting per ADR-T5CPR-003
+  (séparation WAIVER connectrpc / CORRECTION buffa). REVIEW.md ledger
+  entry. Snapshot tarball régénéré via `bin/forge-snapshot.sh` ; A.7
+  29/29 GREEN préservé. Harness `t5-cargo.test.sh` 10 L1 + 1 L2 opt-in,
+  10/10 PASS. Modernisation `connectrpc 0.4.x/0.5.x/0.6.x` deferred à
+  B.8 (T6). Effort : `S` (livré).
+- **T5.1.F — Patch inline label fix dans `cli-trust-harness`**. Ajout
+  de `local name` dans `_test_t51_l1_004_snapshots_dir_5files`. Pas
+  de nouveau change — le `cli-trust-harness` est en `status: implemented`,
+  non encore archivé. Le patch landed dans la même PR. Effort : `XS`.
+- **Note sur Bug #2** : la migration `Workiva → Dartastic` est
+  **trop lourde** pour entrer dans T5.1 (XL effort) et invalide
+  partiellement deux changes T5 archivés. Elle est isolée en **T5.3**.
+  T5.1 ne touche **pas** au standard `flutter/opentelemetry.md` ni aux
+  fichiers Dart OTel. Adopters mobile-only et flagship Flutter mobile
+  continueront à voir le bug OTel jusqu'à v0.4.0-rc.x (T5.3) — c'est
+  acceptable parce que :
+  - mobile-only n'a aucun adopter production aujourd'hui (B.4 archivé
+    2026-04-30, donc adopters early-bird au mieux).
+  - Le flagship Flutter mobile vient juste de recevoir le SDK OTel
+    (Phase B 2026-05-12) — pas d'adopter en prod non plus.
+  - Le `task validate` documenté dans `docs/CONTRIBUTING.md` § Local
+    pre-push validation signalera le bug en clair lors de chaque PR,
+    impossible à louper.
+
+**Release criterion v0.3.3 amendé** : T5.1 archivé inclut désormais
+`cli-trust-harness` (avec T5.1.F inline) **ET** `t5-cargo-pin-refresh`
+(T5.1.E). Le bump VERSION 0.3.2 → 0.3.3 + le sealing CHANGELOG
+[Unreleased] → [0.3.3] interviennent après ces deux archives.
+
+---
+
+## 0.2 Status update — 2026-05-16 (T5.2 — Anti-Hallucination Platform Verification)
+
+> **T5.2 est un changement de processus, pas de code.** Il sert à
+> empêcher la classe de bug qui a produit Q-004 (`opentelemetry_sdk`
+> fantôme) puis sa pseudo-résolution (`opentelemetry` Workiva, web-only).
+
+### Origine — leçon Q-004 + extension Workiva platform
+
+L'investigation Q-004 (2026-05-11, sibling de `t5-otel-app`) a vérifié
+deux axes :
+
+1. Le package **existe** sur pub.dev (`opentelemetry: 0.18.11`).
+2. Les **symboles** publiés correspondent à ce que le standard décrit
+   (résolu : 9 symboles fabriqués remplacés par 7 symboles vérifiés).
+
+Mais a **omis** un troisième axe :
+
+3. Les **plateformes cibles** sont supportées.
+
+Workiva `opentelemetry` ne supporte que `web` — alors que les
+archétypes Forge ciblent Flutter mobile (iOS + Android) en première
+classe (full-stack-monorepo, mobile-only). Le ratification Q-004 a
+donc validé un pkg structurellement incompatible avec la cible
+applicative. La realign `flutter/opentelemetry.md` v1.0.0 → v1.1.0 a
+hérité de ce défaut, propagé dans `t5-otel-app` (frontend Flutter
+flagship) et `b4-mobile-only` (template mobile-only).
+
+**Constatation** : la procédure document-specialist actuelle vérifie
+**l'API surface** mais pas la **platform target compatibility**. C'est
+le trou que T5.2 ferme.
+
+### T5.2 — items proposés
+
+**T5.2.A — `document-specialist.md` platform verification checklist**
+
+Mettre à jour `.claude/agents/document-specialist.md` avec une nouvelle
+H2 section **« Platform Verification Checklist (3-axis) »**. Chaque
+ratification de standard externe DOIT cocher les 3 axes avant de
+flipper le statut "verified" :
+
+1. **Existence** — package résolvable sur le registre (pub.dev /
+   crates.io / npm / Maven / etc.) avec la version épinglée.
+2. **API surface** — symboles documentés correspondent à ceux exposés
+   par le pkg réel (via Context7 ou inspection directe).
+3. **Platform compatibility** — toutes les plateformes cibles de
+   l'archétype ou du standard sont déclarées supportées par le pkg
+   (page pub.dev « Platforms » section / `Cargo.toml` `targets` / etc.).
+   Si **une** plateforme cible n'est pas listée, marker explicite
+   `[PLATFORM MISMATCH:]` et escalation vers ADR.
+
+Format adopté : checklist à 3 cases dans le change `proposal.md`
+section "Source Documents" → ligne dédiée par dépendance ratifiée.
+Pattern repris dans tous les changes futurs touchant `*.yaml`/`.md`
+standards qui pin des deps externes.
+
+**T5.2.B — `standards-lifecycle.md` re-verification cadence**
+
+Bump `.forge/standards/global/standards-lifecycle.md` v1.0.0 →
+**v1.1.0** (additif, REVIEW.md entry). Nouvelle section :
+
+> **Platform compatibility re-verification.** Un standard qui pin
+> une dépendance externe SHOULD ré-exécuter la 3-axis checklist
+> (T5.2.A) lors de chaque re-revue ; MUST la ré-exécuter quand
+> l'archétype consommateur **ajoute une plateforme cible** (e.g.
+> mobile-pwa-first ajoutant PWA Qwik en T8). Pré-revue : la
+> checklist est exécutée *avant* tout ratification de standard
+> nouveau ou bumpé.
+
+**T5.2.C — Harness `t5-2.test.sh`**
+
+≥ 6 L1 grep :
+
+- `document-specialist.md` contient la H2 « Platform Verification Checklist »
+- La section liste les 3 axes nommés (existence / API surface / platform compatibility)
+- `standards-lifecycle.md` v1.1.0 frontmatter
+- `standards-lifecycle.md` contient le bloc "Platform compatibility re-verification"
+- REVIEW.md ledger contient l'entrée Updated 2026-05-XX
+- Tous les standards `.forge/standards/flutter/*.md` qui pin un pkg externe
+  documentent les 3 axes dans leur frontmatter ou body (post-T5.3 :
+  le seul standard concerné aujourd'hui est `flutter/opentelemetry.md`,
+  qui sera bumpé v2.0.0 par T5.3 et héritera de la checklist).
+
+1 L2 opt-in `FORGE_T52_LIVE=1` : exécution de la checklist sur un
+pkg pub.dev arbitraire (sanity check de l'outillage Context7 +
+WebFetch).
+
+**T5.2.D — Documentation**
+
+- `docs/CONTRIBUTING.md § Adding a Standard` enrichi avec la
+  checklist 3-axis.
+- `docs/LINTING.md` mentionne la nouvelle règle ratification
+  (informative, pas enforcement).
+
+**Effort total** : `S`–`M`. Indépendant de T5.3 — peut land avant ou
+après.
+
+---
+
+## 0.3 Status update — 2026-05-16 (T5.3 — `t5-otel-dartastic-realign`)
+
+> **T5.3 corrige le bug architectural OTel** révélé par `task validate`
+> et confirmé par investigation pub.dev 2026-05-16 : Workiva
+> `opentelemetry 0.18.11` est **web-only** ; l'écosystème **Dartastic**
+> (api / dartastic / flutterrific) est **all-platform** et conforme
+> spec OTel sur les 3 signaux.
+
+### Origine — Q-006
+
+Q-004 (résolu 2026-05-12 sur Workiva) est **réouvert** par découverte
+2026-05-16 de la platform mismatch. Marqué **Q-006** dans le nouveau
+change `t5-otel-dartastic-realign` (Q-005 réservée pour l'override
+`FORGE_SKIP_PREPUBLISH` de T5.1.C). Q-006 refermé par ADR du change
+qui ratifie Dartastic + applique la checklist 3-axis de T5.2.
+
+### Comparatif Workiva vs Dartastic
+
+| Critère                          | Workiva `opentelemetry: 0.18.11`        | Dartastic `dartastic_opentelemetry_api: 0.9.0` (+ 1.0.0-beta.6)               |
+|----------------------------------|-----------------------------------------|-------------------------------------------------------------------------------|
+| Plateformes Flutter              | **Web only**                            | All (Android, iOS, Linux, macOS, Web, Windows)                                |
+| Conformité spec OTel             | Traces Beta / Metrics Alpha / Logs ✗   | 3 signaux ratifiés (Traces / Metrics / Logs)                                  |
+| Séparation API / SDK             | Monolithique                            | 3 pkgs : `_api` (no-op) / `dartastic_opentelemetry` (Dart backend) / `flutterrific_opentelemetry` (Flutter) |
+| Verified publisher pub.dev       | workiva.com                             | Mindful Software (Michael Bushe)                                              |
+| Compatible collector contract    | OUI (OTLP HTTP / protobuf 4318)         | OUI (OTLP HTTP / protobuf 4318)                                               |
+| Maintenance active               | OUI                                     | OUI (1.0.0-beta.6 récent)                                                     |
+
+### T5.3 — items proposés
+
+**T5.3.A — Standard bump breaking `flutter/opentelemetry.md` v1.1.0 → v2.0.0**
+
+Réécriture du standard pour ratifier l'écosystème Dartastic :
+
+- Imports canoniques : `package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart` + `package:flutterrific_opentelemetry/flutterrific_opentelemetry.dart`.
+- Symboles : `Tracer`, `Span`, `Context`, `Baggage`, `Attributes`,
+  `Status`, `SpanKind` — alignés sur la spec OTel verbatim.
+- Init API : `OTel.init(...)` ou équivalent flutterrific, à vérifier
+  via Context7 lors du design.
+- Sampling : aligné collector-side per ADR-OTEL-001 (parent_based +
+  trace_id_ratio_based, env-tier overlays). SDK-side : Dartastic
+  expose `AlwaysOnSampler`/`AlwaysOffSampler`/`TraceIdRatioBasedSampler`
+  conformes spec.
+- Plateformes cibles documentées explicitement : Android, iOS,
+  Linux, macOS, Web, Windows. **Checklist 3-axis T5.2.A cochée
+  inline.**
+- REVIEW.md ledger entry : "Updated 2026-05-XX — pkg substitution
+  Workiva → Dartastic ; platform mismatch resolution Q-006."
+- `breaking_change: true` (substitution de pkg, donc rupture).
+
+**T5.3.B — Flagship `examples/forge-fsm-example/frontend/`**
+
+Réécriture des 5 fichiers Dart OTel dans `lib/core/telemetry/` :
+
+- `telemetry_setup.dart` — init Flutterrific
+- `observers/tracing_navigation_observer.dart`
+- `observers/tracing_bloc_observer.dart`
+- `error_reporter.dart`
+- `interceptors/tracing_interceptor.dart`
+
+Plus :
+
+- `pubspec.yaml` : remplacer `opentelemetry: ^0.18.0` par
+  `dartastic_opentelemetry_api: ^0.9.0` + `flutterrific_opentelemetry: ^0.9.0`
+  (ou versions stables au moment du change).
+- `flutter pub get` GREEN attendu.
+
+**T5.3.C — Templates mobile-only**
+
+Réécriture :
+
+- `.forge/templates/archetypes/mobile-only/pubspec.yaml.tmpl` —
+  remplacer `opentelemetry_sdk: ^0.18.0` (qui n'existe pas) par
+  `dartastic_opentelemetry_api` + `flutterrific_opentelemetry`.
+- `.forge/templates/archetypes/mobile-only/lib/observability/otel_init.dart.tmpl` —
+  remplacer l'import + l'init.
+- Mirror dans `cli/assets/`.
+
+**T5.3.D — Snapshot tarball regen (A.7 backward compat)**
+
+Le snapshot `full-stack-monorepo/1.0.0.tar.gz` (archivé pour
+A.7 `forge upgrade`) **n'est pas** régénéré (legacy compat stable
+1.0.0). Le snapshot **schema candidate** ou le prochain bump
+template (post-T5.3 archive) régénère via `npm run bundle` + le
+script de re-snapshot habituel.
+
+**T5.3.E — Harness `t5-otel-dartastic.test.sh`**
+
+≥ 12 L1 grep + 1 L2 fixture-based :
+
+- Standard `flutter/opentelemetry.md` v2.0.0 frontmatter
+- Standard contient les imports Dartastic canoniques
+- Standard contient la checklist 3-axis cochée
+- Aucune mention de `opentelemetry: ^0.18` ou Workiva dans le
+  template ou les fichiers Dart
+- Aucune mention de `opentelemetry_sdk` (le fantôme) nulle part
+- REVIEW.md ledger entry
+- `flutter/opentelemetry.md::breaking_change: true`
+- Mobile-only pubspec.yaml.tmpl pointe sur Dartastic
+- FSM frontend pubspec.yaml pointe sur Dartastic
+- 5 fichiers Dart côté FSM frontend importent Dartastic
+- Mobile-only otel_init.dart.tmpl importe Dartastic
+- CHANGELOG entry
+
+L2 opt-in `FORGE_T53_LIVE=1` : exécute `flutter pub get` + `flutter
+analyze` sur scaffold mobile-only ET flagship frontend, asserte exit 0.
+Skip-pass si `flutter` absent du PATH.
+
+**T5.3.F — Ré-ouverture des changes affectés**
+
+`b4-mobile-only` + `t5-otel-app` + `t5-otel-dart-api-realign`
+restent archivés (Article V audit trail préservé), mais **le change
+T5.3 ajoute une note de référence** dans chacun via leur
+`open-questions.md` ou un fichier `.forge-update-notes` adjacent
+documentant la realign. Pattern : ne pas modifier les changes
+archivés, ajouter un pointer-forward depuis le change qui corrige.
+
+**Effort total** : `XL`. ~5–8 jours pour 1 dev senior.
+
+**Release target** : **v0.4.0-rc.1** (rupture de standard donc bump
+minor en pré-GA selon `docs/VERSIONING.md`). Ne bloque pas v0.3.3
+(T5.1 release ne touche pas à Workiva).
+
+**Risque résiduel** : Dartastic est moins déployé que Workiva
+(beta 1.0.0 vs stable Workiva). Le SDK `flutterrific_opentelemetry`
+n'a peut-être pas le même volume de tests de conformité. **Mitigation**
+: dans le change T5.3 design, prévoir un fallback `dartastic` (Dart
+backend SDK) si flutterrific s'avère bloquant côté Flutter — Dartastic
+expose 3 SDKs au choix.
+
 ---
 
 ## 0. Executive Summary (1 page)
@@ -753,7 +1050,9 @@ sont créés. Cinq nouveaux agents Forge sont introduits. Plan de migration **4 
 | I.2–I.6   | Compliance EU graded — standard `compliance-tiers.md`, linter rule, Demeter agent, `forge-compliance.yml` workflow, NIS2/DORA/CRA/AI Act artefacts | ARCHITECTURE-TARGET §10           | `M`–`L` | I.2 **Done 2026-05-12** via `i2-compliance-tiers` (`global/compliance-tiers.md` v1.0.0 + index entry + REVIEW birth + `docs/COMPLIANCE.md` + 14/14 L1 tests `i2.test.sh`). I.6 **Done 2026-05-12** via `i6-compliance-artefacts` (`.forge/scripts/compliance/bundle.sh` deterministic .tgz + DPA template + standard `global/compliance-artefacts-bundle.md` v1.0.0 + 16/16 tests `i6.test.sh --level 1,2`). I.3 **Done 2026-05-12** via `i3-t3-forbidden-linter` (`constitution-linter.sh::ADR-I3-001` section + standard `global/forbidden-components-rules.md` v1.0.0 with 10 `T3-RULE-001..010` rules + tier-scaled severity T1/T2 warn → T3 fail immediate + 14/14 L1 tests `i3.test.sh` ; resolves I.2 `linter_rule:` forward-pointer ; unblocks I.5). I.5 **Done 2026-05-12** via `i5-compliance-workflow` (reusable `.github/workflows/forge-compliance.yml` `on: workflow_call:` with 3 inputs / 1 output, orchestrant Demeter + linter + SBOM + bundle, upload `.tgz` via `actions/upload-artifact@v4`, standard `global/forge-compliance-workflow.md` v1.0.0 7 H2 + 4 MUST NOT + 8 triggers, 17/17 tests `i5.test.sh --level 1,2` incl. L2 act-opt-in skip-pass ; trois ADRs résolvent exit-code aggregation + SOURCE_DATE_EPOCH source + L2 gating). NIS2/DORA/CRA/AI Act regulatory deadline artefacts encore en attente — déférés à Themis (K.5, T7+) ; le bundle I.6 + workflow I.5 sont forward-stable pour les absorber additivement. |
 | J.1–J.6   | Six standards versionnés `.forge/standards/*.yaml` (transport / state-management / observability / orchestration / identity / persistence) v1.0.0  | ARCHITECTURE-TARGET §12.1         | `M`     | **Done 2026-05-04** via `t4-adr-ratification` ; J.1 `transport.yaml` bumpé en 1.1.0 le 2026-05-06 par `t5-connect-codegen` (codegen pinning, additif) |
 | J.7 / J.8 | `validate-standards-yaml.sh` linter + Janus forbidden-list orchestrator rules + `--eu-tier` flag + CycloneDX SBOM | ARCHITECTURE-TARGET §12.1 + §12.5 | `S`–`L` | J.7 **Done 2026-05-08** via `j7-validate-standards-yaml` (PR #4 merged) ; J.8 (a + b + d) **Done 2026-05-10** via `j8-janus-rules` (20/20 tests, +6 PASS verify.sh, smoke 74 SBOM components) ; J.8.c (`ai-native-rag` LLM gateway rules) deferred to T7 |
-| T5.1 | **CLI Trust Harness** — fix `Taskfile.yml.tmpl` + couches A (golden flags) + B (smoke par archétype) + C (pre-publish tarball gate). Couche D différée à B.8.15.                                                  | Issue post-v0.3.0 / v0.3.1 / v0.3.2 release pain | `M`     | **Planned 2026-05-14** — pre-v0.3.3 release. Détails §0.1.                                                                       |
+| T5.1 | **CLI Trust Harness** — fix `Taskfile.yml.tmpl` + couches A (golden flags) + B (smoke par archétype) + C (pre-publish tarball gate). Couche D différée à B.8.15.                                                  | Issue post-v0.3.0 / v0.3.1 / v0.3.2 release pain | `M`     | **Partially done 2026-05-14** via `cli-trust-harness` — 17/17 L1 + 2 L2 opt-in dans `t5-1.test.sh`. **Extended 2026-05-16** par Option B (T5.1.E `t5-cargo-pin-refresh` + T5.1.F label fix inline). Pre-v0.3.3 release. Détails §0.1. |
+| T5.2 | **Anti-Hallucination Platform Verification** — checklist 3-axis dans `document-specialist.md` + cadence re-verification dans `standards-lifecycle.md` v1.1.0 + harness `t5-2.test.sh`. Process change pour empêcher Q-004 / Q-006-class bugs. | Q-006 (Workiva web-only platform mismatch découvert 2026-05-16) | `S`–`M` | **Planned 2026-05-16** — détails §0.2. Indépendant de T5.1 / T5.3, peut land avant ou après. |
+| T5.3 | **`t5-otel-dartastic-realign`** — substitution Workiva `opentelemetry` (web-only) → écosystème **Dartastic** (`dartastic_opentelemetry_api` + `flutterrific_opentelemetry`, all-platform). Bump `flutter/opentelemetry.md` v1.1.0 → v2.0.0 (breaking). Rewrite flagship Flutter frontend OTel + mobile-only OTel template. Applique la checklist T5.2.A. | Q-006 résolution + bug architectural mobile/desktop OTel | `XL` | **Planned 2026-05-16** — target v0.4.0-rc.1 (rupture standard). Ne bloque pas v0.3.3. Détails §0.3. |
 | K.1       | Hermes-Async (event-driven)                                                                                                                        | ARCHITECTURE-TARGET §9.2          | `M`     | Pending (T7)                                                                                                                      |
 | K.2       | Pythia (AI/RAG)                                                                                                                                    | ARCHITECTURE-TARGET §9.2          | `M`     | Pending (T7)                                                                                                                      |
 | K.3       | Demeter (data steward EU)                                                                                                                          | ARCHITECTURE-TARGET §9.2          | `M`     | **Done 2026-05-12** via `k3-demeter` (persona + scanner + deny-list + standard + Janus delta ; 22/22 tests `k3.test.sh --level 1,2`) |
@@ -1290,7 +1589,9 @@ Reprise de ARCHITECTURE-TARGET §11.
 |-----------|--------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
 | **T4**    | **P-1, P-2, P-3, P-4, I.1, J.1–J.6**                                                             | ✅ **Done 2026-05-04** via `t4-adr-ratification` (PR #2 mergée). 35 ADDED FRs + 8 NFRs. P-5 retiré 2026-05-06 (Hera 9 sub-agents conservés).                                                                                            | Méthodologie : ADR capturés, 6 standards YAML v1.0.0, cycle 12 mois, schémas compliance.                                                     |
 | **T5**    | **Phase 1 ARCHITECTURE-TARGET, J.7, J.8, K.3 (Demeter), I.2–I.6**                                | ✅ **Connect codegen done 2026-05-06** via `t5-connect-codegen` (PR #3). ✅ **J.7 done 2026-05-08** via `j7-validate-standards-yaml` (PR #4 merged). ✅ **OTel + OBI + Coroot stack templates done 2026-05-10** via `t5-otel-stack` (PR #5 merged). ✅ **J.8 done 2026-05-10** via `j8-janus-rules` (PR #6 merged ; refusal rules + `--eu-tier` flag + CycloneDX SBOM ; 20/20 tests, +6 PASS verify.sh ; J.8.c deferred to T7). ✅ **K.3 done 2026-05-12** via `k3-demeter` (PR #7 merged ; Demeter persona + dependency scanner + deny-list + standard + Janus delta ; 22/22 tests `k3.test.sh --level 1,2`). ✅ **Q-004 resolved 2026-05-12** via `t5-otel-dart-api-realign` (PR #8 merged ; `flutter/opentelemetry.md` v1.0.0 → v1.1.0 standards realign on real Workiva `opentelemetry: 0.18.11` ; 9 fabricated symbols removed + 7 verified symbols added ; 12/12 L1 tests). ✅ **I.2 done 2026-05-12** via `i2-compliance-tiers` (single human-readable standard `global/compliance-tiers.md` v1.0.0 codifiant T1/T2/T3 — schema verbatim + matrix §10.2 byte-identical + `linter_rule: t3-forbidden-components` forward-pointer ; index entry + REVIEW birth + `docs/COMPLIANCE.md` + 14/14 L1 tests ; resolves K.3 forward-pointer). ✅ **I.6 done 2026-05-12** via `i6-compliance-artefacts` (deterministic `.tgz` compliance bundle generator `.forge/scripts/compliance/bundle.sh` + DPA template + standard `global/compliance-artefacts-bundle.md` v1.0.0 6 H2 + 4 MUST NOT ; six-member bundle MANIFEST/tier-matrix/dpa-template/audit-ledger×2/SBOM ; `SOURCE_DATE_EPOCH` determinism asserted by L2 fixture ; 16/16 tests `i6.test.sh --level 1,2` ; bundle layout forward-stable for Themis-territory artefacts). ✅ **I.3 done 2026-05-12** via `i3-t3-forbidden-linter` (`constitution-linter.sh::ADR-I3-001` section + standard `global/forbidden-components-rules.md` v1.0.0 with 10 `T3-RULE-001..010` rules + tier-scaled severity T1/T2 warn → T3 fail immediate + 14/14 L1 tests `i3.test.sh` ; resolves I.2 `linter_rule:` forward-pointer ; unblocks I.5). ✅ **I.5 done 2026-05-12** via `i5-compliance-workflow` (reusable `.github/workflows/forge-compliance.yml` `on: workflow_call:` 158 LOC orchestrant Demeter + linter + SBOM + bundle ; 3 inputs `eu-tier` / `target-dir` / `artefact-name` + 1 output `artefact-path` ; upload `.tgz` via `actions/upload-artifact@v4` ; standard `global/forge-compliance-workflow.md` v1.0.0 284 LOC 7 H2 + 4 MUST NOT + 8 triggers ; 17/17 tests `i5.test.sh --level 1,2` ; trois ADRs ADR-I5-CW-001..003 — exit-code aggregation trust-each-script + SOURCE_DATE_EPOCH commit-ts source + L2 act-opt-in `FORGE_I5_ACT=1`). NIS2/DORA/CRA/AI Act regulatory deadline artefacts (Themis K.5, T7+) = pending. | Observabilité + Connect contrats + standards linter + compliance graduée. Réversible.                                                        |
-| **T5.1**  | **CLI Trust Harness — fix Taskfile + couches A/B/C**                                              | ⏸️ Planned 2026-05-14. Pre-release v0.3.3. Détails §0.1.                                                                                                                                                                                | Garantit qu'un tarball npm `@sdd-forge/cli@X` ne shippe pas un scaffold cassé. Couche D différée à T6 / B.8.15.                              |
+| **T5.1**  | **CLI Trust Harness + Option B tactical fixes**                                                    | ✅ **Done 2026-05-16** via 3 archives : `cli-trust-harness` (couches A/B/C + Taskfile sweep) + `t5-cargo-pin-refresh` (buffa pin) + `t5-bin-server-deps` (bin-server Cargo.toml + grpc-api API realign). Released as `@sdd-forge/cli@0.3.3`. | Garantit qu'un tarball npm `@sdd-forge/cli@X` ne shippe pas un scaffold cassé. Couche D différée à T6 / B.8.15. `cargo check --workspace` GREEN end-to-end ; `flutter analyze` mobile-only RED (T5.3). |
+| **T5.2**  | **Anti-Hallucination Platform Verification (process)**                                              | ⏸️ Planned 2026-05-16. Détails §0.2. Closes the Q-004 → Q-006 gap.                                                                                                                  | Ajoute un 3e axe (platform compatibility) à la procédure document-specialist + cadence de re-revue `standards-lifecycle.md` v1.1.0.          |
+| **T5.3**  | **`t5-otel-dartastic-realign`**                                                                    | ⏸️ Planned 2026-05-16. Target v0.4.0-rc.1. Détails §0.3.                                                                                                                            | Workiva (web-only) → Dartastic (all-platform). Bump `flutter/opentelemetry.md` v2.0.0 breaking. Q-006 resolution.                            |
 | **T6**    | **B.8 (flagship 1.0.0 → 2.0.0), Phase 2 ARCHITECTURE-TARGET, B.8.15 couche D upgrade-matrix**     | ⏸️ Pending.                                                                                                                                                                                                                             | Migration breaking flagship. **Point de non-retour**. B.8.15 ferme la dernière couche de T5.1 (upgrade matrix N-1 → N).                      |
 | **T7**    | **B.6 (event-driven-eu), B.7 (ai-native-rag), K.1, K.2, K.4, K.5**                               | ⏸️ Pending.                                                                                                                                                                                                                             | Deux nouveaux archétypes + 4 nouveaux agents.                                                                                                |
 | **T8**    | **B.9 (mobile-pwa-first / 2.0.0), B.3 (rust-cli-tui), pédagogie C.2-C.5**                        | ⏸️ Pending. **F.3 pulled forward, delivered 2026-05-12 via `f3-release-script-fix`.**                                                                                                                                                                | Renommage mobile + dernier archétype premium + walkthrough/anti-patterns/comparison/migration. F.3 release script fix shipped early (T5).    |

@@ -131,6 +131,20 @@ jobs:
         # (dry-run OTP forward fixture) is opt-in via FORGE_F3_LIVE=1
         # per ADR-F3-004 gate pattern.
         run: bash .forge/scripts/tests/f3.test.sh --level 1
+      - name: t5-1.test.sh
+        # T5.1 CLI Trust Harness. L1-only by default ; L2 opt-in via
+        # FORGE_T51_LIVE=1 / FORGE_T51_PACK=1 (ADR-T51-001 / -005).
+        run: bash .forge/scripts/tests/t5-1.test.sh --level 1
+      - name: t5-cargo.test.sh
+        # T5.1.E Cargo pin refresh harness. L1-only by default ; L2
+        # (live crates.io resolution check) is opt-in via
+        # FORGE_T5C_LIVE=1.
+        run: bash .forge/scripts/tests/t5-cargo.test.sh --level 1
+      - name: t5-bin-server.test.sh
+        # T5.1.E bin-server deps harness. L1-only by default ; L2
+        # (live cargo check on fresh scaffold) is opt-in via
+        # FORGE_T5BSD_LIVE=1.
+        run: bash .forge/scripts/tests/t5-bin-server.test.sh --level 1
 
   # ─── gates ── verify.sh + constitution-linter.sh ───────────────
   gates:

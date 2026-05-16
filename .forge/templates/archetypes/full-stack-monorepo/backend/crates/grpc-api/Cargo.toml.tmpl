@@ -21,11 +21,19 @@ publish     = false
 tonic       = { workspace = true }
 prost       = { workspace = true }
 
-# ── Connect-RPC family (ADR-T5-001) — exact pins, see transport.yaml v1.1.0 ──
-# WAIVER 2026-05-05 : 13-day age waiver justified in transport.yaml header.
-connectrpc  = "=0.3.3"
-buffa        = "=0.3.3"
-buffa-types  = "=0.3.3"
+# ── Connect-RPC family (ADR-T5-001) — exact pins, see transport.yaml v1.2.0 ──
+# WAIVER 2026-05-05 : connectrpc / connectrpc-build at =0.3.3 — 13-day age
+# waiver justified in transport.yaml header.
+# Amend 2026-05-16 (t5-cargo-pin-refresh, T5.1.E / ADR-T5CPR-001) :
+# buffa / buffa-types fixed from invalid `=0.3.3` (never published)
+# to `=0.3.0` — the only resolvable version of their 0.3 series
+# satisfying connectrpc 0.3.3's `buffa = "^0.3"` requirement.
+# Amend 2026-05-16 (t5-bin-server-deps) : `features = ["axum"]` required
+# to expose `Router::into_axum_service()` / `into_axum_router()` (the
+# axum feature is opt-in per connectrpc 0.3.3 — verified docs.rs).
+connectrpc  = { version = "=0.3.3", features = ["axum"] }
+buffa        = "=0.3.0"
+buffa-types  = "=0.3.0"
 
 # ── Async runtime + Tower middleware ──
 tokio       = { workspace = true }

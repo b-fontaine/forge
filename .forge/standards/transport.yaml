@@ -12,7 +12,7 @@
 #     with the official `connectrpc/connect-dart` plugin ; added the
 #     `connectrpc` Rust crate family (Anthropic OSS) per ADR-T5-001.
 
-version: "1.1.0"
+version: "1.2.0"
 last_reviewed: 2026-05-04
 expires_at: never
 exception_constitutional: true
@@ -52,15 +52,22 @@ codegen:
     - neoeinstein-tonic
     - neoeinstein-prost
   versions:
-    # WAIVER 2026-05-05 : connectrpc / buffa / buffa-types / connectrpc-build
-    # all pinned `=0.3.3` at 13-day crate age (< 30-day age criterion of
-    # ADR-T5-002 #1 in design.md of t5-connect-codegen). Justification :
+    # WAIVER 2026-05-05 (preserved) : connectrpc / connectrpc-build pinned
+    # `=0.3.3` at 13-day crate age (< 30-day age criterion of ADR-T5-002 #1
+    # in design.md of t5-connect-codegen). Justification :
     #   (1) ConnectRPC conformance suite (6 558 tests) passing satisfies the
     #       regression-filter intent of the 30-day rule.
     #   (2) Anthropic OSS pedigree (`anthropics/connect-rust`).
     #   (3) Exact `=0.3.3` pin keeps upgrades manual.
-    # Pre-1.0 — monitor upstream releases ; if 0.4.x lands before B.8 (T6),
-    # evaluate bump vs stay via a new `transport.yaml` review entry.
+    # Pre-1.0 — monitor upstream releases ; B.8 (T6) re-evaluates.
+    #
+    # Amend 2026-05-16 (t5-cargo-pin-refresh, T5.1.E / ADR-T5CPR-001 / ADR-T5CPR-003) :
+    # buffa / buffa-types were pinned `=0.3.3` by t5-connect-codegen but those
+    # versions were never published on crates.io (series 0.3.x stops at 0.3.0).
+    # connectrpc 0.3.3 declares `buffa = "^0.3"` — `=0.3.0` is the unique
+    # resolvable exact pin satisfying that constraint. Correction is NOT a
+    # WAIVER ; it is an error-of-fact fix. RED witness : task validate 2026-05-16
+    # (cli-trust-harness archetypes-smoke FORGE_E2E_TOOLCHAINS=1).
     buf: "1.68.2"
     protoc-gen-connect-go: "1.19.2"
     protoc-gen-es: ">=2.2.0"
@@ -68,8 +75,8 @@ codegen:
     "@connectrpc/connect-web": "^2.0.0"
     connectrpc-dart: ">=1.0.0"
     connectrpc: "=0.3.3"        # WAIVER (see comment above)
-    buffa: "=0.3.3"              # WAIVER
-    buffa-types: "=0.3.3"        # WAIVER
+    buffa: "=0.3.0"              # CORRECTION (see Amend 2026-05-16 above)
+    buffa-types: "=0.3.0"        # CORRECTION
     connectrpc-build: "=0.3.3"   # WAIVER (build-dep)
   derived_outputs: [openapi-3.1, asyncapi-3.1]
 

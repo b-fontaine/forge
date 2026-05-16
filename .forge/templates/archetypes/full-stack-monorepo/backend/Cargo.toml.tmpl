@@ -36,6 +36,12 @@ tonic = "0.12"
 prost = "0.13"
 tonic-build = "0.12"
 
+# ── HTTP / transport (T5.1.E follow-on, t5-bin-server-deps) ──
+# axum 0.8 is required by connectrpc 0.3.3 (declares `axum = "^0.8"`).
+axum = "0.8"
+tower-http = { version = "0.6", features = ["trace"] }
+http = "1"
+
 # ── Database (infrastructure layer) ──
 sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "macros"] }
 

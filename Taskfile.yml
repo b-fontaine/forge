@@ -1,0 +1,202 @@
+# Forge — repo-root Taskfile for maintainer-side pre-push validation.
+# <!-- Audit: T5.1 (cli-trust-harness) — local pre-push helper -->
+#
+# Run `task validate` before pushing to main / opening a PR. Runs the
+# full gauntlet :
+#   1. Build the CLI (tsc → dist/)
+#   2. Forge gates (verify.sh + constitution-linter.sh)
+#   3. T5.1 harness (17 L1 grep checks)
+#   4. Full CLI vitest suite (72 tests today)
+#   5. Per-archetype smoke with cargo check + flutter analyze
+#      (FORGE_E2E_TOOLCHAINS=1 ; gated by fixture flags)
+#   6. Per-archetype `task dev:up` boot validation
+#      (requires Docker daemon ; teardown is automatic via trap)
+#
+# Each step is invokable individually : `task harness`, `task vitest`,
+# `task gates`, `task dev-up-matrix`, etc. — see `task --list-all`.
+#
+# Adopters NEVER see this file — it lives at the Forge framework repo
+# root, not in scaffolded projects.
+
+version: '3'
+
+vars:
+  # Active archetypes (extends naturally when new ones land in
+  # `.forge/scaffolding/dispatch-table.yml` — append the name here
+  # to bring them into the validation matrix).
+  ACTIVE_ARCHETYPES: full-stack-monorepo mobile-only
+
+tasks:
+  default:
+    desc: "List available tasks"
+    silent: true
+    cmds:
+      - task --list-all
+
+  # ── Top-level gauntlet ──────────────────────────────────────────
+
+  validate:
+    desc: "Full pre-push gauntlet — build + gates + harness + vitest + per-archetype cargo/flutter + dev:up"
+    cmds:
+      - task: build
+      - task: gates
+      - task: harness
+      - task: vitest
+      - task: smoke-with-toolchains
+      - task: dev-up-matrix
+      - 'echo "── ALL CHECKS GREEN — ready to push ──"'
+
+  # ── Individual stages ──────────────────────────────────────────
+
+  build:
+    desc: "Build the CLI (tsc → dist/) — prerequisite for vitest/smoke/dev-up"
+    dir: cli
+    cmds:
+      - npm run build
+
+  gates:
+    desc: "Forge gates — verify.sh + constitution-linter.sh"
+    cmds:
+      - bash .forge/scripts/verify.sh
+      - bash .forge/scripts/constitution-linter.sh
+
+  harness:
+    desc: "T5.1 harness — 17 L1 grep checks (~50 ms)"
+    cmds:
+      - bash .forge/scripts/tests/t5-1.test.sh --level 1
+
+  vitest:
+    desc: "Full CLI vitest suite (72 tests today, ~5 s) — skip-pass cargo/flutter when absent"
+    dir: cli
+    cmds:
+      - npx vitest run
+
+  smoke-with-toolchains:
+    desc: "Per-archetype smoke + cargo check --workspace + flutter analyze (FORGE_E2E_TOOLCHAINS=1)"
+    dir: cli
+    env:
+      FORGE_E2E_TOOLCHAINS: "1"
+    cmds:
+      - npx vitest run test/e2e/archetypes-smoke.test.ts
+
+  dev-up-matrix:
+    desc: "For each archetype — scaffold → task dev:up → docker compose ps → cleanup (requires Docker daemon)"
+    cmds:
+      - |
+        set -uo pipefail
+        if ! docker info > /dev/null 2>&1; then
+          echo "[FAIL] Docker daemon not running. Start Docker Desktop and retry."
+          echo "       (Run 'task clean-leaked' afterwards if you Ctrl+C'd a previous run.)"
+          exit 1
+        fi
+
+        SCAFFOLD_DIRS=()
+        cleanup_all() {
+          local d
+          for d in "${SCAFFOLD_DIRS[@]:-}"; do
+            if [ -n "$d" ] && [ -d "$d" ]; then
+              echo "── cleanup: $d ──"
+              (cd "$d" 2>/dev/null && \
+                (task dev:down 2>/dev/null || \
+                 docker compose -f docker-compose.dev.yml down 2>/dev/null)) || true
+              rm -rf "$d"
+            fi
+          done
+        }
+        trap cleanup_all EXIT INT TERM
+
+        FAILED=()
+        for archetype in {{.ACTIVE_ARCHETYPES}}; do
+          slug="smoke_$(echo "$archetype" | tr '-' '_')"
+          scaffold_dir=$(mktemp -d "/tmp/forge-devup-${archetype}-XXXXXX")
+          SCAFFOLD_DIRS+=("$scaffold_dir")
+          rm -rf "$scaffold_dir"
+
+          echo ""
+          echo "── ${archetype} : scaffold → dev:up ──"
+
+          if ! node cli/dist/index.js init "$slug" \
+              --archetype "$archetype" \
+              --org dev.forge.test \
+              --target "$scaffold_dir"; then
+            echo "[FAIL] $archetype : forge init failed"
+            FAILED+=("$archetype:init")
+            continue
+          fi
+
+          if [ ! -f "$scaffold_dir/Taskfile.yml" ]; then
+            echo "[INFO] $archetype : no Taskfile.yml at scaffold root — skipping dev:up"
+            continue
+          fi
+
+          # Verify the Taskfile parses (catches the original T5.1.0 bug class).
+          tasklist=$(mktemp)
+          if ! (cd "$scaffold_dir" && task --list-all > "$tasklist" 2>&1); then
+            echo "[FAIL] $archetype : 'task --list-all' failed — Taskfile parse error :"
+            sed 's/^/    /' "$tasklist"
+            rm -f "$tasklist"
+            FAILED+=("$archetype:task-parse")
+            continue
+          fi
+
+          if ! grep -qF "dev:up" "$tasklist"; then
+            echo "[INFO] $archetype : no 'dev:up' task defined — skipping boot"
+            rm -f "$tasklist"
+            continue
+          fi
+          rm -f "$tasklist"
+
+          if ! (cd "$scaffold_dir" && task dev:up); then
+            echo "[FAIL] $archetype : 'task dev:up' failed"
+            FAILED+=("$archetype:dev-up")
+            continue
+          fi
+
+          # Let containers settle a few seconds, then dump status.
+          sleep 5
+          echo ""
+          echo "── ${archetype} : docker compose ps ──"
+          (cd "$scaffold_dir" && docker compose -f docker-compose.dev.yml ps)
+
+          echo "[PASS] $archetype : dev:up validation"
+        done
+
+        if [ ${#FAILED[@]:-0} -gt 0 ]; then
+          echo ""
+          echo "── FAIL summary : ${FAILED[*]} ──"
+          exit 1
+        fi
+
+  # ── Extras (opt-in / debug) ────────────────────────────────────
+
+  pack-smoke:
+    desc: "Pre-publish round-trip — npm pack + isolated --global install + scaffold + matrix"
+    cmds:
+      - node cli/scripts/prepublish-smoke.mjs
+
+  harness-l2:
+    desc: "T5.1 harness L2 (opt-in : vitest live + pack-smoke round-trip)"
+    env:
+      FORGE_T51_LIVE: "1"
+      FORGE_T51_PACK: "1"
+    cmds:
+      - bash .forge/scripts/tests/t5-1.test.sh --level 1,2
+
+  help-snapshots-update:
+    desc: "Regenerate the CLI help golden snapshots (run AFTER intentionally changing --help output)"
+    dir: cli
+    cmds:
+      - npx vitest run test/e2e/help-snapshots.test.ts -u
+
+  clean-leaked:
+    desc: "Force-down any leaked test containers + remove /tmp/forge-devup-* dirs (recover after Ctrl+C)"
+    cmds:
+      - |
+        for d in /tmp/forge-devup-* /tmp/forge-smoke-* /tmp/forge-prepublish-* /tmp/forge-validate-*; do
+          if [ -d "$d" ]; then
+            echo "── cleaning $d ──"
+            (cd "$d" 2>/dev/null && docker compose -f docker-compose.dev.yml down 2>/dev/null) || true
+            rm -rf "$d"
+          fi
+        done
+        echo "── done ──"

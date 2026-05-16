@@ -1,0 +1,44 @@
+# Audit: T5.1 (cli-trust-harness) — fixture for archetype mobile-only
+#
+# File matrix asserted by cli/test/e2e/archetypes-smoke.test.ts after
+# `forge init <slug> --archetype mobile-only --org dev.forge.test --target <tmp>`.
+#
+# Note : the mobile-only scaffolder requires a `[a-z][a-z0-9_]+` slug
+# (no dashes). The smoke test derives `smoke_${archetype.name.replace(/-/g,
+# '_')}` to satisfy both this archetype and full-stack-monorepo.
+#
+# Note : mobile-only is a *lighter* scaffold than full-stack-monorepo. It
+# deliberately does NOT ship `.forge/constitution.md` or `.claude/settings.json`
+# — only `.forge/framework-owned-paths.yml` is dropped under `.forge/` to
+# anchor `forge upgrade`. Adopters needing the full Forge framework run
+# `forge init --archetype default` separately.
+
+archetype: mobile-only
+
+has_rust_backend: false
+has_flutter_frontend: true
+
+required_paths:
+  - .forge/framework-owned-paths.yml
+  - .forge.yaml
+  - CLAUDE.md
+  - README.md
+  - pubspec.yaml
+  - analysis_options.yaml
+  - .envrc.example
+  - ios/Runner/Info.plist
+  - android/app/build.gradle.kts
+  - lib/main.dart
+  - lib/app.dart
+  - lib/infrastructure/auth/oidc_config.dart
+  - lib/infrastructure/storage/secure_storage_adapter.dart
+  - lib/infrastructure/biometric/biometric_service.dart
+  - lib/observability/otel_init.dart
+  - lib/domain/auth/auth_repository.dart
+  - lib/presentation/auth/auth_bloc.dart
+
+forbidden_paths:
+  - cli
+  - backend
+  - Cargo.toml
+  - .claude/settings.local.json

@@ -170,6 +170,34 @@ package) and on GitHub Releases. To cut a release, follow these steps:
    `--help` for the full flag list. The OTP value is never echoed
    or logged ; dry-run traces redact it as `<redacted>`.
 
+5. **`prepublishOnly` gate (T5.1, `cli-trust-harness`)**. Before
+   `npm publish` runs, `cli/package.json::prepublishOnly` chains
+   through `node scripts/prepublish-smoke.mjs`, which :
+
+   - Runs `npm pack` to produce the tarball that would be uploaded.
+   - Installs that tarball into an isolated npm prefix
+     (`npm install --prefix=<tmp> --global`). The maintainer's
+     global prefix is never touched.
+   - Scaffolds `full-stack-monorepo` against a fresh tmpdir using
+     the **installed binary**, asserts the file matrix from
+     `cli/test/e2e/archetype-fixtures/full-stack-monorepo.yml`,
+     and runs `task --list-all` on the scaffolded project (skip-pass
+     when `task` is absent).
+
+   A failure aborts `npm publish` before the tarball reaches the
+   registry. The captured tarball + tmpdir paths are printed to
+   stderr for post-mortem.
+
+   **Emergency override** : `FORGE_SKIP_PREPUBLISH=1` (ADR-T51-005)
+   skips the gate with a loud stderr warning containing the literal
+   string `BYPASS`. The override is reserved for cases where the
+   gate itself blocks legitimate work (transient npm registry
+   flakes, gate false-positives). Every use of this variable MUST be
+   followed within 7 days by a GitHub issue titled
+   `[T5.1 bypass post-mortem] vX.Y.Z` and labeled `cli-trust-harness`,
+   documenting what went wrong, what was bypassed, and what fix
+   landed.
+
 A release MUST NOT be cut while any open Forge change is in `proposed`,
 `specified`, `designed`, `planned`, or `implemented` state on the release
 branch — only `archived` changes count.

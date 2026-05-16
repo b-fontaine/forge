@@ -46,6 +46,7 @@ export function parseDispatchTable(content: string): DispatchTable {
         description: entry.description,
         signals: entry.signals ?? [],
         since: entry.since,
+        status: entry.status,
       };
       archetypes[currentName] = final;
     }
@@ -88,7 +89,13 @@ export function parseDispatchTable(content: string): DispatchTable {
         }
       } else {
         const v = stripQuotes(value);
-        if (key === "name" || key === "scaffolder" || key === "description" || key === "since") {
+        if (
+          key === "name" ||
+          key === "scaffolder" ||
+          key === "description" ||
+          key === "since" ||
+          key === "status"
+        ) {
           (entry as Record<string, string>)[key] = v;
         }
         inSignalsBlock = false;

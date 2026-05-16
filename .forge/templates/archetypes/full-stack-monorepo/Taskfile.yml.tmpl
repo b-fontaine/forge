@@ -64,7 +64,8 @@ tasks:
   test:infra:
     desc: "Validate compose/kong/k8s configs"
     cmds:
-      - echo "infra tests: delegated to b1-delivery workflows"
+      # Audit: T5.1 (cli-trust-harness) — single-quoted because the shell command contains ': ' (mid plain-scalar mapping separator in YAML 1.2)
+      - 'echo "infra tests: delegated to b1-delivery workflows"'
 
 # ── Lint ─────────────────────────────────────────────────────────────────────
 
@@ -90,7 +91,7 @@ tasks:
     desc: "Validate infra configs (delegated to b1-delivery)"
     silent: true
     cmds:
-      - echo "infra lint: delegated to b1-delivery"
+      - 'echo "infra lint: delegated to b1-delivery"'
 
   lint:proto:
     desc: "Lint and format-check proto files with buf"

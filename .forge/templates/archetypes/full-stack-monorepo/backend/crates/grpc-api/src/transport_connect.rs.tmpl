@@ -36,50 +36,47 @@
 use std::sync::Arc;
 
 use axum::Router;
-use tower::Layer;
 
 // The build.rs (run by the post_cargo_new pass of overlay.sh) produces
-// `_connectrpc.rs` in OUT_DIR. The macro below pulls the generated
-// service descriptors into scope. If `build.rs` did not run, this line
-// fails to compile with a clear file-not-found message.
-connectrpc::include_generated!("_connectrpc.rs");
+// `_connectrpc.rs` in OUT_DIR via `connectrpc_build::Config::include_file(...)`.
+// We pull it in here via the stdlib `include!` macro. If build.rs did
+// not run, this line fails to compile with a clear file-not-found
+// message. T5.1.E amend (t5-bin-server-deps) : `connectrpc::include_generated!`
+// does not exist in connectrpc 0.3.3 (verified via docs.rs 2026-05-16),
+// the canonical pattern is the stdlib include! below.
+include!(concat!(env!("OUT_DIR"), "/_connectrpc.rs"));
 
-/// Build the Connect adapter as a top-level `axum::Router`.
+/// Build the Connect adapter as an `axum::Router` ready to be nested
+/// under `/connect` (or any prefix) in the top-level server.
 ///
 /// `use_case` is the domain entry point the adapter delegates to once
-/// the adopter wires `connect_router.add_service(...)` below ; the
-/// type parameter `U` keeps the transport layer ignorant of the
-/// concrete application use case (Article VII).
+/// the adopter wires `connect_router.route(...)` below ; the type
+/// parameter `U` keeps the transport layer ignorant of the concrete
+/// application use case (Article VII).
 ///
-/// `tracing_layer` is the Tower layer applied to the outer router —
-/// see the module-level doc for the swap from `TraceLayer` to an OTel
-/// layer to enable traceparent W3C E2E propagation (FR-T5-CC-014).
-///
-/// The returned router is intended to be `.nest()`'d under `/connect`
-/// in the bin-server.
-pub fn into_router<U, L>(_use_case: Arc<U>, tracing_layer: L) -> Router
+/// **Tower middleware (tracing, retries, rate-limiting, …) is applied
+/// at the call site**, not inside this function. See the module-level
+/// doc for the canonical swap from `TraceLayer` to an OTel-specific
+/// layer that propagates W3C `traceparent` (FR-T5-CC-014). T5.1.E
+/// amend (t5-bin-server-deps) : the previous generic `L: Layer<...>`
+/// signature did not satisfy axum 0.8's stricter `Service` bounds
+/// (5 E0277 trait-bound failures, verified 2026-05-16) ; layering is
+/// now adopter-side at the outer router.
+pub fn into_router<U>(_use_case: Arc<U>) -> Router
 where
     U: Send + Sync + 'static,
-    L: Layer<axum::routing::Route> + Clone + Send + Sync + 'static,
-    L::Service: tower::Service<axum::http::Request<axum::body::Body>> + Clone + Send + 'static,
 {
-    // 1) Build the connectrpc::Router and register service descriptors.
+    // Build the connectrpc::Router and register service descriptors.
     //
     // TODO(adopter): wire your proto-generated service handlers here, e.g.:
     //     let connect_router = connectrpc::Router::new()
-    //         .add_service(GreeterServer::new(GreeterHandler::new(_use_case.clone())));
+    //         .route::<GreeterService>(GreeterHandler::new(_use_case.clone()));
     //
-    // Without an `.add_service(...)` call the router is empty and every
+    // Without a `.route::<…>(…)` call the router is empty and every
     // request returns 404 — this is intentional in the seed template.
     let connect_router = connectrpc::Router::new();
 
-    // 2) Convert to an axum Service. Inline integration (no separate
-    //    `connectrpc-axum` crate) — confirmed by the T-VER-006 spike.
-    let connect_service = connect_router.into_axum_service();
-
-    // 3) Apply the tracing layer OUTSIDE the connectrpc service so the
-    //    span wraps the entire request (codec dispatch included).
-    Router::new()
-        .nest_service("/", connect_service)
-        .layer(tracing_layer)
+    // `into_axum_router()` is gated behind connectrpc's `axum` feature
+    // (enabled by the workspace dep in grpc-api/Cargo.toml.tmpl).
+    connect_router.into_axum_router()
 }

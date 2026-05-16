@@ -1,27 +1,31 @@
 // <!-- Audit: T.5 (t5-connect-codegen) — grpc-api build script -->
+// <!-- Amend: T5.1.E (t5-bin-server-deps) — connectrpc-build 0.3.3 API realign -->
 //
 // Generates Rust Connect-RPC service stubs at build time. The proto
 // source of truth lives at <project>/shared/protos/v1/ ; the buf
 // remote plugins handle gRPC + Dart + TS codegen, while this build
 // script handles the Rust Connect codegen path (ADR-T5-001 Path α).
 //
-// The output `_connectrpc.rs` is consumed by transport_connect.rs via
-// `connectrpc::include_generated!("_connectrpc.rs")`.
+// `include_file("_connectrpc.rs")` (NOT `out_file` — that method does
+// not exist on `connectrpc_build::Config` 0.3.3, verified via docs.rs
+// 2026-05-16) emits an aggregator `_connectrpc.rs` in OUT_DIR that
+// `include!()`s each per-proto-package module. The aggregator is
+// consumed from transport_connect.rs via the stdlib
+// `include!(concat!(env!("OUT_DIR"), "/_connectrpc.rs"))` macro.
 
 fn main() {
-    let proto_root = "../../shared/protos/v1";
+    let proto_root = "../../../shared/protos/v1";
     println!("cargo:rerun-if-changed={}", proto_root);
 
     connectrpc_build::Config::new()
-        .out_file("_connectrpc.rs")
-        .compile(
-            &[
-                // Adopter MUST list each .proto file here as it is added
-                // to shared/protos/v1/. The seed proto from b1-scaffolder
-                // is example/example.proto.
-                "../../shared/protos/v1/example/example.proto",
-            ],
-            &[proto_root],
-        )
+        .files(&[
+            // Adopter MUST list each .proto file here as it is added
+            // to shared/protos/v1/. The seed proto from b1-scaffolder
+            // is example/example.proto.
+            "../../../shared/protos/v1/example/example.proto",
+        ])
+        .includes(&[proto_root])
+        .include_file("_connectrpc.rs")
+        .compile()
         .expect("connectrpc-build codegen failed — check shared/protos/v1/ paths");
 }

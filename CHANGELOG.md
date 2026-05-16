@@ -12,6 +12,261 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+## [0.3.3] — 2026-05-16
+
+T5.1 release — CLI Trust Harness + tactical fix-forwards. Three
+archived changes (`cli-trust-harness`, `t5-cargo-pin-refresh`,
+`t5-bin-server-deps`) land together to close the v0.3.0 → v0.3.2
+regression pattern and make `cargo check --workspace` GREEN
+end-to-end on a fresh `forge init --archetype full-stack-monorepo`
+scaffold for the first time since `t5-connect-codegen` archived
+2026-05-06. The remaining `flutter analyze` failure on the
+`mobile-only` archetype (Workiva `opentelemetry` package is
+web-only, plus a `opentelemetry_sdk` ghost-package reference) is
+**explicitly deferred to T5.3** (`t5-otel-dartastic-realign`,
+target v0.4.0-rc.1) per `docs/new-archetypes-plan.md` §0.3.
+
+### Fixed — bin-server deps + workspace HTTP deps + grpc-api API realign (T5.1.E, `t5-bin-server-deps`)
+
+Surgical refactor of the `full-stack-monorepo` Rust backend
+scaffold so `cargo check --workspace` exits 0 on a fresh
+`forge init` — the first time it has done so since
+`t5-connect-codegen` archived 2026-05-06. RED witness chain
+unfolded in cascade as each fix unblocked the next layer ; this
+change closes all five remaining layers in a single archive.
+
+**Root cause** : `t5-connect-codegen` was archived without ever
+running `cargo check` against a freshly-scaffolded tree. Five
+distinct bugs landed silently, each masked by the upstream
+resolution failure of the buffa pin (now fixed by
+`t5-cargo-pin-refresh`).
+
+**Fixes** :
+
+- **Workspace deps** :
+  `backend/Cargo.toml.tmpl::[workspace.dependencies]` gains
+  `axum = "0.8"` + `tower-http = { version = "0.6", features =
+  ["trace"] }` + `http = "1"`. `axum 0.8` is the version
+  `connectrpc 0.3.3` declares as `axum = "^0.8"` (verified via
+  crates.io REST API 2026-05-16) ; the stale `examples/forge-fsm-example/`
+  carries `axum = "0.7"` because it was scaffolded before
+  `t5-connect-codegen` and was never regenerated (T5.3
+  territory).
+- **`bin-server/Cargo.toml.tmpl`** : new file. The scaffolder ran
+  `cargo new bin-server` which produced an empty `[dependencies]`
+  block ; my template now overlays the deps via the
+  `scaffold-plan.yaml::phase: post_cargo_new` mechanism. Inherits
+  via `{ workspace = true }` (mirrors the canonical pattern from
+  `backend/CLAUDE.md § Strict Dependency Rules`) and adds
+  `grpc-api = { path = "../crates/grpc-api" }` so the
+  `transport_connect::into_router` symbol resolves.
+- **`grpc-api/Cargo.toml.tmpl` axum feature** : the `connectrpc`
+  pin gains `features = ["axum"]` so the `Router::into_axum_service()`
+  and `into_axum_router()` methods are exposed (the `axum` feature
+  is opt-in per connectrpc 0.3.3 docs.rs).
+- **`build.rs.tmpl` API realign** : `connectrpc_build::Config`
+  exposes `include_file()` + `files()` + `includes()` + zero-arg
+  `compile()` (verified via docs.rs 2026-05-16) ; `out_file()`
+  and the `compile(&[...], &[...])` 2-arg signature do not exist.
+  Build script rewritten to the actual API.
+- **`build.rs.tmpl` proto path** : `../../shared/protos/v1` →
+  `../../../shared/protos/v1` (the build.rs lives in
+  `backend/crates/grpc-api/`, three levels up from the proto
+  root, not two).
+- **`transport_connect.rs.tmpl` include macro** :
+  `connectrpc::include_generated!("_connectrpc.rs")` →
+  `include!(concat!(env!("OUT_DIR"), "/_connectrpc.rs"))`. The
+  `include_generated!` macro does not exist in `connectrpc 0.3.3`
+  (verified via docs.rs) — the canonical pattern is the stdlib
+  `include!` macro pointing at the `include_file` aggregator
+  written by `connectrpc-build`.
+- **`transport_connect.rs.tmpl` generic refactor** : the previous
+  `fn into_router<U, L>(use_case, tracing_layer)` signature did
+  not satisfy axum 0.8's stricter `Service` bounds (5 E0277
+  trait-bound failures). The seed function now takes only
+  `use_case` and returns the bare connectrpc-derived
+  `axum::Router` via `into_axum_router()`. The bin-server applies
+  the tracing layer at the **outer** router via `.layer(...)` at
+  call site, which preserves the span-wraps-the-whole-request
+  contract (FR-T5-CC-013).
+- **Snapshot regenerated** via `bin/forge-snapshot.sh build
+  full-stack-monorepo 1.0.0` ; bundled mirror byte-identical.
+  A.7 backward-compat `a7.test.sh` 29/29 GREEN preserved.
+
+**Test harness** : `.forge/scripts/tests/t5-bin-server.test.sh`
+ships **9 L1 + 1 L2** tests (L2 opt-in via `FORGE_T5BSD_LIVE=1`
+runs `forge init` then `cargo check --workspace` against a fresh
+scaffold — closes the entire RED chain end-to-end). Registered in
+`forge-ci.yml` matrix immediately after `t5-cargo.test.sh`.
+Workflow at the NFR-CI-002 boundary (300/300 lines after
+trimming a comment block in the t5-1 step).
+
+**Two ADRs** (`ADR-T5BSD-001..002`) resolve the `axum` version
+choice (`0.8` from connectrpc constraint, not the stale example's
+`0.7`) and the bin-server manifest layout (workspace-inherited
+deps + path dep on grpc-api).
+
+**T5.3 sibling note** : the example tree
+`examples/forge-fsm-example/backend/` still carries
+`axum = "0.7"` and does not pull in `connectrpc` — that
+divergence stays until the example is regenerated cohesively as
+part of `t5-otel-dartastic-realign` (T5.3) or a sibling refresh.
+The build now compiles on the **template** ; the example is
+self-consistent at its older state.
+
+### Fixed — Cargo pin refresh (T5.1.E, `t5-cargo-pin-refresh`)
+
+Surgical correction of two dead Cargo pins in the
+`full-stack-monorepo` archetype, surfaced by the first run of
+`task validate` on 2026-05-16 (the same day the
+`cli-trust-harness` harness landed and its `task
+smoke-with-toolchains` leg started exercising
+`cargo check --workspace` on a fresh scaffold).
+
+**Root cause** : `t5-connect-codegen` (2026-05-06) pinned
+`buffa = "=0.3.3"` + `buffa-types = "=0.3.3"` in the template
++ `transport.yaml` v1.1.0, assuming the `connectrpc` family
+shared a release cadence across all four crates. The assumption
+was wrong : `buffa` and `buffa-types` series 0.3.x stops at
+**0.3.0** on crates.io (verified 2026-05-16 via the REST API at
+`https://crates.io/api/v1/crates/buffa` and
+`…/buffa-types`). The pins never resolved on any fresh Cargo
+invocation. The bug went undetected for 10 days because no test
+exercised `cargo check`.
+
+**Fix** :
+
+- `buffa = "=0.3.0"` + `buffa-types = "=0.3.0"` in both the
+  source template
+  (`.forge/templates/archetypes/full-stack-monorepo/backend/crates/grpc-api/Cargo.toml.tmpl`)
+  and the bundled-assets mirror (`cli/assets/.forge/…`). The
+  `connectrpc 0.3.3` crate declares `buffa = "^0.3"`, so
+  `=0.3.0` is the unique resolvable exact pin satisfying that
+  caret constraint.
+- `connectrpc = "=0.3.3"` and `connectrpc-build = "=0.3.3"`
+  unchanged — both versions exist on crates.io ; ADR-T5-001
+  (Anthropic OSS pedigree) holds.
+- `transport.yaml` bumped **v1.1.0 → v1.2.0** (additive minor
+  per ADR-T5CPR-002) with the two corrected pins. WAIVER comment
+  block rewritten per ADR-T5CPR-003 to separate WAIVER
+  (`connectrpc` family, still pedigree-justified at `=0.3.3`)
+  from CORRECTION (`buffa` family, error-of-fact fix at
+  `=0.3.0`). REVIEW.md ledger gains an `Updated 2026-05-16` row.
+- Snapshot tarball
+  `.forge/scaffold-snapshots/full-stack-monorepo/1.0.0.tar.gz`
+  regenerated via `bin/forge-snapshot.sh build full-stack-monorepo 1.0.0`
+  so `forge upgrade` BASE recovery serves the corrected template.
+  Bundled mirror refreshed via `npm run bundle` ; byte-identical
+  to source.
+- A.7 `forge upgrade` backward-compat preserved : `a7.test.sh`
+  29/29 GREEN post-regen.
+
+**Modernisation deferred** : bumping the `connectrpc` family
+to 0.4.x / 0.5.x / 0.6.x belongs to **B.8 (T6)** flagship
+migration, not to this surgical fix.
+
+**Test harness** : `.forge/scripts/tests/t5-cargo.test.sh`
+ships **10 L1 + 1 L2** tests (L2 opt-in via `FORGE_T5C_LIVE=1`
+queries crates.io REST API to confirm `buffa 0.3.0` /
+`buffa-types 0.3.0` are non-yanked and `connectrpc 0.3.3`
+declares `buffa = "^0.3"`). Registered in `forge-ci.yml` matrix
+immediately after `t5-1.test.sh` ; workflow stays under the
+NFR-CI-002 300-line budget.
+
+Three ADRs (`ADR-T5CPR-001..003`) resolve the pin target
+(`=0.3.0` minimum edit vs modernisation), the standard bump
+strategy (`v1.2.0` additive vs `v2.0.0` breaking), and the
+WAIVER comment rewrite. RED witness preserved : `task validate`
+2026-05-16 (`archetypes-smoke.test.ts` with
+`FORGE_E2E_TOOLCHAINS=1`).
+
+### Added — CLI Trust Harness (T5.1, `cli-trust-harness`)
+
+Four-layer harness that walls `npm publish` off from any `@sdd-forge/cli`
+tarball that cannot be demonstrably scaffolded against a fresh machine.
+Closes the regression pattern that forced v0.3.1 and v0.3.2 hot-patches
+within 24 hours of v0.3.0 publication. The four originating defects
+(`--eu-tier` not wired, `spawn bash ENOENT`, empty-target collision
+guard, and the 23-day-old `Taskfile.yml.tmpl:67` plain-scalar YAML bug
+that broke `task dev:up` on every freshly-scaffolded `full-stack-monorepo`
+project) all share a single root cause : no test exercised the published
+binary against a clean fresh-machine layout. This change fixes it
+structurally :
+
+- **Layer T5.1.0** — Sweep of `.forge/templates/`, `examples/`, and
+  `cli/assets/` for unquoted `: ` (colon + space) inside `cmds:` plain
+  scalars. Single-quoted 12 lines across 6 Taskfile templates +
+  rendered mirrors. `task --list-all` on a fresh scaffold now exits 0.
+- **Layer T5.1.A — Golden snapshot of CLI flags.**
+  `cli/test/e2e/help-snapshots.test.ts` captures `forge {--help, init
+  --help, upgrade --help, verify --help, version --help}` into 5
+  `.snap.txt` files under `cli/test/e2e/__snapshots__/help/`. Any
+  drift fails CI. Plus a cross-reference assertion : every
+  non-`removed_from_roadmap` archetype in `dispatch-table.yml` MUST
+  appear by name in `forge init --help`. The `--archetype` option help
+  text was extended to mention `mobile-only` (was previously missing,
+  detected by this very test). `docs/ARCHETYPES.md` now points to the
+  snapshots as the authoritative invocation reference — maintainer
+  GitHub Discussions posts should copy from there rather than retyping
+  the ABI.
+- **Layer T5.1.B — Smoke test per archetype.**
+  `cli/test/e2e/archetypes-smoke.test.ts` iterates `dispatch-table.yml`
+  (skipping `default`, `removed_from_roadmap`, and `legacy_alias` when
+  the target landed). For each remaining archetype : scaffold into a
+  non-existent `mkdtemp` path (exercises the v0.3.2 `mkdir -p` fix),
+  assert a declarative file matrix loaded from
+  `cli/test/e2e/archetype-fixtures/<name>.yml`, run `task --list-all`
+  on the scaffolded tree (skip-pass when `task` absent or when the
+  archetype ships no Taskfile, per ADR-T51-001). Opt-in `cargo check
+  --workspace` / `flutter analyze` gated on `FORGE_E2E_TOOLCHAINS=1`.
+  Fixtures ship for `full-stack-monorepo` + `mobile-only` ; future
+  archetypes pay the test-coverage tax via cross-reference assertion
+  (`T5.1 smoke: archetype 'X' lacks a fixture`). New vendored
+  ~80 LOC mini-YAML parser at `cli/test/e2e/helpers/load-fixture.ts`
+  + 6 unit tests at `cli/test/domain/load-fixture.test.ts` (zero new
+  external dep per NFR-T51-001).
+- **Layer T5.1.C — Pre-publish tarball gate.**
+  `cli/scripts/prepublish-smoke.mjs` chained into
+  `cli/package.json::prepublishOnly` after `lint && test && bundle`.
+  Runs `npm pack` → installs the produced tarball into an isolated
+  npm prefix (`npm install --prefix=<tmp> --global`) — maintainer's
+  global prefix never touched. Re-runs the T5.1.B smoke against the
+  **installed binary**, not against `dist/`. Any failure aborts
+  `npm publish`, preserves the captured tarball + tmpdir paths on
+  stderr for post-mortem. Emergency override
+  `FORGE_SKIP_PREPUBLISH=1` is allowed (loud `BYPASS` stderr line per
+  ADR-T51-005 ; mandatory follow-up issue documented in
+  `GOVERNANCE.md`).
+- **Layer T5.1.D — `forge upgrade` matrix test.** Deferred to
+  **B.8.15** in T6 (flagship 1.0.0 → 2.0.0 migration) per
+  `docs/new-archetypes-plan.md` §0.1 + §4.2 — its critical value is
+  the `1.0.0 → 2.0.0` pair which only exists after B.8.2 ships the
+  `2.0.0` snapshot tarball.
+
+Test harness `.forge/scripts/tests/t5-1.test.sh` ships **17 L1 + 2 L2**
+tests (L2 opt-in via `FORGE_T51_LIVE=1` / `FORGE_T51_PACK=1`),
+registered in `.github/workflows/forge-ci.yml` matrix immediately after
+`f3.test.sh` with `--level 1`. Workflow stays under the NFR-CI-002
+300-line budget (currently 292 lines).
+
+**Local pre-push validation** : a new repo-root `Taskfile.yml`
+orchestrates the full gauntlet via `task validate` (build → gates →
+harness → vitest → per-archetype `cargo check` + `flutter analyze` →
+per-archetype `task dev:up` boot validation with auto teardown via
+bash `trap EXIT INT TERM`). Per-step tasks (`task harness`,
+`task vitest`, `task pack-smoke`, `task help-snapshots-update`,
+`task clean-leaked`, …) are invokable individually for iterative
+debugging. Adopters never see this file — it lives at the framework
+repo root only. Documented in `docs/CONTRIBUTING.md § Local pre-push
+validation`.
+
+Constitution unchanged. No new agent. No new standard YAML. The
+`dispatch-table.yml` parser at `cli/src/domain/dispatch-table.ts`
+gained `status:` field extraction to support the T5.1.A
+cross-reference (additive, no behavior change for existing callers).
+The `--archetype` option help text now lists `default |
+full-stack-monorepo | mobile-only` (was missing `mobile-only`).
+
 ## [0.3.2] — 2026-05-13
 
 Three first-experience bug fixes uncovered when running `forge init` against

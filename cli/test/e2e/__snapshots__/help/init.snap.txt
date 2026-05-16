@@ -1,0 +1,21 @@
+Usage: forge init [options] [project-name]
+
+scaffold Forge into a project directory
+
+Arguments:
+  project-name            project slug (required for non-default archetypes)
+
+Options:
+  --target <dir>          target project directory (default:
+                          "/Users/bfontaine/git/github/forge/cli")
+  --source <dir>          local Forge source checkout (default: the files
+                          bundled with this CLI)
+  --archetype <name>      explicit archetype (e.g. default |
+                          full-stack-monorepo | mobile-only)
+  --auto                  auto-detect archetype from target dir signals
+                          (default: false)
+  --wizard                force interactive wizard mode (default: false)
+  --org <reverse-domain>  reverse domain (required for non-default archetypes)
+  --force                 overwrite existing framework files (default: false)
+  --eu-tier <tier>        EU compliance tier (T1|T2|T3) per J.8 j8-janus-rules
+  -h, --help              display help for command

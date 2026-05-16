@@ -1,0 +1,15 @@
+Usage: forge [options] [command]
+
+Install, upgrade, and verify the Forge framework in a project.
+
+Options:
+  -h, --help                     display help for command
+
+Commands:
+  version                        print the installed Forge framework version
+  init [options] [project-name]  scaffold Forge into a project directory
+  upgrade [options]              non-destructive 3-way merge of framework
+                                 updates into a scaffolded project
+  verify [options]               run Forge's deterministic scripts (verify.sh +
+                                 constitution-linter.sh)
+  help [command]                 display help for command

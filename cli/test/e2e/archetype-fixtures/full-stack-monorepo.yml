@@ -1,0 +1,30 @@
+# Audit: T5.1 (cli-trust-harness) — fixture for archetype full-stack-monorepo
+#
+# File matrix asserted by cli/test/e2e/archetypes-smoke.test.ts after
+# `forge init <slug> --archetype full-stack-monorepo --org dev.forge.test --target <tmp>`.
+#
+# Required paths : MUST exist post-scaffold.
+# Forbidden paths : MUST NOT exist (e.g. the CLI tree leaking, private config).
+
+archetype: full-stack-monorepo
+
+has_rust_backend: true
+has_flutter_frontend: true
+
+required_paths:
+  - .forge/constitution.md
+  - .claude/settings.json
+  - Taskfile.yml
+  - CLAUDE.md
+  - README.md
+  - .gitignore
+  - .mcp.json
+  - docker-compose.dev.yml
+  - backend/Cargo.toml
+  - frontend/pubspec.yaml
+  - shared/protos
+  - .forge.yaml
+
+forbidden_paths:
+  - cli
+  - .claude/settings.local.json

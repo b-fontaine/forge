@@ -137,6 +137,13 @@ templates:
     phase: post_cargo_new
 
   # ── Backend / bin-server crate — POST_CARGO_NEW (ADR-T5-006) ──
+  # Cargo.toml.tmpl added 2026-05-16 by t5-bin-server-deps (T5.1.E).
+  # `cargo new bin-server` generates an empty [dependencies] block ;
+  # we overlay the workspace-inherited deps block here.
+  - source: backend/bin-server/Cargo.toml.tmpl
+    target: backend/bin-server/Cargo.toml
+    substitute: true
+    phase: post_cargo_new
   - source: backend/bin-server/src/main.rs.tmpl
     target: backend/bin-server/src/main.rs
     substitute: true

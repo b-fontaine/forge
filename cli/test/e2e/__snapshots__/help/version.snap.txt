@@ -1,0 +1,6 @@
+Usage: forge version [options]
+
+print the installed Forge framework version
+
+Options:
+  -h, --help  display help for command

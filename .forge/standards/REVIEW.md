@@ -306,3 +306,41 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   expansion. `linter_rule: null` (advisory standard ; the workflow
   itself is the enforcement surface). No constitutional amendment
   required ; Articles III.4, V, XI, XII compliance preserved.
+
+## 2026-05-16 — Updated transport.yaml to v1.2.0 (t5-cargo-pin-refresh)
+
+- **Reviewer**: @bfontaine
+- **Reviewed standards**:
+
+  | Standard       | Version | Decision           | Next review due | Notes                                                                                                                                                                            |
+  |----------------|---------|--------------------|-----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+  | transport.yaml | 1.2.0   | KEEP-WITH-CHANGES  | never (structural) | 1.1.0 → 1.2.0 : corrected `buffa` + `buffa-types` pins from invalid `=0.3.3` (never published) to `=0.3.0` (only resolvable version of their 0.3 series). `connectrpc` and `connectrpc-build` unchanged at `=0.3.3` (valid). |
+
+- **Decision**: Updated by `t5-cargo-pin-refresh` (T5.1.E,
+  ADR-T5CPR-001..003). The original `t5-connect-codegen`
+  (2026-05-06) pinned all four `connectrpc` family crates at
+  `=0.3.3` under the assumption that `buffa` / `buffa-types` shared
+  the release cadence of `connectrpc`. That assumption was wrong :
+  `buffa` series 0.3.x stops at 0.3.0 on crates.io (verified
+  2026-05-16 via the REST API at `https://crates.io/api/v1/crates/buffa`
+  and `…/buffa-types`). `connectrpc 0.3.3` declares
+  `buffa = "^0.3"` (verified via
+  `https://crates.io/api/v1/crates/connectrpc/0.3.3/dependencies`),
+  so `=0.3.0` is the unique resolvable exact pin satisfying that
+  constraint.
+- **Notes**: Additive minor bump per ADR-T5CPR-002 — the pin
+  correction is **corrective** (the previous pin never resolved,
+  hence adopters with `=0.3.3` had a non-buildable Cargo manifest)
+  not breaking. WAIVER comment block rewritten per ADR-T5CPR-003
+  to separate WAIVER (connectrpc / connectrpc-build at `=0.3.3`,
+  still pedigree-justified per the original 13-day age waiver) from
+  CORRECTION (buffa / buffa-types at `=0.3.0`, error-of-fact fix
+  documented inline). Modernisation of the entire `connectrpc`
+  family to 0.4.x / 0.5.x / 0.6.x is deferred to B.8 (T6) where
+  the broader Connect story is re-evaluated alongside the
+  Kong → Envoy flagship migration. RED witness for this change :
+  `task validate` 2026-05-16 (cli-trust-harness
+  `archetypes-smoke.test.ts` with `FORGE_E2E_TOOLCHAINS=1`).
+  `last_reviewed` resets to 2026-05-16 ; `Next review due` stays
+  `never (structural)` per ADR-006/ADR-009 (Article XII
+  structural exemption preserved). No constitutional amendment.

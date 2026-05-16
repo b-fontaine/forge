@@ -291,6 +291,88 @@ and document the results in the PR.
 
 ---
 
+## Local pre-push validation
+
+<!-- Audit: T5.1 (cli-trust-harness) — local pre-push helper -->
+
+A `Taskfile.yml` at the repo root drives the full validation gauntlet
+locally before you push. Requires [go-task](https://taskfile.dev/) v3.x.
+Adopters never see this file — it lives at the framework repo root only.
+
+### Quick reference
+
+```bash
+task validate          # full pre-push gauntlet (~3-6 min)
+task --list-all        # all available tasks
+```
+
+### What `task validate` runs
+
+In sequence, abort at first FAIL :
+
+1. **`build`** — `tsc → cli/dist/` (prerequisite for everything that
+   invokes the binary).
+2. **`gates`** — `verify.sh` (~230 checks) + `constitution-linter.sh`
+   (~35 checks). Same gates as CI.
+3. **`harness`** — `.forge/scripts/tests/t5-1.test.sh --level 1` (17 L1
+   grep checks ; ~50 ms).
+4. **`vitest`** — full CLI vitest suite (72 tests today). Includes the
+   help-snapshots golden diff, the dispatch-table cross-reference, and
+   the per-archetype smoke (skip-pass `cargo`/`flutter` when absent).
+5. **`smoke-with-toolchains`** — re-runs the smoke with
+   `FORGE_E2E_TOOLCHAINS=1` so `cargo check --workspace` and
+   `flutter analyze` actually execute (per-archetype, gated by the
+   fixture's `has_rust_backend` / `has_flutter_frontend` flags).
+6. **`dev-up-matrix`** — for each archetype in `vars.ACTIVE_ARCHETYPES` :
+   scaffold into a tmpdir, parse the rendered `Taskfile.yml`
+   (`task --list-all`), boot the dev stack via `task dev:up`, run
+   `docker compose ps`, tear down. **Requires Docker daemon.** Cleanup
+   is automatic via bash `trap EXIT INT TERM` — Ctrl+C will not leak
+   containers.
+
+### Granular tasks (run individually during iterative work)
+
+| Task                          | Use when                                            | Approx. cost |
+|-------------------------------|-----------------------------------------------------|--------------|
+| `task harness`                | Sanity-check before commit                          | ~50 ms       |
+| `task vitest`                 | After CLI source edits                              | ~5 s         |
+| `task smoke-with-toolchains`  | After scaffold or fixture edits                     | ~30–60 s     |
+| `task dev-up-matrix`          | After `Taskfile.yml.tmpl` or docker-compose edits   | ~1–2 min per archetype |
+| `task pack-smoke`             | Pre-release tarball validation (mirrors `prepublishOnly`) | ~20 s |
+| `task gates`                  | Same gates as CI without the CLI build              | ~5 s         |
+| `task harness-l2`             | T5.1 L2 opt-in (`FORGE_T51_LIVE` + `FORGE_T51_PACK`) | ~30 s       |
+| `task help-snapshots-update`  | After intentional `forge --help` change             | ~1 s         |
+| `task clean-leaked`           | Recover after Ctrl+C during `dev-up-matrix`         | ~5 s         |
+
+### Adding an archetype to the matrix
+
+Append the archetype name (space-separated) to `vars.ACTIVE_ARCHETYPES`
+in the root `Taskfile.yml`. The matrix iteration is fully automatic
+from there :
+
+- A fixture file at `cli/test/e2e/archetype-fixtures/<name>.yml`
+  is required (the cross-reference test fails the PR if it is missing —
+  per FR-T51-055).
+- `task dev-up-matrix` auto-skips with `[INFO]` when the archetype ships
+  no `Taskfile.yml` (e.g. `mobile-only`) or no `dev:up` task.
+- `task dev-up-matrix` FAILS the run if `task --list-all` itself exits
+  non-zero on the scaffolded project — that catches the entire class of
+  Taskfile parse bugs that motivated T5.1 in the first place.
+
+### Recommended cadence
+
+- **Before each commit** : `task harness && task vitest` (~5 s ;
+  catches surface drift + structural issues).
+- **Before each PR / push** : `task validate` (full gauntlet ; same
+  fidelity as CI plus the live `task dev:up` boot that CI does not
+  run).
+- **Before each release** : `task validate && task pack-smoke` (adds
+  the actual `npm pack` + isolated `npm install --global --prefix`
+  round-trip on top — same code path the `prepublishOnly` hook
+  exercises right before `npm publish`).
+
+---
+
 ## Continuous Integration
 
 <!-- Audit: G.1 (g1-forge-ci, FR-CI-011) -->

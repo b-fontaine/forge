@@ -41,11 +41,16 @@ async fn main() -> anyhow::Result<()> {
     //
     // TraceLayer is a generic HTTP tracing placeholder. Swap for an
     // OTel-specific layer (e.g. `axum_tracing_opentelemetry::OtelAxumLayer`)
-    // to get traceparent W3C E2E propagation (FR-T5-CC-014).
+    // to get traceparent W3C E2E propagation (FR-T5-CC-014). T5.1.E
+    // amend (t5-bin-server-deps) : tracing_layer is applied at the
+    // OUTER router level, not inside `transport_connect::into_router` ;
+    // axum 0.8 requires layers to be attached at the call site
+    // (E0277 bounds verified 2026-05-16).
     let connect_addr: SocketAddr = "0.0.0.0:8080".parse()?;
     let tracing_layer = TraceLayer::new_for_http();
     let app: Router = Router::new()
-        .nest("/connect", transport_connect::into_router(use_case.clone(), tracing_layer));
+        .nest("/connect", transport_connect::into_router(use_case.clone()))
+        .layer(tracing_layer);
 
     let listener = tokio::net::TcpListener::bind(connect_addr).await?;
 

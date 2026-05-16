@@ -1,0 +1,16 @@
+name: t5-cargo-pin-refresh
+status: archived
+created: 2026-05-16
+schema: default
+constitution_version: "1.1.0"
+parent_audit_items:
+  - T5.1.E  # docs/new-archetypes-plan.md §0.1 — buffa = "=0.3.3" pin dead ; bumper vers =0.3.0 (seule version série 0.3.x publiée)
+depends_on:
+  - cli-trust-harness  # detected by task validate / archetypes-smoke FORGE_E2E_TOOLCHAINS=1
+timeline:
+  proposed: 2026-05-16
+  specified: 2026-05-16
+  designed: 2026-05-16
+  planned: 2026-05-16
+  implemented: 2026-05-16
+  archived: 2026-05-16

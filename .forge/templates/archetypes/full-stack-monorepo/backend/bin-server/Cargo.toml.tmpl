@@ -1,0 +1,25 @@
+# <!-- Audit: T5.1.E (t5-bin-server-deps) -->
+#
+# bin-server — DI wiring + entrypoint for the flagship.
+# Hexagonal layer per backend/CLAUDE.md § Strict Dependency Rules :
+# no business logic, no domain types, no infrastructure imports.
+# Inherits deps via workspace ; declares grpc-api as a path dep.
+
+[package]
+name = "bin-server"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# Path dep on the gRPC adapter crate (consumes transport_connect::into_router).
+grpc-api = { path = "../crates/grpc-api" }
+
+# Workspace deps (inherited from backend/Cargo.toml).
+tokio = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+tonic = { workspace = true }
+axum = { workspace = true }
+tower-http = { workspace = true }
+http = { workspace = true }

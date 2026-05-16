@@ -1,0 +1,12 @@
+Usage: forge upgrade [options]
+
+non-destructive 3-way merge of framework updates into a scaffolded project
+
+Options:
+  --target <dir>  target project directory (default:
+                  "/Users/bfontaine/git/github/forge/cli")
+  --dry-run       print the plan without writing (default: false)
+  --force         let conflicts land in-place (requires clean Git tree)
+                  (default: false)
+  --verbose       print progress and BASE-recovery diagnostics (default: false)
+  -h, --help      display help for command

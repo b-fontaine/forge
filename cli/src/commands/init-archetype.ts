@@ -20,6 +20,10 @@ export interface DispatchTableEntry {
   description?: string;
   signals?: string[];
   since?: string;
+  // T5.1 — captured by parseDispatchTable so cross-reference checks
+  // (FR-T51-025/041) can filter out `removed_from_roadmap` and
+  // `legacy_alias` entries.
+  status?: string;
 }
 
 /**
