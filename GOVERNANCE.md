@@ -198,6 +198,48 @@ package) and on GitHub Releases. To cut a release, follow these steps:
    documenting what went wrong, what was bypassed, and what fix
    landed.
 
+### Release communication policy
+
+Forge ships several release types ; each calls for a different
+communication surface. The matrix below documents the convention :
+
+| Release type                                                     | GitHub Release notes | GitHub Discussions Announcement |
+|------------------------------------------------------------------|----------------------|--------------------------------|
+| **Patch** (`v0.X.y` → `v0.X.y+1`)                                 | **Required** — CHANGELOG section auto-extracted | **Skip** — too frequent ; signal-to-noise ratio low |
+| **Pre-GA minor** (`v0.X.0` → `v0.X+1.0` while on `0.y.z` track)   | **Required**          | **Required** — surface what adopters see (new archetypes, schema bumps, breaking templates) |
+| **Major / point-of-no-return** (B.8 flagship 2.0.0, v1.0, …)     | **Required**          | **Required** + soigneusement rédigé (migration guide link, breaking changes, appel à feedback) |
+| **Structural decision** (Constitution amendment, archetype taxonomy change, ADR retiré, …) | optional (if no release) | **Required** even without a release tag |
+
+Rationale :
+
+- **Patches** are tactical fix-forwards (e.g. v0.3.1, v0.3.2,
+  v0.3.3 shipped within 14 days). Posting each on Discussions
+  burns reader attention without proportional informational
+  value. The CHANGELOG + GitHub release notes remain the canonical
+  audit trail.
+- **Pre-GA minors** introduce visible surface changes for
+  adopters (new archetypes, breaking templates, schema bumps).
+  The Discussions Announcement category (post-only-by-maintainer,
+  comment-by-anyone) is the right channel.
+- **Majors / point-of-no-return** require explicit narrative :
+  what changed, why now, what migration path. The post is the
+  canonical entry point for the community.
+- **Structural decisions** without a release tag (e.g. ADR-007
+  retiring `flutter-firebase`, an Article XII amendment) MUST
+  hit Discussions — the audit trail is in `.forge/standards/REVIEW.md`
+  or `.forge/changes/`, but the **community awareness** lives on
+  Discussions.
+
+This policy is informed by [GitHub's own observations on Discussions
+signal-to-noise](https://github.com/orgs/community/discussions/171009) :
+notification filtering by category is not granular enough to make
+every-patch announcements useful ; reserving the channel for changes
+adopters actually need to know about preserves attention.
+
+When in doubt : **skip the Discussion post**. The maintainer can always
+backfill an announcement when adopter feedback signals demand. The
+inverse — un-posting a noisy announcement — is impossible.
+
 A release MUST NOT be cut while any open Forge change is in `proposed`,
 `specified`, `designed`, `planned`, or `implemented` state on the release
 branch — only `archived` changes count.
