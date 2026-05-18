@@ -384,3 +384,61 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   change : `t5-2.test.sh --level 1` showed 0/8 PASS before the
   agent file + this bump landed ; GREEN witness shows 8/8 PASS
   after.
+
+## 2026-05-18 — Updated flutter/opentelemetry.md to v2.0.0 (t5-otel-dartastic-realign)
+
+- **Change**: `t5-otel-dartastic-realign`
+- **Status**: implemented
+- **Trigger**: **Q-006** (re-opened Q-004) — Workiva
+  `opentelemetry 0.18.11` ratified by `t5-otel-dart-api-realign`
+  v1.1.0 (2026-05-12) was discovered 2026-05-16 to be **web-only**
+  on pub.dev. The consuming archetypes (`mobile-only` first class
+  Android+iOS ; `full-stack-monorepo` frontend Flutter mobile+web)
+  cannot use a web-only OTel SDK. Resolved by substitution Workiva
+  → Dartastic.
+- **Bump**: v1.1.0 → v2.0.0. **breaking_change: true**.
+- **Inaugural 3-axis checklist application** : this change is the
+  FIRST consumer of the T5.2 platform-verification checklist
+  (`.claude/agents/document-specialist.md` §
+  `Platform Verification Checklist (3-axis)`, archived 2026-05-18).
+  The 3 Dartastic packages were verified inline against all 3 axes
+  (existence + API surface + platform compatibility) before
+  ratification. Result : no `[PLATFORM MISMATCH:]` markers raised
+  — the substitution satisfies every consuming archetype.
+- **WAIVER (ADR-T53-002)** : `dartastic_opentelemetry_api`
+  transitively pins at `^1.0.0-beta.2` (constraint declared by SDK
+  1.1.0-beta.6). At ratification time the latest published prerelease on
+  pub.dev was `1.0.0-beta.7` ; pub solver resolves to that
+  automatically given the caret constraint. The stable 0.9.0 line
+  is incompatible with SDK 1.1.0-beta.6. Upgrade trigger named :
+  `t5-3-1-dartastic-api-ga-refresh` (file a follow-up patch when
+  `_api 1.0.0` GA ships). Pattern verbatim from `transport.yaml
+  v1.2.0` WAIVER (`t5-cargo-pin-refresh` precedent).
+- **flutterrific shim primary (ADR-T53-001)** : the integration
+  path uses `flutterrific_opentelemetry 0.4.0` for
+  auto-instrumentation (route observer / lifecycle / errors).
+  Option B fallback (pure `dartastic_opentelemetry` Dart SDK with
+  custom Flutter wiring) is documented in the standard's
+  "Migration off flutterrific" subsection.
+- **Sampling preserved (ADR-T53-004)** : the Phase A (collector
+  `processors.probabilistic_sampler` per ADR-OTEL-001) + Phase B
+  (SDK `ParentBasedSampler(AlwaysOnSampler())`) dual-stage model
+  is preserved verbatim across the substitution. Collector
+  contract unchanged (OTLP HTTP/protobuf on `:4318`).
+- **Forward-pointers (ADR-T53-003)** : 3 archived changes
+  (`b4-mobile-only`, `t5-otel-app`, `t5-otel-dart-api-realign`)
+  carry a new `.forge-update-notes` file documenting that their
+  Workiva pin has been superseded by Dartastic in T5.3. Existing
+  archived files remain byte-identical (Article V immutability).
+- **Constitutional anchor** : Article III.4 (Ambiguity Protocol —
+  anti-hallucination) + Article IX (Observability). The standard
+  cites these verbatim ; the harness asserts the literal `Article
+  III.4` string is present (T5.2 self-validation lesson applied —
+  no fabricated constitutional citations).
+- **Implementation evidence** : `t5-otel-dartastic.test.sh --level 1`
+  L1 13/13 GREEN ; L2 opt-in (`FORGE_T53_LIVE=1`) runs
+  `flutter pub get` + `flutter analyze` on FSM frontend + fresh
+  mobile-only scaffold ; `verify.sh` + `constitution-linter.sh` +
+  `t5-1.test.sh::ci_line_budget` (forge-ci.yml ≤ 300) preserved.
+  Independent code-reviewer pass (per T5.2 self-validation lesson
+  / NFR-T53-010) executed pre-archive.

@@ -4,7 +4,7 @@
 // Instrumented with OpenTelemetry spans (Article IX).
 
 import 'package:flutter_appauth/flutter_appauth.dart';
-import 'package:opentelemetry_api/opentelemetry_api.dart';
+import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
 import 'package:{{project_name}}/domain/attestation/device_attestor.dart';
 import 'package:{{project_name}}/domain/auth/auth_repository.dart';
@@ -13,12 +13,6 @@ import 'package:{{project_name}}/infrastructure/auth/oidc_config.dart';
 import 'package:{{project_name}}/infrastructure/storage/secure_storage_adapter.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  final FlutterAppAuth _appAuth;
-  final SecureStorageAdapter _storage;
-  final DeviceAttestor _attestor;
-  final OidcConfig _config;
-  final Tracer _tracer;
-
   AuthRepositoryImpl({
     required FlutterAppAuth appAuth,
     required SecureStorageAdapter storage,
@@ -30,6 +24,12 @@ class AuthRepositoryImpl implements AuthRepository {
         _attestor = attestor,
         _config = config,
         _tracer = tracer;
+
+  final FlutterAppAuth _appAuth;
+  final SecureStorageAdapter _storage;
+  final DeviceAttestor _attestor;
+  final OidcConfig _config;
+  final Tracer _tracer;
 
   @override
   Future<AuthToken> login() async {

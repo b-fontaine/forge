@@ -1,82 +1,47 @@
-// Audit: T.5 (t5-otel-app) — Phase B SDK instrumentation
+// Audit: T.5.3 (t5-otel-dartastic-realign) — Workiva → Dartastic substitution
 //
 // telemetry_setup.dart — initialise the OpenTelemetry SDK for the Flutter
-// frontend. Mirrors the patterns in `flutter/opentelemetry.md` v1.1.0
-// § SDK Initialization with the ADR-T5-OTA-002 deviation (OTLP HTTP/protobuf
-// transport on port 4318) and ADR-T5-OTA-003 sampler shape.
+// frontend on the Dartastic ecosystem. Replaces the Workiva
+// `opentelemetry: 0.18.11` init from T5 / Phase B (Q-006 resolution).
 //
-// Per FR-T5-OTA-040 / FR-T5-OTA-046 :
+// Per `flutter/opentelemetry.md` v2.0.0 § SDK Initialization :
 //   - exposes `Future<void> setupTelemetry({required AppConfig config})`.
-//   - calls `registerGlobalTracerProvider(provider)` at the end so subsequent
-//     code paths can call `globalTracerProvider.getTracer(...)`.
+//   - delegates to `OTel.initialize(serviceName, endpoint, sampler)` — the
+//     high-level Dartastic init wraps Resource + BatchSpanProcessor +
+//     OtlpHttpSpanExporter wiring per ADR-T53-001 (flutterrific path).
+//   - keeps the Phase A (collector probabilistic_sampler) + Phase B
+//     (SDK ParentBasedSampler(AlwaysOnSampler())) dual-stage sampling
+//     model per ADR-OTEL-001 / ADR-T53-004.
 //
-// Q-004 follow-up (2026-05-12) : realigned to the actual `opentelemetry: 0.18.11`
-// (Workiva) public API surface — `CollectorExporter` replaces fabricated
-// `OtlpHttpSpanExporter`, `BatchSpanProcessor` uses positional + named params
-// (no wrapping config object), and `ParentBasedSampler(AlwaysOnSampler())`
-// replaces the fabricated `TraceIdRatioBasedSampler(1.0)`. The Phase A
-// collector `probabilistic_sampler` continues to enforce the env-tier ratio
-// downstream per ADR-T5-OTA-003 / ADR-OTEL-001 (dual-stage model).
+// Dartastic `resourceAttributes` parameter is typed `Attributes?` (not a
+// plain Map<String, String>). The canonical conversion is via the
+// `<String, Object>{...}.toAttributes()` extension method exposed by the
+// API package.
 
 import 'dart:io' show Platform;
 
-import 'package:opentelemetry/api.dart';
-import 'package:opentelemetry/sdk.dart';
+import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
 import '../config/app_config.dart';
 
-/// Initialise the global tracer provider.
+/// Initialise the global tracer provider on the Dartastic ecosystem.
 ///
-/// Call BEFORE `runApp` (per ADR-T5-OTA-005 init order). Also called BEFORE
-/// `Bloc.observer = TracingBlocObserver()` so the BLoC observer can resolve
-/// the global tracer in its constructor.
+/// Call BEFORE `runApp`. Also BEFORE `Bloc.observer = TracingBlocObserver()`
+/// so the observer can resolve the tracer in its constructor.
+///
+/// Sampler : `ParentBasedSampler(AlwaysOnSampler())` (Phase B) — the
+/// collector-side `probabilistic_sampler` (Phase A, ADR-OTEL-001) enforces
+/// the env-tier ratio downstream.
 Future<void> setupTelemetry({required AppConfig config}) async {
-  // 1. Resource — service identity + deployment metadata + device platform.
-  //    Per FR-T5-OTA-043. No PII (FR-T5-OTA-010).
-  final resource = Resource([
-    Attribute.fromString(ResourceAttributes.serviceName, config.serviceName),
-    Attribute.fromString(ResourceAttributes.serviceVersion, config.appVersion),
-    Attribute.fromString(
-      ResourceAttributes.deploymentEnvironment,
-      config.environment,
-    ),
-    Attribute.fromString('device.platform', Platform.operatingSystem),
-    Attribute.fromString('device.os.version', Platform.operatingSystemVersion),
-  ]);
-
-  // 2. Exporter — OTLP HTTP/protobuf to the collector :4318 receiver
-  //    (ADR-T5-OTA-002). `CollectorExporter` (from `sdk.dart`) speaks the
-  //    OTLP wire format ; transport security is governed by the Uri scheme
-  //    (https in production, http in dev/staging).
-  final exporter = CollectorExporter(
-    Uri.parse('${config.otlpEndpoint}/v1/traces'),
+  await OTel.initialize(
+    serviceName: config.serviceName,
+    endpoint: '${config.otlpEndpoint}/v1/traces',
+    sampler: ParentBasedSampler(const AlwaysOnSampler()),
+    resourceAttributes: <String, Object>{
+      'service.version': config.appVersion,
+      'deployment.environment': config.environment,
+      'device.platform': Platform.operatingSystem,
+      'device.os.version': Platform.operatingSystemVersion,
+    }.toAttributes(),
   );
-
-  // 3. BatchSpanProcessor — positional exporter, named tuning params per
-  //    `opentelemetry: 0.18.11` Workiva pkg. No wrapping config object in
-  //    this version (FR-T5-OTA-044 + flutter/opentelemetry.md v1.1.0
-  //    § SDK Initialization snippet).
-  final processor = BatchSpanProcessor(
-    exporter,
-    maxExportBatchSize: 512,
-    scheduledDelayMillis: 5000,
-  );
-
-  // 4. Sampler — `ParentBasedSampler(AlwaysOnSampler())` per ADR-T5-OTA-003
-  //    (revised after Q-004 realign). The `TraceIdRatioBased*` class is NOT
-  //    exported by `opentelemetry: 0.18.11` ; the env-tier ratio is enforced
-  //    collector-side via `processors.probabilistic_sampler` (Phase A,
-  //    ADR-OTEL-001). See `flutter/opentelemetry.md` v1.1.0 § Sampling.
-  final sampler = ParentBasedSampler(AlwaysOnSampler());
-
-  // 5. TracerProvider — wire resource + processor + sampler.
-  final tracerProvider = TracerProviderBase(
-    resource: resource,
-    processors: [processor],
-    sampler: sampler,
-  );
-
-  // 6. Register globally — every observer / interceptor reads the global
-  //    provider via `globalTracerProvider.getTracer(...)` (FR-T5-OTA-046).
-  registerGlobalTracerProvider(tracerProvider);
 }

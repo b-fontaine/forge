@@ -178,9 +178,14 @@ describe("T5.1.B — smoke per archetype", () => {
           const cwd =
             archetypeName === "mobile-only" ? tmp : join(tmp, "frontend");
           const f = spawnSync("flutter", ["analyze"], { cwd, encoding: "utf8" });
+          // `flutter analyze` writes the per-issue diagnostics on stdout and
+          // the summary line on stderr — surface both so triage doesn't
+          // require re-running the analyzer outside the harness.
           expect(
             f.status,
-            `archetype '${archetypeName}': 'flutter analyze' failed:\n${f.stderr}`,
+            `archetype '${archetypeName}': 'flutter analyze' failed (cwd=${cwd}).\n` +
+              `--- stdout (issues) ---\n${f.stdout || "(empty)"}\n` +
+              `--- stderr (summary) ---\n${f.stderr || "(empty)"}`,
           ).toBe(0);
         }
       }

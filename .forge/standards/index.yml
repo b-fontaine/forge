@@ -115,7 +115,7 @@ standards:
 
   - id: flutter/opentelemetry
     path: standards/flutter/opentelemetry.md
-    triggers: [opentelemetry flutter, otel flutter, tracing flutter, span flutter, OTLP flutter, opentelemetry_dart]
+    triggers: [opentelemetry flutter, otel flutter, tracing flutter, span flutter, OTLP flutter, dartastic, flutterrific, otlp-http flutter]
     scope: flutter
     priority: medium
 

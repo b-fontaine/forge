@@ -1,0 +1,30 @@
+# Update Notes — b4-mobile-only
+
+<!-- Audit: T.5.3 (t5-otel-dartastic-realign, 2026-05-18) -->
+
+## Superseded standard pin (T5.3, 2026-05-18)
+
+The mobile-only template shipped by this archive originally pinned :
+- `opentelemetry_api: ^0.18.0` (Workiva)
+- `opentelemetry_sdk: ^0.18.0` (phantom — never existed on pub.dev)
+
+Both pins have been **superseded** by the Dartastic ecosystem in T5.3
+(`t5-otel-dartastic-realign`, archived 2026-05-18) :
+
+- `dartastic_opentelemetry: ^1.1.0-beta.6`
+- `flutterrific_opentelemetry: ^0.4.0`
+
+See `.forge/standards/flutter/opentelemetry.md` v2.0.0 (with the inline
+3-axis platform-verification checklist applied) and
+`.forge/changes/t5-otel-dartastic-realign/` for the full substitution
+rationale + Migration table.
+
+**Article V immutability** : this `.forge-update-notes` file is the
+ONLY addition to this archived change since its archive date. All
+other files (`.forge.yaml`, `proposal.md`, `specs.md`, `design.md`,
+`tasks.md`, `open-questions.md`) remain byte-identical.
+
+**Pattern** : ADR-T53-003 prescribes `.forge-update-notes` files for
+the per-archive forward-pointer convention (Option A) ; the global
+supersession graph lives in `.forge/changes/t5-otel-dartastic-realign/.forge.yaml::depends_on`
+(Option C).

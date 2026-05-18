@@ -23,8 +23,13 @@ dependencies:
   local_auth: ^2.3.0
 
   # Observability — Article IX (FR-MO-028, FR-MO-029).
-  opentelemetry_api: ^0.18.0
-  opentelemetry_sdk: ^0.18.0
+  # T5.3 substitution (2026-05-18) : Dartastic ecosystem replaces the
+  # historical Workiva `opentelemetry: ^0.18` pin (web-only ; Q-006)
+  # and the phantom `opentelemetry_sdk: ^0.18.0` (never existed on
+  # pub.dev). All 3 axes verified via T5.2 checklist —
+  # `flutter/opentelemetry.md` v2.0.0 § Source Documents.
+  dartastic_opentelemetry: ^1.1.0-beta.6
+  flutterrific_opentelemetry: ^0.4.0
 
   # Localization (lightweight; ARB scaffold left to adopter).
   intl: ^0.19.0
@@ -40,7 +45,18 @@ dev_dependencies:
   mocktail: ^1.0.4
 
   # BDD — Article II + Article VI.7.
-  gherkin: ^3.1.0
+  # T5.3 (2026-05-18) : the `gherkin: ^3.1.0` runtime executor was
+  # removed because (a) the b4-mobile-only `app_test.dart.tmpl`
+  # never wired it ("Phase B will wire cucumber/gherkin runner" —
+  # deferred indefinitely), (b) the Forge canonical Flutter BDD path
+  # uses `bdd_widget_test` (codegen from .feature files, no runtime
+  # gherkin dep), and (c) `gherkin 3.1.0` pins `uuid ^3.0.6` which
+  # transitively conflicts with `flutterrific_opentelemetry`'s
+  # `uuid ^4.5.1` requirement. Adopters wiring BDD should add
+  # `bdd_widget_test` to dev_dependencies and follow
+  # `.forge/standards/flutter/testing.md`. The `.feature.tmpl`
+  # placeholder under `integration_test/features/` is preserved as
+  # documentation.
 
   # Linting — Article X.
   flutter_lints: ^4.0.0

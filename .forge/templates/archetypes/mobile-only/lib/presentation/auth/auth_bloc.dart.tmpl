@@ -46,8 +46,10 @@ class AuthLoading extends AuthState {
 }
 
 class AuthAuthenticated extends AuthState {
-  final AuthToken token;
   const AuthAuthenticated(this.token);
+
+  final AuthToken token;
+
   @override
   List<Object?> get props => [token];
 }
@@ -57,8 +59,10 @@ class AuthUnauthenticated extends AuthState {
 }
 
 class AuthError extends AuthState {
-  final String message;
   const AuthError(this.message);
+
+  final String message;
+
   @override
   List<Object?> get props => [message];
 }
@@ -66,8 +70,6 @@ class AuthError extends AuthState {
 // ─── Bloc ───────────────────────────────────────────────────────────────
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  final AuthRepository _repository;
-
   AuthBloc({required AuthRepository repository})
       : _repository = repository,
         super(const AuthInitial()) {
@@ -76,6 +78,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthTokenRefreshRequested>(_onRefresh);
     on<AuthBiometricUnlockRequested>(_onBiometricUnlock);
   }
+
+  final AuthRepository _repository;
 
   Future<void> _onLogin(AuthLoginRequested event, Emitter<AuthState> emit) async {
     emit(const AuthLoading());

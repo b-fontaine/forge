@@ -1,19 +1,22 @@
-// Audit: T.5 (t5-otel-app) — Phase B SDK instrumentation
+// Audit: T.5.3 (t5-otel-dartastic-realign) — Workiva → Dartastic substitution
 //
-// ErrorReporter — emits an error span via the global tracer.
-// Mirrors `flutter/opentelemetry.md` § Error Instrumentation.
+// ErrorReporter — emits an error span via the Dartastic tracer.
+// Mirrors `flutter/opentelemetry.md` v2.0.0 § Error Instrumentation.
 //
-// Plain class (not `@lazySingleton`) per ADR-T5-OTA-005 — `get_it`-clean
-// DI is deferred to a future feature change. The TODO marker uses the
-// Forge issue-ID convention from Article X.4.
+// Dartastic API notes (verified via pub.dev 2026-05-18) :
+//   - `OTel.tracer()` returns the default tracer (no positional name arg) ;
+//     for a named scope, use `OTel.tracerProvider(name: ...).getTracer()`.
+//   - Span attributes are typed : `setStringAttribute(key, String)`,
+//     `setIntAttribute(key, int)`, `setBoolAttribute(key, bool)`,
+//     `setDoubleAttribute(key, double)`. The Workiva
+//     `span.setAttribute(Attribute)` collection-style does not exist.
+//   - Status code is `SpanStatusCode` (capital S enum name) with
+//     `SpanStatusCode.Ok` and `SpanStatusCode.Error` values.
 
-import 'package:opentelemetry/api.dart';
+import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
-// TODO(#TBD-OTEL-DI): promote ErrorReporter to @lazySingleton via
-// `get_it` + `injectable` per Article VI.4 once the example pulls
-// `injectable`. For Phase B, instantiated inline in main.dart.
 class ErrorReporter {
-  ErrorReporter() : _tracer = globalTracerProvider.getTracer('error');
+  ErrorReporter() : _tracer = OTel.tracer();
 
   final Tracer _tracer;
 
@@ -22,20 +25,15 @@ class ErrorReporter {
     StackTrace stackTrace, {
     Map<String, String> context = const {},
   }) {
-    final span = _tracer.startSpan(
-      'error.reported',
-      attributes: [
-        Attribute.fromString('error.type', error.runtimeType.toString()),
-        Attribute.fromString('error.message', error.toString()),
-        ...context.entries.map((e) => Attribute.fromString(e.key, e.value)),
-      ],
-    );
-    span.recordException(error, stackTrace: stackTrace);
-    // setStatus signature in opentelemetry 0.18.11 :
-    //   void setStatus(StatusCode, [String description])
-    // The description is optional and positional — pass the error string
-    // so SigNoz / Coroot pivot the error analytics UI on the right field.
-    span.setStatus(StatusCode.error, error.toString());
-    span.end();
+    final span = _tracer.startSpan('error.reported')
+      ..setStringAttribute('error.type', error.runtimeType.toString())
+      ..setStringAttribute('error.message', error.toString());
+    for (final entry in context.entries) {
+      span.setStringAttribute(entry.key, entry.value);
+    }
+    span
+      ..recordException(error, stackTrace: stackTrace)
+      ..setStatus(SpanStatusCode.Error, error.toString())
+      ..end();
   }
 }

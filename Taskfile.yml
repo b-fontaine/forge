@@ -93,7 +93,11 @@ tasks:
         SCAFFOLD_DIRS=()
         cleanup_all() {
           local d
-          for d in "${SCAFFOLD_DIRS[@]:-}"; do
+          # mvdan/sh (go-task's interpreter) does NOT allow combining
+          # `${array[@]:-default}` syntax — guard with `${#array[@]}`
+          # length test instead before iterating.
+          if [ "${#SCAFFOLD_DIRS[@]}" -eq 0 ]; then return 0; fi
+          for d in "${SCAFFOLD_DIRS[@]}"; do
             if [ -n "$d" ] && [ -d "$d" ]; then
               echo "── cleanup: $d ──"
               (cd "$d" 2>/dev/null && \
@@ -103,7 +107,10 @@ tasks:
             fi
           done
         }
-        trap cleanup_all EXIT INT TERM
+                # mvdan/sh (go-task interpreter) rejects both bare INT/TERM and
+        # SIGINT/SIGTERM signal names. EXIT alone covers both normal
+        # termination and signal-induced exits — sufficient for cleanup.
+        trap cleanup_all EXIT
 
         FAILED=()
         for archetype in {{.ACTIVE_ARCHETYPES}}; do
@@ -146,6 +153,15 @@ tasks:
           fi
           rm -f "$tasklist"
 
+          # Bootstrap .env from the scaffold's .env.example if present
+          # (full-stack-monorepo's docker-compose.dev.yml declares
+          # `env_file: .env` which adopters generate via
+          # `cp .env.example .env`). Smoke must reproduce that step.
+          if [ -f "$scaffold_dir/.env.example" ] && [ ! -f "$scaffold_dir/.env" ]; then
+            cp "$scaffold_dir/.env.example" "$scaffold_dir/.env"
+            echo "[INFO] $archetype : bootstrapped .env from .env.example"
+          fi
+
           if ! (cd "$scaffold_dir" && task dev:up); then
             echo "[FAIL] $archetype : 'task dev:up' failed"
             FAILED+=("$archetype:dev-up")
@@ -161,7 +177,9 @@ tasks:
           echo "[PASS] $archetype : dev:up validation"
         done
 
-        if [ ${#FAILED[@]:-0} -gt 0 ]; then
+        # mvdan/sh rejects `${array[@]:-0}` combination ; `${#array[@]}`
+        # alone returns 0 on unset/empty arrays in both bash and mvdan/sh.
+        if [ "${#FAILED[@]}" -gt 0 ]; then
           echo ""
           echo "── FAIL summary : ${FAILED[*]} ──"
           exit 1

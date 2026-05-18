@@ -8,18 +8,16 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:opentelemetry_api/opentelemetry_api.dart';
+import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
 import 'data/auth/auth_repository_impl.dart';
 import 'domain/attestation/device_attestor.dart';
-import 'domain/auth/auth_repository.dart';
 import 'infrastructure/attestation/android_play_integrity_attestor.dart';
 import 'infrastructure/attestation/fake_attestor.dart';
 import 'infrastructure/attestation/ios_app_attest_attestor.dart';
 import 'infrastructure/auth/oidc_config.dart';
 import 'infrastructure/biometric/biometric_service.dart';
 import 'infrastructure/storage/secure_storage_adapter.dart';
-import 'observability/otel_init.dart';
 import 'presentation/auth/auth_bloc.dart';
 import 'presentation/biometric/biometric_lock_widget.dart';
 
@@ -42,7 +40,7 @@ class App extends StatelessWidget {
       storage: storage,
       attestor: attestor,
       config: defaultConfig,
-      tracer: globalTracerProvider.getTracer('{{project_name}}.auth'),
+      tracer: OTel.tracer(),
     );
     final biometricService = BiometricService();
 

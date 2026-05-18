@@ -503,12 +503,15 @@ v1.0.0 sont désormais résolus.
 | `t5-cargo-pin-refresh`       | archived               | T5.1.E (Cargo pin correction)                  |
 | `t5-bin-server-deps`         | archived               | T5.1.E (bin-server deps + grpc-api API realign) |
 | `t5-2-platform-verification` | archived               | T5.2 (Anti-Hallucination Platform Verification — 3-axis checklist + standards-lifecycle.md v1.1.0) |
+| `t5-otel-dartastic-realign`  | implemented (ready-to-PR) | T5.3 (Workiva → Dartastic substitution, breaking standard v2.0.0) — branche `t5-otel-dartastic-realign` |
 
-**28 archivés** (incluant `t5-2-platform-verification` 2026-05-18) au
-2026-05-18, aucun change en cours. Aucun change orphelin, aucun
-`status: in_progress` bloqué, aucun marqueur
-`[NEEDS CLARIFICATION:]` non résolu inline dans les changes archivés
-(tous gates `verify.sh` + `constitution-linter.sh` PASS).
+**28 archivés** au 2026-05-18 + **1 en cours** (T5.3
+`t5-otel-dartastic-realign`, status `implemented`, awaiting
+push/PR/merge on dedicated branch). T5.3.1
+(`b1-1-dev-up-matrix-fixes`) planifié mais non-encore-créé (cf.
+§0.4). Aucun marqueur `[NEEDS CLARIFICATION:]` non résolu inline
+dans les changes archivés (tous gates `verify.sh` +
+`constitution-linter.sh` PASS).
 
 ---
 
@@ -843,7 +846,98 @@ après.
 
 ---
 
-## 0.3 Status update — 2026-05-16 (T5.3 — `t5-otel-dartastic-realign`)
+## 0.3 Status update — 2026-05-16 → ✅ Implemented 2026-05-18 (T5.3 — `t5-otel-dartastic-realign`)
+
+> ✅ **Implemented 2026-05-18** via `t5-otel-dartastic-realign`
+> (branche `t5-otel-dartastic-realign`, status `implemented`, ready
+> to archive/PR). **Inaugural application of the T5.2 3-axis platform
+> verification checklist** : the 3 Dartastic packages
+> (`dartastic_opentelemetry_api ^1.0.0-beta.2` transitive +
+> `dartastic_opentelemetry ^1.1.0-beta.6` + `flutterrific_opentelemetry
+> ^0.4.0`) verified inline against existence + API surface +
+> platform compatibility. No `[PLATFORM MISMATCH:]` markers raised.
+> `flutter/opentelemetry.md` v1.1.0 → **v2.0.0** breaking bump with
+> WAIVER block per ADR-T53-002. FSM frontend (5 Dart files) +
+> mobile-only template (4 templates + cli/assets mirrors) rewritten
+> on Dartastic. 3 archived changes (`b4-mobile-only`, `t5-otel-app`,
+> `t5-otel-dart-api-realign`) carry forward-pointer
+> `.forge-update-notes` (Article V immutability preserved).
+> Harness `t5-otel-dartastic.test.sh` 13 L1 + 2 L2 opt-in
+> (`FORGE_T53_LIVE=1`) → 13/13 L1 GREEN ; **L2 `flutter analyze`
+> GREEN sur les 2 archétypes** via `task validate / smoke-with-toolchains`
+> (3/3 PASS en 34.5 s).
+>
+> **Validation méta** : indépendant code-reviewer agent pass
+> attrapa 2 HIGH findings (`FlutterrificOTel.routeObserver()`
+> fabriqué — corrigé en `FlutterOTel.routeObserver` getter ; pin
+> SDK `^0.9.5` obsolète — corrigé en `^1.1.0-beta.6`). Sans L2
+> live-run, 7 itérations supplémentaires de fix-forwards Dartastic
+> API symbol-level (`OTel.tracer()` no-args, `setStringAttribute`
+> typed setters, `SpanStatusCode.Error` capital E, `TextMapSetter<T>.set(key, value)`
+> 2-args carrier-baked, `Attributes` via `<Map>.toAttributes()`
+> extension) — toutes capturées par `flutter analyze`. **Démontre
+> que L2 live-run + code-reviewer indépendant sont opérationnellement
+> non-négociables** pour tout change qui réinclut une dépendance
+> externe (T5.2 self-validation lesson appliquée).
+>
+> **First fixes carried in T5.3** (externalités positives du
+> chantier — bugs pré-T5.3 masqués par les failures upstream
+> Workiva pub-get) :
+>
+> 1. **Mobile-only template analyzer-debt** (14 issues `b4-mobile-only`) :
+>    unused imports (`app.dart`, `app_test.dart`), 8×
+>    `sort_constructors_first` (auth_repository_impl, auth_token,
+>    oidc_config, biometric_service, secure_storage_adapter,
+>    auth_bloc ×3, biometric_lock_widget), `withOpacity` →
+>    `withValues(alpha:)` deprecation, `prefer_const` on
+>    `AlwaysOnSampler()`. Pre-existing dette masked by the
+>    Workiva pub-get failure ; now visible because pub-get is
+>    GREEN. **Fixed in T5.3 commit.**
+> 2. **`gherkin: ^3.1.0` dead weight** in mobile-only `pubspec.yaml.tmpl` :
+>    the `b4-mobile-only` template shipped `gherkin` runtime
+>    executor as dev_dependency but `app_test.dart.tmpl` never
+>    wired it ("Phase B will wire cucumber/gherkin runner" —
+>    deferred indefinitely). `gherkin 3.1.0` pins `uuid ^3.0.6`
+>    which transitively conflicts with `flutterrific_opentelemetry`'s
+>    `uuid ^4.5.1`. Removed ; comment block explains future BDD
+>    path via `bdd_widget_test`. **Fixed in T5.3 commit.**
+> 3. **Root Taskfile mvdan/sh quirks** in `dev-up-matrix` task :
+>    `${SCAFFOLD_DIRS[@]:-}` array-default combination not
+>    supported by mvdan/sh → guarded by `${#SCAFFOLD_DIRS[@]}`
+>    length check ; `${#FAILED[@]:-0}` → `${#FAILED[@]}` (returns
+>    0 on unset) ; `trap ... EXIT INT TERM` rejected → `trap
+>    cleanup_all EXIT` only (signal exits go through EXIT).
+>    **Fixed in T5.3 commit.**
+> 4. **`.env` bootstrap missing** in `dev-up-matrix` : scaffold
+>    ships `.env.example` per convention but smoke didn't copy
+>    it → docker-compose `env_file: .env` failed. Added explicit
+>    `cp .env.example .env` step in the smoke loop.
+>    **Fixed in T5.3 commit.**
+> 5. **`archetypes-smoke.test.ts` failure message** : `flutter
+>    analyze` writes the per-issue diagnostics on stdout, not
+>    stderr ; test assertion only surfaced stderr (summary line).
+>    Added `f.stdout` to the failure message so triage doesn't
+>    require re-running the analyzer outside the harness.
+>    **Fixed in T5.3 commit.**
+>
+> Remaining `task validate` red lights → **deferred to T5.3.1**
+> (`b1-1-dev-up-matrix-fixes`, §0.4 below) :
+>
+> 6. **`image: scratch` placeholder** in
+>    `full-stack-monorepo/docker-compose.dev.yml.tmpl:60` : the
+>    `fsm-backend` service uses `image: scratch` as a TODO
+>    placeholder ("replace with project image once built") ;
+>    Docker rejects this with "Error 'scratch' is a reserved
+>    name". The placeholder has never actually worked in `task
+>    dev:up` because the Taskfile's `dev-up-matrix` was itself
+>    syntactically broken (mvdan/sh quirks above), so this bug
+>    was never reached. Now that `dev-up-matrix` runs, the
+>    `fsm-backend` placeholder needs a real fix — either a
+>    working stand-in image (e.g. `nginx:alpine` with a
+>    healthcheck shim) or a Docker Compose `profiles:` gate to
+>    make the service opt-in. Out of scope for T5.3 (no
+>    relation to Workiva → Dartastic substitution) ; tracked
+>    as **T5.3.1** below.
 
 > **T5.3 corrige le bug architectural OTel** révélé par `task validate`
 > et confirmé par investigation pub.dev 2026-05-16 : Workiva
@@ -971,6 +1065,130 @@ n'a peut-être pas le même volume de tests de conformité. **Mitigation**
 : dans le change T5.3 design, prévoir un fallback `dartastic` (Dart
 backend SDK) si flutterrific s'avère bloquant côté Flutter — Dartastic
 expose 3 SDKs au choix.
+
+---
+
+## 0.4 Status update — 2026-05-18 (T5.3.1 — `b1-1-dev-up-matrix-fixes` planned)
+
+> **T5.3.1 ferme la dette pré-existante du `dev-up-matrix` smoke
+> qui a été mise en lumière par la chaîne `task validate` de T5.3.**
+> Bugs latents dans le template `full-stack-monorepo` shippé par
+> `b1-foundations` / `b1-delivery` (T2 P1), jamais exécutés
+> end-to-end avant T5.3 parce que les couches upstream
+> (Workiva pub-get + mvdan/sh syntax + .env bootstrap) failaient
+> avant d'atteindre Docker Compose. T5.3 a livré les fixes
+> upstream (cf. §0.3 « First fixes carried in T5.3 ») ; T5.3.1
+> livre les fixes downstream désormais visibles.
+
+### Origine — chaîne de bugs latents découverts pendant T5.3
+
+`task validate` execute en séquence : build → gates → harness →
+vitest → smoke-with-toolchains → **dev-up-matrix**. Avant T5.3 :
+
+- `smoke-with-toolchains` (`flutter analyze`) FAIL → `dev-up-matrix`
+  jamais atteint.
+- T5.3 (Dartastic substitution + analyzer dette) débloque
+  `smoke-with-toolchains` GREEN.
+- `dev-up-matrix` FAIL en cascade sur 4 niveaux successifs :
+  (a) mvdan/sh parameter expansion ; (b) mvdan/sh trap signal
+  names ; (c) `.env` bootstrap absent ; (d) `image: scratch`
+  reserved name. Les niveaux (a)+(b)+(c) sont **fixés dans T5.3**
+  car ils bloquaient la validation de T5.3 lui-même. Niveau (d)
+  est **strictement template-related**, sans lien avec la
+  substitution OTel — il sort du scope T5.3.
+
+### T5.3.1 — items proposés
+
+**T5.3.1.A — `image: scratch` placeholder dans
+`docker-compose.dev.yml.tmpl`**
+
+Le template `full-stack-monorepo/docker-compose.dev.yml.tmpl:60`
+déclare `fsm-backend: image: scratch` comme TODO placeholder
+("replace with project image once built"). Docker rejette
+"scratch" comme reserved name → `task dev:up` FAIL immédiat.
+
+Trois options :
+
+- **A. Working stand-in image** — remplacer `image: scratch` par
+  `image: nginx:alpine` (ou équivalent léger qui expose un
+  healthcheck-able endpoint). L'adopter remplace au moment de
+  builder sa vraie image backend. **Risque** : healthcheck
+  `curl localhost:8080/health` échoue avec nginx-default
+  (écoute :80 + pas de /health) — dependants en attente
+  infinie. À mitiger : adjuster le healthcheck du placeholder OU
+  utiliser une image dédiée (`traefik/whoami` qui expose :80
+  avec 200 OK).
+- **B. Docker Compose `profiles:` opt-in** — placer
+  `fsm-backend` (et tous services dépendants) derrière un
+  `profiles: ["backend"]`. Smoke `task dev:up` ne lance que
+  l'infra (db, kong, signoz, otel-collector) ; l'adopter
+  active `--profile backend` quand son image est prête. Plus
+  propre architecturalement, mais demande re-design du
+  docker-compose et docs adopter.
+- **C. Commenter `fsm-backend` + tous ses dépendants** —
+  baseline minimale. Forge backend = TODO, adopter remplit.
+  Plus simple mais moins fonctionnel.
+
+**T5.3.1.B — Re-validation end-to-end `task validate`**
+
+Une fois `dev-up-matrix` GREEN sur les 2 archétypes, ajouter
+une assertion dans `archetypes-smoke.test.ts` (ou nouvelle
+suite e2e) qui exerce `task dev:up` + `docker compose ps` +
+`task dev:down` cycle complet. Le `dev-up-matrix` du
+Taskfile root est aujourd'hui le seul niveau qui exerce cela ;
+le `cli/test/e2e/` n'a pas de vue sur Docker. À envisager : le
+laisser au niveau Taskfile (opt-in) OU le promouvoir en e2e
+test bloquant.
+
+**T5.3.1.C — Cleanup `docker-compose.dev.yml.tmpl::version`
+attribute obsolete**
+
+Le template déclare `version: "3.X"` qui est obsolete depuis
+Compose v2 (warning `the attribute version is obsolete`). À
+supprimer pour propreté + supprimer un warning de smoke.
+
+**T5.3.1.D — `task validate` GREEN end-to-end** comme
+critère de release de T5.3.1.
+
+### T5.3.1 — non-objectifs
+
+- Pas de rewrite du `docker-compose.dev.yml` structurel (Kong,
+  SigNoz, OBI, Coroot stack). T5.3.1 = template hygiene, pas
+  re-architecture B.8.
+- Pas de touch sur le mobile-only smoke (déjà GREEN post-T5.3).
+- Pas de changement constitutionnel ou de standard. T5.3.1 est
+  hygiénique pur.
+
+### T5.3.1 — critères de réussite + release
+
+- `task validate` GREEN sur la même branche (full-stack-monorepo
+  + mobile-only smoke).
+- `task dev:up` + `docker compose ps` + cleanup loop GREEN sur
+  full-stack-monorepo.
+- Aucune régression sur les autres harnesses (verify.sh +
+  constitution-linter + t5-1 + t5-2 + t5-otel-dartastic preserved).
+- **Effort estimé** : `S`–`M` (~half-day à 1 day) suivant l'option
+  retenue pour T5.3.1.A.
+- **Release target** : pourrait piggyback sur **v0.4.0-rc.1**
+  (le même release vehicle que T5.3) si T5.3.1 land vite (avant
+  release tag), OU constituer un patch `v0.4.0-rc.2` séparé si
+  T5.3 est déjà tagué.
+
+### T5.3.1 — pourquoi un change séparé
+
+Trois raisons :
+
+1. **Scope auditability** : T5.3 = « Workiva → Dartastic
+   substitution + 3-axis checklist application ». Y bundler des
+   fixes Docker Compose dilue le narrative et complique le
+   review.
+2. **Reverter atomique** : si T5.3 doit être révoqué (régression
+   adopter, etc.) on revert UN change. Mélanger les
+   responsabilités fait que toute révocation touche des bugs
+   sans rapport.
+3. **Pattern Forge** : `t5-cargo-pin-refresh` + `t5-bin-server-deps`
+   ont précédé en T5.1.E comme fix-forwards distincts du
+   `cli-trust-harness` original. Même pattern ici.
 
 ---
 
@@ -1608,7 +1826,8 @@ Reprise de ARCHITECTURE-TARGET §11.
 | **T5**    | **Phase 1 ARCHITECTURE-TARGET, J.7, J.8, K.3 (Demeter), I.2–I.6**                                | ✅ **Connect codegen done 2026-05-06** via `t5-connect-codegen` (PR #3). ✅ **J.7 done 2026-05-08** via `j7-validate-standards-yaml` (PR #4 merged). ✅ **OTel + OBI + Coroot stack templates done 2026-05-10** via `t5-otel-stack` (PR #5 merged). ✅ **J.8 done 2026-05-10** via `j8-janus-rules` (PR #6 merged ; refusal rules + `--eu-tier` flag + CycloneDX SBOM ; 20/20 tests, +6 PASS verify.sh ; J.8.c deferred to T7). ✅ **K.3 done 2026-05-12** via `k3-demeter` (PR #7 merged ; Demeter persona + dependency scanner + deny-list + standard + Janus delta ; 22/22 tests `k3.test.sh --level 1,2`). ✅ **Q-004 resolved 2026-05-12** via `t5-otel-dart-api-realign` (PR #8 merged ; `flutter/opentelemetry.md` v1.0.0 → v1.1.0 standards realign on real Workiva `opentelemetry: 0.18.11` ; 9 fabricated symbols removed + 7 verified symbols added ; 12/12 L1 tests). ✅ **I.2 done 2026-05-12** via `i2-compliance-tiers` (single human-readable standard `global/compliance-tiers.md` v1.0.0 codifiant T1/T2/T3 — schema verbatim + matrix §10.2 byte-identical + `linter_rule: t3-forbidden-components` forward-pointer ; index entry + REVIEW birth + `docs/COMPLIANCE.md` + 14/14 L1 tests ; resolves K.3 forward-pointer). ✅ **I.6 done 2026-05-12** via `i6-compliance-artefacts` (deterministic `.tgz` compliance bundle generator `.forge/scripts/compliance/bundle.sh` + DPA template + standard `global/compliance-artefacts-bundle.md` v1.0.0 6 H2 + 4 MUST NOT ; six-member bundle MANIFEST/tier-matrix/dpa-template/audit-ledger×2/SBOM ; `SOURCE_DATE_EPOCH` determinism asserted by L2 fixture ; 16/16 tests `i6.test.sh --level 1,2` ; bundle layout forward-stable for Themis-territory artefacts). ✅ **I.3 done 2026-05-12** via `i3-t3-forbidden-linter` (`constitution-linter.sh::ADR-I3-001` section + standard `global/forbidden-components-rules.md` v1.0.0 with 10 `T3-RULE-001..010` rules + tier-scaled severity T1/T2 warn → T3 fail immediate + 14/14 L1 tests `i3.test.sh` ; resolves I.2 `linter_rule:` forward-pointer ; unblocks I.5). ✅ **I.5 done 2026-05-12** via `i5-compliance-workflow` (reusable `.github/workflows/forge-compliance.yml` `on: workflow_call:` 158 LOC orchestrant Demeter + linter + SBOM + bundle ; 3 inputs `eu-tier` / `target-dir` / `artefact-name` + 1 output `artefact-path` ; upload `.tgz` via `actions/upload-artifact@v4` ; standard `global/forge-compliance-workflow.md` v1.0.0 284 LOC 7 H2 + 4 MUST NOT + 8 triggers ; 17/17 tests `i5.test.sh --level 1,2` ; trois ADRs ADR-I5-CW-001..003 — exit-code aggregation trust-each-script + SOURCE_DATE_EPOCH commit-ts source + L2 act-opt-in `FORGE_I5_ACT=1`). NIS2/DORA/CRA/AI Act regulatory deadline artefacts (Themis K.5, T7+) = pending. | Observabilité + Connect contrats + standards linter + compliance graduée. Réversible.                                                        |
 | **T5.1**  | **CLI Trust Harness + Option B tactical fixes**                                                    | ✅ **Done 2026-05-16** via 3 archives : `cli-trust-harness` (couches A/B/C + Taskfile sweep) + `t5-cargo-pin-refresh` (buffa pin) + `t5-bin-server-deps` (bin-server Cargo.toml + grpc-api API realign). Released as `@sdd-forge/cli@0.3.3`. | Garantit qu'un tarball npm `@sdd-forge/cli@X` ne shippe pas un scaffold cassé. Couche D différée à T6 / B.8.15. `cargo check --workspace` GREEN end-to-end ; `flutter analyze` mobile-only RED (T5.3). |
 | **T5.2**  | **Anti-Hallucination Platform Verification (process)**                                              | ✅ **Done 2026-05-18** via `t5-2-platform-verification`. 8 L1 + 1 L2 opt-in (`FORGE_T52_LIVE=1` pub.dev smoke `flutter_bloc`) ; harness `t5-2.test.sh` 9/9 GREEN, wall-clock 0.06s L1 / 0.31s L1+L2. 4 surfaces drift-guard (agent + standards-lifecycle + CONTRIBUTING + LINTING) vérifiées verbatim. `standards-lifecycle.md` v1.0.0 → v1.1.0 (additive, frontmatter back-fill, REVIEW.md ledger 2026-05-18). Article III.4 (Ambiguity Protocol) reinforcement procédural — auto-validation par code-reviewer indépendant qui a attrapé "Article VIII" fabriquée → corrigée pré-archive. Release target v0.3.4 (patch). | Ajoute un 3e axe (platform compatibility) à la procédure document-specialist + cadence de re-revue `standards-lifecycle.md` v1.1.0.          |
-| **T5.3**  | **`t5-otel-dartastic-realign`**                                                                    | ⏸️ Planned 2026-05-16. Target v0.4.0-rc.1. Détails §0.3.                                                                                                                            | Workiva (web-only) → Dartastic (all-platform). Bump `flutter/opentelemetry.md` v2.0.0 breaking. Q-006 resolution.                            |
+| **T5.3**  | **`t5-otel-dartastic-realign`**                                                                    | ✅ **Done 2026-05-18** via `t5-otel-dartastic-realign`. Inaugural application of T5.2 3-axis checklist on 3 Dartastic packages. Standard v1.1.0 → v2.0.0 breaking. FSM frontend (5 .dart files) + mobile-only template (4 .tmpl + cli/assets mirrors) rewritten. 3 archived changes carry `.forge-update-notes` forward-pointers (Article V immutability). Harness `t5-otel-dartastic.test.sh` 13/13 L1 GREEN ; L2 (`flutter analyze` on both archetypes) GREEN via `task validate` smoke-with-toolchains. Independent code-reviewer + 7 fix-forward iterations on Dartastic API symbol-level errors (caught by `flutter analyze`). First fixes carried in T5.3 (mobile-only analyzer dette 14 issues, gherkin uuid conflict removed, Taskfile mvdan/sh fixes, .env bootstrap, archetypes-smoke stdout surfacing). Détails §0.3. Target v0.4.0-rc.1. | Workiva (web-only) → Dartastic (all-platform). Bump `flutter/opentelemetry.md` v2.0.0 breaking. Q-006 resolution. |
+| **T5.3.1** | **`b1-1-dev-up-matrix-fixes` (template hygiene)**                                                  | ⏸️ Planned 2026-05-18 post-T5.3. Closes the `dev-up-matrix` red lights that T5.3 exposed (chiefly `image: scratch` placeholder in `full-stack-monorepo/docker-compose.dev.yml.tmpl:60` + `version: "3.X"` obsolete attribute). Détails §0.4. Effort `S`–`M`. Release : piggyback v0.4.0-rc.1 ou patch rc.2. | Hygiène pré-existante `b1-foundations`/`b1-delivery` template. Pas de lien avec Workiva → Dartastic ; séparé pour scope auditability + atomic revertability. |
 | **T6**    | **B.8 (flagship 1.0.0 → 2.0.0), Phase 2 ARCHITECTURE-TARGET, B.8.15 couche D upgrade-matrix**     | ⏸️ Pending.                                                                                                                                                                                                                             | Migration breaking flagship. **Point de non-retour**. B.8.15 ferme la dernière couche de T5.1 (upgrade matrix N-1 → N).                      |
 | **T7**    | **B.6 (event-driven-eu), B.7 (ai-native-rag), K.1, K.2, K.4, K.5**                               | ⏸️ Pending.                                                                                                                                                                                                                             | Deux nouveaux archétypes + 4 nouveaux agents.                                                                                                |
 | **T8**    | **B.9 (mobile-pwa-first / 2.0.0), B.3 (rust-cli-tui), pédagogie C.2-C.5**                        | ⏸️ Pending. **F.3 pulled forward, delivered 2026-05-12 via `f3-release-script-fix`.**                                                                                                                                                                | Renommage mobile + dernier archétype premium + walkthrough/anti-patterns/comparison/migration. F.3 release script fix shipped early (T5).    |
