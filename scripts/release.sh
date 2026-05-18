@@ -19,18 +19,32 @@
 #                       `## [X.Y.Z]` heading in CHANGELOG.md.
 #
 # Optional flags :
-#   --otp <6-digits>    npm 2FA OTP. Fallback chain (ADR-F3-004) :
+#   --otp <6-digits>    Legacy npm 2FA TOTP code (kept for backwards
+#                       compatibility). Fallback chain (ADR-F3-004) :
 #                       --otp flag → interactive TTY prompt → $NPM_OTP
-#                       env var. Required when --skip-npm is absent.
+#                       env var. **Optional** since 2026-05-18 — when
+#                       no OTP is provided, the script assumes the npm
+#                       account uses WebAuthn 2FA and `npm publish`
+#                       triggers the browser flow directly (npm v11+).
 #   --dry-run           preview every step without side effects.
 #   --skip-npm          skip npm publish step (and OTP collection).
 #   --skip-gh           skip GitHub release step.
+#   --skip-login        skip the `npm login` auto-trigger (assumes a
+#                       valid session token already cached).
 #   -h, --help          print this header and exit 0.
+#
+# npm 2FA modes supported :
+#   - **WebAuthn (default for modern accounts)** : `npm login` opens a
+#     browser ; the user approves with their authenticator (Touch ID /
+#     Yubikey / Dashlane). `npm publish` then triggers a fresh browser
+#     challenge for each publish. Pass NO `--otp`.
+#   - **TOTP (legacy)** : pass `--otp <6-digits>` (or `$NPM_OTP`) and
+#     the script forwards it to `npm publish --otp=...`.
 #
 # Exit codes :
 #   0  — success (or dry-run preview)
 #   1  — pre-flight check failed
-#   2  — usage error (bad flag, bad value, missing OTP)
+#   2  — usage error (bad flag, bad value)
 #   3  — operational failure (tag conflict, npm error, etc.)
 #
 # Bug-class fixes (F.3) vs the original release-v0.3.0.sh :
@@ -38,6 +52,13 @@
 #     parent shell's pwd is invariant across the run.
 #   - `npm publish --otp=<value>` is forwarded properly ; the OTP
 #     value is never logged or echoed.
+#
+# WebAuthn support (2026-05-18) :
+#   - `_resolve_otp` no longer fatals when no OTP is provided ;
+#     the publish step omits `--otp` from the `npm publish` command
+#     line so the npm CLI triggers the WebAuthn browser flow.
+#   - A new `npm login` auto-trigger runs before publish when the
+#     account is not currently logged in (skippable via --skip-login).
 
 set -euo pipefail
 
@@ -46,6 +67,7 @@ set -euo pipefail
 DRY_RUN=0
 SKIP_NPM=0
 SKIP_GH=0
+SKIP_LOGIN=0
 VERSION=""
 OTP=""
 
@@ -59,6 +81,7 @@ while [ $# -gt 0 ]; do
     --dry-run) DRY_RUN=1; shift ;;
     --skip-npm) SKIP_NPM=1; shift ;;
     --skip-gh) SKIP_GH=1; shift ;;
+    --skip-login) SKIP_LOGIN=1; shift ;;
     --version)
       if [ $# -lt 2 ]; then
         echo "release: --version requires a value (e.g., --version 0.3.1)" >&2
@@ -137,10 +160,15 @@ run() {
 
 # ─── OTP resolution (only when publish will actually run) ────────
 #
-# Fallback chain per ADR-F3-004 :
+# Legacy TOTP fallback chain per ADR-F3-004 :
 #   1. --otp flag (already in $OTP if passed).
-#   2. Interactive TTY prompt (silent read).
+#   2. Interactive TTY prompt (silent read ; OPTIONAL since 2026-05-18).
 #   3. $NPM_OTP env var.
+#
+# **WebAuthn-friendly behaviour (2026-05-18)** : if no OTP is provided
+# via flag / env / TTY-prompt, `_resolve_otp` returns 0 cleanly. The
+# publish step omits `--otp` from the `npm publish` command line so
+# the npm CLI itself triggers the WebAuthn browser flow (npm v11+).
 #
 # In --skip-npm or --dry-run mode we skip resolution entirely so a
 # maintainer exploring with --dry-run or testing the script need
@@ -153,13 +181,14 @@ _resolve_otp() {
     return 0
   fi
   if [ -t 0 ]; then
-    # Interactive TTY — prompt the user with a silent read.
+    # Interactive TTY — prompt the user with a silent read. Empty
+    # response is now valid : it means "use WebAuthn, no TOTP".
     local prompt_otp
-    read -rsp "npm 2FA OTP (6 digits) : " prompt_otp
+    read -rsp "npm 2FA OTP (6 digits, or empty for WebAuthn) : " prompt_otp
     echo ""  # newline after the silent prompt
     if [ -z "$prompt_otp" ]; then
-      echo "release: 2FA OTP required (empty input on TTY prompt)" >&2
-      exit 2
+      echo "  → empty OTP : assuming WebAuthn 2FA (browser flow)" >&2
+      return 0
     fi
     if ! printf '%s' "$prompt_otp" | grep -Eq '^[0-9]{6}$'; then
       echo "release: 2FA OTP must be 6 digits, got '<redacted>'" >&2
@@ -177,8 +206,9 @@ _resolve_otp() {
     OTP="$NPM_OTP"
     return 0
   fi
-  echo "release: 2FA OTP required (pass --otp, run on a TTY, or set NPM_OTP)" >&2
-  exit 2
+  # No OTP available — assume WebAuthn flow (browser challenge during
+  # `npm publish`). This is the default for modern npm accounts.
+  return 0
 }
 
 # ─── Pre-flight ──────────────────────────────────────────────────
@@ -285,9 +315,18 @@ if [ "$SKIP_NPM" = "1" ]; then
 else
   step "Step 5 — Build + publish @sdd-forge/cli to npm"
 
-  echo "  Logged in as: $(npm whoami 2>/dev/null || echo '(not logged in)')"
+  current_user="$(npm whoami 2>/dev/null || echo '(not logged in)')"
+  echo "  Logged in as: $current_user"
   if [ "$DRY_RUN" = "0" ] && ! npm whoami >/dev/null 2>&1; then
-    fatal "not logged in to npm. Run \`npm login\` first or use --skip-npm."
+    if [ "$SKIP_LOGIN" = "1" ]; then
+      fatal "not logged in to npm and --skip-login passed. Run \`npm login\` first or drop --skip-login."
+    fi
+    echo "  → triggering \`npm login\` (WebAuthn browser flow ; approve in your authenticator)"
+    npm login
+    if ! npm whoami >/dev/null 2>&1; then
+      fatal "npm login did not produce a valid session. Aborting."
+    fi
+    ok "logged in as $(npm whoami)"
   fi
 
   run "cd cli && npm install"
@@ -297,12 +336,24 @@ else
   run "cd cli && npm test"
   ok "cli/ tests passed"
 
-  # The publish step itself : OTP-forwarding subshell, never echoes
-  # the OTP value. The dry-run trace renders `<redacted>`.
+  # The publish step. Two modes :
+  #   - WebAuthn (default, no OTP) : invoke `npm publish --access public`
+  #     directly ; npm CLI triggers a browser challenge for the publish.
+  #   - TOTP (legacy, $OTP set) : forward `--otp=$OTP` ; never echo the
+  #     value (dry-run trace renders `<redacted>`).
   if [ "$DRY_RUN" = "1" ]; then
-    echo "    [dry-run] cd cli && npm publish --access public --otp=<redacted>"
+    if [ -n "$OTP" ]; then
+      echo "    [dry-run] cd cli && npm publish --access public --otp=<redacted>"
+    else
+      echo "    [dry-run] cd cli && npm publish --access public  # WebAuthn flow"
+    fi
   else
-    ( cd cli && npm publish --access public --otp="$OTP" )
+    if [ -n "$OTP" ]; then
+      ( cd cli && npm publish --access public --otp="$OTP" )
+    else
+      echo "  → \`npm publish\` will trigger WebAuthn ; approve in your authenticator"
+      ( cd cli && npm publish --access public )
+    fi
     ok "@sdd-forge/cli@$EXPECTED_VERSION published to npm"
   fi
 fi
