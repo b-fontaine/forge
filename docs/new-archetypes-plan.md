@@ -502,9 +502,10 @@ v1.0.0 sont désormais résolus.
 | `cli-trust-harness`          | archived               | T5.1 (CLI Trust Harness)                       |
 | `t5-cargo-pin-refresh`       | archived               | T5.1.E (Cargo pin correction)                  |
 | `t5-bin-server-deps`         | archived               | T5.1.E (bin-server deps + grpc-api API realign) |
+| `t5-2-platform-verification` | archived               | T5.2 (Anti-Hallucination Platform Verification — 3-axis checklist + standards-lifecycle.md v1.1.0) |
 
-**27 archivés** (incluant `t5-bin-server-deps` 2026-05-16) au
-2026-05-16, aucun change en cours. Aucun change orphelin, aucun
+**28 archivés** (incluant `t5-2-platform-verification` 2026-05-18) au
+2026-05-18, aucun change en cours. Aucun change orphelin, aucun
 `status: in_progress` bloqué, aucun marqueur
 `[NEEDS CLARIFICATION:]` non résolu inline dans les changes archivés
 (tous gates `verify.sh` + `constitution-linter.sh` PASS).
@@ -728,11 +729,27 @@ les couches A/B/C qui débloquent les releases courantes.
 
 ---
 
-## 0.2 Status update — 2026-05-16 (T5.2 — Anti-Hallucination Platform Verification)
+## 0.2 Status update — 2026-05-16 → ✅ Implemented 2026-05-18 (T5.2 — Anti-Hallucination Platform Verification)
 
 > **T5.2 est un changement de processus, pas de code.** Il sert à
 > empêcher la classe de bug qui a produit Q-004 (`opentelemetry_sdk`
 > fantôme) puis sa pseudo-résolution (`opentelemetry` Workiva, web-only).
+
+> ✅ **Implemented 2026-05-18** via `t5-2-platform-verification`
+> (status `implemented`, ready to archive). Toutes les couches
+> T5.2.A → T5.2.D livrées ; harness `t5-2.test.sh` 8/8 L1 + 1 L2
+> opt-in GREEN ; release target **v0.3.4** (patch). Article III.4
+> (Ambiguity Protocol — anti-hallucination) renforcé
+> procéduralement, pas amendé. Drift guard ADR-T52-003 enforced via
+> les 2 H2 canoniques (`## Platform Verification Checklist (3-axis)`
+> + `## Platform compatibility re-verification`) référencées
+> verbatim sur 4 surfaces (agent + standards-lifecycle +
+> CONTRIBUTING + LINTING). Note d'auto-validation : un code-reviewer
+> indépendant pré-archive a attrapé une citation constitutionnelle
+> fabriquée ("Article VIII anti-hallucination" → corrigé en
+> Article III.4 Ambiguity Protocol) — exactement la classe de bug
+> que T5.2 existe pour prévenir, démonstration vivante du process
+> review/verify séparés.
 
 ### Origine — leçon Q-004 + extension Workiva platform
 
@@ -1590,7 +1607,7 @@ Reprise de ARCHITECTURE-TARGET §11.
 | **T4**    | **P-1, P-2, P-3, P-4, I.1, J.1–J.6**                                                             | ✅ **Done 2026-05-04** via `t4-adr-ratification` (PR #2 mergée). 35 ADDED FRs + 8 NFRs. P-5 retiré 2026-05-06 (Hera 9 sub-agents conservés).                                                                                            | Méthodologie : ADR capturés, 6 standards YAML v1.0.0, cycle 12 mois, schémas compliance.                                                     |
 | **T5**    | **Phase 1 ARCHITECTURE-TARGET, J.7, J.8, K.3 (Demeter), I.2–I.6**                                | ✅ **Connect codegen done 2026-05-06** via `t5-connect-codegen` (PR #3). ✅ **J.7 done 2026-05-08** via `j7-validate-standards-yaml` (PR #4 merged). ✅ **OTel + OBI + Coroot stack templates done 2026-05-10** via `t5-otel-stack` (PR #5 merged). ✅ **J.8 done 2026-05-10** via `j8-janus-rules` (PR #6 merged ; refusal rules + `--eu-tier` flag + CycloneDX SBOM ; 20/20 tests, +6 PASS verify.sh ; J.8.c deferred to T7). ✅ **K.3 done 2026-05-12** via `k3-demeter` (PR #7 merged ; Demeter persona + dependency scanner + deny-list + standard + Janus delta ; 22/22 tests `k3.test.sh --level 1,2`). ✅ **Q-004 resolved 2026-05-12** via `t5-otel-dart-api-realign` (PR #8 merged ; `flutter/opentelemetry.md` v1.0.0 → v1.1.0 standards realign on real Workiva `opentelemetry: 0.18.11` ; 9 fabricated symbols removed + 7 verified symbols added ; 12/12 L1 tests). ✅ **I.2 done 2026-05-12** via `i2-compliance-tiers` (single human-readable standard `global/compliance-tiers.md` v1.0.0 codifiant T1/T2/T3 — schema verbatim + matrix §10.2 byte-identical + `linter_rule: t3-forbidden-components` forward-pointer ; index entry + REVIEW birth + `docs/COMPLIANCE.md` + 14/14 L1 tests ; resolves K.3 forward-pointer). ✅ **I.6 done 2026-05-12** via `i6-compliance-artefacts` (deterministic `.tgz` compliance bundle generator `.forge/scripts/compliance/bundle.sh` + DPA template + standard `global/compliance-artefacts-bundle.md` v1.0.0 6 H2 + 4 MUST NOT ; six-member bundle MANIFEST/tier-matrix/dpa-template/audit-ledger×2/SBOM ; `SOURCE_DATE_EPOCH` determinism asserted by L2 fixture ; 16/16 tests `i6.test.sh --level 1,2` ; bundle layout forward-stable for Themis-territory artefacts). ✅ **I.3 done 2026-05-12** via `i3-t3-forbidden-linter` (`constitution-linter.sh::ADR-I3-001` section + standard `global/forbidden-components-rules.md` v1.0.0 with 10 `T3-RULE-001..010` rules + tier-scaled severity T1/T2 warn → T3 fail immediate + 14/14 L1 tests `i3.test.sh` ; resolves I.2 `linter_rule:` forward-pointer ; unblocks I.5). ✅ **I.5 done 2026-05-12** via `i5-compliance-workflow` (reusable `.github/workflows/forge-compliance.yml` `on: workflow_call:` 158 LOC orchestrant Demeter + linter + SBOM + bundle ; 3 inputs `eu-tier` / `target-dir` / `artefact-name` + 1 output `artefact-path` ; upload `.tgz` via `actions/upload-artifact@v4` ; standard `global/forge-compliance-workflow.md` v1.0.0 284 LOC 7 H2 + 4 MUST NOT + 8 triggers ; 17/17 tests `i5.test.sh --level 1,2` ; trois ADRs ADR-I5-CW-001..003 — exit-code aggregation trust-each-script + SOURCE_DATE_EPOCH commit-ts source + L2 act-opt-in `FORGE_I5_ACT=1`). NIS2/DORA/CRA/AI Act regulatory deadline artefacts (Themis K.5, T7+) = pending. | Observabilité + Connect contrats + standards linter + compliance graduée. Réversible.                                                        |
 | **T5.1**  | **CLI Trust Harness + Option B tactical fixes**                                                    | ✅ **Done 2026-05-16** via 3 archives : `cli-trust-harness` (couches A/B/C + Taskfile sweep) + `t5-cargo-pin-refresh` (buffa pin) + `t5-bin-server-deps` (bin-server Cargo.toml + grpc-api API realign). Released as `@sdd-forge/cli@0.3.3`. | Garantit qu'un tarball npm `@sdd-forge/cli@X` ne shippe pas un scaffold cassé. Couche D différée à T6 / B.8.15. `cargo check --workspace` GREEN end-to-end ; `flutter analyze` mobile-only RED (T5.3). |
-| **T5.2**  | **Anti-Hallucination Platform Verification (process)**                                              | ⏸️ Planned 2026-05-16. Détails §0.2. Closes the Q-004 → Q-006 gap.                                                                                                                  | Ajoute un 3e axe (platform compatibility) à la procédure document-specialist + cadence de re-revue `standards-lifecycle.md` v1.1.0.          |
+| **T5.2**  | **Anti-Hallucination Platform Verification (process)**                                              | ✅ **Done 2026-05-18** via `t5-2-platform-verification`. 8 L1 + 1 L2 opt-in (`FORGE_T52_LIVE=1` pub.dev smoke `flutter_bloc`) ; harness `t5-2.test.sh` 9/9 GREEN, wall-clock 0.06s L1 / 0.31s L1+L2. 4 surfaces drift-guard (agent + standards-lifecycle + CONTRIBUTING + LINTING) vérifiées verbatim. `standards-lifecycle.md` v1.0.0 → v1.1.0 (additive, frontmatter back-fill, REVIEW.md ledger 2026-05-18). Article III.4 (Ambiguity Protocol) reinforcement procédural — auto-validation par code-reviewer indépendant qui a attrapé "Article VIII" fabriquée → corrigée pré-archive. Release target v0.3.4 (patch). | Ajoute un 3e axe (platform compatibility) à la procédure document-specialist + cadence de re-revue `standards-lifecycle.md` v1.1.0.          |
 | **T5.3**  | **`t5-otel-dartastic-realign`**                                                                    | ⏸️ Planned 2026-05-16. Target v0.4.0-rc.1. Détails §0.3.                                                                                                                            | Workiva (web-only) → Dartastic (all-platform). Bump `flutter/opentelemetry.md` v2.0.0 breaking. Q-006 resolution.                            |
 | **T6**    | **B.8 (flagship 1.0.0 → 2.0.0), Phase 2 ARCHITECTURE-TARGET, B.8.15 couche D upgrade-matrix**     | ⏸️ Pending.                                                                                                                                                                                                                             | Migration breaking flagship. **Point de non-retour**. B.8.15 ferme la dernière couche de T5.1 (upgrade matrix N-1 → N).                      |
 | **T7**    | **B.6 (event-driven-eu), B.7 (ai-native-rag), K.1, K.2, K.4, K.5**                               | ⏸️ Pending.                                                                                                                                                                                                                             | Deux nouveaux archétypes + 4 nouveaux agents.                                                                                                |

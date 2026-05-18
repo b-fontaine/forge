@@ -173,6 +173,32 @@ definition unacceptable in that context.
 section. Intended for incremental adoption only ; document the
 rationale in your project's `CLAUDE.md`.
 
+## Informative rules (procedural, not enforced)
+
+### T5.2 — Platform Verification Checklist (3-axis)
+
+The **3-axis platform-verification checklist** introduced by T5.2
+(`t5-2-platform-verification`, 2026-05-18) is **procedural** : it
+governs the ratification process for external dependency-pinning
+standards (e.g. `flutter/opentelemetry.md`, `rust/<dep>.md`) by
+requiring three axes to be ticked before flipping the standard's
+status to `verified` — Existence, API surface, Platform
+compatibility.
+
+The checklist is **not** enforced by `constitution-linter.sh`. It
+is a convention reinforcement of Article VIII (anti-hallucination)
+following Q-004 + Q-006. Enforcement (parsing per-change
+`proposal.md` for the 3-axis tick-box matrix) is deferred until
+the convention has produced enough adoption signal to design a
+meaningful linter rule — possibly T6+.
+
+The checklist body lives in
+[`.claude/agents/document-specialist.md`](../.claude/agents/document-specialist.md)
+§ `Platform Verification Checklist (3-axis)`. Re-verification
+cadence lives in
+[`.forge/standards/global/standards-lifecycle.md`](../.forge/standards/global/standards-lifecycle.md)
+§ `Platform compatibility re-verification`.
+
 ## See also
 
 - Standard : [`linting-rules.md`](../.forge/standards/global/linting-rules.md)

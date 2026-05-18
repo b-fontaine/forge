@@ -103,15 +103,13 @@ jobs:
         # .forge/changes/t5-otel-app/tasks.md. L1 alone runs here.
         run: bash .forge/scripts/tests/t5-otel-app.test.sh --level 1
       - name: t5-otel-traceparent-e2e.test.sh
-        # T.5 Phase C E2E traceparent harness (7 L1 + 2 L2). Phase C
-        # is harness + spec ; live-run leg deferred to Phase D — see
-        # .forge/changes/t5-otel-traceparent-e2e/tasks.md
-        # § "Phase D — DEFERRED" for the deferred deliverables roadmap.
+        # T.5 Phase C E2E traceparent harness ; live-run deferred to Phase D.
         run: bash .forge/scripts/tests/t5-otel-traceparent-e2e.test.sh --level 1
       - name: t5-otel-live-run.test.sh
-        # T.5 Phase D OTel live-run harness (8 L1 + 1 L2). Hermetic by
-        # default ; docker leg opt-in via FORGE_LIVE_RUN_DOCKER=1.
+        # T.5 Phase D OTel live-run ; docker leg opt-in via FORGE_LIVE_RUN_DOCKER=1.
         run: bash .forge/scripts/tests/t5-otel-live-run.test.sh --level 1
+      - name: t5-2.test.sh
+        run: bash .forge/scripts/tests/t5-2.test.sh --level 1  # T.5.2 ; L2 opt-in FORGE_T52_LIVE=1
       - name: j8.test.sh
         run: bash .forge/scripts/tests/j8.test.sh --level 1,2
       - name: k3.test.sh

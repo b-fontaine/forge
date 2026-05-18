@@ -1,0 +1,20 @@
+name: t5-2-platform-verification
+status: archived
+created: 2026-05-17
+schema: default
+constitution_version: "1.1.0"
+parent_audit_items:
+  - T.5.2  # docs/new-archetypes-plan.md §0.2 (Anti-Hallucination Platform Verification)
+depends_on:
+  - t5-otel-dart-api-realign  # the Q-004 cascade that motivated the 3-axis checklist
+  - cli-trust-harness         # ratifies the Option B / Q-006 platform mismatch discovery
+archived_to:
+  - .forge/specs/platform-verification.md  # consolidated spec — 8 functional clusters + 10 NFRs + 4 ADRs (ADR-T52-001..004)
+# Downstream consumer (informational, not enforced by schema): t5-otel-dartastic-realign (T5.3) — first standard to tick the 3-axis checklist inline (Workiva → Dartastic).
+timeline:
+  proposed: 2026-05-17
+  specified: 2026-05-17
+  designed: 2026-05-17
+  planned: 2026-05-18
+  implemented: 2026-05-18
+  archived: 2026-05-18

@@ -157,7 +157,7 @@ scope).
 **Raised by** : proposal.md § Impact (Risk level paragraph)
 
 **Question** : should the pre-publish gate (T5.1.C) ship with an
-emergency escape hatch (`FORGE_SKIP_PREPUBLISH=1`) that lets the
+emergency escape hatch (`FORGE_SKIP_PREPUBLISH=1`) hat lets the
 maintainer ship a tarball even when the smoke fails ?
 
 - **A. Yes (proposed)** — `FORGE_SKIP_PREPUBLISH=1` skips

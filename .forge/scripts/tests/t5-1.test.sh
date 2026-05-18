@@ -266,13 +266,28 @@ _test_t51_l1_012_toolchains_env() {
   fi
 }
 
-# FR-T51-150 — CHANGELOG [Unreleased] entry for cli-trust-harness
+# FR-T51-150 — CHANGELOG entry for cli-trust-harness
+# Semantics : before release, the change must appear under [Unreleased].
+# Once archived AND released, the entry migrates to a versioned section
+# (Keep-a-Changelog 1.1.0) ; in that case any released section suffices.
 _test_t51_l1_013_changelog_entry() {
   if [ ! -f "$CHANGELOG_MD" ]; then
     echo "    CHANGELOG.md missing: $CHANGELOG_MD" >&2; return 1
   fi
-  # Extract the [Unreleased] section using awk : everything between
-  # `## [Unreleased]` and the next `## [` heading.
+  local change_yaml="$FORGE_ROOT_REAL/.forge/changes/cli-trust-harness/.forge.yaml"
+  local archived=0
+  if [ -f "$change_yaml" ] && grep -Eq '^status:[[:space:]]*archived' "$change_yaml"; then
+    archived=1
+  fi
+  if [ "$archived" -eq 1 ]; then
+    # Accept any mention in the file (released section is fine).
+    if ! grep -Fq "cli-trust-harness" "$CHANGELOG_MD"; then
+      echo "    CHANGELOG.md does not mention cli-trust-harness anywhere (archived change)" >&2
+      return 1
+    fi
+    return 0
+  fi
+  # Pre-archive : must live under [Unreleased].
   local section
   section=$(awk '/^## \[Unreleased\]/{flag=1; next} /^## \[/{flag=0} flag' "$CHANGELOG_MD")
   if ! printf '%s' "$section" | grep -Fq "cli-trust-harness"; then

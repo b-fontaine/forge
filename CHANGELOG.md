@@ -12,6 +12,52 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added — T5.2 Anti-Hallucination Platform Verification (`t5-2-platform-verification`)
+
+- **3-axis platform-verification checklist** added to the new
+  Forge-local `.claude/agents/document-specialist.md` override.
+  Every ratification of an external dependency-pinning standard
+  (e.g. `.forge/standards/flutter/<dep>.md`) MUST now tick three
+  axes — Existence, API surface, Platform compatibility — before
+  flipping its status to `verified`. Failing Axis 3 emits
+  `[PLATFORM MISMATCH: ...]` mirroring the existing
+  `[NEEDS CLARIFICATION: ...]` Article III.4 convention and
+  escalates to an ADR.
+- **`standards-lifecycle.md` bumped v1.0.0 → v1.1.0** (additive
+  per ADR-T52-001) with new H2 `## Platform compatibility
+  re-verification` codifying the cadence : SHOULD re-run at every
+  12-month review, MUST re-run on consuming-archetype target
+  platform addition, MUST execute before first ratification.
+  Frontmatter introduced explicitly (file was authored
+  pre-J.7 convention).
+- **REVIEW.md append-only ledger entry** dated 2026-05-18 records
+  the bump (Article XII). Existing 27 ledger entries unmodified.
+- **New harness `t5-2.test.sh`** — 8 L1 grep assertions + 1 L2
+  opt-in via `FORGE_T52_LIVE=1` (pub.dev tooling smoke on
+  `flutter_bloc` per ADR-T52-002). Registered in `forge-ci.yml`
+  matrix immediately after `t5-otel-live-run.test.sh`.
+- **`docs/CONTRIBUTING.md § Adding a Standard`** + **`docs/LINTING.md
+  § Informative rules`** updated with cross-references to the
+  checklist (option (b) preferred per drift-prevention
+  NFR-T52-010).
+- Trigger incident : **Q-006** — Workiva `opentelemetry 0.18.11`
+  ratified 2026-05-12 (`t5-otel-dart-api-realign`) despite being
+  web-only on pub.dev, discovered 2026-05-16 during
+  `cli-trust-harness` Option B validation. The Workiva → Dartastic
+  substitution itself ships in **T5.3 (`t5-otel-dartastic-realign`,
+  target v0.4.0-rc.1)** — T5.2 ships the **process change** that
+  prevents the recurrence ; T5.3 will be the first consumer
+  ticking the 3-axis checklist inline.
+- Article III.4 (Ambiguity Protocol / anti-hallucination)
+  reinforced procedurally. No constitution amendment, no new CLI
+  flag, no new toolchain dependency, no new Forge agent persona —
+  pure process change. *Note*: an earlier draft of this entry and
+  the T5.2 spec/design mistakenly cited "Article VIII" (which is
+  actually "Infrastructure" in the Forge constitution). Corrected
+  in the same review pass — this is exactly the class of
+  fabricated-citation bug the T5.2 checklist exists to prevent,
+  caught here by an independent code-reviewer pass before archive.
+
 ## [0.3.3] — 2026-05-16
 
 T5.1 release — CLI Trust Harness + tactical fix-forwards. Three

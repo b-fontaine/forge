@@ -52,6 +52,24 @@ agent's context at the right moment.
 5. **Document it** — Explain in the standard file: why the rule exists, in
    which context it applies, and what happens if it is violated.
 
+### When the standard pins an external dependency — 3-axis verification
+
+If the standard pins an external package (pub.dev / crates.io / npm /
+Maven / etc.), you MUST also run the **Platform Verification Checklist
+(3-axis)** before flipping the standard's status to `verified`. The
+checklist body lives in
+[`.claude/agents/document-specialist.md`](../.claude/agents/document-specialist.md)
+§ `Platform Verification Checklist (3-axis)`. Cadence rules for
+re-verification live in
+[`.forge/standards/global/standards-lifecycle.md`](../.forge/standards/global/standards-lifecycle.md)
+§ `Platform compatibility re-verification`.
+
+The checklist was introduced by **T5.2** (`t5-2-platform-verification`,
+2026-05-18) following **Q-006** — the Workiva `opentelemetry 0.18.11`
+ratification (`t5-otel-dart-api-realign`) that survived Axis 1 + Axis 2
+verification but was structurally web-only, breaking the consuming
+`mobile-only` and `full-stack-monorepo` archetypes on iOS + Android.
+
 ### Required format for a standard
 
 ```markdown

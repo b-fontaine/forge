@@ -344,3 +344,43 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   `last_reviewed` resets to 2026-05-16 ; `Next review due` stays
   `never (structural)` per ADR-006/ADR-009 (Article XII
   structural exemption preserved). No constitutional amendment.
+
+## 2026-05-18 — standards-lifecycle.md v1.0.0 → v1.1.0
+
+- **Change**: `t5-2-platform-verification`
+- **Status**: implemented
+- **Trigger**: **Q-006** — Workiva `opentelemetry 0.18.11` ratified
+  2026-05-12 (`t5-otel-dart-api-realign`) despite being web-only on
+  pub.dev, discovered 2026-05-16 during `cli-trust-harness` Option B
+  validation. Q-004 (9 fabricated symbols) had already exposed the
+  ratification process gap on Axis 2 ; Q-006 exposed the gap on
+  Axis 3 (platform compatibility).
+- **Anchor**: new H2 `## Platform compatibility re-verification`
+  appended to `.forge/standards/global/standards-lifecycle.md` ;
+  cross-references the Forge-local
+  `.claude/agents/document-specialist.md` §
+  `Platform Verification Checklist (3-axis)` verbatim per
+  **ADR-T52-003** drift guard.
+- **breaking_change**: false — strictly additive bump. The existing
+  H2 sections (Purpose / Frontmatter / 12-month review window /
+  Structural exception / Themis hook / Linter integration /
+  Automated enforcement) remain byte-identical. The new H2 only
+  appends cadence rules for re-verification of external
+  dependency-pinning standards.
+- **Frontmatter**: this bump also introduces the explicit YAML
+  frontmatter block at the top of the standard (the file was
+  authored pre-J.7 convention and never carried an explicit
+  `version:` field — v1.0.0 was implicit). `version: 1.1.0`,
+  `last_reviewed: 2026-05-18`, `expires_at: never`,
+  `exception_constitutional: true` (structural exemption preserved
+  per ADR-006/ADR-009).
+- **Notes**: Cadence introduced — SHOULD at 12-month review, MUST
+  on new target platform addition, MUST before first ratification
+  of any external dependency-pinning standard. Article III.4
+  reinforcement, not amendment. The Workiva → Dartastic
+  substitution itself is out of scope here — it ships in T5.3
+  (`t5-otel-dartastic-realign`) and will be the first consumer
+  ticking the 3-axis checklist inline. RED witness for this
+  change : `t5-2.test.sh --level 1` showed 0/8 PASS before the
+  agent file + this bump landed ; GREEN witness shows 8/8 PASS
+  after.

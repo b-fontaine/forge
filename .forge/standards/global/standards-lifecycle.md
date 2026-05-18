@@ -1,8 +1,32 @@
 # Standards lifecycle
 
+<!-- Audit: T.4 + T5.2 (additive bump 2026-05-18) -->
+
+```yaml
+version: 1.1.0
+last_reviewed: 2026-05-18
+expires_at: never
+exception_constitutional: true
+breaking_change: false
+linter_rule: null
+enforcement:
+  ci_blocking: false
+  pre_commit_hook: false
+forbidden: []
+rationale: >-
+  Governs the lifecycle of every .forge/standards/* file. Structural
+  exception per ADR-006 — this standard defines the rules other
+  standards comply with, so it does not itself expire. Bumped to
+  v1.1.0 by t5-2-platform-verification (2026-05-18) additively
+  adding the "Platform compatibility re-verification" cadence per
+  Q-006.
+```
+
 > **Audit**: T.4 (t4-adr-ratification, 2026-05-04). Ratifies the 12-month
 > review window introduced by `docs/ARCHITECTURE-TARGET.md` §12.6 and
-> `docs/new-archetypes-plan.md` §2.3 (P-3).
+> `docs/new-archetypes-plan.md` §2.3 (P-3). **Additive bump T.5.2
+> (t5-2-platform-verification, 2026-05-18)** — see § `Platform
+> compatibility re-verification` below.
 
 This standard governs the lifecycle of every `.forge/standards/*.yaml` file :
 how it is born, when it must be reviewed, when it expires, and how it is
@@ -156,3 +180,71 @@ Sortie : `[STD-PASS]` (stdout) / `[STD-FAIL: ...]` (stderr) /
 `[STD-INFO: ...]` (stdout). Exit codes 0 (PASS) / 1 (FAIL) /
 2 (usage). Voir `docs/SCHEMA.md` § "Standard YAML schema" pour la
 documentation utilisateur complète.
+
+## Platform compatibility re-verification
+
+> **Audit** : T5.2 (`t5-2-platform-verification`, 2026-05-18). Additive
+> bump v1.0.0 → v1.1.0. Motivation : **Q-006** (Workiva `opentelemetry
+> 0.18.11` ratified despite being web-only, discovered 2026-05-16 during
+> `cli-trust-harness` Option B validation).
+
+This section codifies **when and how often** the 3-axis platform
+verification checklist — defined in
+`.claude/agents/document-specialist.md` §
+`Platform Verification Checklist (3-axis)` — MUST be re-executed
+against an already-ratified external dependency-pinning standard.
+
+### Cadence rules
+
+A standard that pins an external dependency (package on pub.dev,
+crates.io, npm, Maven Central, etc.) :
+
+- **SHOULD** re-execute the 3-axis checklist during each 12-month
+  Article XII review (`expires_at` arrival). The re-execution
+  verifies that the package still exists, that its API surface has
+  not silently drifted, and that its declared support matrix still
+  covers every target platform of the consuming archetype.
+- **MUST** re-execute the 3-axis checklist **immediately** when
+  the consuming archetype declares a **new target platform**. The
+  canonical example : `mobile-pwa-first` adding PWA Qwik in T8
+  relative to `mobile-only` v1.0.0 — a Flutter OTel pkg that was
+  iOS+Android-only at ratification time becomes structurally
+  incompatible the day Qwik PWA enters the archetype matrix.
+  Another example : any archetype declaring a new compliance tier
+  whose `forbidden:` block changes the platform constraints (e.g.
+  T3 self-hostable forbidding cloud-only SDKs).
+- **MUST** execute the 3-axis checklist **before** any **new**
+  external dependency-pinning standard is ratified for the first
+  time. The checklist is not a back-fill mechanism — it is a
+  precondition for ratification.
+
+Failure to re-execute when MUST applies is itself a `[PLATFORM
+MISMATCH:]` event, triggering the same ADR escalation path as a
+failed Axis 3 check.
+
+### Why these rules exist (Q-006 worked example)
+
+Q-006 surfaced 2026-05-16 : `flutter/opentelemetry.md` v1.1.0
+ratified Workiva `opentelemetry 0.18.11` against axes 1 + 2 only,
+without re-executing Axis 3. The Workiva package is web-only on
+pub.dev ; the consuming archetypes (`mobile-only`,
+`full-stack-monorepo` frontend Flutter) require iOS + Android. The
+mismatch survived because no cadence rule existed forcing Axis 3
+to run before the standard's status flipped to `verified`. Result :
+a full XL `t5-otel-dartastic-realign` rewrite (T5.3, target
+v0.4.0-rc.1) instead of catching the mismatch at ratification time.
+
+T5.2 closes the loop : the cadence above ensures every future
+ratification AND every future re-review surfaces a `[PLATFORM
+MISMATCH:]` instead of silently shipping a structurally broken
+standard.
+
+### Cross-reference
+
+The body of the 3-axis checklist (axis names, evidence sources,
+escalation marker syntax) lives in
+`.claude/agents/document-specialist.md` §
+`Platform Verification Checklist (3-axis)` per **ADR-T52-001**
+(option A + B combined). This standard owns the **cadence** ; the
+agent file owns the **procedure**. Both surfaces cross-reference
+each other verbatim per **ADR-T52-003** (drift guard).
