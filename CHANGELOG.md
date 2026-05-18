@@ -12,6 +12,17 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+## [0.3.4] — 2026-05-18
+
+T5.2 release — Anti-Hallucination Platform Verification. One
+archived change (`t5-2-platform-verification`) introduces a 3-axis
+ratification checklist (Existence / API surface / Platform
+compatibility) for external dependency-pinning standards, closing
+the Q-006 gap (Workiva `opentelemetry 0.18.11` ratified despite
+being web-only on pub.dev). Pure process change — no runtime code,
+no CLI surface impact, no new toolchain dependency. Article III.4
+(Ambiguity Protocol — anti-hallucination) reinforced procedurally.
+
 ### Added — T5.2 Anti-Hallucination Platform Verification (`t5-2-platform-verification`)
 
 - **3-axis platform-verification checklist** added to the new
