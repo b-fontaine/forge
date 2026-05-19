@@ -125,6 +125,26 @@ fi
 TAG="v$VERSION"
 EXPECTED_VERSION="$VERSION"
 
+# Derive the npm dist-tag from the SemVer prerelease identifier.
+#   - plain X.Y.Z → empty NPM_DIST_TAG ; npm defaults to `latest`.
+#   - X.Y.Z-rc.N    → `rc`
+#   - X.Y.Z-beta.N  → `beta`
+#   - X.Y.Z-alpha.N → `alpha`
+#   - X.Y.Z-next.N  → `next`
+#   - X.Y.Z-<other> → first alphabetic identifier prefix ; fallback `next`
+#     if the prerelease starts with a digit (e.g. `0.4.0-1`).
+# Publishing a prerelease without an explicit `--tag` makes npm error out
+# (npm v9+) to avoid landing the prerelease under `latest` by accident.
+NPM_DIST_TAG=""
+case "$VERSION" in
+  *-*)
+    NPM_DIST_TAG=$(printf '%s' "$VERSION" | sed -nE 's/^[0-9]+\.[0-9]+\.[0-9]+-([A-Za-z]+).*$/\1/p')
+    if [ -z "$NPM_DIST_TAG" ]; then
+      NPM_DIST_TAG="next"
+    fi
+    ;;
+esac
+
 # ─── --otp validation (value present only ; resolution deferred) ─
 
 if [ -n "$OTP" ]; then
@@ -347,20 +367,28 @@ else
   #     directly ; npm CLI triggers a browser challenge for the publish.
   #   - TOTP (legacy, $OTP set) : forward `--otp=$OTP` ; never echo the
   #     value (dry-run trace renders `<redacted>`).
+  # Prereleases (X.Y.Z-...) get `--tag $NPM_DIST_TAG` so they DON'T land
+  # under `latest`. npm v9+ errors out on prerelease publish without
+  # explicit `--tag` to enforce this discipline.
+  tag_flag=""
+  if [ -n "$NPM_DIST_TAG" ]; then
+    tag_flag="--tag $NPM_DIST_TAG"
+    echo "  → dist-tag: $NPM_DIST_TAG (prerelease ; will NOT land under \`latest\`)"
+  fi
   if [ "$DRY_RUN" = "1" ]; then
     if [ -n "$OTP" ]; then
-      echo "    [dry-run] cd cli && npm publish --access public --otp=<redacted>"
+      echo "    [dry-run] cd cli && npm publish --access public $tag_flag --otp=<redacted>"
     else
-      echo "    [dry-run] cd cli && npm publish --access public  # WebAuthn flow"
+      echo "    [dry-run] cd cli && npm publish --access public $tag_flag  # WebAuthn flow"
     fi
   else
     if [ -n "$OTP" ]; then
-      ( cd cli && npm publish --access public --otp="$OTP" )
+      ( cd cli && npm publish --access public $tag_flag --otp="$OTP" )
     else
       echo "  → \`npm publish\` will trigger WebAuthn ; approve in your authenticator"
-      ( cd cli && npm publish --access public )
+      ( cd cli && npm publish --access public $tag_flag )
     fi
-    ok "@sdd-forge/cli@$EXPECTED_VERSION published to npm"
+    ok "@sdd-forge/cli@$EXPECTED_VERSION published to npm${NPM_DIST_TAG:+ under dist-tag '$NPM_DIST_TAG'}"
   fi
 fi
 
