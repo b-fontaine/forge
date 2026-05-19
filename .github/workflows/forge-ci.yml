@@ -49,9 +49,15 @@ jobs:
       - name: cli npm ci
         working-directory: cli
         run: npm ci
-      - name: cli npm run build
+      - name: cli npm run bundle
+        # `bundle` = `build` + `bundle-assets.mjs`. The latter materialises
+        # `cli/assets/.forge/...` (gitignored) which several harnesses need
+        # to assert the cli/assets mirror is in sync with the repo-root
+        # templates (e.g. `t5-otel-dartastic.test.sh::_test_t53_l1_011`,
+        # FR-T53-C-003). Without the bundle, the mirror does not exist on
+        # CI runners and the assertion fails by construction.
         working-directory: cli
-        run: npm run build
+        run: npm run bundle
       - name: foundations.test.sh
         run: bash .forge/scripts/tests/foundations.test.sh
       - name: scaffolder.test.sh (L1+L2)
