@@ -118,9 +118,12 @@ _test_f3_005_version_flag_handling() {
     echo "    '--version' flag not present in $RELEASE_SCRIPT" >&2
     return 1
   fi
-  # Validation regex literal must appear (semver triple-dot).
-  if ! grep -Eq '\^\[0-9\]\+\\\.\[0-9\]\+\\\.\[0-9\]\+\$' "$RELEASE_SCRIPT" \
-     && ! grep -Fq '^[0-9]+\.[0-9]+\.[0-9]+$' "$RELEASE_SCRIPT"; then
+  # Validation regex literal must appear (semver triple-dot core). The
+  # X.Y.Z prefix is required ; what follows may be the strict `$` end-anchor
+  # (legacy form) OR an optional prerelease group `(-...)?$` (SemVer 2 form
+  # added 2026-05-19 to support `0.4.0-rc.1` releases). Grep the prefix
+  # without `$` so both encodings satisfy the assertion.
+  if ! grep -Fq '^[0-9]+\.[0-9]+\.[0-9]+' "$RELEASE_SCRIPT"; then
     echo "    semver validation regex missing for --version" >&2
     return 1
   fi

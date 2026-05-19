@@ -12,12 +12,15 @@ set -euo pipefail
 #   6. Create GitHub release (manual fallback if gh not installed)
 #
 # Usage :
-#   bash scripts/release.sh --version X.Y.Z [options]
+#   bash scripts/release.sh --version X.Y.Z[-<prerelease>] [options]
 #
 # Required flag :
-#   --version <X.Y.Z>   release semver to tag and publish ; MUST match
+#   --version <X.Y.Z[-<prerelease>]>
+#                       release semver to tag and publish ; MUST match
 #                       VERSION file, cli/package.json, and a sealed
-#                       `## [X.Y.Z]` heading in CHANGELOG.md.
+#                       `## [X.Y.Z]` heading in CHANGELOG.md. SemVer 2
+#                       prereleases are accepted (e.g. 0.4.0-rc.1) ;
+#                       `+<build>` metadata is rejected.
 #
 # Optional flags :
 #   --otp <6-digits>    Legacy npm 2FA TOTP code (kept for backwards
@@ -110,8 +113,12 @@ if [ -z "$VERSION" ]; then
   exit 2
 fi
 
-if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-  echo "release: --version must match X.Y.Z, got '$VERSION'" >&2
+# SemVer 2.0.0 — accept X.Y.Z plus optional dot-separated prerelease
+# identifiers per the spec (e.g. 0.4.0-rc.1, 1.0.0-beta, 2.3.4-alpha.5.6).
+# Build metadata (`+...`) is intentionally not supported : npm publish and
+# git tags both reject it for our pipeline.
+if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$'; then
+  echo "release: --version must match X.Y.Z or X.Y.Z-<prerelease> (SemVer 2), got '$VERSION'" >&2
   exit 2
 fi
 
