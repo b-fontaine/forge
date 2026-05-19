@@ -208,7 +208,12 @@ _test_ota_007_rust_propagation_helper() {
 
 # ─── L1 tests — Flutter SDK init (FR-T5-OTA-040..050) ────────────
 
-# FR-T5-OTA-040 / FR-T5-OTA-046 — telemetry_setup.dart exists with required API
+# FR-T5-OTA-040 / FR-T5-OTA-046 — telemetry_setup.dart exists with required API.
+# T5.3 (2026-05-18) substituted the Workiva `registerGlobalTracerProvider`
+# bootstrap with the Dartastic high-level `OTel.initialize(...)` entry point
+# (per `flutter/opentelemetry.md` v2.0.0 § SDK Initialization). The FSM
+# example was rewritten accordingly. Both bootstrap signatures are accepted
+# here to remain compatible with adopters mid-migration.
 _test_ota_010_dart_telemetry_setup() {
   local f="$LIB_TELEMETRY_DIR/telemetry_setup.dart"
   if [ ! -f "$f" ]; then
@@ -219,20 +224,25 @@ _test_ota_010_dart_telemetry_setup() {
     echo "    Future<void> setupTelemetry signature missing in $f" >&2
     return 1
   fi
-  if ! grep -q "registerGlobalTracerProvider" "$f"; then
-    echo "    registerGlobalTracerProvider call missing in $f" >&2
+  if ! grep -qE "registerGlobalTracerProvider|OTel\.initialize" "$f"; then
+    echo "    bootstrap call missing in $f (expected registerGlobalTracerProvider [legacy Workiva] or OTel.initialize [Dartastic v2.0.0])" >&2
     return 1
   fi
 }
 
-# FR-T5-OTA-042 / FR-T5-OTA-064 — pubspec dependencies
+# FR-T5-OTA-042 / FR-T5-OTA-064 — pubspec dependencies. T5.3 (2026-05-18)
+# substituted the Workiva `opentelemetry: ^0.18` pin (web-only, Q-006)
+# with the Dartastic ecosystem (`dartastic_opentelemetry` +
+# `flutterrific_opentelemetry`) — all-platform per
+# `flutter/opentelemetry.md` v2.0.0 § Source Documents. Either pin is
+# accepted to remain compatible with adopters still on Workiva pre-v2.0.0.
 _test_ota_011_dart_pubspec_otel() {
   if [ ! -f "$PUBSPEC" ]; then
     echo "    pubspec.yaml missing: $PUBSPEC" >&2
     return 1
   fi
-  if ! grep -qE "^\s*opentelemetry:" "$PUBSPEC"; then
-    echo "    opentelemetry: dep missing in $PUBSPEC" >&2
+  if ! grep -qE "^\s*(opentelemetry|dartastic_opentelemetry):" "$PUBSPEC"; then
+    echo "    OTel dep missing in $PUBSPEC (expected opentelemetry [Workiva, pre-T5.3] or dartastic_opentelemetry [post-T5.3])" >&2
     return 1
   fi
   if ! grep -qE "^\s*dio:" "$PUBSPEC"; then
