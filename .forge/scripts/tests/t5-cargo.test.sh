@@ -167,10 +167,20 @@ _test_t5c_l1_008_snapshot_content() {
     echo "    snapshot missing: $SNAPSHOT" >&2; return 1
   fi
   # Extract the embedded Cargo.toml.tmpl + grep for the corrected pin.
-  local extracted
-  extracted=$(tar -xzOf "$SNAPSHOT" "*grpc-api/Cargo.toml.tmpl" 2>/dev/null || true)
-  if [ -z "$extracted" ]; then
+  # Resolve the in-tar pathname via `tar -tzf` first (portable across
+  # BSD tar on macOS and GNU tar on Linux CI) — the previous direct
+  # `tar -xzOf "*pattern"` only matched on BSD tar (GNU tar requires
+  # `--wildcards`, BSD tar globs by default ; the asymmetry made this
+  # test pass locally on macOS but RED on Linux CI runners).
+  local pathname
+  pathname=$(tar -tzf "$SNAPSHOT" 2>/dev/null | grep '/grpc-api/Cargo\.toml\.tmpl$' | head -1 || true)
+  if [ -z "$pathname" ]; then
     echo "    snapshot does not embed grpc-api/Cargo.toml.tmpl" >&2; return 1
+  fi
+  local extracted
+  extracted=$(tar -xzOf "$SNAPSHOT" "$pathname" 2>/dev/null || true)
+  if [ -z "$extracted" ]; then
+    echo "    snapshot extraction of $pathname returned empty" >&2; return 1
   fi
   if ! printf '%s' "$extracted" | grep -Fq 'buffa        = "=0.3.0"'; then
     echo "    snapshot embedded Cargo.toml.tmpl missing buffa = \"=0.3.0\"" >&2
