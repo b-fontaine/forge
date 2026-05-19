@@ -168,9 +168,13 @@ PY
 }
 
 _test_b4_010() {
+  # T5.3 (2026-05-18) : Workiva `opentelemetry_api` → Dartastic ecosystem
+  # (`dartastic_opentelemetry` + `flutterrific_opentelemetry`). The legacy
+  # `opentelemetry_api` pin was web-only on pub.dev (Q-006) — replaced per
+  # `flutter/opentelemetry.md` v2.0.0 § Source Documents.
   local f="$TEMPLATES/pubspec.yaml.tmpl"
   [ -f "$f" ] || { echo "    expected: $f" >&2; return 1; }
-  for dep in flutter_bloc flutter_appauth flutter_secure_storage local_auth opentelemetry_api; do
+  for dep in flutter_bloc flutter_appauth flutter_secure_storage local_auth dartastic_opentelemetry flutterrific_opentelemetry; do
     grep -qE "^[[:space:]]+$dep:" "$f" || { echo "    missing dep: $dep" >&2; return 1; }
   done
 }
@@ -464,10 +468,15 @@ _test_b4_030() {
 }
 
 _test_b4_031() {
+  # T5.3 (2026-05-18) : Dartastic ecosystem replaces the legacy explicit
+  # OtlpExporter wiring. The high-level `OTel.initialize(endpoint: ...)` API
+  # (per `flutter/opentelemetry.md` v2.0.0 § SDK Initialization) internalises
+  # the OTLP HTTP exporter — the surface assertion is the initialization call
+  # itself plus the default endpoint port 4318.
   local f="$TEMPLATES/lib/observability/otel_init.dart.tmpl"
   [ -f "$f" ] || { echo "    expected: $f" >&2; return 1; }
-  grep -qiE 'otlp|exporter' "$f" \
-    || { echo "    missing OTLP exporter" >&2; return 1; }
+  grep -qiE 'otlp|exporter|OTel\.initialize' "$f" \
+    || { echo "    missing OTel.initialize / OTLP exporter wiring" >&2; return 1; }
   grep -qF '4318' "$f" \
     || { echo "    missing default endpoint port 4318" >&2; return 1; }
 }

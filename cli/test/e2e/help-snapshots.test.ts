@@ -34,6 +34,10 @@ const DISPATCH_TABLE_PATH = resolve(
  * - `NO_COLOR=1` + `FORCE_COLOR=0` strip every ANSI escape.
  * - CRLF → LF.
  * - Trailing whitespace stripped per line.
+ * - `--target <dir>` default (process.cwd()) substituted with `<CWD>` token
+ *   so the snapshot remains stable across local dev (`/Users/.../forge/cli`)
+ *   and CI (`/home/runner/work/forge/forge/cli`). The CLI surface drift the
+ *   snapshot guards against is option *structure*, not the runtime CWD.
  */
 function captureHelp(args: string[]): string {
   const r = spawnSync(process.execPath, [CLI_ENTRY, ...args, "--help"], {
@@ -45,8 +49,10 @@ function captureHelp(args: string[]): string {
       `forge ${args.join(" ")} --help exited ${r.status}: ${r.stderr}`,
     );
   }
+  const cwd = process.cwd();
   return (r.stdout ?? "")
     .replace(/\r\n/g, "\n")
+    .replaceAll(cwd, "<CWD>")
     .replace(/[ \t]+$/gm, "");
 }
 

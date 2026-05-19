@@ -91,7 +91,28 @@ describe("T5.1.B — smoke per archetype", () => {
 
   it.each(archetypes.map((a) => [a.name]))(
     "scaffolds %s + file matrix + task --list-all",
-    async (archetypeName) => {
+    async (archetypeName, ctx) => {
+      // Preflight skip — full-stack-monorepo's init.sh aborts (exit 5) when
+      // any of flutter / cargo / buf is absent on PATH. Mobile-only uses a
+      // different scaffolder that does not enforce the preflight. Honour the
+      // archetype's actual toolchain requirements declared in its fixture so
+      // CI runners without the Dart/Rust/Protobuf toolchains skip-pass
+      // instead of hard-failing (ADR-T51-001 / FR-T51-049 parity for L1).
+      const preflight = loadFixture(archetypeName, FIXTURES_DIR);
+      const requiredTools: string[] = [];
+      if (preflight.has_flutter_frontend) requiredTools.push("flutter");
+      if (preflight.has_rust_backend) requiredTools.push("cargo", "buf");
+      const missing = requiredTools.filter((t) => !commandOnPath(t));
+      if (missing.length > 0) {
+        // eslint-disable-next-line no-console
+        console.log(
+          `[INFO: archetype '${archetypeName}' smoke skipped — missing toolchain(s) on PATH: ${missing.join(", ")}. ` +
+            `Tighter checks remain opt-in via FORGE_E2E_TOOLCHAINS=1.]`,
+        );
+        ctx.skip();
+        return;
+      }
+
       const tmp = await mkdtemp(join(tmpdir(), `forge-smoke-${archetypeName}-`));
       // Delete so `forge init` exercises the mkdir -p path from v0.3.2.
       await rm(tmp, { recursive: true, force: true });
@@ -122,7 +143,7 @@ describe("T5.1.B — smoke per archetype", () => {
       ).toBe(0);
 
       // File matrix.
-      const fixture = loadFixture(archetypeName, FIXTURES_DIR);
+      const fixture = preflight;
       for (const p of fixture.required_paths) {
         expect(
           existsSync(join(tmp, p)),
