@@ -152,10 +152,20 @@ _test_t5bsd_l1_008_snapshot_content() {
   if [ ! -f "$SNAPSHOT" ]; then
     echo "    snapshot missing: $SNAPSHOT" >&2; return 1
   fi
-  local extracted
-  extracted=$(tar -xzOf "$SNAPSHOT" "*bin-server/Cargo.toml.tmpl" 2>/dev/null || true)
-  if [ -z "$extracted" ]; then
+  # Resolve the in-tar pathname via `tar -tzf` first (portable across
+  # BSD tar on macOS and GNU tar on Linux CI — BSD tar globs by default,
+  # GNU tar requires `--wildcards`). Same pattern as
+  # t5-cargo.test.sh::_test_t5c_l1_008_snapshot_content.
+  local pathname
+  pathname=$(tar -tzf "$SNAPSHOT" 2>/dev/null | grep '/bin-server/Cargo\.toml\.tmpl$' | head -1 || true)
+  if [ -z "$pathname" ]; then
     echo "    snapshot does not embed bin-server/Cargo.toml.tmpl" >&2
+    return 1
+  fi
+  local extracted
+  extracted=$(tar -xzOf "$SNAPSHOT" "$pathname" 2>/dev/null || true)
+  if [ -z "$extracted" ]; then
+    echo "    snapshot extraction of $pathname returned empty" >&2
     return 1
   fi
   if ! printf '%s' "$extracted" | grep -Fq 'name = "bin-server"'; then
@@ -165,13 +175,17 @@ _test_t5bsd_l1_008_snapshot_content() {
 }
 
 _test_t5bsd_l1_009_changelog_entry() {
+  # FR-T5BSD-100 intent : the change is documented in CHANGELOG.md. The
+  # change was active under `## [Unreleased]` during its lifecycle and
+  # migrated to the v0.3.3 released section on 2026-05-16 (commit
+  # 60fa53b). The assertion is satisfied as long as the change name
+  # appears anywhere in the changelog post-release, since the seal moves
+  # entries from Unreleased to a versioned heading.
   if [ ! -f "$CHANGELOG_MD" ]; then
     echo "    CHANGELOG.md missing" >&2; return 1
   fi
-  local section
-  section=$(awk '/^## \[Unreleased\]/{f=1;next} /^## \[/{f=0} f' "$CHANGELOG_MD")
-  if ! printf '%s' "$section" | grep -Fq "t5-bin-server-deps"; then
-    echo "    CHANGELOG.md [Unreleased] does not mention t5-bin-server-deps" >&2
+  if ! grep -Fq "t5-bin-server-deps" "$CHANGELOG_MD"; then
+    echo "    CHANGELOG.md does not mention t5-bin-server-deps (expected under [Unreleased] pre-release, or a sealed [X.Y.Z] section post-release)" >&2
     return 1
   fi
 }
