@@ -12,6 +12,8 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+## [0.4.0-rc.1] — 2026-05-19
+
 ### Changed (BREAKING) — T5.3 Workiva → Dartastic OTel substitution (`t5-otel-dartastic-realign`)
 
 - **`flutter/opentelemetry.md` bumped v1.1.0 → v2.0.0** (breaking).

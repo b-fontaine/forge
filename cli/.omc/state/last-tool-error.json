@@ -1,7 +1,7 @@
 {
   "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"git status --short && echo \\\"---\\\" && git add VERSION cli/VERSION cli/package.json cli/package-lock.json CHANGELOG.md && git commit -m \\\"chore(release): bump to v0.3.1 + seal CHANGELOG\\n\\n...",
-  "error": "Exit code 128\n M ../.gitignore\n M ../.omc/project-memory.json\n M ../CHANGELOG.md\n M ../VERSION\n M .omc/state/subagent-tracking.json\n M VERSION\n M package-lock.json\n M package.json\nA  ../docs/comparatif_sdd.md\n?? ../.claude/scheduled_tasks.lock\n?? .omc/state/agent-replay-87ef61e2-2c93-49b1-ab71-7548f6b4badf.jsonl\n---\nfatal: pathspec 'cli/VERSION' did not match any files",
-  "timestamp": "2026-05-12T21:49:01.591Z",
+  "tool_input_preview": "{\"command\":\"git add .forge/scripts/tests/t5.test.sh cli/test/e2e/archetypes-smoke.test.ts && git status --short && echo \\\"---\\\" && git commit -m \\\"$(cat <<'EOF'\\nfix(ci): T5.1.B vitest skip + t5 harne...",
+  "error": "Exit code 128\nfatal: pathspec '.forge/scripts/tests/t5.test.sh' did not match any files",
+  "timestamp": "2026-05-19T08:04:12.507Z",
   "retry_count": 1
 }
