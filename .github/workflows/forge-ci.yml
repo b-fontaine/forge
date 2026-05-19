@@ -50,12 +50,8 @@ jobs:
         working-directory: cli
         run: npm ci
       - name: cli npm run bundle
-        # `bundle` = `build` + `bundle-assets.mjs`. The latter materialises
-        # `cli/assets/.forge/...` (gitignored) which several harnesses need
-        # to assert the cli/assets mirror is in sync with the repo-root
-        # templates (e.g. `t5-otel-dartastic.test.sh::_test_t53_l1_011`,
-        # FR-T53-C-003). Without the bundle, the mirror does not exist on
-        # CI runners and the assertion fails by construction.
+        # Bundle (build + bundle-assets.mjs) — materialises `cli/assets/` mirror
+        # (gitignored) required by `_test_t53_l1_011` (FR-T53-C-003).
         working-directory: cli
         run: npm run bundle
       - name: foundations.test.sh
@@ -97,12 +93,8 @@ jobs:
         run: bash .forge/scripts/tests/j7.test.sh --level 1,2
       - name: t5-otel.test.sh
         run: bash .forge/scripts/tests/t5-otel.test.sh --level 1
-      # T.5 Phase B harness `t5-otel-dart-api-realign.test.sh` decommissioned
-      # in T5.3 (2026-05-18, `t5-otel-dartastic-realign`) — the standard
-      # `flutter/opentelemetry.md` it validated at v1.1.0 (Workiva pin) has
-      # been superseded by v2.0.0 (Dartastic ecosystem) per .forge/changes/
-      # t5-otel-dart-api-realign/.forge-update-notes. Replacement harness :
-      # `t5-otel-dartastic.test.sh` (registered below).
+      # T5.3 decommissioned t5-otel-dart-api-realign.test.sh (v1.1.0 Workiva
+      # superseded by v2.0.0 Dartastic — see archive .forge-update-notes).
       - name: t5-otel-app.test.sh
         # T.5 Phase B SDK instrumentation ; L2 toolchain smoke gated separately.
         run: bash .forge/scripts/tests/t5-otel-app.test.sh --level 1
