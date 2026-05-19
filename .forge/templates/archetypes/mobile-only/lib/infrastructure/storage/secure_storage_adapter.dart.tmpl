@@ -10,10 +10,6 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:{{project_name}}/domain/auth/auth_token.dart';
 
 class SecureStorageAdapter {
-  static const _kTokenKey = 'auth_token_v1';
-
-  final FlutterSecureStorage _storage;
-
   SecureStorageAdapter()
       : _storage = const FlutterSecureStorage(
           iOptions: IOSOptions(
@@ -26,6 +22,10 @@ class SecureStorageAdapter {
             // The library falls back gracefully when StrongBox is unavailable.
           ),
         );
+
+  static const _kTokenKey = 'auth_token_v1';
+
+  final FlutterSecureStorage _storage;
 
   Future<void> writeToken(AuthToken token) async {
     final payload = jsonEncode({

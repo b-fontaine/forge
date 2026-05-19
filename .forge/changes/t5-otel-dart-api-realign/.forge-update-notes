@@ -1,0 +1,46 @@
+# Update Notes — t5-otel-dart-api-realign
+
+<!-- Audit: T.5.3 (t5-otel-dartastic-realign, 2026-05-18) -->
+
+## Superseded standard pin (T5.3, 2026-05-18)
+
+This archive resolved **Q-004** (Workiva fabricated symbols, 2026-05-11)
+by realigning `.forge/standards/flutter/opentelemetry.md` from v1.0.0
+to v1.1.0 on the actual Workiva `opentelemetry 0.18.11` API surface
+(9 fabricated symbols removed, 7 verified added).
+
+The v1.1.0 standard has been **superseded** by v2.0.0 in T5.3
+(`t5-otel-dartastic-realign`, archived 2026-05-18) due to **Q-006** —
+Workiva's web-only platform mismatch (discovered 2026-05-16 via
+`cli-trust-harness` Option B validation, post-this-archive). Q-004
+fixed Axis 2 (API surface) ; Q-006 exposed the missing Axis 3
+(platform compatibility) which Q-004's procedure had not checked.
+
+The substitution moves to the Dartastic ecosystem :
+
+- `dartastic_opentelemetry_api: ^1.0.0-beta.2` (transitive, WAIVER
+  per ADR-T53-002)
+- `dartastic_opentelemetry: ^1.1.0-beta.6`
+- `flutterrific_opentelemetry: ^0.4.0`
+
+All 3 packages declare support for all 6 Flutter platforms (Android,
+iOS, Linux, macOS, Web, Windows) — the 3-axis checklist from T5.2
+(`t5-2-platform-verification`, archived 2026-05-18) was applied
+inline in T5.3's `proposal.md` § Source Documents, and embedded in
+the v2.0.0 standard itself.
+
+**Why this archive remains valid history** : Q-004's resolution
+correctly identified Workiva's actual API surface (v1.1.0 fixed real
+symbol fabrications). The defect was in the ratification procedure
+(missing Axis 3), not in this archive's symbol work. T5.2 codified
+the missing axis as a standing procedural rule ; T5.3 substitutes
+the package whose Axis 3 fails.
+
+**Article V immutability** : this `.forge-update-notes` file is the
+ONLY addition to this archived change since its archive date. All
+other files remain byte-identical.
+
+**Pattern** : ADR-T53-003 — per-archive `.forge-update-notes`
+(Option A) + global supersession graph via
+`.forge/changes/t5-otel-dartastic-realign/.forge.yaml::depends_on`
+(Option C).

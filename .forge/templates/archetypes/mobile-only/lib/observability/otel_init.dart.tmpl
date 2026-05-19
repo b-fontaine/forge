@@ -1,20 +1,27 @@
-// <!-- Audit: B.4 (b4-mobile-only, FR-MO-028) -->
-// Article IX — Observability. Initializes the OpenTelemetry SDK with an
-// OTLP/HTTP exporter. Default endpoint http://localhost:4318 (dev mode);
-// override via env or runtime config in production.
+// <!-- Audit: T.5.3 (t5-otel-dartastic-realign) — substitutes B.4 Workiva pin -->
+// Article IX — Observability. Initializes the OpenTelemetry SDK on the
+// Dartastic ecosystem (`flutter/opentelemetry.md` v2.0.0). Default endpoint
+// http://localhost:4318 (dev mode) ; override via env or runtime config in
+// production.
+//
+// Substitution notes (T5.3, 2026-05-18) :
+//   - Replaces phantom `opentelemetry_sdk: ^0.18.0` (never existed on
+//     pub.dev) AND Workiva `opentelemetry_api: ^0.18.0` (web-only ; Q-006).
+//   - Uses `OTel.initialize(...)` high-level API per `flutter/opentelemetry.md`
+//     v2.0.0 § SDK Initialization.
+//   - Sampler `ParentBasedSampler(AlwaysOnSampler())` preserves the Phase A
+//     (collector) + Phase B (SDK) dual-stage model per ADR-OTEL-001 /
+//     ADR-T53-004.
 
-import 'package:opentelemetry_api/opentelemetry_api.dart' as api;
-import 'package:opentelemetry_sdk/opentelemetry_sdk.dart' as sdk;
+import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
-late api.Tracer rootTracer;
+late Tracer rootTracer;
 
 Future<void> initOtel({String endpoint = 'http://localhost:4318'}) async {
-  // OTLP exporter: in production, the adopter MUST set [endpoint] to their
-  // collector URL (e.g. https://otel.your-domain.com).
-  final exporter = sdk.OtlpHttpSpanExporter(uri: Uri.parse(endpoint));
-  final provider = sdk.TracerProviderBase(
-    processors: [sdk.BatchSpanProcessor(exporter)],
+  await OTel.initialize(
+    serviceName: '{{project_name}}',
+    endpoint: '$endpoint/v1/traces',
+    sampler: ParentBasedSampler(const AlwaysOnSampler()),
   );
-  api.globalTracerProvider = provider;
-  rootTracer = api.globalTracerProvider.getTracer('{{project_name}}');
+  rootTracer = OTel.tracer();
 }

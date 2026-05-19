@@ -1,0 +1,40 @@
+# Update Notes — t5-otel-app
+
+<!-- Audit: T.5.3 (t5-otel-dartastic-realign, 2026-05-18) -->
+
+## Superseded standard pin (T5.3, 2026-05-18)
+
+This archive shipped the FSM frontend Phase B SDK instrumentation
+against Workiva `opentelemetry: ^0.18.0` (`examples/forge-fsm-example/frontend/`).
+The 5 Dart files in `lib/core/telemetry/` :
+
+- `telemetry_setup.dart`
+- `error_reporter.dart`
+- `interceptors/tracing_interceptor.dart`
+- `observers/tracing_bloc_observer.dart`
+- `observers/tracing_navigation_observer.dart`
+
+…have been **rewritten on the Dartastic ecosystem** in T5.3
+(`t5-otel-dartastic-realign`, archived 2026-05-18) :
+
+- `dartastic_opentelemetry: ^1.1.0-beta.6`
+- `flutterrific_opentelemetry: ^0.4.0`
+
+Substitution motivation : Q-006 — Workiva `opentelemetry 0.18.11` is
+**web-only** on pub.dev (`Platforms: Web`). The consuming archetype
+(`full-stack-monorepo` frontend Flutter, mobile + web) requires
+Android + iOS support. Q-006 surfaced 2026-05-16 via
+`cli-trust-harness` Option B validation.
+
+See `.forge/standards/flutter/opentelemetry.md` v2.0.0 § Migration
+from v1.1.0 for the symbol-by-symbol from→to table, and
+`.forge/changes/t5-otel-dartastic-realign/` for the full change.
+
+**Article V immutability** : this `.forge-update-notes` file is the
+ONLY addition to this archived change since its archive date. All
+other files remain byte-identical.
+
+**Pattern** : ADR-T53-003 — per-archive `.forge-update-notes`
+(Option A) + global supersession graph via
+`.forge/changes/t5-otel-dartastic-realign/.forge.yaml::depends_on`
+(Option C).

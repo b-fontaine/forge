@@ -1,0 +1,19 @@
+name: t5-otel-dartastic-realign
+status: implemented
+created: 2026-05-18
+schema: default
+constitution_version: "1.1.0"
+parent_audit_items:
+  - T.5.3  # docs/new-archetypes-plan.md §0.3 (t5-otel-dartastic-realign)
+depends_on:
+  - t5-otel-dart-api-realign  # Workiva v1.1.0 standard being replaced
+  - t5-otel-app                # FSM frontend SDK init being rewritten
+  - b4-mobile-only             # mobile-only template being rewritten
+  - t5-2-platform-verification # T5.3 is the first consumer of the 3-axis checklist
+# supersedes: the 3 archived changes above carry the Workiva pin ; T5.3 supersedes the pin via .forge-update-notes pointer files (Article V immutability — archived files unchanged). See FR-T53-D-001..006.
+timeline:
+  proposed: 2026-05-18
+  specified: 2026-05-18
+  designed: 2026-05-18
+  planned: 2026-05-18
+  implemented: 2026-05-18

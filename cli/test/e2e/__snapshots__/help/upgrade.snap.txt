@@ -4,7 +4,7 @@ non-destructive 3-way merge of framework updates into a scaffolded project
 
 Options:
   --target <dir>  target project directory (default:
-                  "/Users/bfontaine/git/github/forge/cli")
+                  "<CWD>")
   --dry-run       print the plan without writing (default: false)
   --force         let conflicts land in-place (requires clean Git tree)
                   (default: false)

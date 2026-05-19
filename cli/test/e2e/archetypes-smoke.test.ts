@@ -76,8 +76,34 @@ afterAll(async () => {
   }
 });
 
+/**
+ * Per-archetype toolchain requirements derived from the fixture flags.
+ * `full-stack-monorepo` (has_rust_backend + has_flutter_frontend) needs
+ * flutter / cargo / buf — the three tools `init.sh` hard-aborts on
+ * (exit 5). `mobile-only` uses a different scaffolder that requires
+ * `flutter` but doesn't enforce a preflight check ; we still gate on
+ * the same fixture flag for symmetry so CI runners without Flutter
+ * skip-pass identically across archetypes.
+ */
+function missingToolsFor(archetypeName: string): string[] {
+  const fx = loadFixture(archetypeName, FIXTURES_DIR);
+  const required: string[] = [];
+  if (fx.has_flutter_frontend) required.push("flutter");
+  if (fx.has_rust_backend) required.push("cargo", "buf");
+  return required.filter((t) => !commandOnPath(t));
+}
+
 describe("T5.1.B — smoke per archetype", () => {
   const archetypes = activeArchetypes();
+  // Partition at module-load so vitest can render the skipped archetypes
+  // as `↓ skipped` instead of relying on a runtime `ctx.skip()` call —
+  // `it.each` in vitest 2.1.x does NOT pass a TestContext to the
+  // parameterised callback, so a runtime skip is not available
+  // (verified 2026-05-18 on PR #21 CI : `Cannot read properties of
+  // undefined (reading 'skip')`). Static partitioning is the canonical
+  // skip pattern that keeps the CI output audit-friendly.
+  const runnable = archetypes.filter((a) => missingToolsFor(a.name).length === 0);
+  const skippedDueToToolchain = archetypes.filter((a) => missingToolsFor(a.name).length > 0);
 
   it("dispatch-table cross-reference: every active archetype has a fixture (FR-T51-055)", () => {
     for (const a of archetypes) {
@@ -89,9 +115,23 @@ describe("T5.1.B — smoke per archetype", () => {
     }
   });
 
-  it.each(archetypes.map((a) => [a.name]))(
+  // Statically-skipped declarations — visible in the test report as
+  // intentionally skipped (not silent pass), so reviewers can see at a
+  // glance which archetypes never got their scaffold exercised in this
+  // run. Tighter checks remain opt-in via FORGE_E2E_TOOLCHAINS=1.
+  if (skippedDueToToolchain.length > 0) {
+    it.skip.each(
+      skippedDueToToolchain.map((a) => [a.name, missingToolsFor(a.name).join(", ")]),
+    )("scaffolds %s [missing on PATH: %s] (skipped — ADR-T51-001)", () => {
+      /* declarative skip — body never runs */
+    });
+  }
+
+  it.each(runnable.map((a) => [a.name]))(
     "scaffolds %s + file matrix + task --list-all",
     async (archetypeName) => {
+      const preflight = loadFixture(archetypeName, FIXTURES_DIR);
+
       const tmp = await mkdtemp(join(tmpdir(), `forge-smoke-${archetypeName}-`));
       // Delete so `forge init` exercises the mkdir -p path from v0.3.2.
       await rm(tmp, { recursive: true, force: true });
@@ -122,7 +162,7 @@ describe("T5.1.B — smoke per archetype", () => {
       ).toBe(0);
 
       // File matrix.
-      const fixture = loadFixture(archetypeName, FIXTURES_DIR);
+      const fixture = preflight;
       for (const p of fixture.required_paths) {
         expect(
           existsSync(join(tmp, p)),
@@ -178,9 +218,14 @@ describe("T5.1.B — smoke per archetype", () => {
           const cwd =
             archetypeName === "mobile-only" ? tmp : join(tmp, "frontend");
           const f = spawnSync("flutter", ["analyze"], { cwd, encoding: "utf8" });
+          // `flutter analyze` writes the per-issue diagnostics on stdout and
+          // the summary line on stderr — surface both so triage doesn't
+          // require re-running the analyzer outside the harness.
           expect(
             f.status,
-            `archetype '${archetypeName}': 'flutter analyze' failed:\n${f.stderr}`,
+            `archetype '${archetypeName}': 'flutter analyze' failed (cwd=${cwd}).\n` +
+              `--- stdout (issues) ---\n${f.stdout || "(empty)"}\n` +
+              `--- stderr (summary) ---\n${f.stderr || "(empty)"}`,
           ).toBe(0);
         }
       }

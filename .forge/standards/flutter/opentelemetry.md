@@ -1,575 +1,568 @@
 ---
-version: 1.1.0
-last_reviewed: 2026-05-11
-pkg: opentelemetry
-pkg_version: 0.18.11
-pkg_maintainer: Workiva
-pkg_source: https://pub.dev/packages/opentelemetry/versions/0.18.11
+version: 2.0.0
+last_reviewed: 2026-05-18
+breaking_change: true
+pkg_name_api: dartastic_opentelemetry_api
+pkg_version_api: ^1.0.0-beta.2
+pkg_name_sdk: dartastic_opentelemetry
+pkg_version_sdk: ^1.1.0-beta.6
+pkg_name_flutter: flutterrific_opentelemetry
+pkg_version_flutter: ^0.4.0
+pkg_maintainer: mindfulsoftware.com (verified-publisher on pub.dev)
+pkg_source: https://pub.dev/packages/dartastic_opentelemetry
+forbidden:
+  - "opentelemetry: ^0.18"
+  - "opentelemetry_sdk"
+rationale: >-
+  Flutter OpenTelemetry observability via the Dartastic ecosystem
+  (mindfulsoftware.com) which is OTel-spec-1.31.0-aligned and
+  declares support for all 6 Flutter platforms (Android, iOS, Linux,
+  macOS, Web, Windows). Replaces Workiva opentelemetry 0.18.11 which
+  was web-only (resolved Q-006 / cli-trust-harness Option B
+  validation 2026-05-16).
+  WAIVER (T5.3, 2026-05-18) : dartastic_opentelemetry_api transitively
+  pins at ^1.0.0-beta.2 (the constraint declared by SDK 1.1.0-beta.6). At
+  ratification time the latest published prerelease on pub.dev was
+  1.0.0-beta.7 ; pub solver resolves to that automatically given the
+  caret constraint. The stable 0.9.0 line is incompatible with SDK
+  1.1.0-beta.6. Upgrade trigger : when dartastic_opentelemetry_api 1.0.0 GA
+  ships, file a follow-up patch change (target naming :
+  t5-3-1-dartastic-api-ga-refresh).
+  3-axis checklist re-verification cadence (T5.2 §
+  "Platform compatibility re-verification") catches any post-GA
+  drift independently. Pattern verbatim from transport.yaml v1.2.0
+  WAIVER (t5-cargo-pin-refresh).
 ---
 
-<!--
-Frontmatter is informational for this .md standard. The YAML-spec
-frontmatter contract enforced by `bin/validate-standards-yaml.sh`
-(`standards-lifecycle.md` § Automated enforcement) applies only to
-`.forge/standards/*.yaml` standards. This `.md` documentation
-standard mirrors the field names for greppability and adopter
-clarity — the validator does NOT scan it.
+<!-- Audit: T.5.3 (t5-otel-dartastic-realign) ; supersedes Workiva pin from t5-otel-dart-api-realign -->
 
+<!--
 History :
 - v1.0.0 (2026-05-04, t4-adr-ratification) — fabricated API names
   from cross-language transposition (JS / Java / Python OTel).
 - v1.1.0 (2026-05-11, t5-otel-dart-api-realign) — realigned to the
   actual `opentelemetry: 0.18.11` (Workiva) pub.dev pkg API surface,
-  resolving Q-004 raised in `t5-otel-app/open-questions.md`.
+  resolving Q-004.
+- v2.0.0 (2026-05-18, t5-otel-dartastic-realign) — BREAKING.
+  Substitution Workiva → Dartastic ecosystem. Resolves Q-006
+  (Workiva web-only platform mismatch). FIRST consumer of the T5.2
+  3-axis platform-verification checklist — applied inline in the
+  "Source Documents — 3-axis verification" H2 below.
 -->
 
 # Flutter OpenTelemetry Standard
 
-> **Status (per Workiva README, 2026-05-11)** :
+> **Status (per Dartastic README, 2026-05-18)** :
 >
-> | Signal  | Status        |
-> |---------|---------------|
-> | Traces  | Beta          |
-> | Metrics | Alpha         |
-> | Logs    | Unimplemented |
+> | Signal  | Status                                       |
+> |---------|----------------------------------------------|
+> | Traces  | Spec-aligned (OTel spec 1.31.0)              |
+> | Metrics | Spec-aligned                                 |
+> | Logs    | Spec-aligned (LogRecord + LogRecordProcessor)|
 >
-> **This v1.1.0 standard scopes to traces only.** Metrics (alpha)
-> and logs (unimplemented) are out of scope until Workiva moves them
-> to Beta. Cross-language adopters expecting a full three-signal SDK
-> on Flutter today should run metrics + logs through the Rust
-> backend (which uses `opentelemetry-rust 0.31` per
-> `rust/opentelemetry.md`) and rely on browser / mobile traces here.
+> v2.0.0 scopes to traces in the reference FSM example and mobile-only
+> template ; metrics + logs API are documented for adopters who
+> want to wire them. All 3 signals are implementable on every
+> Flutter target platform Dartastic declares.
+
+## Source Documents — 3-axis verification
+
+> **First consumer of the T5.2 3-axis platform-verification checklist**
+> (`.claude/agents/document-specialist.md` §
+> `Platform Verification Checklist (3-axis)`). Verified 2026-05-18
+> via Context7 + pub.dev WebFetch.
+
+| Dependency | Existence | API surface | Platform compatibility | Notes |
+|---|---|---|---|---|
+| `dartastic_opentelemetry_api @ ^1.0.0-beta.2` | [x] pub.dev verified-publisher mindfulsoftware.com | [x] OTelAPI / Tracer / Span / Context / Baggage / Attributes / Status / SpanKind / SpanProcessor / SpanExporter / W3CTraceContextPropagator / W3CBaggagePropagator | [x] Android, iOS, Linux, macOS, Web, Windows declared | beta line accepted per WAIVER (frontmatter rationale) |
+| `dartastic_opentelemetry @ ^1.1.0-beta.6` | [x] pub.dev verified-publisher | [x] OTel.initialize / OtlpGrpcSpanExporter / OtlpHttpSpanExporter / Tracer / Span / AlwaysOnSampler / AlwaysOffSampler / ParentBasedSampler / TraceIdRatioBasedSampler / Meter / Counter / Histogram / OTelLogger / LogRecord | [x] All Dart/Flutter targets | OTel spec 1.31.0 ; published 9 days ago |
+| `flutterrific_opentelemetry @ ^0.4.0` | [x] pub.dev verified-publisher | [x] OTel-init helper / route observer / lifecycle / error+navigation auto-instrumentation / go_router integration | [x] Android+iOS "Full" ; Web "Complete OTLP/HTTP" ; desktop "Beta" | desktop Beta not blocking — no current archetype targets desktop |
+
+No `[PLATFORM MISMATCH:]` markers raised. The substitution satisfies
+all 3 axes for `mobile-only` (Android+iOS), `full-stack-monorepo`
+frontend (Flutter mobile + web), and any future archetype with
+matching target sets.
 
 ## Technology Stack
 
-| Package | Role |
-|---|---|
-| `opentelemetry: 0.18.11` (Workiva, Apache-2.0) | Core OTel SDK for Dart/Flutter — traces |
-| `dio` (`^5.7.0`) | HTTP client with interceptor for trace propagation |
-| `flutter_bloc` | BLoC pattern + `BlocObserver` hook for event/state tracing |
+Three Dartastic packages used together :
 
-The canonical pub.dev pkg is **`opentelemetry`** (single bundled
-package : api + sdk + web_sdk sub-libraries). Workiva is the verified
-publisher. The `lib/api.dart` and `lib/sdk.dart` sub-libraries are
-the only entry points adopters import. The OTLP wire format is
-reached via the `CollectorExporter` class (exported by `sdk.dart`)
-which accepts a single `Uri` pointing at an OTLP-compliant endpoint.
-The legacy sub-libraries that the v1.0.0 standard incorrectly
-imported (paths starting with `exporter_otlp_*`) do not exist in
-this pkg layout — see REVIEW.md 2026-05-11 entry for the full list
-of legacy identifiers that were removed.
+| Package | Role | Forge-pinned version |
+|---|---|---|
+| `dartastic_opentelemetry_api` | No-op OpenTelemetry API surface | `^1.0.0-beta.2` (transitive via SDK) |
+| `dartastic_opentelemetry` | Dart SDK backend (exporters / processors / samplers) | `^1.1.0-beta.6` |
+| `flutterrific_opentelemetry` | Flutter integration shim (auto-instrumentation, go_router observer, lifecycle, errors) | `^0.4.0` |
 
----
+**Publisher** : `mindfulsoftware.com` (verified-publisher on pub.dev).
+
+**Spec alignment** : OpenTelemetry Specification 1.31.0 (Traces /
+Metrics / Logs).
+
+**Collector contract** : OTLP HTTP/protobuf on port `:4318` per
+**ADR-OTEL-001** (`t5-otel-stack`, 2026-05-10). The collector
+contract is unchanged by v2.0.0 — only the SDK pkg substitution
+moves.
+
+### Canonical imports
+
+```dart
+import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
+import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:flutterrific_opentelemetry/flutterrific_opentelemetry.dart';
+```
 
 ## SDK Initialization
 
+The canonical init uses **flutterrific_opentelemetry** (Option A
+per ADR-T53-001). Call `OTel.initialize(...)` before `runApp` and
+register the route observer in `MaterialApp.router` :
+
 ```dart
-// lib/core/telemetry/telemetry_setup.dart
-import 'dart:io' show Platform;
+import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:flutterrific_opentelemetry/flutterrific_opentelemetry.dart';
 
-import 'package:opentelemetry/api.dart'
-    show
-        Attribute,
-        ResourceAttributes,
-        registerGlobalTracerProvider;
-import 'package:opentelemetry/sdk.dart'
-    show
-        AlwaysOnSampler,
-        BatchSpanProcessor,
-        CollectorExporter,
-        ParentBasedSampler,
-        Resource,
-        TracerProviderBase;
-
-Future<void> setupTelemetry({required AppConfig config}) async {
-  // 1. OTLP HTTP exporter — single positional Uri argument. The
-  //    Workiva CollectorExporter speaks the OTLP wire format ; per
-  //    ADR-T5-OTA-002 the Forge stack pins HTTP/protobuf on :4318.
-  final exporter = CollectorExporter(Uri.parse('${config.otlpEndpoint}/v1/traces'));
-
-  // 2. Batch processor — positional exporter, named tuning params.
-  //    No wrapping config object in 0.18.11 (the v1.0.0 standard
-  //    incorrectly assumed one ; see REVIEW.md 2026-05-11 entry).
-  final processor = BatchSpanProcessor(
-    exporter,
-    maxExportBatchSize: 512,
-    scheduledDelayMillis: 5000, // 5 s flush interval
-  );
-
-  // 3. Resource — positional list of Attribute objects. Use the
-  //    semantic-convention constants from `api.dart`.
-  final resource = Resource([
-    Attribute.fromString(ResourceAttributes.serviceName, config.serviceName),
-    Attribute.fromString(ResourceAttributes.serviceVersion, config.appVersion),
-    Attribute.fromString(ResourceAttributes.deploymentEnvironment, config.environment),
-    Attribute.fromString('device.platform', Platform.operatingSystem),
-    Attribute.fromString('device.os.version', Platform.operatingSystemVersion),
-  ]);
-
-  // 4. TracerProvider — sampler is `ParentBasedSampler(AlwaysOnSampler())`
-  //    in 0.18.11. See the `## Sampling` section below for the ratio
-  //    semantics realised collector-side.
-  final tracerProvider = TracerProviderBase(
-    resource: resource,
-    processors: [processor],
+Future<void> setupTelemetry() async {
+  await OTel.initialize(
+    serviceName: 'forge-fsm-frontend',
+    endpoint: const String.fromEnvironment(
+      'OTEL_EXPORTER_OTLP_ENDPOINT',
+      defaultValue: 'http://localhost:4318',
+    ),
     sampler: ParentBasedSampler(AlwaysOnSampler()),
   );
+}
 
-  registerGlobalTracerProvider(tracerProvider);
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await setupTelemetry();
+  runApp(MyApp());
 }
 ```
 
----
+Then in the app's router setup :
+
+```dart
+MaterialApp.router(
+  routerConfig: GoRouter(
+    routes: [...],
+    observers: [FlutterOTel.routeObserver],
+  ),
+);
+```
+
+### Migration off flutterrific (Option B fallback)
+
+Adopters who do NOT want the `flutterrific_opentelemetry` shim drop
+it from `pubspec.yaml` and wire the same behaviour manually against
+`dartastic_opentelemetry` :
+
+- Implement a custom `NavigatorObserver` subclass that calls
+  `tracer.startSpan('navigation.<route>')` on `didPush` / `didPop`.
+- Implement a custom `BlocObserver` subclass for state-management
+  instrumentation.
+- Wire `FlutterError.onError` + `runZonedGuarded` to your error
+  reporter.
+
+Adds approximately 50-80 LOC vs the flutterrific path. Documented
+as a fallback in case `flutterrific 0.4.0` blocks the build ; not
+the Forge default recommendation.
 
 ## Sampling
 
-The Workiva `opentelemetry: 0.18.11` pkg exports the following
-samplers (from `lib/sdk.dart`) :
+Forge's sampling model is **dual-stage** per ADR-OTEL-001
+(unchanged by the substitution) :
 
-| Class | Behaviour |
-|---|---|
-| `AlwaysOnSampler` | Sample every span. |
-| `AlwaysOffSampler` | Drop every span. |
-| `ParentBasedSampler(_root, {remote*Sampled, local*Sampled, ...})` | Respect the W3C `traceparent` `flags` bit ; delegate to `_root` for sampling-decisions on root spans. |
-| `Sampler` (interface) | Adopters can implement custom samplers. |
+- **Phase A — collector-side** : the OTel Collector applies
+  `processors.probabilistic_sampler` with env-tier overlays. This
+  is where adopter-tunable sampling lives. The SDK does NOT decide
+  the sampling rate.
+- **Phase B — SDK-side** : `ParentBasedSampler(AlwaysOnSampler())`.
+  Every span produced by the app is always emitted ; Phase A
+  decides post-hoc. Preserves trace continuity across processes
+  while keeping the SDK simple.
 
-A `TraceIdRatio`-based sampler class is **not exported** by 0.18.11
-(the v1.0.0 standard incorrectly assumed one ; see REVIEW.md
-2026-05-11 entry). The Forge
-stack realises the `observability.yaml::sampler: parentbased_traceidratio`
-semantics via the **dual-stage Phase A + Phase B model** documented
-in `t5-otel-stack` ADR-OTEL-001 :
+Dartastic exposes the canonical OTel sampler types :
 
-- **SDK-side (this standard)** : `ParentBasedSampler(AlwaysOnSampler())`.
-  Every span starts. Inherited sampled-already decisions (W3C
-  `traceparent` `flags = 01`) are respected through the parent-based
-  wrapper.
-- **Collector-side** : the OTel collector's
-  `processors.probabilistic_sampler` enforces the env-tier ratio
-  (10 % prod / 50 % staging / 100 % dev). Spans dropped here never
-  reach SigNoz / Coroot.
+- `AlwaysOnSampler()` — recommended for the SDK (Phase B).
+- `AlwaysOffSampler()` — useful for tests.
+- `ParentBasedSampler(<delegate>)` — wraps a delegate with parent-respecting decisions.
+- `TraceIdRatioBasedSampler(ratio)` — head-based ratio sampler.
+  Available but **discouraged for SDK use** ; if used, remove Phase A's
+  collector-side sampling to avoid double sampling.
 
-This split is intentional : adopters can flip dev/staging tools to
-"see every span" without rebuilding the Flutter app. A future
-`opentelemetry: 0.19.x` shipping a ratio-based sampler class would
-be the trigger for a v1.2.0 bump of this standard.
-
----
+```dart
+await OTel.initialize(
+  serviceName: '<service>',
+  endpoint: '<otlp-http-url>',
+  sampler: ParentBasedSampler(AlwaysOnSampler()),
+);
+```
 
 ## HTTP Instrumentation via Dio Interceptor
 
+Pattern : one span per outbound HTTP request ; inject `traceparent`
+(and `tracestate`) on every outbound. Continuation across processes
+is what makes the distributed trace work.
+
 ```dart
-// lib/core/telemetry/interceptors/tracing_interceptor.dart
 import 'package:dio/dio.dart';
-import 'package:opentelemetry/api.dart'
-    show
-        Attribute,
-        Context,
-        Span,
-        SpanKind,
-        StatusCode,
-        TextMapSetter,
-        Tracer,
-        W3CTraceContextPropagator,
-        contextWithSpan,
-        globalTracerProvider;
+import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
 class TracingInterceptor extends Interceptor {
-  TracingInterceptor() : _tracer = globalTracerProvider.getTracer('http.client');
-
-  final Tracer _tracer;
+  final Tracer tracer;
+  TracingInterceptor(this.tracer);
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    final span = _tracer.startSpan(
-      '${options.method} ${_sanitizePath(options.path)}',
+    final span = tracer.startSpan(
+      'http.${options.method.toUpperCase()} ${options.uri.path}',
       kind: SpanKind.client,
-      attributes: [
-        Attribute.fromString('http.method', options.method),
-        Attribute.fromString('http.url', options.uri.toString()),
-        Attribute.fromString('http.target', options.path),
-        Attribute.fromString('net.peer.name', options.uri.host),
-      ],
-    );
+    )
+      ..setAttribute('http.method', options.method)
+      ..setAttribute('http.url', options.uri.toString())
+      ..setAttribute('net.peer.name', options.uri.host);
 
-    // Inject W3C traceparent header for context propagation.
-    // `contextWithSpan` is a top-level helper from `api.dart`. The
-    // JS/Java-style `withSpan` method on Context does not exist in
-    // opentelemetry 0.18.11 — see REVIEW.md 2026-05-11 entry for
-    // the full list of legacy identifiers that were removed.
+    final ctx = Context.current.withSpan(span);
     final propagator = W3CTraceContextPropagator();
-    propagator.inject(
-      contextWithSpan(Context.current, span),
-      options.headers,
-      _HttpHeadersSetter(),
-    );
-
-    // Store span reference on request for later completion.
-    options.extra['otel_span'] = span;
-
+    final headers = <String, String>{};
+    propagator.inject(ctx, headers, (carrier, key, value) {
+      carrier[key] = value;
+    });
+    options.headers.addAll(headers);
+    options.extra['otel.span'] = span;
     handler.next(options);
   }
 
   @override
-  void onResponse(Response<dynamic> response, ResponseInterceptorHandler handler) {
-    final span = response.requestOptions.extra['otel_span'] as Span?;
+  void onResponse(Response response, ResponseInterceptorHandler handler) {
+    final span = response.requestOptions.extra['otel.span'] as Span?;
     span
-      ?..setAttribute(Attribute.fromInt('http.status_code', response.statusCode ?? 0))
-      ..setStatus(StatusCode.ok)
+      ?..setAttribute('http.status_code', response.statusCode ?? 0)
+      ..setStatus(SpanStatusCode.Ok)
       ..end();
     handler.next(response);
   }
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    final span = err.requestOptions.extra['otel_span'] as Span?;
+    final span = err.requestOptions.extra['otel.span'] as Span?;
     span
-      ?..setAttribute(Attribute.fromInt('http.status_code', err.response?.statusCode ?? 0))
-      ..recordException(err, attributes: [
-        Attribute.fromString('exception.type', err.type.name),
-        Attribute.fromString('exception.message', err.message ?? ''),
-      ])
-      // setStatus signature in 0.18.11 : `void setStatus(StatusCode, [String description])`
-      // — second argument is POSITIONAL, not `message:` named.
-      ..setStatus(StatusCode.error, err.message ?? '')
+      ?..setAttribute('http.status_code', err.response?.statusCode ?? 0)
+      ..setStatus(SpanStatusCode.Error, err.message ?? 'http_error')
+      ..recordException(err)
       ..end();
     handler.next(err);
   }
-
-  String _sanitizePath(String path) {
-    // Replace UUIDs and numeric IDs to keep span-name cardinality bounded.
-    return path
-        .replaceAll(RegExp(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'), '{id}')
-        .replaceAll(RegExp(r'/\d+'), '/{id}');
-  }
-}
-
-class _HttpHeadersSetter implements TextMapSetter<Map<String, dynamic>> {
-  @override
-  void set(Map<String, dynamic> carrier, String key, String value) {
-    carrier[key] = value;
-  }
 }
 ```
-
----
 
 ## Navigation Observer
 
+**Default (flutterrific)** : register the built-in observer in
+go_router :
+
 ```dart
-// lib/core/telemetry/observers/tracing_navigation_observer.dart
-import 'package:flutter/widgets.dart';
-import 'package:opentelemetry/api.dart'
-    show Attribute, Span, StatusCode, Tracer, globalTracerProvider;
+GoRouter(
+  routes: [...],
+  observers: [FlutterOTel.routeObserver],
+);
+```
 
+Captures `didPush` / `didPop` / `didReplace` as spans with route
+attributes, no glue code in adopter projects.
+
+**Manual fallback (Navigator 1.0 or non-flutterrific adopters)** :
+
+```dart
 class TracingNavigationObserver extends NavigatorObserver {
-  TracingNavigationObserver()
-      : _tracer = globalTracerProvider.getTracer('navigation');
-
-  final Tracer _tracer;
-  Span? _currentRouteSpan;
+  final Tracer tracer;
+  TracingNavigationObserver(this.tracer);
 
   @override
-  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
-    _endCurrentSpan();
-    _currentRouteSpan = _tracer.startSpan(
-      'navigation.push ${route.settings.name ?? "unknown"}',
-      attributes: [
-        Attribute.fromString('screen.name', route.settings.name ?? 'unknown'),
-        Attribute.fromString('navigation.action', 'push'),
-      ],
-    );
+  void didPush(Route route, Route? previousRoute) {
+    tracer.startSpan('navigation.push')
+      ..setAttribute('route.name', route.settings.name ?? '<anon>')
+      ..end();
   }
 
   @override
-  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
-    _endCurrentSpan();
-  }
-
-  @override
-  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
-    _endCurrentSpan();
-    if (newRoute != null) {
-      _currentRouteSpan = _tracer.startSpan(
-        'navigation.replace ${newRoute.settings.name ?? "unknown"}',
-        attributes: [
-          Attribute.fromString('screen.name', newRoute.settings.name ?? 'unknown'),
-          Attribute.fromString('navigation.action', 'replace'),
-        ],
-      );
-    }
-  }
-
-  void _endCurrentSpan() {
-    final span = _currentRouteSpan;
-    if (span != null) {
-      span
-        ..setStatus(StatusCode.ok)
-        ..end();
-    }
-    _currentRouteSpan = null;
+  void didPop(Route route, Route? previousRoute) {
+    tracer.startSpan('navigation.pop')
+      ..setAttribute('route.name', route.settings.name ?? '<anon>')
+      ..end();
   }
 }
 ```
-
----
 
 ## BLoC Observer
 
+Pattern : extend `BlocObserver` (`flutter_bloc`) and create spans on
+`onEvent` / `onTransition` / `onError`.
+
 ```dart
-// lib/core/telemetry/observers/tracing_bloc_observer.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:opentelemetry/api.dart'
-    show Attribute, StatusCode, Tracer, globalTracerProvider;
+import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
 class TracingBlocObserver extends BlocObserver {
-  TracingBlocObserver()
-      : _tracer = globalTracerProvider.getTracer('bloc');
-
-  final Tracer _tracer;
+  final Tracer tracer;
+  TracingBlocObserver(this.tracer);
 
   @override
-  void onEvent(Bloc<dynamic, dynamic> bloc, Object? event) {
+  void onEvent(Bloc bloc, Object? event) {
     super.onEvent(bloc, event);
-    // Create a one-shot span per event ; close immediately to avoid leaks.
-    final span = _tracer.startSpan(
-      '${bloc.runtimeType}.${event.runtimeType}',
-      attributes: [
-        Attribute.fromString('bloc.type', bloc.runtimeType.toString()),
-        Attribute.fromString('bloc.event', event.runtimeType.toString()),
-      ],
-    );
-    span.end();
+    tracer.startSpan('bloc.event.${event.runtimeType}')
+      ..setAttribute('bloc.name', bloc.runtimeType.toString())
+      ..end();
   }
 
   @override
-  void onError(BlocBase<dynamic> bloc, Object error, StackTrace stackTrace) {
+  void onTransition(Bloc bloc, Transition transition) {
+    super.onTransition(bloc, transition);
+    tracer.startSpan('bloc.transition')
+      ..setAttribute('bloc.name', bloc.runtimeType.toString())
+      ..setAttribute('bloc.state', transition.nextState.runtimeType.toString())
+      ..end();
+  }
+
+  @override
+  void onError(BlocBase bloc, Object error, StackTrace stackTrace) {
     super.onError(bloc, error, stackTrace);
-    final span = _tracer.startSpan('${bloc.runtimeType}.error');
-    span
+    tracer.startSpan('bloc.error')
+      ..setAttribute('bloc.name', bloc.runtimeType.toString())
+      ..setStatus(SpanStatusCode.Error, error.toString())
       ..recordException(error, stackTrace: stackTrace)
-      ..setStatus(StatusCode.error, error.toString())
       ..end();
   }
 }
+
+void main() {
+  Bloc.observer = TracingBlocObserver(OTel.tracer());
+  runApp(MyApp());
+}
 ```
-
-Register in `main.dart` :
-
-```dart
-Bloc.observer = TracingBlocObserver();
-```
-
----
 
 ## User Interaction Spans
 
+Manual span creation around user-triggered domain operations (tap,
+scroll, form-submit). Use semantic attribute namespaces (`app.*`,
+`user.*`, `domain.*`).
+
 ```dart
-// lib/core/telemetry/telemetry_service.dart
-import 'package:injectable/injectable.dart';
-import 'package:opentelemetry/api.dart'
-    show Attribute, SpanKind, StatusCode, Tracer, globalTracerProvider;
-
-@lazySingleton
-class TelemetryService {
-  TelemetryService()
-      : _tracer = globalTracerProvider.getTracer('user.interaction');
-
-  final Tracer _tracer;
-
-  /// Wrap a user-initiated action in a span.
-  Future<T> trackInteraction<T>(
-    String name,
-    Future<T> Function() action, {
-    Map<String, Object> attributes = const {},
-  }) async {
-    final span = _tracer.startSpan(
-      name,
-      kind: SpanKind.internal,
-      attributes: attributes.entries
-          .map((e) => Attribute.fromString(e.key, e.value.toString()))
-          .toList(),
-    );
-    try {
-      final result = await action();
-      span.setStatus(StatusCode.ok);
-      return result;
-    } catch (e, st) {
-      span
-        ..recordException(e, stackTrace: st)
-        ..setStatus(StatusCode.error, e.toString());
-      rethrow;
-    } finally {
-      span.end();
-    }
-  }
-}
-
-// Usage in a BLoC
-Future<void> _onSubmitOrder(
-  SubmitOrder event,
-  Emitter<OrderState> emit,
-) async {
-  await _telemetry.trackInteraction(
-    'user.submit_order',
-    () => _placeOrder(event.cart),
-    attributes: {'order.item_count': event.cart.items.length},
-  );
+final span = OTel.tracer().startSpan('user.tap.checkout-button');
+span
+  ..setAttribute('app.screen', '/cart')
+  ..setAttribute('user.id', currentUser.id);
+try {
+  await processCheckout();
+  span.setStatus(SpanStatusCode.Ok);
+} catch (e, st) {
+  span
+    ..setStatus(SpanStatusCode.Error, e.toString())
+    ..recordException(e, stackTrace: st);
+  rethrow;
+} finally {
+  span.end();
 }
 ```
-
----
 
 ## Error Instrumentation
 
+Wire `FlutterError.onError` + `runZonedGuarded` so every uncaught
+error becomes a span on the active context.
+
 ```dart
-// lib/core/telemetry/error_reporter.dart
-import 'package:flutter/foundation.dart';
-import 'package:flutter/widgets.dart';
-import 'package:injectable/injectable.dart';
-import 'package:opentelemetry/api.dart'
-    show Attribute, StatusCode, Tracer, globalTracerProvider;
-
-@lazySingleton
-class ErrorReporter {
-  ErrorReporter()
-      : _tracer = globalTracerProvider.getTracer('error');
-
-  final Tracer _tracer;
-
-  void report(
-    Object error,
-    StackTrace stackTrace, {
-    Map<String, String> context = const {},
-  }) {
-    final span = _tracer.startSpan(
-      'error.reported',
-      attributes: [
-        Attribute.fromString('error.type', error.runtimeType.toString()),
-        Attribute.fromString('error.message', error.toString()),
-        ...context.entries.map((e) => Attribute.fromString(e.key, e.value)),
-      ],
-    );
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runZonedGuarded(() async {
+    await setupTelemetry();
+    FlutterError.onError = (details) {
+      final span = OTel.tracer().startSpan('error.flutter');
+      span
+        ..setStatus(SpanStatusCode.Error, details.exceptionAsString())
+        ..recordException(details.exception, stackTrace: details.stack)
+        ..end();
+    };
+    runApp(MyApp());
+  }, (error, stack) {
+    final span = OTel.tracer().startSpan('error.zone');
     span
-      ..recordException(error, stackTrace: stackTrace)
-      ..setStatus(StatusCode.error, error.toString())
+      ..setStatus(SpanStatusCode.Error, error.toString())
+      ..recordException(error, stackTrace: stack)
       ..end();
-  }
+  });
 }
-
-// In main.dart
-FlutterError.onError = (details) {
-  getIt<ErrorReporter>().report(details.exception, details.stack ?? StackTrace.empty);
-  FlutterError.presentError(details);
-};
-
-PlatformDispatcher.instance.onError = (error, stack) {
-  getIt<ErrorReporter>().report(error, stack);
-  return true;
-};
 ```
-
----
 
 ## Custom Spans
 
+`tracer.startSpan('<namespace>.<operation>')` with semantic
+attributes. Namespace conventions :
+
+- `domain.*` — business logic operations (e.g. `domain.order.create`).
+- `app.*` — application-level operations (e.g. `app.cache.invalidate`).
+- `user.*` — user-initiated operations (e.g. `user.tap.checkout`).
+- `http.*`, `db.*`, `messaging.*` — follow upstream OTel semantic
+  conventions verbatim.
+
 ```dart
-// Use for business-critical flows.
-import 'package:opentelemetry/api.dart'
-    show Attribute, StatusCode, globalTracerProvider;
-
-Future<void> _processCheckout(Cart cart) async {
-  final tracer = globalTracerProvider.getTracer('checkout');
-  final span = tracer.startSpan(
-    'checkout.process',
-    attributes: [
-      Attribute.fromInt('checkout.item_count', cart.items.length),
-      Attribute.fromString('checkout.currency', cart.currency),
-    ],
-  );
-
-  try {
-    span.addEvent('payment.started');
-    await _paymentService.charge(cart.total);
-    span.addEvent('payment.completed');
-
-    span.addEvent('inventory.reserving');
-    await _inventoryService.reserve(cart.items);
-    span.addEvent('inventory.reserved');
-
-    span.setStatus(StatusCode.ok);
-  } catch (e, st) {
-    span
-      ..recordException(e, stackTrace: st)
-      ..setStatus(StatusCode.error, e.toString());
-    rethrow;
-  } finally {
-    span.end();
-  }
+final span = OTel.tracer().startSpan('domain.order.create');
+span.setAttribute('order.items.count', order.items.length);
+try {
+  final result = await orderRepository.create(order);
+  span.setAttribute('order.id', result.id);
+  span.setStatus(SpanStatusCode.Ok);
+  return result;
+} catch (e, st) {
+  span
+    ..setStatus(SpanStatusCode.Error, e.toString())
+    ..recordException(e, stackTrace: st);
+  rethrow;
+} finally {
+  span.end();
 }
 ```
 
----
-
 ## Context Propagation (W3C traceparent)
 
-When making requests to your backend, the `TracingInterceptor`
-automatically injects the `traceparent` header following the W3C
-Trace Context spec :
+Use `W3CTraceContextPropagator` to inject/extract the `traceparent`
+header. Required for FSM `demo-005` traceparent round-trip and any
+cross-service trace.
 
+**Outbound (injection)** :
+
+```dart
+final propagator = W3CTraceContextPropagator();
+final headers = <String, String>{};
+propagator.inject(Context.current, headers, (carrier, key, value) {
+  carrier[key] = value;
+});
+// headers now contains 'traceparent' (and optionally 'tracestate').
 ```
-traceparent: 00-{traceId}-{spanId}-{flags}
+
+**Inbound (extraction)** — for Dart isolates / WebSocket streams /
+any inbound HTTP context :
+
+```dart
+final propagator = W3CTraceContextPropagator();
+final ctx = propagator.extract(
+  Context.current,
+  request.headers,
+  (carrier, key) => carrier[key],
+);
+final span = OTel.tracer().startSpan('inbound', context: ctx);
 ```
 
-The backend must extract and use this header to continue the same
-trace, creating a distributed trace from the Flutter client to
-backend services. The `W3CTraceContextPropagator` class is exported
-by `package:opentelemetry/api.dart`. The carrier setter implements
-`TextMapSetter<Map<String, dynamic>>` (the Dio header map type).
+The W3C `traceparent` header format is
+`00-<32 hex trace-id>-<16 hex span-id>-<2 hex flags>`. Validation
+is done by the propagator.
 
-The `contextWithSpan(Context, Span)` top-level function from
-`api.dart` builds the context the propagator injects — it is the
-canonical replacement for the JS/Java-style `withSpan` method on
-Context (which does NOT exist in the Dart `opentelemetry: 0.18.11`
-API ; see REVIEW.md 2026-05-11 entry).
+## Migration from v1.1.0 (Workiva → Dartastic)
 
----
+This is a **breaking bump** (`breaking_change: true`). Adopters
+using v1.1.0 MUST migrate pubspec + import paths + a handful of
+symbol names.
+
+### pubspec.yaml diff
+
+```yaml
+# REMOVE
+dependencies:
+  opentelemetry: ^0.18.11  # Workiva
+
+# ADD
+dependencies:
+  dartastic_opentelemetry: ^1.1.0-beta.6
+  flutterrific_opentelemetry: ^0.4.0
+```
+
+### Symbol substitution
+
+| v1.1.0 (Workiva) | v2.0.0 (Dartastic) | Notes |
+|---|---|---|
+| `package:opentelemetry/api.dart` | `package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart` | API surface only ; no-op implementation |
+| `package:opentelemetry/sdk.dart` | `package:dartastic_opentelemetry/dartastic_opentelemetry.dart` | Dart SDK backend |
+| (none in Workiva) | `package:flutterrific_opentelemetry/flutterrific_opentelemetry.dart` | Flutter integration shim (new in v2.0.0) |
+| `CollectorExporter(Uri)` | `OtlpHttpSpanExporter()` (or use `OTel.initialize(endpoint: ...)`) | Dartastic's high-level init wraps exporter creation |
+| `BatchSpanProcessor(exporter, {...})` | `BatchSpanProcessor` (Dartastic, same name) | API matches OTel spec |
+| `ParentBasedSampler(AlwaysOnSampler())` | `ParentBasedSampler(AlwaysOnSampler())` | Identical |
+| `SpanStatusCode.Ok` / `SpanStatusCode.Error` | `SpanStatusCode.Ok` / `SpanStatusCode.Error` | Identical |
+| `setStatus(SpanStatusCode.Error, description)` | `setStatus(SpanStatusCode.Error, description)` | Identical |
+| `contextWithSpan(Context, Span)` | `Context.current.withSpan(span)` (instance method) | Dartastic uses method instead of free function |
+| `TraceIdRatioBasedSampler` — **ABSENT in Workiva 0.18.11** | `TraceIdRatioBasedSampler(ratio)` | Now available |
+| `package:opentelemetry/exporter_otlp_http.dart` | Top-level SDK import | No sub-path import in Dartastic |
+| `package:opentelemetry/exporter_otlp_grpc.dart` | Top-level SDK import | No sub-path import in Dartastic |
+
+### Configuration env var
+
+Both v1.1.0 and v2.0.0 read `OTEL_EXPORTER_OTLP_ENDPOINT` for the
+collector URL. No env var change.
+
+## Anti-patterns
+
+Drawn from the historical Q-004 + Q-006 incidents :
+
+- **DON'T** ratify a Flutter OTel package without ticking the
+  T5.2 3-axis checklist (existence + API surface + platform
+  compatibility). Skipping platform compatibility caused Q-006.
+- **DON'T** cross-language transpose API names from JS / Java /
+  Python OTel into Dart. Workiva v1.0.0 fabricated 9 symbols this
+  way and shipped them as "verified" (Q-004). Always verify each
+  symbol against the actual pub.dev API page or Context7-fetched
+  docs.
+- **DON'T** pin `opentelemetry: ^0.18` (Workiva) — it is web-only.
+- **DON'T** reference `opentelemetry_sdk` — that package never
+  existed on pub.dev (phantom typo from b4-mobile-only era).
+- **DON'T** skip the WAIVER documentation when a pkg pin lands on
+  a `-beta.N` / `-alpha.N` line. Beta acceptance MUST be
+  transparent + carry a named upgrade trigger.
 
 ## Rules
 
-- **No PII in span attributes** : no emails, names, passwords, or
-  tokens. NFR-FOT-DA aligns with Article XI.6 (privacy).
-- **Sanitize URL paths** : replace IDs with `{id}` to bound span-name
-  cardinality.
-- **Spans must always be ended** : use try/finally to guarantee
-  `span.end()`.
-- **Use `BatchSpanProcessor`** with a 5 s `scheduledDelayMillis` and
-  a 512 `maxExportBatchSize`. Tune via the named ctor params.
-- **Resource attributes are set once at startup** : service name,
-  version, environment, platform.
-- **`TracingInterceptor` is the only place HTTP spans are created** :
-  never manually create HTTP spans in repositories. The interceptor
-  guarantees `traceparent` injection on every outgoing call.
-- **Error spans use `recordException`**, not just
-  `setStatus(StatusCode.error)`. The exception attribute set
-  (`exception.type`, `exception.message`, `exception.stacktrace`)
-  is what SigNoz / Coroot pivot off for the error analytics UI.
-- **Traces only in v1.1.0** : this standard scopes to traces.
-  Metrics (alpha per Workiva) and logs (unimplemented per Workiva)
-  are out of scope until upstream moves them to Beta — see the
-  Status callout at the top of this file. Cross-language adopters
-  needing metrics + logs today should rely on the Rust backend (per
-  `rust/opentelemetry.md`) for those signals.
+- **MUST** initialise OTel via `OTel.initialize(...)` before `runApp`.
+- **MUST** set `serviceName` to a stable, deployment-scoped value
+  (e.g. `forge-fsm-frontend`).
+- **MUST** register the route observer (flutterrific
+  `FlutterOTel.routeObserver` or a custom
+  `NavigatorObserver`).
+- **MUST** use Phase A + Phase B dual-stage sampling per
+  ADR-OTEL-001 (`ParentBasedSampler(AlwaysOnSampler())` on the
+  SDK side, collector-side probabilistic sampler in deployment).
+- **MUST** propagate W3C `traceparent` on all outbound HTTP calls
+  via `W3CTraceContextPropagator`.
+- **MUST NOT** introduce Workiva `opentelemetry: ^0.18` (forbidden
+  in frontmatter — web-only).
+- **MUST NOT** introduce the phantom `opentelemetry_sdk` (never
+  existed on pub.dev).
+- **MUST NOT** ratify any new external Flutter OTel dependency
+  without applying the T5.2 3-axis checklist.
 
----
+## Constitutional basis
+
+Anchored on **Article III.4** (Ambiguity Protocol — anti-hallucination)
+and **Article IX** (Observability). The v2.0.0 bump is the inaugural
+application of the T5.2 procedural reinforcement of Article III.4 —
+every symbol cited was verified against the actual pub.dev API
+surface (not cross-language transposed), and every platform claim
+was verified against the package's declared support matrix on
+pub.dev (Q-006 prevention).
 
 ## References
 
-- Workiva pub.dev page : <https://pub.dev/packages/opentelemetry>
-- Workiva 0.18.11 page : <https://pub.dev/packages/opentelemetry/versions/0.18.11>
-- Workiva GitHub repo : <https://github.com/Workiva/opentelemetry-dart>
-- `lib/api.dart` export list : <https://github.com/Workiva/opentelemetry-dart/blob/master/lib/api.dart>
-- `lib/sdk.dart` export list : <https://github.com/Workiva/opentelemetry-dart/blob/master/lib/sdk.dart>
-- `t5-otel-app::open-questions.md::Q-004` (origin of this realign).
-- `t5-otel-stack::ADR-OTEL-001` (collector-side `probabilistic_sampler`
-  ratio enforcement).
+- Dartastic packages :
+  - https://pub.dev/packages/dartastic_opentelemetry_api
+  - https://pub.dev/packages/dartastic_opentelemetry
+  - https://pub.dev/packages/flutterrific_opentelemetry
+- OpenTelemetry Specification 1.31.0 :
+  https://github.com/open-telemetry/opentelemetry-specification/tree/v1.31.0
+- ADR-OTEL-001 (collector sampling contract) :
+  `.forge/changes/t5-otel-stack/design.md`
+- T5.2 3-axis checklist :
+  `.claude/agents/document-specialist.md` §
+  `Platform Verification Checklist (3-axis)`
+- T5.2 re-verification cadence :
+  `.forge/standards/global/standards-lifecycle.md` §
+  `Platform compatibility re-verification`
+- Q-004 (Workiva fabricated symbols, resolved 2026-05-12) :
+  `.forge/changes/t5-otel-dart-api-realign/`
+- Q-006 (Workiva web-only platform mismatch, this change) :
+  `.forge/changes/t5-otel-dartastic-realign/proposal.md`

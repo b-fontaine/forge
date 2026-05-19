@@ -4,5 +4,5 @@ run Forge's deterministic scripts (verify.sh + constitution-linter.sh)
 
 Options:
   --target <dir>  target project directory (default:
-                  "/Users/bfontaine/git/github/forge/cli")
+                  "<CWD>")
   -h, --help      display help for command

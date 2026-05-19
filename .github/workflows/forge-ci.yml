@@ -49,9 +49,11 @@ jobs:
       - name: cli npm ci
         working-directory: cli
         run: npm ci
-      - name: cli npm run build
+      - name: cli npm run bundle
+        # Bundle (build + bundle-assets.mjs) — materialises `cli/assets/` mirror
+        # (gitignored) required by `_test_t53_l1_011` (FR-T53-C-003).
         working-directory: cli
-        run: npm run build
+        run: npm run bundle
       - name: foundations.test.sh
         run: bash .forge/scripts/tests/foundations.test.sh
       - name: scaffolder.test.sh (L1+L2)
@@ -91,16 +93,10 @@ jobs:
         run: bash .forge/scripts/tests/j7.test.sh --level 1,2
       - name: t5-otel.test.sh
         run: bash .forge/scripts/tests/t5-otel.test.sh --level 1
-      - name: t5-otel-dart-api-realign.test.sh
-        # T.5 Phase B — Q-004 follow-up to t5-otel-app. Validates the
-        # flutter/opentelemetry.md v1.0.0 -> v1.1.0 realign against the
-        # actual `opentelemetry: 0.18.11` (Workiva) pub.dev API surface.
-        run: bash .forge/scripts/tests/t5-otel-dart-api-realign.test.sh --level 1
+      # T5.3 decommissioned t5-otel-dart-api-realign.test.sh (v1.1.0 Workiva
+      # superseded by v2.0.0 Dartastic — see archive .forge-update-notes).
       - name: t5-otel-app.test.sh
-        # T.5 Phase B SDK instrumentation harness (16 L1 + 2 L2). L2
-        # smoke tests (cargo build + flutter analyze) are gated by the
-        # toolchain matrix entry — see T-CI-001 in
-        # .forge/changes/t5-otel-app/tasks.md. L1 alone runs here.
+        # T.5 Phase B SDK instrumentation ; L2 toolchain smoke gated separately.
         run: bash .forge/scripts/tests/t5-otel-app.test.sh --level 1
       - name: t5-otel-traceparent-e2e.test.sh
         # T.5 Phase C E2E traceparent harness ; live-run deferred to Phase D.
@@ -110,6 +106,8 @@ jobs:
         run: bash .forge/scripts/tests/t5-otel-live-run.test.sh --level 1
       - name: t5-2.test.sh
         run: bash .forge/scripts/tests/t5-2.test.sh --level 1  # T.5.2 ; L2 opt-in FORGE_T52_LIVE=1
+      - name: t5-otel-dartastic.test.sh
+        run: bash .forge/scripts/tests/t5-otel-dartastic.test.sh --level 1  # T.5.3 ; L2 opt-in FORGE_T53_LIVE=1
       - name: j8.test.sh
         run: bash .forge/scripts/tests/j8.test.sh --level 1,2
       - name: k3.test.sh

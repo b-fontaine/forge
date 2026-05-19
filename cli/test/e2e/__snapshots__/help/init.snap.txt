@@ -7,7 +7,7 @@ Arguments:
 
 Options:
   --target <dir>          target project directory (default:
-                          "/Users/bfontaine/git/github/forge/cli")
+                          "<CWD>")
   --source <dir>          local Forge source checkout (default: the files
                           bundled with this CLI)
   --archetype <name>      explicit archetype (e.g. default |

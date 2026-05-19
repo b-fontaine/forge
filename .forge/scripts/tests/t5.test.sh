@@ -214,6 +214,12 @@ _test_t5_005() {
 }
 _test_t5_006() {
   # ADR-T5-001 / FR-T5-CC-010 : Cargo.toml.tmpl declares connectrpc-build build-dep
+  # + connectrpc / buffa runtime deps. Post T5.1.E amendments (2026-05-16) :
+  #   - `connectrpc` switched to inline-table form to enable `features = ["axum"]`
+  #     (required for `Router::into_axum_router()` per `t5-bin-server-deps`).
+  #   - `buffa` / `buffa-types` corrected from invalid `=0.3.3` (never published)
+  #     to `=0.3.0` per ADR-T5CPR-001 / REVIEW.md 2026-05-16 (transport.yaml
+  #     v1.2.0 § codegen.versions). Pin contract recorded in transport.yaml.
   if [ ! -f "$GRPC_API_CARGO_TPL" ]; then
     echo "    missing template: $GRPC_API_CARGO_TPL" >&2
     return 1
@@ -222,12 +228,17 @@ _test_t5_006() {
     echo "    Cargo.toml.tmpl does not declare connectrpc-build = \"=0.3.3\" build-dep" >&2
     return 1
   fi
-  for needle in '^connectrpc\s*=\s*"=0\.3\.3"' '^buffa\s*=\s*"=0\.3\.3"'; do
-    if ! grep -qE "$needle" "$GRPC_API_CARGO_TPL"; then
-      echo "    Cargo.toml.tmpl missing dep matching $needle" >&2
-      return 1
-    fi
-  done
+  # connectrpc may appear either as simple `connectrpc = "=0.3.3"` (legacy)
+  # OR inline-table `connectrpc = { version = "=0.3.3", features = [...] }`
+  # (current, post T5.1.E). Both encode the same exact pin.
+  if ! grep -qE '^connectrpc\s*=\s*("=0\.3\.3"|\{\s*version\s*=\s*"=0\.3\.3")' "$GRPC_API_CARGO_TPL"; then
+    echo "    Cargo.toml.tmpl missing dep connectrpc pinned to =0.3.3" >&2
+    return 1
+  fi
+  if ! grep -qE '^buffa\s*=\s*"=0\.3\.0"' "$GRPC_API_CARGO_TPL"; then
+    echo "    Cargo.toml.tmpl missing dep buffa = \"=0.3.0\" (T5.1.E corrected pin)" >&2
+    return 1
+  fi
 }
 _test_t5_007() {
   # FR-T5-CC-004 : the 3 existing remote entries are preserved
@@ -251,10 +262,14 @@ _test_t5_008() {
   done
 }
 _test_t5_009() {
-  # FR-T5-CC-020 : transport.yaml version is 1.1.0
+  # FR-T5-CC-020 : transport.yaml version is 1.2.0 since 2026-05-16
+  # (t5-cargo-pin-refresh, T5.1.E / ADR-T5CPR-001). v1.1.0 introduced the
+  # `codegen.versions` map ; v1.2.0 corrected the buffa pin from invalid
+  # `=0.3.3` (never published on crates.io) to `=0.3.0`. The REVIEW.md
+  # ledger 2026-05-16 entry is the authoritative anchor.
   local v
   v="$(_yq_eval '.version' "$STD_DIR/transport.yaml")"
-  assert_eq "1.1.0" "$v" "transport.yaml version"
+  assert_eq "1.2.0" "$v" "transport.yaml version"
 }
 _test_t5_010() {
   # FR-T5-CC-021 : transport.yaml has codegen.connect_layout_version: 1
@@ -276,7 +291,14 @@ _test_t5_012() {
   fi
 }
 _test_t5_013() {
-  # FR-T5-CC-010 : transport_connect.rs.tmpl exists with into_router using into_axum_service()
+  # FR-T5-CC-010 : transport_connect.rs.tmpl exists with into_router building
+  # an axum::Router via connectrpc's axum feature. The exposed method on
+  # `connectrpc::Router` is `into_axum_router()` since T5.1.E
+  # (`t5-bin-server-deps`, 2026-05-16) — the previous `into_axum_service()`
+  # signature did not satisfy axum 0.8's stricter `Service` trait-bound
+  # (5 E0277 failures verified docs.rs 2026-05-16). Either method name
+  # is accepted to remain compatible with adopters on older connectrpc
+  # API surfaces.
   if [ ! -f "$GRPC_API_CONNECT_TPL" ]; then
     echo "    missing template: $GRPC_API_CONNECT_TPL" >&2
     return 1
@@ -285,8 +307,8 @@ _test_t5_013() {
     echo "    transport_connect.rs.tmpl missing pub fn into_router" >&2
     return 1
   fi
-  if ! grep -qE 'into_axum_service\(\)' "$GRPC_API_CONNECT_TPL"; then
-    echo "    transport_connect.rs.tmpl missing into_axum_service() call" >&2
+  if ! grep -qE 'into_axum_(service|router)\(\)' "$GRPC_API_CONNECT_TPL"; then
+    echo "    transport_connect.rs.tmpl missing into_axum_router()/into_axum_service() call" >&2
     return 1
   fi
 }
@@ -306,18 +328,39 @@ _test_t5_014() {
   fi
 }
 _test_t5_015() {
-  # FR-T5-CC-013 : OTel layer applied OUTSIDE the connectrpc::Router (Tower middleware composition)
-  # Heuristic: a `.layer(` call appears AFTER `.into_axum_service()`, not inside the connectrpc::Router builder.
+  # FR-T5-CC-013 : OTel layer applied OUTSIDE the connectrpc::Router (Tower
+  # middleware composition). Since T5.1.E (`t5-bin-server-deps`, 2026-05-16),
+  # the layering moved from `transport_connect.rs.tmpl` to the call site
+  # (`bin-server/main.rs.tmpl`) because axum 0.8's stricter `Service` bounds
+  # rejected a generic `L: Layer<...>` in the adapter signature. The
+  # post-condition of FR-T5-CC-013 is preserved as long as :
+  #   (1) `transport_connect.rs.tmpl` does NOT apply `.layer(` on the
+  #       `connectrpc::Router` it builds, AND
+  #   (2) `bin-server/main.rs.tmpl` applies `.layer(` AFTER the
+  #       `transport_connect::into_router(...)` mount (Tower composition
+  #       on the outer axum::Router).
   if [ ! -f "$GRPC_API_CONNECT_TPL" ]; then
     echo "    missing template: $GRPC_API_CONNECT_TPL" >&2
     return 1
   fi
+  # (1) The adapter must NOT layer on connectrpc::Router. Allow a docstring
+  # mention of `.layer(` (`//` or `///` lines) but reject executable
+  # `.layer(` lines.
+  if grep -nE '^\s*\.layer\(' "$GRPC_API_CONNECT_TPL" >/dev/null; then
+    echo "    transport_connect.rs.tmpl: executable .layer(...) found inside the adapter — OTel layer must be applied at the call site" >&2
+    return 1
+  fi
+  # (2) The call site (bin-server/main.rs.tmpl) must layer AFTER into_router.
+  if [ ! -f "$BIN_SERVER_MAIN_TPL" ]; then
+    echo "    missing template: $BIN_SERVER_MAIN_TPL" >&2
+    return 1
+  fi
   if ! awk '
-    /into_axum_service\(\)/ { seen=1 }
-    seen && /\.layer\(/    { found=1; exit }
+    /transport_connect::into_router/ { seen=1 }
+    seen && /\.layer\(/              { found=1; exit }
     END { exit !found }
-  ' "$GRPC_API_CONNECT_TPL"; then
-    echo "    transport_connect.rs.tmpl: no .layer(...) found AFTER .into_axum_service() (OTel layer must be outside connectrpc)" >&2
+  ' "$BIN_SERVER_MAIN_TPL"; then
+    echo "    bin-server/main.rs.tmpl: no .layer(...) found AFTER transport_connect::into_router (OTel layer must be applied at the call site)" >&2
     return 1
   fi
 }

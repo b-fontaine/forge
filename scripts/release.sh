@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Forge — generic release helper script
 # <!-- Audit: F.3 (f3-release-script-fix) -->
+set -euo pipefail
 #
 # Run AFTER the PR that closes the release scope is merged into main
 # (per GOVERNANCE.md § Release Process). Performs the post-merge
@@ -59,8 +60,6 @@
 #     line so the npm CLI triggers the WebAuthn browser flow.
 #   - A new `npm login` auto-trigger runs before publish when the
 #     account is not currently logged in (skippable via --skip-login).
-
-set -euo pipefail
 
 # ─── Args ────────────────────────────────────────────────────────
 

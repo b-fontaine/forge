@@ -14,12 +14,6 @@
 import 'package:equatable/equatable.dart';
 
 class OidcConfig extends Equatable {
-  final String issuer;
-  final String clientId;
-  final String redirectUri;
-  final List<String> scopes;
-  final String? discoveryUrl; // optional, falls back to <issuer>/.well-known/openid-configuration
-
   const OidcConfig({
     required this.issuer,
     required this.clientId,
@@ -27,6 +21,12 @@ class OidcConfig extends Equatable {
     required this.scopes,
     this.discoveryUrl,
   });
+
+  final String issuer;
+  final String clientId;
+  final String redirectUri;
+  final List<String> scopes;
+  final String? discoveryUrl; // optional, falls back to <issuer>/.well-known/openid-configuration
 
   @override
   List<Object?> get props => [issuer, clientId, redirectUri, scopes, discoveryUrl];

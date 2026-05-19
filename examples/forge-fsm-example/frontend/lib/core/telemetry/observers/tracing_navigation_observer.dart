@@ -1,14 +1,18 @@
-// Audit: T.5 (t5-otel-app) — Phase B SDK instrumentation
+// Audit: T.5.3 (t5-otel-dartastic-realign) — Workiva → Dartastic substitution
 //
 // TracingNavigationObserver — emits one span per route push / replace.
-// Mirrors `flutter/opentelemetry.md` § Navigation Observer.
+// Mirrors `flutter/opentelemetry.md` v2.0.0 § Navigation Observer.
+//
+// Note (ADR-T53-001) : the canonical Dartastic path uses
+// `FlutterOTel.routeObserver` from `flutterrific_opentelemetry`.
+// This custom NavigatorObserver is kept as the Option B fallback for
+// adopters using Navigator 1.0 or who want explicit observer code paths.
 
+import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:flutter/widgets.dart';
-import 'package:opentelemetry/api.dart';
 
 class TracingNavigationObserver extends NavigatorObserver {
-  TracingNavigationObserver()
-    : _tracer = globalTracerProvider.getTracer('navigation');
+  TracingNavigationObserver() : _tracer = OTel.tracer();
 
   final Tracer _tracer;
   Span? _currentRouteSpan;
@@ -17,13 +21,10 @@ class TracingNavigationObserver extends NavigatorObserver {
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
     super.didPush(route, previousRoute);
     _endCurrentSpan();
-    _currentRouteSpan = _tracer.startSpan(
-      'navigation.push ${route.settings.name ?? "unknown"}',
-      attributes: [
-        Attribute.fromString('screen.name', route.settings.name ?? 'unknown'),
-        Attribute.fromString('navigation.action', 'push'),
-      ],
-    );
+    _currentRouteSpan =
+        _tracer.startSpan('navigation.push ${route.settings.name ?? "unknown"}')
+          ..setStringAttribute('screen.name', route.settings.name ?? 'unknown')
+          ..setStringAttribute('navigation.action', 'push');
   }
 
   @override
@@ -39,22 +40,18 @@ class TracingNavigationObserver extends NavigatorObserver {
     if (newRoute != null) {
       _currentRouteSpan = _tracer.startSpan(
         'navigation.replace ${newRoute.settings.name ?? "unknown"}',
-        attributes: [
-          Attribute.fromString(
-            'screen.name',
-            newRoute.settings.name ?? 'unknown',
-          ),
-          Attribute.fromString('navigation.action', 'replace'),
-        ],
-      );
+      )
+        ..setStringAttribute('screen.name', newRoute.settings.name ?? 'unknown')
+        ..setStringAttribute('navigation.action', 'replace');
     }
   }
 
   void _endCurrentSpan() {
     final span = _currentRouteSpan;
     if (span != null) {
-      span.setStatus(StatusCode.ok);
-      span.end();
+      span
+        ..setStatus(SpanStatusCode.Ok)
+        ..end();
     }
     _currentRouteSpan = null;
   }

@@ -12,16 +12,16 @@ import 'package:flutter/material.dart';
 import 'package:{{project_name}}/infrastructure/biometric/biometric_service.dart';
 
 class BiometricLockWidget extends StatefulWidget {
-  final Widget child;
-  final BiometricService biometricService;
-  final Duration timeout;
-
   const BiometricLockWidget({
     super.key,
     required this.child,
     required this.biometricService,
     this.timeout = const Duration(seconds: 60),
   });
+
+  final Widget child;
+  final BiometricService biometricService;
+  final Duration timeout;
 
   @override
   State<BiometricLockWidget> createState() => _BiometricLockWidgetState();
@@ -74,7 +74,7 @@ class _BiometricLockWidgetState extends State<BiometricLockWidget>
         if (_locked)
           Positioned.fill(
             child: ColoredBox(
-              color: Colors.black.withOpacity(0.92),
+              color: Colors.black.withValues(alpha: 0.92),
               child: Center(
                 child: ElevatedButton.icon(
                   onPressed: _attemptUnlock,

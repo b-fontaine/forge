@@ -12,6 +12,51 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Changed (BREAKING) — T5.3 Workiva → Dartastic OTel substitution (`t5-otel-dartastic-realign`)
+
+- **`flutter/opentelemetry.md` bumped v1.1.0 → v2.0.0** (breaking).
+  Substitution Workiva `opentelemetry 0.18.11` (web-only) → Dartastic
+  ecosystem (`dartastic_opentelemetry_api ^1.0.0-beta.2` +
+  `dartastic_opentelemetry ^1.1.0-beta.6` + `flutterrific_opentelemetry ^0.4.0`,
+  all-platform : Android/iOS/Linux/macOS/Web/Windows). Resolves **Q-006**
+  (Workiva web-only platform mismatch discovered 2026-05-16 via
+  `cli-trust-harness` Option B validation).
+- **Inaugural application of the T5.2 3-axis platform-verification
+  checklist** — the 3 Dartastic packages were verified inline against
+  existence + API surface (Context7-checked) + platform compatibility
+  before ratification. No `[PLATFORM MISMATCH:]` markers raised.
+- **WAIVER (ADR-T53-002)** : `dartastic_opentelemetry_api` pins at
+  `^1.0.0-beta.2` (the only resolvable version given SDK 1.1.0-beta.6's
+  constraint). Upgrade trigger named : `t5-3-1-dartastic-api-ga-refresh`.
+  Pattern mirrors `transport.yaml v1.2.0` WAIVER (`t5-cargo-pin-refresh`).
+- **FSM example frontend rewritten** : 5 Dart files in
+  `examples/forge-fsm-example/frontend/lib/core/telemetry/` ported from
+  Workiva imports to Dartastic. Sampler dual-stage preserved
+  (ParentBasedSampler(AlwaysOnSampler()) on SDK side per ADR-OTEL-001 /
+  ADR-T53-004 ; collector contract unchanged).
+- **Mobile-only template rewritten** : `pubspec.yaml.tmpl`,
+  `lib/observability/otel_init.dart.tmpl`, `lib/app.dart.tmpl`,
+  `lib/data/auth/auth_repository_impl.dart.tmpl` all migrated.
+  cli/assets mirror kept byte-identical. The phantom `opentelemetry_sdk`
+  pin (never existed on pub.dev) removed. **Closes the v0.3.3 deferred
+  `flutter analyze mobile-only` RED status.**
+- **3 archived changes superseded** : `b4-mobile-only`, `t5-otel-app`,
+  `t5-otel-dart-api-realign` each gain a new `.forge-update-notes`
+  forward-pointer file (Article V immutability preserved — existing
+  files byte-identical).
+- **REVIEW.md append-only ledger entry** 2026-05-18 with
+  `breaking_change: true` + Q-006 trigger + 3-axis checklist applied.
+- **Harness `t5-otel-dartastic.test.sh`** : 13 L1 grep + 2 L2 opt-in
+  (`FORGE_T53_LIVE=1` — `flutter pub get` + `flutter analyze` on FSM
+  frontend + fresh mobile-only scaffold). Registered in `forge-ci.yml`
+  matrix (forge-ci.yml still ≤ 300 lines per t5-1 budget).
+- **Article III.4 (Ambiguity Protocol)** reinforced via the inline 3-axis
+  checklist application — Forge no longer ratifies an external pkg
+  without ticking all 3 axes (T5.2 self-validation lesson applied).
+- **Release target** : v0.4.0-rc.1 (pre-GA minor bump per
+  `docs/VERSIONING.md` because the standard breaks). Decoupled from
+  the v0.3.4 patch line which carried T5.2.
+
 ## [0.3.4] — 2026-05-18
 
 T5.2 release — Anti-Hallucination Platform Verification. One
