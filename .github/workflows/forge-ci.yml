@@ -141,6 +141,9 @@ jobs:
         # (live cargo check on fresh scaffold) is opt-in via
         # FORGE_T5BSD_LIVE=1.
         run: bash .forge/scripts/tests/t5-bin-server.test.sh --level 1
+      - name: t5-3-1.test.sh
+        # T5.3.1 docker-compose.dev.yml hygiene. L2 opt-in via FORGE_B1DUM_DOCKER=1.
+        run: bash .forge/scripts/tests/t5-3-1.test.sh --level 1
 
   # ─── gates ── verify.sh + constitution-linter.sh ───────────────
   gates:

@@ -22,7 +22,8 @@
 #   Do NOT use this file for staging or production deployments.
 # =============================================================================
 
-version: "3.8"
+# Compose v2 — no top-level `version:` key (deprecated 2024-01,
+# inferred from filename).
 
 services:
 
@@ -51,13 +52,17 @@ services:
 
   # ---------------------------------------------------------------------------
   # fsm-backend — Application backend
-  # TODO(<project-name>): set build: context and image: tag once Dockerfile is ready
-  # Replace the image below with the project image once built.
+  # ── T5.3.1 (b1-1-dev-up-matrix-fixes) — fsm-backend placeholder ──
+  # `traefik/whoami:latest` is a wiring placeholder that responds 200 OK
+  # on GET / — it lets `task dev:up` reach steady state on a fresh scaffold.
+  # Replace the image below with your real backend image (e.g.
+  # ghcr.io/org/<project-name>-backend:dev) once your Dockerfile is built,
+  # and restore the original `/health` probe path on the healthcheck below.
   # Reference Dockerfile: infra/docker/Dockerfile.backend.example
   # ---------------------------------------------------------------------------
   fsm-backend:
-    # replace with project image once built (e.g. image: ghcr.io/org/<project-name>-backend:dev)
-    image: scratch
+    image: traefik/whoami:latest
+    command: ["--port=8080"]
     env_file: .env
     environment:
       DATABASE_URL: ${DATABASE_URL}
@@ -70,7 +75,7 @@ services:
       fsm-db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/ || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5

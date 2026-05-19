@@ -1,0 +1,18 @@
+name: b1-1-dev-up-matrix-fixes
+status: archived
+created: 2026-05-19
+schema: default
+constitution_version: "1.1.0"
+parent_audit_items:
+  - T.5.3.1  # docs/new-archetypes-plan.md §0.4 (b1-1-dev-up-matrix-fixes)
+depends_on:
+  - t5-otel-dartastic-realign  # T5.3 unblocked dev-up-matrix by greening smoke-with-toolchains upstream
+  - b1-foundations             # template owner of docker-compose.dev.yml.tmpl
+  - b1-delivery                # template owner of docker-compose.dev.yml.tmpl
+timeline:
+  proposed: 2026-05-19
+  specified: 2026-05-19
+  designed: 2026-05-19
+  planned: 2026-05-19
+  implemented: 2026-05-19
+  archived: 2026-05-19

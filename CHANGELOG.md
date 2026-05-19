@@ -12,6 +12,36 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Fixed — full-stack-monorepo docker-compose.dev.yml template hygiene (T5.3.1, `b1-1-dev-up-matrix-fixes`)
+
+- Replace `image: scratch` placeholder on `fsm-backend` with
+  `traefik/whoami:latest --port 8080` stand-in (per ADR-B1-DUM-001).
+  Healthcheck probe path adjusted from `/health` to `/` ; adopter
+  comment instructs to restore `/health` when swapping in the real
+  backend image. Closes the `dev-up-matrix` smoke leg that T5.3
+  exposed once `smoke-with-toolchains` started greening.
+- Remove obsolete top-level `version: "3.8"` key (per ADR-B1-DUM-002).
+  Replaced with a 1-line `# Compose v2 — ...` forward-defensive
+  comment so adopters do not re-add the key.
+- Mirror the same edits across the **4 synchronised copies**
+  (canonical + `examples/forge-fsm-example/` + `cli/assets/` ×2 via
+  `npm run bundle`).
+- New harness `.forge/scripts/tests/t5-3-1.test.sh` (9 L1 grep-based
+  tests + 1 L2 opt-in `FORGE_B1DUM_DOCKER=1` exercising `forge init`
+  → `task dev:up` → `docker compose ps` → `task dev:down` cycle ;
+  mirrors `t5-otel-live-run::FORGE_LIVE_RUN_DOCKER=1` ADR-T5-OLR-005
+  pattern). Registered in `forge-ci.yml` `harness` job (299 lines ≤
+  NFR-CI-002 300).
+- Regenerate `.forge/scaffold-snapshots/full-stack-monorepo/1.0.0.tar.gz`
+  via `bin/forge-snapshot.sh` (deterministic `SOURCE_DATE_EPOCH`) ;
+  bundle the `cli/assets/.forge/scaffold-snapshots/...` mirror.
+- **No constitution or standard change** ; T5.3.1 is pure template
+  hygiene scoped to `full-stack-monorepo / 1.0.0` (mobile-only and
+  other archetypes untouched).
+- Tracked at `.forge/changes/b1-1-dev-up-matrix-fixes/` ; 3 ADRs
+  (`ADR-B1-DUM-001..003`) ; 9/9 harness L1 GREEN ; release vehicle
+  `v0.4.0-rc.2` (rc.1 already published on npm 2026-05-19).
+
 ## [0.4.0-rc.1] — 2026-05-19
 
 ### Changed (BREAKING) — T5.3 Workiva → Dartastic OTel substitution (`t5-otel-dartastic-realign`)

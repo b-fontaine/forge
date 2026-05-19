@@ -503,13 +503,16 @@ v1.0.0 sont désormais résolus.
 | `t5-cargo-pin-refresh`       | archived               | T5.1.E (Cargo pin correction)                  |
 | `t5-bin-server-deps`         | archived               | T5.1.E (bin-server deps + grpc-api API realign) |
 | `t5-2-platform-verification` | archived               | T5.2 (Anti-Hallucination Platform Verification — 3-axis checklist + standards-lifecycle.md v1.1.0) |
-| `t5-otel-dartastic-realign`  | implemented (ready-to-PR) | T5.3 (Workiva → Dartastic substitution, breaking standard v2.0.0) — branche `t5-otel-dartastic-realign` |
+| `t5-otel-dartastic-realign`  | archived               | T5.3 (Workiva → Dartastic substitution, breaking standard v2.0.0 ; released `v0.4.0-rc.1` 2026-05-19) |
+| `b1-1-dev-up-matrix-fixes`   | archived               | T5.3.1 (full-stack-monorepo docker-compose.dev.yml template hygiene — `traefik/whoami` placeholder + `version:` removal ; archived 2026-05-19 ; release target `v0.4.0-rc.2`) |
 
-**28 archivés** au 2026-05-18 + **1 en cours** (T5.3
-`t5-otel-dartastic-realign`, status `implemented`, awaiting
-push/PR/merge on dedicated branch). T5.3.1
-(`b1-1-dev-up-matrix-fixes`) planifié mais non-encore-créé (cf.
-§0.4). Aucun marqueur `[NEEDS CLARIFICATION:]` non résolu inline
+**30 archivés** au 2026-05-19. T5.3.1 livré sans
+`task validate` GREEN end-to-end : le L2 et `task validate`
+exposent **Q-005** (SigNoz image pins `signoz/frontend:0.55.1`
+et `signoz/query-service:0.55.1` rotted upstream — Docker Hub
+manifest unknown). Q-005 scope-out de T5.3.1 (preserve
+`docker-compose.dev.yml.tmpl` structurel) ; suivi dans **§0.5**
+ci-dessous via change `t5-otel-stack-image-refresh`. Aucun marqueur `[NEEDS CLARIFICATION:]` non résolu inline
 dans les changes archivés (tous gates `verify.sh` +
 `constitution-linter.sh` PASS).
 
@@ -1189,6 +1192,112 @@ Trois raisons :
 3. **Pattern Forge** : `t5-cargo-pin-refresh` + `t5-bin-server-deps`
    ont précédé en T5.1.E comme fix-forwards distincts du
    `cli-trust-harness` original. Même pattern ici.
+
+---
+
+## 0.5 Status update — 2026-05-19 (T5.3.2 — `t5-otel-stack-image-refresh` planned)
+
+> **Origine** : T5.3.1 L2 dry-run + `task validate` end-to-end
+> 2026-05-19 ont surfacé un blocker upstream **indépendant** de
+> T5.3.1 (Q-005, marqué `wontfix-here`) :
+>
+> ```
+> Image signoz/frontend:0.55.1       manifest unknown
+> Image signoz/query-service:0.55.1  manifest unknown
+> ```
+>
+> SigNoz a retag/removed la version `0.55.1` sur Docker Hub
+> entre 2026-05-10 (date d'archive de `t5-otel-stack` Phase A) et
+> 2026-05-19. Les deux images SigNoz pinnées dans
+> `docker-compose.dev.yml.tmpl` (et son mirror dev-up infra)
+> sont rotted upstream. `traefik/whoami:latest` (placeholder
+> T5.3.1 ADR-B1-DUM-001) **se pull correctement** — la cascade
+> de fail est strictement côté SigNoz pins.
+
+### Origine — image pins de `t5-otel-stack` Phase A rotted
+
+`t5-otel-stack` (archivé 2026-05-10) a shippé le stack obs avec
+pins fixes :
+
+- `signoz/frontend:0.55.1`
+- `signoz/query-service:0.55.1`
+- `otel/opentelemetry-collector-contrib:0.96.0` (status à
+  vérifier)
+- `grafana/beyla:2.0.1` (OBI eBPF, peu probablement rotted)
+- `coroot/coroot:1.4.4` (peu probablement rotted)
+
+L'écosystème SigNoz a publié 0.56.x / 0.57.x depuis 2026-05-10
+(à vérifier au moment du refresh). Le pin rotted bloque
+**toute la chaîne `task validate`** end-to-end pour tout adopter
+qui scaffold `full-stack-monorepo` aujourd'hui.
+
+### T5.3.2 — items proposés
+
+**T5.3.2.A — Refresh SigNoz pins**
+
+Bumper `signoz/frontend` et `signoz/query-service` vers la dernière
+version stable mutuellement compatible (probablement `0.56.x` ou
+`0.57.x` — à vérifier via `docker manifest inspect` au moment de
+l'implémentation, pas par guessing).
+
+**T5.3.2.B — Refresh OTel collector contrib pin (si rotted)**
+
+Vérifier `otel/opentelemetry-collector-contrib:0.96.0` ; si
+rotted, bumper vers la dernière `0.X.Y` mutuellement compatible
+avec les recepteurs/exporters configurés dans le contrib config.
+
+**T5.3.2.C — Refresh Beyla / Coroot pins (préventif)**
+
+`grafana/beyla:2.0.1` et `coroot/coroot:1.4.4` semblent stables
+sur Docker Hub. Vérifier malgré tout au moment du refresh ;
+pas de bump si non-rotted.
+
+**T5.3.2.D — Standard `observability.yaml` version bump
+(éventuellement)**
+
+Si le bump impose des breaking changes (env vars renommées,
+volumes obligatoires nouveaux), bump `observability.yaml` de
+v1.1.0 → v1.2.0 minor (additive) ou v2.0.0 major (breaking).
+À déterminer en design ADR-T532-001.
+
+### T5.3.2 — non-objectifs
+
+- Pas de re-architecture du stack observability (Kong, OTel, OBI,
+  Coroot). Reste B.8 / T6.
+- Pas de touch sur `t5-otel-app` (Phase B SDK init). Le contrat
+  collector reste OTLP gRPC :4317, inchangé.
+- Pas de touch sur les autres archétypes (mobile-only n'a pas
+  de stack observability scaffold).
+
+### T5.3.2 — critères de réussite
+
+- `task validate` GREEN end-to-end sur `full-stack-monorepo` smoke.
+- `task dev:up` → `docker compose ps` shows tous les services
+  SigNoz + OTel collector en state `running|healthy`.
+- 4-copy mirror sync préservé (template + example + cli/assets ×2).
+- Snapshot tarball regen (NFR-B1-DUM-006 pattern repris).
+- Harness `t5-3-1.test.sh` L2 (`FORGE_B1DUM_DOCKER=1`) passe
+  désormais GREEN end-to-end (Q-005 résolu).
+- Aucune régression sur les autres harnesses.
+- **Effort estimé** : `S` (~½ jour) si pins seulement, `M` si
+  bump impose touch sur OTel collector config ou env vars.
+- **Release target** : v0.4.0-rc.2 (même release vehicle que
+  T5.3.1) — les deux changes ship ensemble.
+
+### T5.3.2 — pourquoi un change séparé de T5.3.1
+
+Trois raisons (pattern identique au pourquoi de T5.3.1 vs T5.3) :
+
+1. **Scope auditability** : T5.3.1 = template hygiene
+   (`scratch`/`version:`/audit comment) ; T5.3.2 = upstream pin
+   refresh. Y bundler les deux dilue le narrative.
+2. **Atomic revertability** : si un bump SigNoz casse autre chose
+   (config OTel collector incompatible avec la nouvelle UI, etc.)
+   on revert UN change. Mélanger fait que toute révocation
+   touche des bugs sans rapport.
+3. **Pattern Forge** : `t5-cargo-pin-refresh` + `t5-bin-server-deps`
+   sont des pin-refreshes distincts précisément pour cette
+   raison. Même pattern ici.
 
 ---
 
