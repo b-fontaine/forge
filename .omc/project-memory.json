@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1779171963629,
+  "lastScanned": 1779304489347,
   "projectRoot": "/Users/bfontaine/git/github/forge",
   "techStack": {
     "languages": [],
@@ -9,8 +9,8 @@
     "runtime": null
   },
   "build": {
-    "buildCommand": "python3 -c \"import yaml; yaml.safe_load(open('.github/workflows/forge-ci.yml'))\" && echo \"yaml OK\" && git add .github/workflows/forge-ci.yml && git commit -m \"$(cat <<'EOF'\nfix(ci): swap cli npm run build → npm run bundle in harness job\n\nThe `harness` job in forge-ci.yml ran `cli npm run build` (tsc only),\nbut several harnesses assert that `cli/assets/.forge/...` mirrors the\nrepo-root templates. `cli/assets/` is gitignored (cli/.gitignore:3)\nand only materialised by `cli/scripts/bundle-assets.mjs` (invoked via\n`npm run bundle` = `build` + bundle-assets, and chained from\n`prepack`). Without the bundle, the mirror doesn't exist on CI\nrunners and the assertion fails by construction.\n\nConcretely : `t5-otel-dartastic.test.sh::_test_t53_l1_011_cli_assets_mirror`\n(FR-T53-C-003) was failing in CI with :\n  [FR-T53-C-003] cli/assets pubspec.yaml.tmpl missing:\n    /home/runner/work/forge/forge/cli/assets/.forge/templates/archetypes/mobile-only/pubspec.yaml.tmpl\nThe file is present locally because bundle-assets.mjs runs as part of\n`npm run bundle` (or `npm pack`), but the harness job never invoked\nthat script.\n\nFix : swap `npm run build` for `npm run bundle` in the harness job's\nsetup step. Build is a strict subset of bundle so there's no\nduplication, and the asset mirror becomes available to every\ndownstream harness step.\n\nLocal verification :\n- `rm -rf cli/assets && cd cli && npm run bundle` →\n  `bundle-assets: 1166 files → assets/`\n- `bash .forge/scripts/tests/t5-otel-dartastic.test.sh --level 1` :\n  13/13 GREEN (was 12/13 — _test_t53_l1_011 was RED).\n\nCo-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>\nEOF\n)\" 2>&1 | tail -3 && git push 2>&1 | tail -3",
-    "testCommand": "git commit -m \"$(cat <<'EOF'\nfix(ci): T5.1.B vitest skip + t5 harness contract alignment\n\nTwo follow-up CI fixes on top of f0089c5 (post-T5.3) :\n\n- `cli/test/e2e/archetypes-smoke.test.ts` — `ctx.skip()` was failing\n  with `Cannot read properties of undefined (reading 'skip')` on CI :\n  vitest 2.1.x's `it.each(rows)(name, cb)` does NOT pass a TestContext\n  to the parameterised callback, so a runtime skip is not available.\n  Refactored to partition archetypes at module-load and use\n  `it.skip.each(...)` for the toolchain-missing set. Result on CI (no\n  flutter/cargo/buf on PATH) : 1 passed + 2 skipped, with the skipped\n  declarations visible in the report (`scaffolds <name> [missing on\n  PATH: ...] (skipped — ADR-T51-001)`) instead of a silent return.\n\n- `.forge/scripts/tests/t5.test.sh` — four assertions were stale vs\n  the templates evolved in T5.1.E (`t5-cargo-pin-refresh` +\n  `t5-bin-server-deps`, 2026-05-16) and never updated alongside :\n    * `_test_t5_006` : `connectrpc` is now in inline-table form\n      ({ version = \"=0.3.3\", features = [\"axum\"] }) to enable the\n      axum feature required by `Router::into_axum_router()` ;\n      `buffa` / `buffa-types` corrected from invalid `=0.3.3` (never\n      published) to `=0.3.0` per ADR-T5CPR-001 / REVIEW.md 2026-05-16.\n      Regex extended to accept both encodings + updated pin.\n    * `_test_t5_009` : transport.yaml bumped 1.1.0 → 1.2.0 in commit\n      60fa53b (REVIEW.md ledger 2026-05-16). Assertion follows.\n    * `_test_t5_013` : `into_axum_service()` → `into_axum_router()`\n      (axum 0.8 stricter `Service` bounds, T5.1.E doc inside the\n      template). Pattern accepts both names for adopter compatibility.\n    * `_test_t5_015` : the OTel-layer-outside-connectrpc post-condition\n      moved from `transport_connect.rs.tmpl` to the call site\n      (`bin-server/main.rs.tmpl`) because axum 0.8 rejected the\n      generic `L: Layer<...>` adapter signature (T5.1.E\n      t5-bin-server-deps). The test now asserts (1) no executable\n      `.layer(` inside the adapter AND (2) a `.layer(` AFTER\n      `transport_connect::into_router` in bin-server/main.rs.tmpl.\n      FR-T5-CC-013 post-condition unchanged.\n\nThe 4 t5 harness failures are exactly the \"ratification grep-only sans\nbuild\" pattern flagged in user memory `t5_connect_codegen_lesson.md` :\ntemplates evolved to fix Rust compilation errors caught by\n`flutter analyze`-equivalent (L2 cargo check), but the L1 grep\nassertions were never refreshed. This commit closes the contract gap.\n\nLocal verification :\n- `bash .forge/scripts/tests/t5.test.sh --level 1` : 25/25 GREEN\n  (was 21/25 — 4 stale assertions).\n- `npx vitest run` with normal PATH : 72/72 GREEN.\n- `npx vitest run` with simulated empty Flutter/Cargo/buf PATH :\n  1 passed + 2 skipped (3) — skip declarations render correctly.\n\nCo-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>\nEOF\n)\" 2>&1 | tail -3 && git push 2>&1 | tail -3",
+    "buildCommand": null,
+    "testCommand": null,
     "lintCommand": null,
     "devCommand": null,
     "scripts": {}
@@ -41,7 +41,7 @@
       "path": "bin",
       "purpose": "Executable scripts",
       "fileCount": 12,
-      "lastAccessed": 1779171963586,
+      "lastAccessed": 1779304489308,
       "keyFiles": [
         "_forge-init-helpers.sh",
         "forge-demeter-scan.sh",
@@ -54,7 +54,7 @@
       "path": "cli",
       "purpose": null,
       "fileCount": 8,
-      "lastAccessed": 1779171963586,
+      "lastAccessed": 1779304489309,
       "keyFiles": [
         "README.md",
         "VERSION",
@@ -67,7 +67,7 @@
       "path": "docs",
       "purpose": "Documentation",
       "fileCount": 15,
-      "lastAccessed": 1779171963587,
+      "lastAccessed": 1779304489310,
       "keyFiles": [
         "ARCHETYPES.md",
         "ARCHITECTURE-TARGET.md",
@@ -80,7 +80,7 @@
       "path": "examples",
       "purpose": "Example code",
       "fileCount": 1,
-      "lastAccessed": 1779171963587,
+      "lastAccessed": 1779304489310,
       "keyFiles": [
         "README.md"
       ]
@@ -89,7 +89,7 @@
       "path": "scripts",
       "purpose": "Build/utility scripts",
       "fileCount": 1,
-      "lastAccessed": 1779171963588,
+      "lastAccessed": 1779304489311,
       "keyFiles": [
         "release.sh"
       ]
@@ -98,7 +98,7 @@
       "path": "cli/assets",
       "purpose": "Static assets",
       "fileCount": 17,
-      "lastAccessed": 1779171963589,
+      "lastAccessed": 1779304489314,
       "keyFiles": [
         "CHANGELOG.md",
         "CLAUDE.md",
@@ -109,7 +109,7 @@
       "path": "cli/dist",
       "purpose": "Distribution/build output",
       "fileCount": 6,
-      "lastAccessed": 1779171963590,
+      "lastAccessed": 1779304489316,
       "keyFiles": [
         "cli.d.ts",
         "cli.js",
@@ -120,27 +120,27 @@
       "path": "cli/node_modules",
       "purpose": "Dependencies",
       "fileCount": 1,
-      "lastAccessed": 1779171963590,
+      "lastAccessed": 1779304489317,
       "keyFiles": []
     }
   },
   "hotPaths": [
     {
       "path": "docs/new-archetypes-plan.md",
-      "accessCount": 48,
-      "lastAccessed": 1779139985822,
+      "accessCount": 58,
+      "lastAccessed": 1779308720255,
       "type": "file"
     },
     {
       "path": ".forge/product/roadmap.md",
-      "accessCount": 23,
-      "lastAccessed": 1779140111641,
+      "accessCount": 26,
+      "lastAccessed": 1779308733166,
       "type": "file"
     },
     {
       "path": "CHANGELOG.md",
-      "accessCount": 14,
-      "lastAccessed": 1779133770733,
+      "accessCount": 15,
+      "lastAccessed": 1779308764894,
       "type": "file"
     },
     {
