@@ -42,6 +42,24 @@ minor bump and will be called out under a `### BREAKING` subsection.
   (`ADR-B1-DUM-001..003`) ; 9/9 harness L1 GREEN ; release vehicle
   `v0.4.0-rc.2` (rc.1 already published on npm 2026-05-19).
 
+### Known issue (v0.4.0-rc.2)
+
+- **`task validate` `dev-up-matrix` leg stays RED** on
+  `full-stack-monorepo` because the SigNoz image pins shipped by
+  `t5-otel-stack` (2026-05-10) are **rotted upstream** (Docker
+  Hub manifest unknown, including the last published 0.76.3).
+  SigNoz has completed a full architectural migration
+  (3-services → 1 unified `signoz/signoz` image) which makes a
+  simple pin refresh impossible. An attempted follow-up
+  `t5-otel-stack-image-refresh` (T5.3.2) was ABANDONED
+  2026-05-20 after `docker manifest inspect` verification
+  surfaced the architecture change. Fix is deferred to
+  **B.8 / T6** (flagship 1.0.0 → 2.0.0 observability stack
+  re-architecture per ADR-008). Full evidence + rationale in
+  `docs/new-archetypes-plan.md` §0.5. T5.3.1's L1 harness
+  (template hygiene) remains 9/9 GREEN ; only the L2 docker
+  cycle is affected.
+
 ## [0.4.0-rc.1] — 2026-05-19
 
 ### Changed (BREAKING) — T5.3 Workiva → Dartastic OTel substitution (`t5-otel-dartastic-realign`)

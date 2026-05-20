@@ -1195,109 +1195,127 @@ Trois raisons :
 
 ---
 
-## 0.5 Status update — 2026-05-19 (T5.3.2 — `t5-otel-stack-image-refresh` planned)
+## 0.5 Status update — 2026-05-20 (T5.3.2 — `t5-otel-stack-image-refresh` ABANDONED)
 
-> **Origine** : T5.3.1 L2 dry-run + `task validate` end-to-end
-> 2026-05-19 ont surfacé un blocker upstream **indépendant** de
-> T5.3.1 (Q-005, marqué `wontfix-here`) :
->
-> ```
-> Image signoz/frontend:0.55.1       manifest unknown
-> Image signoz/query-service:0.55.1  manifest unknown
-> ```
->
-> SigNoz a retag/removed la version `0.55.1` sur Docker Hub
-> entre 2026-05-10 (date d'archive de `t5-otel-stack` Phase A) et
-> 2026-05-19. Les deux images SigNoz pinnées dans
-> `docker-compose.dev.yml.tmpl` (et son mirror dev-up infra)
-> sont rotted upstream. `traefik/whoami:latest` (placeholder
-> T5.3.1 ADR-B1-DUM-001) **se pull correctement** — la cascade
-> de fail est strictement côté SigNoz pins.
+> **Verdict 2026-05-20** : **T5.3.2 ABANDONED** — le scope original
+> ("pin refresh") est **impossible**. La vérification empirique
+> par `docker manifest inspect` (Article III.4 strict) a révélé
+> que l'architecture SigNoz pinnée par `t5-otel-stack` (2026-05-10)
+> n'existe plus du tout sur Docker Hub. Ce n'est pas un retag,
+> c'est une **migration architecturale upstream** complète. Le
+> fix appartient à **B.8 / T6** (re-architecture du stack
+> observability), pas à un patch v0.4.0-rc.2.
 
-### Origine — image pins de `t5-otel-stack` Phase A rotted
+### Investigation 2026-05-20 — evidence verbatim
 
-`t5-otel-stack` (archivé 2026-05-10) a shippé le stack obs avec
-pins fixes :
+Vérification `docker manifest inspect` (exit code) sur les 9
+pins shippés par `t5-otel-stack` Phase A 2026-05-10 :
 
-- `signoz/frontend:0.55.1`
-- `signoz/query-service:0.55.1`
-- `otel/opentelemetry-collector-contrib:0.96.0` (status à
-  vérifier)
-- `grafana/beyla:2.0.1` (OBI eBPF, peu probablement rotted)
-- `coroot/coroot:1.4.4` (peu probablement rotted)
+```
+✓ EXISTS: otel/opentelemetry-collector-contrib:0.96.0   (0.152.1 latest 2026-05-20)
+✓ EXISTS: clickhouse/clickhouse-server:24.1.2-alpine
+✗ GONE  : kong:3.6-alpine                                (Kong a retiré alpine variant)
+✓ EXISTS: grafana/beyla:2.0.1
+✗ GONE  : coroot/coroot:1.4.4                            (rotted)
+✗ GONE  : signoz/frontend:0.55.1                         (rotted, confirmé)
+✗ GONE  : signoz/frontend:0.76.3                         (DERNIÈRE publiée, aussi rotted)
+✓ EXISTS: signoz/query-service:0.77.0-c86203e6b-oss      (mais sans frontend...)
+✓ EXISTS: signoz/signoz:v0.125.1                         (NEW unified, publié 2026-05-20)
+✓ EXISTS: signoz/signoz-otel-collector:v0.144.4          (NEW collector, mai 2026)
+```
 
-L'écosystème SigNoz a publié 0.56.x / 0.57.x depuis 2026-05-10
-(à vérifier au moment du refresh). Le pin rotted bloque
-**toute la chaîne `task validate`** end-to-end pour tout adopter
-qui scaffold `full-stack-monorepo` aujourd'hui.
+Docker Hub tag listing API (top 5 ordering=last_updated) :
 
-### T5.3.2 — items proposés
+```
+signoz/frontend      → tags LAST published 2025-03-18 (14 mois, abandonné)
+signoz/query-service → tags LAST published 2025-03-24 (14 mois, abandonné)
+signoz/signoz        → tag v0.125.1 publié 2026-05-20  (actif)
+otel/...contrib      → tag 0.152.1 publié 2026-05-20   (actif)
+```
 
-**T5.3.2.A — Refresh SigNoz pins**
+### Lecture — SigNoz a fait une rearch majeure
 
-Bumper `signoz/frontend` et `signoz/query-service` vers la dernière
-version stable mutuellement compatible (probablement `0.56.x` ou
-`0.57.x` — à vérifier via `docker manifest inspect` au moment de
-l'implémentation, pas par guessing).
+Courant 2025-2026, SigNoz a migré de **3 services séparés**
+(`signoz/frontend` + `signoz/query-service` + collector externe)
+à **1 image unifiée** `signoz/signoz` + **collector SigNoz-flavored**
+`signoz/signoz-otel-collector`. L'ancienne archi 3-services est
+**morte** sur Docker Hub : non seulement `0.55.1` est rotted,
+mais **la dernière version 0.76.3 aussi** (Docker Hub pruning).
+Pas de target version récente disponible pour la voie pin-refresh.
 
-**T5.3.2.B — Refresh OTel collector contrib pin (si rotted)**
+Conséquence : un "pin refresh" qui se contenterait de bumper le
+numéro de version est **techniquement impossible** — il n'y a
+plus de version récente à viser dans l'archi 3-services.
 
-Vérifier `otel/opentelemetry-collector-contrib:0.96.0` ; si
-rotted, bumper vers la dernière `0.X.Y` mutuellement compatible
-avec les recepteurs/exporters configurés dans le contrib config.
+### Pourquoi T5.3.2 est ABANDONED (pas re-scopée)
 
-**T5.3.2.C — Refresh Beyla / Coroot pins (préventif)**
+Trois raisons :
 
-`grafana/beyla:2.0.1` et `coroot/coroot:1.4.4` semblent stables
-sur Docker Hub. Vérifier malgré tout au moment du refresh ;
-pas de bump si non-rotted.
+1. **Scope-out explicite du proposal initial T5.3.2** : "**No
+   re-architecture of the observability stack.** T6 / B.8
+   flagship 1.0.0 → 2.0.0 will replace Kong → Envoy, swap
+   SigNoz → Grafana stack ?, etc. Out of T5.3.2." Re-architecturer
+   autour de `signoz/signoz:v0.125.1` est précisément ce qui
+   est scope-out.
+2. **Effort réel disjoint de la promesse `v0.4.0-rc.2` patch** :
+   le proposal annonçait `S`–`M` (½ à 1 jour) sur l'hypothèse
+   pin refresh. Re-architecture autour de l'image unifiée = `L`-`XL`
+   minimum (Compose layout, env vars, volumes, healthchecks,
+   peut-être Janus rules + Demeter scan refresh).
+3. **B.8 / T6 va swap le stack de toute façon** : ADR-008
+   (`docs/ARCHITECTURE-TARGET.md`) prévoit `KEEP-WITH-CHANGES
+   SigNoz + OBI + Coroot` lors de la migration flagship 1.0.0
+   → 2.0.0. Investir maintenant dans la rearch SigNoz, c'est
+   du throwaway si B.8 décide de swap vers Grafana LGTM ou
+   autre.
 
-**T5.3.2.D — Standard `observability.yaml` version bump
-(éventuellement)**
+### Conséquences immédiates
 
-Si le bump impose des breaking changes (env vars renommées,
-volumes obligatoires nouveaux), bump `observability.yaml` de
-v1.1.0 → v1.2.0 minor (additive) ou v2.0.0 major (breaking).
-À déterminer en design ADR-T532-001.
+- **`task validate` reste RED sur main** pour le leg `dev-up-matrix`
+  full-stack-monorepo. Documenté comme **known-issue de
+  v0.4.0-rc.2** dans `CHANGELOG.md`.
+- **T5.3.1 (`b1-1-dev-up-matrix-fixes`) reste valide** — il fixe
+  le placeholder `image: scratch` + `version: "3.8"` obsolete,
+  et ce contrat L1 (9/9 GREEN) est entièrement satisfait. Le
+  L2 cycle ne peut pas atteindre le steady state à cause des
+  pins SigNoz rotted, mais c'est désormais documenté comme
+  out-of-scope.
+- **Q-005 du T5.3.1 archived** : statut normalisé `wontfix-here`
+  → `wontfix` (canonical F.1 enum), resolution mise à jour
+  pour pointer vers B.8 / T6 plutôt que vers le T5.3.2 maintenant
+  abandonné.
+- **v0.4.0-rc.2** : ship T5.3.1 seul (template hygiene), pas
+  de pin refresh.
 
-### T5.3.2 — non-objectifs
+### Re-routage de l'effort
 
-- Pas de re-architecture du stack observability (Kong, OTel, OBI,
-  Coroot). Reste B.8 / T6.
-- Pas de touch sur `t5-otel-app` (Phase B SDK init). Le contrat
-  collector reste OTLP gRPC :4317, inchangé.
-- Pas de touch sur les autres archétypes (mobile-only n'a pas
-  de stack observability scaffold).
+Le fix réel appartient à **B.8 / T6 (flagship 1.0.0 → 2.0.0)**
+dans le module **B.8.7** ou équivalent ("Observability stack
+re-architecture" — décision SigNoz unified vs Grafana LGTM vs
+autre, partie de la matrice ADR-008). À ce moment Atlas
+re-architecturera le `docker-compose.dev.yml.tmpl` autour du
+choix retenu, avec breaking `observability.yaml` v2.0.0.
 
-### T5.3.2 — critères de réussite
+Le proposal abandonné et son investigation sont effacés du
+working tree (untracked, jamais commit). Cette section §0.5
+préserve l'evidence `docker manifest inspect` ci-dessus pour
+que le futur architecte B.8 n'ait pas à re-découvrir le même
+dead-end.
 
-- `task validate` GREEN end-to-end sur `full-stack-monorepo` smoke.
-- `task dev:up` → `docker compose ps` shows tous les services
-  SigNoz + OTel collector en state `running|healthy`.
-- 4-copy mirror sync préservé (template + example + cli/assets ×2).
-- Snapshot tarball regen (NFR-B1-DUM-006 pattern repris).
-- Harness `t5-3-1.test.sh` L2 (`FORGE_B1DUM_DOCKER=1`) passe
-  désormais GREEN end-to-end (Q-005 résolu).
-- Aucune régression sur les autres harnesses.
-- **Effort estimé** : `S` (~½ jour) si pins seulement, `M` si
-  bump impose touch sur OTel collector config ou env vars.
-- **Release target** : v0.4.0-rc.2 (même release vehicle que
-  T5.3.1) — les deux changes ship ensemble.
+### Article III.4 — leçon institutionnalisée
 
-### T5.3.2 — pourquoi un change séparé de T5.3.1
+Cette abandon est exactement ce que la discipline Article III.4
+(Anti-Hallucination Protocol) est conçue pour produire :
+**Author proposed la shape ("pin refresh, effort S-M") ;
+Reviewer (Atlas via `docker manifest inspect`) a vérifié les
+bytes ; la vérification a invalidé l'hypothèse**. Le change a
+été abandonné AVANT toute écriture de code, AVANT tout commit
+production. Coût total : ~30 min d'investigation, zéro dette.
 
-Trois raisons (pattern identique au pourquoi de T5.3.1 vs T5.3) :
-
-1. **Scope auditability** : T5.3.1 = template hygiene
-   (`scratch`/`version:`/audit comment) ; T5.3.2 = upstream pin
-   refresh. Y bundler les deux dilue le narrative.
-2. **Atomic revertability** : si un bump SigNoz casse autre chose
-   (config OTel collector incompatible avec la nouvelle UI, etc.)
-   on revert UN change. Mélanger fait que toute révocation
-   touche des bugs sans rapport.
-3. **Pattern Forge** : `t5-cargo-pin-refresh` + `t5-bin-server-deps`
-   sont des pin-refreshes distincts précisément pour cette
-   raison. Même pattern ici.
+Pattern à reproduire pour tout pin-refresh futur : **lancer
+`docker manifest inspect` AVANT d'écrire les specs**, pas
+après. Si la cible n'existe pas dans la forme attendue, abandon
+immédiat.
 
 ---
 

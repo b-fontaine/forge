@@ -138,20 +138,27 @@ Hub between 2026-05-10 and 2026-05-19).
 
 ### Resolution
 
-- **Resolved on**: 2026-05-19
-- **Decision**: **wontfix in T5.3.1**. The proposal explicitly
-  scope-outs SigNoz / OBI / Coroot / OTel-collector layout
-  ("layout stays as shipped by T5 `t5-otel-stack` … T5.3.1 =
-  template hygiene, not re-architecture B.8"). Image-pin refresh
-  belongs in a separate change (`t5-otel-stack-image-refresh` or
-  similar, pattern mirrors `t5-cargo-pin-refresh` Option B
-  follow-on to `cli-trust-harness`). Tracked in
-  `docs/new-archetypes-plan.md` §0.5 as a T5 follow-up candidate.
-- **Rationale**: T5.3.1's L1 contract (9/9 GREEN) is met. L2 is
-  opt-in and does not gate CI (ADR-B1-DUM-003 / precedent
-  ADR-T5-OLR-005). L2 correctly captured the upstream blocker —
-  which is the documented purpose of L2 — and the blocker is
-  logged for the next focused change.
+- **Resolved on**: 2026-05-19 (initial), updated 2026-05-20.
+- **Decision**: **wontfix — deferred to B.8 / T6** (flagship
+  1.0.0 → 2.0.0 observability stack re-architecture per ADR-008).
+- **Rationale**: An attempted follow-up `t5-otel-stack-image-refresh`
+  (T5.3.2, proposed 2026-05-19) was **ABANDONED 2026-05-20**
+  after empirical `docker manifest inspect` verification
+  (Article III.4) revealed SigNoz had completed a full
+  architectural migration : 3-services
+  (`signoz/frontend` + `signoz/query-service` + external collector)
+  → 1 unified image (`signoz/signoz` + `signoz/signoz-otel-collector`).
+  The old 3-services architecture is **fully gone** from Docker
+  Hub — not just 0.55.1, but every published tag back to and
+  including the last release 0.76.3 (Docker Hub pruning). Pin
+  refresh is technically impossible ; the fix is a stack
+  re-architecture which is explicitly scope-out of T5.3.1 *and*
+  of the would-be T5.3.2. Full investigation log preserved in
+  `docs/new-archetypes-plan.md` §0.5.
+- **Consequence**: `task validate` `dev-up-matrix` stays RED on
+  main as a documented known-issue of v0.4.0-rc.2 (CHANGELOG
+  entry). T5.3.1's L1 contract remains fully met ; the L2 cycle
+  is intentionally left unable to reach steady state.
 
 ---
 
@@ -162,4 +169,4 @@ Hub between 2026-05-10 and 2026-05-19).
 | Q-001 | answered | **ADR-B1-DUM-001** — Option A `traefik/whoami:latest` + `--port 8080` + `/` probe |
 | Q-002 | answered | **ADR-B1-DUM-002** — Option B bare delete + 1-line forward-defensive comment      |
 | Q-003 | answered | **ADR-B1-DUM-003** — Option A Taskfile + L2 opt-in `FORGE_B1DUM_DOCKER=1`         |
-| Q-005 | wontfix  | upstream `signoz/frontend:0.55.1` manifest gone — follow-up change candidate `t5-otel-stack-image-refresh` |
+| Q-005 | wontfix  | upstream SigNoz did a full 3-services → 1 unified-image rearch ; pin refresh impossible. Deferred to **B.8 / T6** (ADR-008 stack re-architecture). T5.3.2 attempt abandoned 2026-05-20 ; see `docs/new-archetypes-plan.md` §0.5. |
