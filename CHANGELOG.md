@@ -12,6 +12,28 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+## [0.4.0-rc.2] — 2026-05-20
+
+### Added — vitest globalSetup bundle preflight (T5.3.3, `t5-3-3-vitest-bundle-preflight`)
+
+- `cli/test/global-setup.ts` runs `npm run bundle` once before any
+  vitest suite starts (via `cli/vitest.config.ts::test.globalSetup`).
+  Closes the bypass where bare `vitest run` / `npx vitest` skipped
+  the bundle and the e2e suite rsynced from a stale `cli/assets/`
+  mirror — surfaced as a LOW finding in the T5.3.1 independent
+  code-reviewer pass and reproduced 2026-05-20.
+- `spawnSync` invocation (ADR-T533-001) ; throws on non-zero exit
+  so the failure is visible at globalSetup time, not buried inside
+  later e2e stderr.
+- New harness `t5-3-3.test.sh` (5 L1 grep tests). No L2 needed —
+  the inverse proof (running vitest against a stale `cli/assets/`)
+  is intrinsically covered by the existing e2e suite.
+- `forge-ci.yml` matrix entry adjusted with comment compression
+  on the `i5.test.sh` / `f3.test.sh` / `t5-1.test.sh` /
+  `t5-cargo.test.sh` / `t5-bin-server.test.sh` blocks per
+  ADR-T533-002 to stay ≤ 300 lines (NFR-CI-002, now 294/300).
+
+
 ### Fixed — full-stack-monorepo docker-compose.dev.yml template hygiene (T5.3.1, `b1-1-dev-up-matrix-fixes`)
 
 - Replace `image: scratch` placeholder on `fsm-backend` with
