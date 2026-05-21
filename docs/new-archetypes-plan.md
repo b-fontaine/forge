@@ -505,16 +505,21 @@ v1.0.0 sont désormais résolus.
 | `t5-2-platform-verification` | archived               | T5.2 (Anti-Hallucination Platform Verification — 3-axis checklist + standards-lifecycle.md v1.1.0) |
 | `t5-otel-dartastic-realign`  | archived               | T5.3 (Workiva → Dartastic substitution, breaking standard v2.0.0 ; released `v0.4.0-rc.1` 2026-05-19) |
 | `b1-1-dev-up-matrix-fixes`   | archived               | T5.3.1 (full-stack-monorepo docker-compose.dev.yml template hygiene — `traefik/whoami` placeholder + `version:` removal ; archived 2026-05-19 ; release target `v0.4.0-rc.2`) |
+| `t5-3-3-vitest-bundle-preflight` | implemented        | T5.3.3 (vitest globalSetup runs `npm run bundle` once before any test suite, closes `npx vitest` bypass surfaced as T5.3.1 reviewer LOW finding ; `v0.4.0-rc.3`/`0.4.0` target) |
 
-**30 archivés** au 2026-05-19. T5.3.1 livré sans
-`task validate` GREEN end-to-end : le L2 et `task validate`
-exposent **Q-005** (SigNoz image pins `signoz/frontend:0.55.1`
-et `signoz/query-service:0.55.1` rotted upstream — Docker Hub
-manifest unknown). Q-005 scope-out de T5.3.1 (preserve
-`docker-compose.dev.yml.tmpl` structurel) ; suivi dans **§0.5**
-ci-dessous via change `t5-otel-stack-image-refresh`. Aucun marqueur `[NEEDS CLARIFICATION:]` non résolu inline
-dans les changes archivés (tous gates `verify.sh` +
-`constitution-linter.sh` PASS).
+**31 archivés** au 2026-05-20 (30 archivés + 1 implemented ce
+jour : T5.3.3). T5.3.1 livré sans `task validate` GREEN
+end-to-end : le L2 et `task validate` exposent **Q-005**
+(SigNoz image pins rotted upstream + architecture migration
+3-services → unified ; pin refresh impossible). Tentative
+T5.3.2 (`t5-otel-stack-image-refresh`) **ABANDONED 2026-05-20**
+après vérification `docker manifest inspect` (Article III.4),
+détails §0.5 ci-dessous. Q-005 reroutée vers **B.8 / T6**
+(re-architecture du stack observability per ADR-008). T5.3.3
+(this) ferme la dette `npx vitest` bypass que T5.3.1 a
+surfacée — voir §0.6. Aucun marqueur `[NEEDS CLARIFICATION:]`
+non résolu inline dans les changes archivés (tous gates
+`verify.sh` + `constitution-linter.sh` PASS).
 
 ---
 
@@ -1316,6 +1321,65 @@ Pattern à reproduire pour tout pin-refresh futur : **lancer
 `docker manifest inspect` AVANT d'écrire les specs**, pas
 après. Si la cible n'existe pas dans la forme attendue, abandon
 immédiat.
+
+---
+
+## 0.6 Status update — 2026-05-20 (T5.3.3 — `t5-3-3-vitest-bundle-preflight` ✅ implemented)
+
+> **Origine** : T5.3.1 code-reviewer LOW finding (2026-05-19)
+> + user-reproduced 2026-05-20. `cli/assets/` est gitignored
+> et regénéré par `npm run bundle`. Les e2e tests rsync depuis
+> `cli/assets/` mais `npx vitest run` n'invoque pas `npm run
+> bundle` (seul `npm test` le faisait via `prepack` chain).
+> Quand un contributeur touche les templates canoniques puis
+> lance `vitest` directement, les e2e fail sur stale assets
+> (rsync exit 23 mobile-only, forge init exit 255
+> full-stack-monorepo).
+
+### Fix livré
+
+`cli/test/global-setup.ts` (vitest `globalSetup`) lance
+`npm run bundle` une fois avant toute test suite. Couvre
+**toutes les entry paths** (`vitest run`, `npx vitest`,
+`npm test`, `pnpm vitest`, etc.). Wired via
+`cli/vitest.config.ts::test.globalSetup`.
+
+**ADR-T533-001** : `spawnSync` (synchrone) plutôt qu'async —
+globalSetup serial avant toute parallélisation de test, pas
+de concurrency à exploiter, code plus court, error
+propagation plus simple via `result.status`.
+
+**ADR-T533-002** : `forge-ci.yml` compression — comments
+`i5.test.sh` + `f3.test.sh` + `t5-1` + `t5-cargo` +
+`t5-bin-server` trimés à 1-line chacun pour ajouter
+`t5-3-3.test.sh` matrix entry. Net : 294 lignes (≤ 300,
+NFR-CI-002, 6 lignes de headroom retrouvées).
+
+### Inverse proof exécuté
+
+```
+$ rm -rf cli/assets/
+$ npx vitest run cli/test/e2e/archetypes-smoke.test.ts
+[vitest globalSetup] running 'npm run bundle' in cli/
+bundle-assets: 1168 files → assets/
+ ✓ test/e2e/archetypes-smoke.test.ts (3 tests) 6160ms
+ Tests  3 passed (3)
+```
+
+Le globalSetup détecte l'absence de `cli/assets/`, le
+régénère, et les 3 e2e tests passent. Le mode de failure que
+T5.3.3 cible est désormais structurellement impossible.
+
+### Effort + release
+
+- **Effort** : `XS` (~30 min total, pipeline tight design
+  ADRs inline).
+- **Release target** : `v0.4.0-rc.3` ou `v0.4.0` final
+  (rc.2 sealed entre temps, T5.3.3 ne piggyback pas — sera
+  dans le prochain rc/release).
+- **Harness** : `t5-3-3.test.sh` 5/5 L1 GREEN. No L2 —
+  inverse proof est intrinsèquement couvert par la e2e
+  suite existante.
 
 ---
 

@@ -119,31 +119,26 @@ jobs:
       - name: i3.test.sh
         run: bash .forge/scripts/tests/i3.test.sh --level 1,2
       - name: i5.test.sh
-        # I.5 reusable compliance workflow harness. L1-only by default ;
-        # L2 (act-based smoke) is opt-in via FORGE_I5_ACT=1 per ADR-I5-CW-003.
+        # I.5 reusable compliance workflow harness. L2 opt-in via FORGE_I5_ACT=1 (ADR-I5-CW-003).
         run: bash .forge/scripts/tests/i5.test.sh --level 1
       - name: f3.test.sh
-        # F.3 release script fix harness. L1-only by default ; L2
-        # (dry-run OTP forward fixture) is opt-in via FORGE_F3_LIVE=1
-        # per ADR-F3-004 gate pattern.
+        # F.3 release script fix harness. L2 opt-in via FORGE_F3_LIVE=1 (ADR-F3-004).
         run: bash .forge/scripts/tests/f3.test.sh --level 1
       - name: t5-1.test.sh
-        # T5.1 CLI Trust Harness. L1-only by default ; L2 opt-in via
-        # FORGE_T51_LIVE=1 / FORGE_T51_PACK=1 (ADR-T51-001 / -005).
+        # T5.1 CLI Trust Harness. L2 opt-in via FORGE_T51_LIVE=1 / FORGE_T51_PACK=1.
         run: bash .forge/scripts/tests/t5-1.test.sh --level 1
       - name: t5-cargo.test.sh
-        # T5.1.E Cargo pin refresh harness. L1-only by default ; L2
-        # (live crates.io resolution check) is opt-in via
-        # FORGE_T5C_LIVE=1.
+        # T5.1.E Cargo pin refresh. L2 opt-in via FORGE_T5C_LIVE=1.
         run: bash .forge/scripts/tests/t5-cargo.test.sh --level 1
       - name: t5-bin-server.test.sh
-        # T5.1.E bin-server deps harness. L1-only by default ; L2
-        # (live cargo check on fresh scaffold) is opt-in via
-        # FORGE_T5BSD_LIVE=1.
+        # T5.1.E bin-server deps. L2 opt-in via FORGE_T5BSD_LIVE=1.
         run: bash .forge/scripts/tests/t5-bin-server.test.sh --level 1
       - name: t5-3-1.test.sh
         # T5.3.1 docker-compose.dev.yml hygiene. L2 opt-in via FORGE_B1DUM_DOCKER=1.
         run: bash .forge/scripts/tests/t5-3-1.test.sh --level 1
+      - name: t5-3-3.test.sh
+        # T5.3.3 vitest globalSetup bundle preflight (no L2).
+        run: bash .forge/scripts/tests/t5-3-3.test.sh --level 1
 
   # ─── gates ── verify.sh + constitution-linter.sh ───────────────
   gates:
