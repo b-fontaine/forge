@@ -10,7 +10,7 @@
   },
   "build": {
     "buildCommand": null,
-    "testCommand": null,
+    "testCommand": "git add VERSION cli/VERSION cli/package-lock.json cli/package.json CHANGELOG.md && \\\ngit commit -m \"$(cat <<'EOF'\nchore(release): v0.4.0-rc.2 — T5.3.1 + T5.3.3\n\nBump VERSION + cli/VERSION + cli/package.json + cli/package-lock.json\nto 0.4.0-rc.2. Seal CHANGELOG section [0.4.0-rc.2] with both T5.3.1\nand T5.3.3 entries + the known-issue note for the SigNoz image-rot\nblocker deferred to B.8 / T6 (per `docs/new-archetypes-plan.md` §0.5).\n\nRelease scope :\n\n  - T5.3.1 (b1-1-dev-up-matrix-fixes) — `docker-compose.dev.yml.tmpl`\n    template hygiene (image: scratch → traefik/whoami:latest, version:\n    \"3.8\" removal). Archived 2026-05-19, commit f731c13.\n  - T5.3.3 (t5-3-3-vitest-bundle-preflight) — vitest globalSetup\n    bundle preflight closing the `npx vitest` bypass. Archived\n    2026-05-20, commit 05cc78d.\n  - T5.3.2 (t5-otel-stack-image-refresh) — ABANDONED 2026-05-20\n    after docker manifest inspect verification revealed SigNoz did\n    a full archi migration. Not part of rc.2 ; deferred to B.8.\n\nReplaces three previous \"chore(version): v0.4.0-rc.2\" commits\n(be8df9a, 75acd16, f2dd582) that landed across multiple release.sh\nattempts — folded into this single clean commit via soft-reset on\nde93e1a + 2-commit split. T5.3.3 feature commit re-ordered to\nprecede this release bump (was f2dd582 < 6ef2138 < d963905 ;\nnow 05cc78d < <this>).\n\nLocal v0.4.0-rc.2 tag was deleted prior to the squash ; remote\nnever had it ; npm @sdd-forge/cli@0.4.0-rc.2 was never published.\n\nEnvironment ready for `bash scripts/release.sh --version 0.4.0-rc.2`.\n\nCo-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>\nEOF\n)\" && echo \"\" && echo \"=== clean main history ===\"; git log --oneline -8",
     "lintCommand": null,
     "devCommand": null,
     "scripts": {}
@@ -127,20 +127,20 @@
   "hotPaths": [
     {
       "path": "docs/new-archetypes-plan.md",
-      "accessCount": 58,
-      "lastAccessed": 1779308720255,
+      "accessCount": 62,
+      "lastAccessed": 1779310566660,
       "type": "file"
     },
     {
       "path": ".forge/product/roadmap.md",
-      "accessCount": 26,
-      "lastAccessed": 1779308733166,
+      "accessCount": 27,
+      "lastAccessed": 1779310584854,
       "type": "file"
     },
     {
       "path": "CHANGELOG.md",
-      "accessCount": 15,
-      "lastAccessed": 1779308764894,
+      "accessCount": 16,
+      "lastAccessed": 1779347737453,
       "type": "file"
     },
     {
