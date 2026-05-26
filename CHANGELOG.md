@@ -12,6 +12,8 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+## [0.4.0-rc.3]
+
 ### Fixed — Coroot image rehosted ghcr.io (B.8.8, `b8-coroot-rehost`)
 
 - Docker Hub public access on `coroot/coroot:1.4.4` returns
