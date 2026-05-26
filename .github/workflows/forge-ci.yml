@@ -139,6 +139,9 @@ jobs:
       - name: t5-3-3.test.sh
         # T5.3.3 vitest globalSetup bundle preflight (no L2).
         run: bash .forge/scripts/tests/t5-3-3.test.sh --level 1
+      - name: b8-coroot.test.sh
+        # B.8.8 Coroot rehost ghcr.io + 1.20.2. L2 opt-in via FORGE_B8_COROOT_DOCKER=1.
+        run: bash .forge/scripts/tests/b8-coroot.test.sh --level 1
 
   # ─── gates ── verify.sh + constitution-linter.sh ───────────────
   gates:

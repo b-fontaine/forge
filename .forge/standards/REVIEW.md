@@ -442,3 +442,49 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   `t5-1.test.sh::ci_line_budget` (forge-ci.yml ≤ 300) preserved.
   Independent code-reviewer pass (per T5.2 self-validation lesson
   / NFR-T53-010) executed pre-archive.
+
+---
+
+## 2026-05-25 — Updated observability.yaml to v1.2.0 (b8-coroot-rehost)
+
+- **Reviewer**: @bfontaine
+- **Reviewed standards**:
+
+  | Standard           | Version | Decision           | Next review due | Notes                                                                                                                                          |
+  |--------------------|---------|--------------------|-----------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+  | observability.yaml | 1.2.0   | KEEP-WITH-CHANGES  | 2027-05-04      | Bumped `versions.coroot` `1.4.4` → `1.20.2` ; host migrated `docker.io/coroot/coroot` → `ghcr.io/coroot/coroot` (no v-prefix per ADR-B8-COR-001 — inverted at impl after L2 manifest-pull caught proposal's mis-read). |
+
+- **Decision**: Updated by `b8-coroot-rehost` (pilot of the
+  `b8-observability-rearch` trio, B.8.8 in
+  `docs/new-archetypes-plan.md` §4.2). Additive only —
+  `exception_constitutional: false` preserved, no breaking change.
+- **Notes**: Coroot host migration surfaced 2026-05-24 by verify-then-pin
+  pass institutionalised after T5.3.2 ABANDONED. `docker manifest
+  inspect coroot/coroot:1.4.4` returns `denied: requested access to
+  the resource is denied / unauthorized: authentication required` ;
+  `docker manifest inspect ghcr.io/coroot/coroot:1.20.2` returns a
+  valid multi-arch OCI index (amd64 + arm64). The early proposal of
+  this change claimed v-prefix mandatory on GHCR — that was an
+  inverted verify-then-pin transcript (background-task outputs
+  mis-labelled during `/forge:explore`), caught at `/forge:implement`
+  Phase 6 by the L2 manifest-pull fixture, which failed against
+  `ghcr.io/coroot/coroot:v1.20.2` ("manifest unknown") and passed
+  against the unprefixed `1.20.2`. The true convention is **uniform
+  no-v-prefix** across `versions.*` — Coroot on GHCR and Beyla on
+  Docker Hub both accept the unprefixed form. Pin convention note
+  inline above `versions:` block documents the registry migration
+  + the no-v-prefix discovery with a pointer to
+  `.forge/changes/b8-coroot-rehost/evidence.md` § 1 for the corrected
+  transcripts. ADR-B8-COR-001 rewritten 2026-05-25 (original draft
+  preserved in git history per Article V). `rationale:` block
+  extended with Coroot CE jurisdiction posture per ADR-B8-COR-004
+  (Coroot Inc US-incorporated but CE is Apache-2.0 with no upstream
+  phone-home — T1/T2 OK, T3 SHOULD flag candidate-substitution at
+  deployment-time Demeter pass ; no new K.3 rule in this sub-change).
+  Realised by 4 manifest copies (canonical .tmpl + cli bundle .tmpl
+  + example rendered + cli bundle example) all carrying the new pin
+  + audit comment + `forge.dev/standard: "observability.yaml@1.2.0"`
+  annotation bump. Harness `b8-coroot.test.sh --level 1` 13/13 GREEN
+  + L2 opt-in (`FORGE_B8_COROOT_DOCKER=1`) asserts manifest pullable
+  + `--config` flag valid + verify-then-pin invariant
+  (`docker.io/coroot/coroot:1.4.4` still denied).

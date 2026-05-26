@@ -62,7 +62,7 @@ metadata:
     app.kubernetes.io/name: <project-name>
     app.kubernetes.io/component: coroot
   annotations:
-    forge.dev/standard: "observability.yaml@1.1.0"
+    forge.dev/standard: "observability.yaml@1.2.0"
 spec:
   replicas: 1
   selector:
@@ -75,9 +75,12 @@ spec:
         app.kubernetes.io/name: <project-name>
         app.kubernetes.io/component: coroot
     spec:
+      # ── B.8.8 / b8-coroot-rehost (2026-05-24) — image rehost ghcr.io ──
+      # Migrated from coroot/coroot:1.4.4 (docker.io public-access denied
+      # 2026-05-24, verify-then-pin lesson T5.3.2 institutionalised).
       containers:
         - name: coroot
-          image: coroot/coroot:1.4.4
+          image: ghcr.io/coroot/coroot:1.20.2
           imagePullPolicy: IfNotPresent
           args: ["--config=/etc/coroot/config.yaml"]
           ports:

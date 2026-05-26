@@ -1,14 +1,24 @@
 # Forge Standard — Observability stack
 # Audit: T.4 (t4-adr-ratification, 2026-05-04) ; T.5 (t5-otel-stack, 2026-05-09)
+#        ; B.8.8 (b8-coroot-rehost, 2026-05-25 — Coroot host migration)
 # Ratifies: ADR-008 from docs/ARCHITECTURE-TARGET.md
 #
 # v1.1.0 (t5-otel-stack 2026-05-09) : additive — no breaking change.
 #   - Added versions: map with concrete OBI + Coroot image pins
 #     (ADR-OTEL-002 in t5-otel-stack/design.md). Symmetric with T.5
 #     transport.yaml 1.0.0 → 1.1.0 codegen pinning pattern.
+#
+# v1.2.0 (b8-coroot-rehost 2026-05-25) : additive — no breaking change.
+#   - Bumped versions.coroot 1.4.4 → 1.20.2 (host migration
+#     docker.io/coroot/coroot → ghcr.io/coroot/coroot, no v-prefix
+#     per ADR-B8-COR-001 — GHCR accepts the unprefixed form same as
+#     Docker Hub does for Beyla). docker.io public-access denied
+#     2026-05-24 (verify-then-pin lesson T5.3.2 institutionalised).
+#   - Updated rationale: Coroot CE jurisdiction posture
+#     (ADR-B8-COR-004 — T1/T2 OK ; T3 candidate-substitution flag).
 
-version: "1.1.0"
-last_reviewed: 2026-05-04
+version: "1.2.0"
+last_reviewed: 2026-05-25
 expires_at: 2027-05-04
 exception_constitutional: false
 linter_rule: null
@@ -21,6 +31,25 @@ rationale: |
   ADR-008. SigNoz remains the main backend ; OBI eBPF + Coroot complete
   coverage without app instrumentation overhead. Privileged DaemonSet —
   Aegis review required at deployment time.
+
+  Coroot host migration (b8-coroot-rehost / ADR-B8-COR-001) — pulls
+  moved from docker.io/coroot/coroot to ghcr.io/coroot/coroot since
+  2026-05-24 (docker.io public access returns `denied: unauthorized`).
+  No tag convention change — GHCR accepts the unprefixed `1.20.2`
+  form same as Docker Hub does for Beyla ; `versions.*` stays
+  uniformly non-v-prefixed (the v-prefix mandatory claim made early
+  in this change's proposal was a verify-then-pin mis-read corrected
+  during implementation — see `.forge/changes/b8-coroot-rehost/
+  evidence.md` § 1).
+
+  Coroot CE jurisdiction posture (b8-coroot-rehost / ADR-B8-COR-004) —
+  Coroot Inc is US-incorporated, but the CE image is Apache-2.0 and
+  runs entirely on the adopter's infrastructure with no upstream
+  phone-home. T1 / T2 : Coroot CE is OK. T3 : SHOULD flag Coroot as
+  candidate-substitution at deployment-time Demeter pass — adopter
+  decides per their compliance posture. No new K3-RULE in this
+  sub-change ; precedent reserved for a future K.3 amendment if
+  pattern recurs (SigNoz Cloud, Grafana Cloud, etc.).
 
 sdk: opentelemetry
 ebpf_complement: opentelemetry-obi
@@ -38,9 +67,21 @@ deployment_constraints:
   privileged_daemonset_required: true
   aegis_audit_required_for_prod: true
 
+# Pin convention note (b8-coroot-rehost / ADR-B8-COR-001) :
+# - Registry for `coroot` is ghcr.io/coroot/coroot, NOT
+#   docker.io/coroot/coroot (host migrated 2026-05-24, docker.io
+#   public access returns "denied: unauthorized").
+# - Tags stay uniformly non-v-prefixed across `versions.*` —
+#   `docker manifest inspect ghcr.io/coroot/coroot:1.20.2` returns a
+#   valid multi-arch OCI index, same convention as `beyla` on
+#   Docker Hub. (Note : the early proposal of this change claimed
+#   v-prefix mandatory on GHCR ; that was a verify-then-pin mis-read
+#   inverted during implementation — see
+#   .forge/changes/b8-coroot-rehost/evidence.md § 1 for the
+#   corrected transcripts.)
 versions:
   # T.5 t5-otel-stack pins (ADR-OTEL-002, Context7 verified 2026-05-08).
   # OBI is satisfied by `grafana/beyla` per the upstream Grafana → OTel
   # donation lineage (binary-compatible with the OTel-branded fork).
   beyla: "2.0.1"      # grafana/beyla
-  coroot: "1.4.4"     # coroot/coroot
+  coroot: "1.20.2"    # ghcr.io/coroot/coroot (ADR-B8-COR-001 no v-prefix)

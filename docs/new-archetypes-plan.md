@@ -506,6 +506,7 @@ v1.0.0 sont désormais résolus.
 | `t5-otel-dartastic-realign`  | archived               | T5.3 (Workiva → Dartastic substitution, breaking standard v2.0.0 ; released `v0.4.0-rc.1` 2026-05-19) |
 | `b1-1-dev-up-matrix-fixes`   | archived               | T5.3.1 (full-stack-monorepo docker-compose.dev.yml template hygiene — `traefik/whoami` placeholder + `version:` removal ; archived 2026-05-19 ; release target `v0.4.0-rc.2`) |
 | `t5-3-3-vitest-bundle-preflight` | implemented        | T5.3.3 (vitest globalSetup runs `npm run bundle` once before any test suite, closes `npx vitest` bypass surfaced as T5.3.1 reviewer LOW finding ; `v0.4.0-rc.3`/`0.4.0` target) |
+| `b8-coroot-rehost`           | archived               | B.8.8 (Coroot rehost ghcr.io + 1.20.2 — no v-prefix per ADR-B8-COR-001 inverted at impl ; pilot of `b8-observability-rearch` trio ; T6 first additive brick — siblings `b8-signoz-unified` + `b8-obi-refresh` follow ; v0.4.0-rc.3 target) |
 
 **31 archivés** au 2026-05-20 (30 archivés + 1 implemented ce
 jour : T5.3.3). T5.3.1 livré sans `task validate` GREEN
@@ -1380,6 +1381,87 @@ T5.3.3 cible est désormais structurellement impossible.
 - **Harness** : `t5-3-3.test.sh` 5/5 L1 GREEN. No L2 —
   inverse proof est intrinsèquement couvert par la e2e
   suite existante.
+
+---
+
+## 0.7 Status update — 2026-05-25 (B.8.8 — `b8-coroot-rehost` ✅ archived)
+
+> **Origine** : T6 / B.8 ouvre. Pilot du trio
+> `b8-observability-rearch` (Coroot → SigNoz → OBI) arbitré par
+> le mainteneur le 2026-05-24 en sortie d'un `/forge:explore`
+> dédié. Verify-then-pin pass (lesson T5.3.2 institutionnalisée)
+> appliqué aux 4 composants observability surface ; **3
+> composants en posture-mort ou cours-de-mort** sur leur registre
+> public : SigNoz (`signoz/query-service:0.55.1` +
+> `signoz/frontend:0.55.1` rotted — archi 3-services →
+> unifiée upstream), OBI (`grafana/beyla:2.0.1` valide encore
+> mais 3.15.0 disponible majeur), Coroot (`coroot/coroot:1.4.4`
+> **denied/unauthorized sur docker.io** — host migré GHCR).
+
+### Fix livré
+
+`b8-coroot-rehost` pilote la rearch : single-component refresh,
+scope étroit. Cinq surfaces touchées :
+
+- **Image** : `coroot/coroot:1.4.4` → `ghcr.io/coroot/coroot:1.20.2`
+  (no v-prefix — GHCR pour Coroot accepte le tag unprefixed, idem
+  Docker Hub pour Beyla ; le claim "v-prefix mandatory" dans la
+  proposal initiale était un mis-read verify-then-pin attrapé au
+  `/forge:implement` Phase 6 par le L2 manifest-pull fixture — voir
+  `.forge/changes/b8-coroot-rehost/evidence.md` § 1 pour les
+  transcripts corrigés).
+- **Standard** `observability.yaml` v1.1.0 → **v1.2.0 additive**.
+  `versions.coroot` bumpé + `last_reviewed: 2026-05-25` +
+  YAML comment block documentant la migration de host (docker.io →
+  ghcr.io) + la découverte no-v-prefix (uniformité préservée avec
+  `versions.beyla`). `rationale:` étendu avec posture Coroot CE
+  jurisdiction (ADR-B8-COR-004 — T1/T2 OK, T3
+  candidate-substitution flag) + host-migration note.
+- **REVIEW.md** ledger appendé 2026-05-25 (KEEP-WITH-CHANGES).
+- **4 copies template** synchronisées (canonical .tmpl + cli
+  bundle .tmpl + example rendered + cli bundle example).
+- **Snapshot** régénéré déterministe (287 files, 650211 bytes
+  gzipped). `a7.test.sh` 29/29 PASS (forge-upgrade backward compat).
+
+**4 ADRs résolus** (`ADR-B8-COR-001..004`) :
+1. Uniform no-v-prefix `versions.*` (inversé à l'impl après L2
+   manifest-pull → caught proposal's v-prefix-mandatory mis-read ;
+   no within-file heterogeneity, trio-coupling automatic).
+2. Pas de `coroot_registry` field explicite (frontmatter minimal).
+3. CHANGELOG grep + L2 manifest-pull fixture + `--config` flag
+   check (kind apply déféré à `b8-signoz-unified`).
+4. T1/T2 CE-OK ; T3 candidate-substitution flag dans `rationale`,
+   pas de K3-RULE-EXT nouveau (précédent réservé pour amendement
+   K.3 si pattern récurrent).
+
+### Inverse proof + harness
+
+`b8-coroot.test.sh --level 1` : **13/13 GREEN**. Couvre les 4
+copies + 6 invariants standard + REVIEW append + validator + CHANGELOG.
+L2 opt-in `FORGE_B8_COROOT_DOCKER=1` : 2 tests — manifest pullable
+multi-arch + `--config` flag valide + verify-then-pin invariant
+(legacy denied sur docker.io reste denied).
+
+`a7.test.sh` 29/29 PASS (rétro-compat A.7 préservée).
+`bin/validate-standards-yaml.sh observability.yaml` exit 0.
+`forge-ci.yml` 297/300 lignes (NFR-CI-002 préservé).
+
+### Effort + release + suite
+
+- **Effort** : `S` (single-component, scope serré ; ~2 h total).
+- **Release target** : `v0.4.0-rc.3` (v0.4.0 final reservé pour
+  T6 complet — `b8-coroot-rehost` + `b8-signoz-unified` +
+  `b8-obi-refresh` + B.8.x restant).
+- **Trio sibling 1** : `b8-signoz-unified` — débloque le known
+  issue rc.2 (`task validate dev-up-matrix` RED). Rearch 4 services
+  → 5 services + OPAMP + ClickHouse 24→25 + sqlite app state +
+  UI port 3301→8080. Effort `M`-`L`. Owns
+  `observability.yaml v2.0.0` breaking + `pin_review_cadence:`
+  nouveau champ (cadence 30j SigNoz seulement, OBI/Coroot 12mo
+  loose).
+- **Trio sibling 2** : `b8-obi-refresh` — major bump
+  `grafana/beyla:2.0.1` → `3.15.0`. Aegis re-audit
+  capabilities Linux + RBAC.
 
 ---
 

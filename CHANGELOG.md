@@ -12,6 +12,60 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Fixed — Coroot image rehosted ghcr.io (B.8.8, `b8-coroot-rehost`)
+
+- Docker Hub public access on `coroot/coroot:1.4.4` returns
+  `denied: unauthorized` (verified 2026-05-24 via
+  `docker manifest inspect`). Migrate to
+  `ghcr.io/coroot/coroot:1.20.2` (GHCR accepts the unprefixed form,
+  same convention as Docker Hub for Beyla — the early proposal
+  claimed v-prefix mandatory ; that was a verify-then-pin mis-read
+  inverted at implementation time per
+  `.forge/changes/b8-coroot-rehost/evidence.md` § 1).
+  Lesson institutionalised by T5.3.2 ABANDONED (verify-then-pin
+  pass applied to the whole observability triplet ; SigNoz + OBI
+  legs follow in sibling sub-changes `b8-signoz-unified` +
+  `b8-obi-refresh`).
+- `.forge/standards/observability.yaml` v1.1.0 → v1.2.0 additive
+  (no breaking change) :
+  - `versions.coroot: "1.4.4"` → `versions.coroot: "1.20.2"`.
+  - `last_reviewed: 2026-05-04` → `2026-05-25`.
+  - `rationale:` block extended with Coroot host-migration note
+    and Coroot CE jurisdiction posture (ADR-B8-COR-004 — T1/T2 OK,
+    T3 candidate-substitution flag at deployment-time Demeter
+    pass ; no new K.3 rule in this sub-change).
+  - YAML comment block above `versions:` documents the registry
+    migration (docker.io → ghcr.io) and the no-v-prefix discovery
+    (ADR-B8-COR-001 — inverted 2026-05-25 at `/forge:implement` :
+    GHCR accepts the unprefixed `1.20.2` form, same as Docker Hub
+    for Beyla ; early proposal v-prefix-mandatory claim was a
+    verify-then-pin mis-read caught by L2 manifest-pull fixture).
+- 4-copy mirror sync : canonical `.tmpl` + `cli/assets/...tmpl` +
+  `examples/.../coroot-deployment.yaml` rendered +
+  `cli/assets/examples/...yaml` rendered. All four carry the new
+  pin + audit comment + `forge.dev/standard:
+  "observability.yaml@1.2.0"` annotation bump.
+- New harness `.forge/scripts/tests/b8-coroot.test.sh` — 13 L1
+  grep-based tests + 2 L2 opt-in via `FORGE_B8_COROOT_DOCKER=1`
+  (ghcr multi-arch manifest pullable + `--config` flag valid
+  per ADR-B8-COR-003 ; docker.io `coroot/coroot:1.4.4` still
+  denied per FR-B8-COR-073 verify-then-pin invariant). Registered
+  in `.github/workflows/forge-ci.yml::harness` matrix (297/300
+  lines per NFR-CI-002).
+- `.forge/standards/REVIEW.md` ledger appended 2026-05-25
+  (KEEP-WITH-CHANGES, next review 2027-05-04).
+- **Pilot of the `b8-observability-rearch` trio** (cf.
+  `.forge/_memory/b8-observability-rearch-exploration.md`).
+  Sibling sub-changes :
+  - `b8-signoz-unified` — SigNoz 4-services-archi → 5-services
+    unified rearch (rc.2 known issue blocker).
+  - `b8-obi-refresh` — Beyla 2.0.1 → 3.15.0 major bump.
+- Tracked at `.forge/changes/b8-coroot-rehost/` ; 4 ADRs
+  (`ADR-B8-COR-001..004`) ; 13/13 harness L1 GREEN ; Q-001..Q-004
+  all resolved before archive. Release vehicle : next
+  `v0.4.0-rc.x` (rc.3 candidate). v0.4.0 final reserved for T6
+  complete (b8 trio + B.8.x).
+
 ## [0.4.0-rc.2] — 2026-05-20
 
 ### Added — vitest globalSetup bundle preflight (T5.3.3, `t5-3-3-vitest-bundle-preflight`)
