@@ -16,10 +16,50 @@
 #     2026-05-24 (verify-then-pin lesson T5.3.2 institutionalised).
 #   - Updated rationale: Coroot CE jurisdiction posture
 #     (ADR-B8-COR-004 — T1/T2 OK ; T3 candidate-substitution flag).
+#
+# v2.0.0 (b8-signoz-unified 2026-05-26) : *** BREAKING *** versions surgery.
+#   - SigNoz 3-service architecture (signoz/frontend + signoz/query-service
+#     + otel/opentelemetry-collector-contrib) collapsed by upstream into the
+#     unified arch — migrated to signoz/signoz:v0.125.1 +
+#     signoz/signoz-otel-collector:v0.144.4, backed by
+#     clickhouse/clickhouse-server:25.5.6 + signoz/zookeeper:3.7.1
+#     (ADR-B8-SIG-001/-002/-007). The old 3-service pins rotted on Docker
+#     Hub (signoz/frontend:0.55.1 + signoz/query-service:0.55.1 → "no such
+#     manifest", verify-then-pin re-confirmed live 2026-05-27).
+#   - ADD versions.{signoz, signoz_otel_collector, clickhouse,
+#     signoz_zookeeper}. REMOVE-set (signoz_frontend / signoz_query_service
+#     / otel_collector_contrib) was never carried as versions.* keys — the
+#     SigNoz pins lived only in the docker-compose template — so the surgery
+#     is defensively-additive on the standard, but the *architectural* shift
+#     (3-svc → unified) is BREAKING and warrants the major bump.
+#   - ADD top-level pin_review_cadence: map (ISO 8601 durations, ADR-005 /
+#     ADR-B8-SIG-005). Additive top-level field, NO schema edit required
+#     (standard.schema.json additionalProperties:true at root — ADR-J7-004).
+#   - v-prefix MANDATORY on signoz/signoz + signoz/signoz-otel-collector
+#     (evidence.md § 1.4) — the OPPOSITE of versions.coroot / versions.beyla
+#     which carry no prefix. Documented inline at the versions: block to
+#     prevent the b8-coroot ADR-B8-COR-001 inversion-at-impl recurrence.
+#   - REVIEW.md ledger uses the ARCH-CHANGE flag (NOT Updated) — first use
+#     of ARCH-CHANGE for a breaking architectural shift on a ratified
+#     standard (FR-B8-SIG-H-006 precedent).
 
-version: "1.2.0"
-last_reviewed: 2026-05-25
-expires_at: 2027-05-04
+# ── WAIVER (b8-signoz-unified 2026-05-26) ──────────────────────────────────
+# Per .forge/standards/global/standards-lifecycle.md § Bumps, this v1.2.0 →
+# v2.0.0 BREAKING bump is waived from the additive-only default because the
+# SigNoz 3-service → unified architectural migration is a structural rearch,
+# not a version refresh. The new top-level pin_review_cadence: field is
+# ADDITIVE and does NOT require an Article XII constitutional amendment per
+# the ADR-J7-004 schema-relaxation precedent (standard.schema.json declares
+# additionalProperties:true at root, accepting new top-level fields without
+# a schema edit — j7-validate-standards-yaml/design.md). breaking_change:
+# true (below) is the machine-readable signal that this is NOT an additive
+# minor bump and that REVIEW.md uses ARCH-CHANGE not Updated.
+# ───────────────────────────────────────────────────────────────────────────
+
+version: "2.0.0"
+breaking_change: true
+last_reviewed: 2026-05-26
+expires_at: 2027-05-26
 exception_constitutional: false
 linter_rule: null
 enforcement:
@@ -51,6 +91,36 @@ rationale: |
   sub-change ; precedent reserved for a future K.3 amendment if
   pattern recurs (SigNoz Cloud, Grafana Cloud, etc.).
 
+  SigNoz unified migration (b8-signoz-unified / ADR-B8-SIG-001..007) —
+  SigNoz upstream collapsed its 3-service layout (signoz/frontend +
+  signoz/query-service + otel-collector-contrib) into the unified arch :
+  signoz/signoz:v0.125.1 (UI + query-service + alertmanager + embedded
+  sqlite app state) + signoz/signoz-otel-collector:v0.144.4, backed by
+  clickhouse/clickhouse-server:25.5.6 + signoz/zookeeper:3.7.1. The old
+  3-service pins rotted on Docker Hub — this debloques the v0.4.0-rc.2/rc.3
+  `task validate dev-up-matrix` RED. OPAMP is disabled in the dev compose
+  (ADR-B8-SIG-003 — upstream v0.125.1 Compose wires the collector statically
+  via SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_* env, no OPAMP_*). Note the v-prefix
+  convention difference : signoz/signoz + signoz/signoz-otel-collector are
+  v-prefixed (versions.signoz: "v0.125.1") whereas coroot + beyla are NOT.
+
+  SigNoz CE jurisdiction posture (b8-signoz-unified / ADR-B8-SIG-006) —
+  SigNoz Inc is Delaware-incorporated (US, San Francisco HQ + Indian
+  engineering office). The CE binary signoz/signoz:v0.125.1 is open-source
+  and runs entirely on adopter infrastructure. T1 / T2 : SigNoz CE is OK.
+  T3 : SHOULD flag SigNoz as candidate-substitution at deployment-time
+  Demeter pass — adopter decides per their compliance posture. SigNoz Cloud
+  (hosted SaaS) is out of scope ; T3 adopters running self-host CE do not
+  cross-route to SigNoz Cloud. No new K3-RULE in this sub-change ; no
+  cloud-act-publishers.yml entry (mirrors the Coroot ADR-B8-COR-004 posture).
+  CAVEAT (not silent) : unlike Coroot CE, SigNoz CE ships an anonymous usage
+  beacon (statsreporter) that is ON by default on the unified image — it is
+  NOT a no-phone-home posture out of the box. T3 adopters MUST disable it via
+  the config-file key statsreporter.enabled: false (SigNoz removed the legacy
+  TELEMETRY_ENABLED env var in versions > 0.87.0, so it is a no-op on v0.125.1
+  — the opt-out lives in a mounted config.yaml, tracked as Q-007 in the change
+  dir). Beacon collects env/platform/OS/arch/version only, no PII by default.
+
 sdk: opentelemetry
 ebpf_complement: opentelemetry-obi
 service_map: coroot
@@ -79,9 +149,39 @@ deployment_constraints:
 #   inverted during implementation — see
 #   .forge/changes/b8-coroot-rehost/evidence.md § 1 for the
 #   corrected transcripts.)
+# v-prefix convention (b8-signoz-unified / ADR-B8-SIG-002 / evidence § 1.4) :
+# - signoz + signoz_otel_collector pins are V-PREFIXED ("v0.125.1",
+#   "v0.144.4") — SigNoz Docker Hub repos only serve the v-prefixed tag
+#   (the unprefixed "0.125.1" returns no manifest). Verified live 2026-05-27.
+# - clickhouse + signoz_zookeeper + coroot + beyla are NOT v-prefixed.
+# This is the OPPOSITE convention from coroot/beyla and is documented inline
+# to prevent the b8-coroot ADR-B8-COR-001 inversion-at-impl pattern recurring.
 versions:
   # T.5 t5-otel-stack pins (ADR-OTEL-002, Context7 verified 2026-05-08).
   # OBI is satisfied by `grafana/beyla` per the upstream Grafana → OTel
   # donation lineage (binary-compatible with the OTel-branded fork).
+  # FR-B8-SIG-J-001 reserved scope : the Beyla 2.0.1 → 3.15.0 major bump
+  # (+ capabilities Linux review + Aegis re-audit) is RESERVED for the trio
+  # sibling 3 `b8-obi-refresh`. b8-signoz-unified MUST NOT modify versions.beyla
+  # (NFR-B8-SIG-011 trio coupling — this comment is documentation-only).
   beyla: "2.0.1"      # grafana/beyla
   coroot: "1.20.2"    # ghcr.io/coroot/coroot (ADR-B8-COR-001 no v-prefix)
+  # SigNoz unified arch pins (b8-signoz-unified / ADR-B8-SIG-001/-002/-007).
+  # v-prefix MANDATORY on the two signoz/* repos (see convention note above).
+  signoz: "v0.125.1"               # signoz/signoz (unified UI+query+alertmanager+sqlite)
+  signoz_otel_collector: "v0.144.4" # signoz/signoz-otel-collector
+  clickhouse: "25.5.6"             # clickhouse/clickhouse-server (telemetry store, no v-prefix)
+  signoz_zookeeper: "3.7.1"        # signoz/zookeeper (ClickHouse replication coordinator, no v-prefix)
+
+# Pin review cadence (b8-signoz-unified / ADR-B8-SIG-005, top-level option a).
+# ISO 8601 durations (P30D / P12M) — informational-only at v2.0.0 ; the J.7
+# validator accepts the field via additionalProperties:true (no schema edit,
+# ADR-J7-004). Active enforcement (stale-pin nag) deferred to a future J.x
+# amendment (NFR-B8-SIG-009). Keys mirror versions: keys.
+pin_review_cadence:
+  signoz: "P30D"                 # aggressive upstream dev velocity
+  signoz_otel_collector: "P30D"  # tracks signoz/signoz cadence
+  clickhouse: "P30D"             # tracks signoz upstream pin
+  signoz_zookeeper: "P12M"       # slow upstream cadence
+  beyla: "P12M"                  # slow OBI cadence
+  coroot: "P12M"                 # established pilot cadence

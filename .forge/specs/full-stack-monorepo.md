@@ -715,26 +715,41 @@ yes — `test_kustomize_base_renders` + `test_overlay_<env>_renders_and_validate
 **Constitution reference:** Article IX, Article VIII. **Testable:**
 yes — `test_compose_otel_service_shape`.
 
+<!-- Modified in b8-signoz-unified change, 2026-05-28 -->
 ### FR-IN-008: SigNoz services in `docker-compose.dev.yml.tmpl`
 
 <!-- From change: b1-delivery (2026-04-29) -->
+<!-- Modified in: b8-signoz-unified (2026-05-28, archived) -->
+<!-- Previously (b1-delivery 2026-04-29): three services fsm-signoz-clickhouse + fsm-signoz-query + fsm-signoz-frontend on :3301, pinned to old 0.55.1 era (signoz/frontend + signoz/query-service + otel/opentelemetry-collector-contrib); only frontend host-exposed; healthchecks + restart unless-stopped on every service; depends_on chain query→clickhouse, frontend→query; signoz-clickhouse-data volume; task observe → http://localhost:3301. Superseded by the unified architecture below per b8-signoz-unified (B.8.8 trio sibling 2). -->
 
-- **MUST** — three services `fsm-signoz-clickhouse` (storage),
-  `fsm-signoz-query` (HTTP API), `fsm-signoz-frontend` (UI on
-  :3301). All pinned to specific versions (no `:latest`).
-- **MUST** — only `fsm-signoz-frontend` host-exposes a port (3301).
-  `clickhouse` and `query-service` are internal-only.
-- **MUST** — every SigNoz service declares a healthcheck and
-  `restart: unless-stopped`.
-- **MUST** — `depends_on` chain : `query → clickhouse:
-  service_healthy`, `frontend → query: service_healthy`.
-- **SHALL** — named volume `signoz-clickhouse-data` for persistence.
-- **SHOULD** — `Taskfile.yml.tmpl` declares `task observe` that
-  opens `http://localhost:3301` via `open` (macOS) or `xdg-open`
-  (Linux).
+- **MUST** — two or three services for the unified SigNoz
+  architecture : `fsm-signoz` (unified UI + query-service +
+  alertmanager, pinned to `signoz/signoz:v0.125.1` per
+  FR-B8-SIG-A-001) + `fsm-signoz-otel-collector` (SigNoz-flavoured
+  collector, pinned to `signoz/signoz-otel-collector:v0.144.4` per
+  FR-B8-SIG-A-002) + optional `fsm-signoz-clickhouse` retained as
+  storage substrate (FR-B8-SIG-A-004). The choice of 2-service vs
+  3-service final layout is governed by ADR-B8-SIG-001.
+- **MUST** — `fsm-signoz` host-exposes the UI port per
+  ADR-B8-SIG-004 (`${SIGNOZ_UI_PORT:-3301}` → ctr `:8080`,
+  preserving the `:3301` default for adopter compat) ; collector
+  services host-expose `4317` (gRPC OTLP) + `4318` (HTTP OTLP) per
+  FR-B8-SIG-A-008.
+- **MUST** — every retained or new service declares a healthcheck
+  and `restart: unless-stopped` per FR-B8-SIG-A-011.
+- **MUST** — `depends_on` chain coherent per FR-B8-SIG-A-012 (the
+  collector waits for `fsm-signoz` healthy ; `fsm-signoz` waits for
+  ClickHouse healthy).
+- **SHALL** — named volume(s) for ClickHouse persistence + sqlite
+  app state where Q-001 resolved to embedded-sqlite per
+  FR-B8-SIG-A-005.
+- **SHOULD** — `Taskfile.yml.tmpl` `task observe` target opens the
+  UI URL determined by ADR-B8-SIG-004 (formerly hardcoded
+  `http://localhost:3301`).
 
 **Constitution reference:** Article IX. **Testable:** yes —
-`test_compose_signoz_services_shape` + `test_taskfile_has_observe_target`.
+`_test_b8sig_l1_001..004` + `_test_b8sig_l2_003_compose_up_healthy`
+per b8-signoz-unified Cluster E.
 
 ### FR-IN-009: OTel exporter env defaults shipped to apps
 
@@ -782,21 +797,31 @@ yes — `test_env_dev_files_export_otel_defaults`.
 **Constitution reference:** Article VIII, Article X. **Testable:**
 yes — `test_standard_k8s_overlays_has_required_sections`.
 
+<!-- Modified in b8-signoz-unified change, 2026-05-28 -->
 ### FR-IN-012: Standard `infra/observability-local.md`
 
 <!-- From change: b1-delivery (2026-04-29) -->
+<!-- Modified in: b8-signoz-unified (2026-05-28, archived) -->
+<!-- Previously (b1-delivery 2026-04-29): records the exact pinned image versions for otel-collector, signoz-clickhouse, signoz-query-service, signoz-frontend — single source of truth referenced by the compose template. Superseded by the unified-arch version list below per b8-signoz-unified (B.8.8 trio sibling 2). -->
 
 - **MUST** — file exists with 5 canonical H2 sections : Local OTel
   + SigNoz topology, App-side OTLP configuration, Versioning
   policy, Trace sampling defaults, Migration to production
   observability.
 - **MUST** — records the exact pinned image versions for
-  `otel-collector`, `signoz-clickhouse`, `signoz-query-service`,
-  `signoz-frontend` — single source of truth referenced by the
-  compose template.
+  `signoz`, `signoz-otel-collector`, `signoz-clickhouse` (if
+  retained per Q-001 / ADR-B8-SIG-001), and references
+  `versions.signoz` + `versions.signoz_otel_collector` in
+  `.forge/standards/observability.yaml` v2.0.0 as the authoritative
+  source per FR-B8-SIG-B-002 + FR-B8-SIG-B-003. The previous
+  3-service version-list (`signoz-clickhouse`, `signoz-query-service`,
+  `signoz-frontend`) MUST NOT appear in the standard text after
+  this change.
 
 **Constitution reference:** Article IX. **Testable:** yes —
-`test_standard_observability_local_has_required_sections`.
+`_test_b8sig_l1_005..010` per b8-signoz-unified Cluster E (asserts
+both presence of the new pins AND absence of the legacy 3-service
+names in the standard).
 
 ### FR-GL-024: Schema promotion to stable / 1.0.0
 

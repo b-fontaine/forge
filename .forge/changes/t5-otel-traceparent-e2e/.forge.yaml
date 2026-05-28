@@ -1,5 +1,5 @@
 name: t5-otel-traceparent-e2e
-status: implemented
+status: archived
 created: 2026-05-11
 schema: full-stack-monorepo
 constitution_version: "1.1.0"
@@ -30,4 +30,4 @@ timeline:
   designed: 2026-05-11
   planned: 2026-05-11
   implemented: 2026-05-11
-  # archived: <auto-filled by /forge:archive>
+  archived: 2026-05-26

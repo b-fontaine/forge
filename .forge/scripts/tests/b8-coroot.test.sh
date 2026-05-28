@@ -161,8 +161,13 @@ _test_b8cor_l1_008_standard_version_bumped() {
   if [ ! -f "$OBSERV_YAML" ]; then
     echo "    observability.yaml missing" >&2; return 1
   fi
-  if ! grep -Eq '^version:\s*"?1\.2\.0"?\s*$' "$OBSERV_YAML"; then
-    echo "    observability.yaml::version is not '1.2.0' (FR-B8-COR-030)" >&2
+  # The observability.yaml standard is shared across the b8-observability-rearch
+  # trio. Leg 1 (b8-coroot-rehost) set version 1.2.0 additive ; leg 2
+  # (b8-signoz-unified) bumped it to 2.0.0 BREAKING (2026-05-27). Track the
+  # current trio state ; leg 3 (b8-obi-refresh) will bump again. FR-B8-COR-030
+  # intent is "version was bumped by the trio", not a frozen 1.2.0.
+  if ! grep -Eq '^version:\s*"?2\.0\.0"?\s*$' "$OBSERV_YAML"; then
+    echo "    observability.yaml::version is not '2.0.0' (FR-B8-COR-030 ; bumped BREAKING by trio leg 2 b8-signoz-unified)" >&2
     grep -E '^version:' "$OBSERV_YAML" >&2 || true
     return 1
   fi
@@ -183,12 +188,13 @@ _test_b8cor_l1_010_standard_last_reviewed_today() {
   if [ ! -f "$OBSERV_YAML" ]; then
     echo "    observability.yaml missing" >&2; return 1
   fi
-  # b8-coroot-rehost was raised 2026-05-24 and implemented 2026-05-25 ;
-  # either ISO date is acceptable as evidence the standard was refreshed
-  # during this change. NFR-B8-COR-008 (trio coupling) only requires the
-  # bump to be recent, not a specific day.
-  if ! grep -Eq '^last_reviewed:\s*2026-05-2[45]\s*$' "$OBSERV_YAML"; then
-    echo "    observability.yaml::last_reviewed is not 2026-05-24 or 2026-05-25 (FR-B8-COR-034)" >&2
+  # The observability.yaml standard is shared across the b8-observability-rearch
+  # trio. Leg 1 (b8-coroot-rehost) refreshed last_reviewed to 2026-05-24..25 ;
+  # leg 2 (b8-signoz-unified) refreshed it to 2026-05-26..27. NFR-B8-COR-008
+  # (trio coupling) only requires the bump to be recent, not a specific day —
+  # track the current trio state ; leg 3 (b8-obi-refresh) will refresh again.
+  if ! grep -Eq '^last_reviewed:\s*2026-05-2[67]\s*$' "$OBSERV_YAML"; then
+    echo "    observability.yaml::last_reviewed is not 2026-05-26 or 2026-05-27 (FR-B8-COR-034 ; refreshed by b8-signoz-unified trio leg 2)" >&2
     grep -E '^last_reviewed:' "$OBSERV_YAML" >&2 || true
     return 1
   fi

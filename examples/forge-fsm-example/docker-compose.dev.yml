@@ -10,6 +10,10 @@
 #   fsm-db       — PostgreSQL 16 relational datastore (primary persistence layer)
 #   fsm-backend  — Application backend (Rust gRPC service or equivalent)
 #   fsm-kong     — API gateway (Kong 3), handling REST↔gRPC transcoding
+#   SigNoz unified observability (B.8.8 / b8-signoz-unified) — 4 long-running
+#   + 2 init : fsm-signoz, fsm-signoz-otel-collector, fsm-signoz-clickhouse,
+#   fsm-signoz-zookeeper, init-clickhouse, fsm-signoz-telemetrystore-migrator.
+#   UI at http://localhost:3301 (override via SIGNOZ_UI_PORT).
 #
 # IMPORTANT — before running `task dev:up`:
 #   1. Copy .env.example to .env   →   cp .env.example .env
@@ -85,9 +89,13 @@ services:
     environment:
       KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /kong/kong.yml
+    # Loopback-bind (127.0.0.1) is the DEV security posture (Aegis, B.8.8) —
+    # host-published ports MUST NOT bind 0.0.0.0 in dev. Prod uses ingress /
+    # NetworkPolicy, never raw host-publish (see infra/CLAUDE.md "Production
+    # hardening delta").
     ports:
-      - "8000:8000"
-      - "${FSM_KONG_ADMIN_PORT:-8001}:8001"
+      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:${FSM_KONG_ADMIN_PORT:-8001}:8001"
     volumes:
       - ./infra/kong/kong.yml.example:/kong/kong.yml:ro
     networks:
@@ -102,92 +110,228 @@ services:
       retries: 5
       start_period: 20s
 
+  # ── B.8.8 / b8-signoz-unified (2026-05-26) — SigNoz 3-svc → unified migration ──
+  # Migrated from 3-service architecture (signoz/frontend + signoz/query-service +
+  # otel-collector-contrib) to unified arch (signoz/signoz:v0.125.1 +
+  # signoz/signoz-otel-collector:v0.144.4). Rotted 3-service pins on Docker Hub
+  # (verify-then-pin lesson T5.3.2 applied 2026-05-26). v-prefix mandatory on
+  # SigNoz Docker Hub repositories — opposite of coroot/beyla convention.
+  #
+  # Unified topology (ADR-B8-SIG-001/-007) — 4 long-running + 2 init :
+  #   fsm-signoz                          signoz/signoz:v0.125.1          (UI :3301→:8080, sqlite app state)
+  #   fsm-signoz-otel-collector           signoz/signoz-otel-collector:v0.144.4  (OTLP :4317/:4318)
+  #   fsm-signoz-clickhouse               clickhouse/clickhouse-server:25.5.6     (telemetry store, internal)
+  #   fsm-signoz-zookeeper                signoz/zookeeper:3.7.1          (ClickHouse replication coordinator)
+  #   init-clickhouse                     clickhouse/clickhouse-server:25.5.6     (cluster bootstrap, init)
+  #   fsm-signoz-telemetrystore-migrator  signoz/signoz-otel-collector:v0.144.4   (telemetry-store migrations, init)
+  #
+  # OPAMP is OFF in dev (ADR-B8-SIG-003) — the collector is configured
+  # statically via SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_{DSN,CLUSTER,REPLICATION}
+  # env, mirroring the upstream v0.125.1 Compose (no OPAMP_* env vars).
+  # Standard : .forge/standards/observability.yaml v2.0.0.
+  # "fresh-start only for dev" — no ClickHouse/sqlite data-volume migration
+  # tooling ships (proposal Scope Out / Risk #1+#2). See infra/CLAUDE.md.
+  # ───────────────────────────────────────────────────────────────────────────
+
   # ---------------------------------------------------------------------------
-  # fsm-otel-collector — OpenTelemetry Collector (B.1.14, FR-IN-007)
-  # Standard: .forge/standards/infra/observability-local.md
-  # Receivers: OTLP gRPC :4317 + OTLP HTTP :4318. Health: :13133.
+  # fsm-signoz-zookeeper — ClickHouse replication coordinator (ADR-B8-SIG-007)
+  # Internal-only; no host port mapping.
   # ---------------------------------------------------------------------------
-  fsm-otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.96.0
-    command: ["--config=/etc/otelcol-contrib/config.yaml"]
-    ports:
-      - "4317:4317"
-      - "4318:4318"
-      - "13133:13133"
+  fsm-signoz-zookeeper:
+    image: signoz/zookeeper:3.7.1
+    environment:
+      ZOO_SERVER_ID: "1"
+      ALLOW_ANONYMOUS_LOGIN: "yes"
+      ZOO_AUTOPURGE_INTERVAL: "1"
     volumes:
-      - ./infra/observability/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
+      - signoz-zookeeper-data:/bitnami/zookeeper
     networks:
       - fsm-dev
-    depends_on:
-      fsm-signoz-query:
-        condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --spider --quiet http://localhost:13133/ || exit 1"]
-      interval: 5s
-      timeout: 3s
+      # bitnami signoz/zookeeper:3.7.1 — the `ruok` 4lw is whitelist-gated by
+      # default, so probe via the standard zkServer.sh admin status instead
+      # (returns "Mode: standalone" once the client port :2181 is serving).
+      test: ["CMD-SHELL", "zkServer.sh status >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 10s
       retries: 10
-      start_period: 5s
+      start_period: 20s
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
-  # fsm-signoz-clickhouse — SigNoz storage backend (B.1.14, FR-IN-008)
-  # Internal-only; no host port mapping.
+  # init-clickhouse — ClickHouse cluster bootstrap (init container, ADR-B8-SIG-001)
+  # Writes the single-node `cluster` topology (remote_servers + zookeeper node
+  # + macros) into the shared config-d volume before clickhouse starts, so the
+  # telemetrystore-migrator's `ON CLUSTER cluster` DDL resolves (upstream
+  # mounts ../common/clickhouse/cluster.xml ; Forge ships a minimal single-node
+  # equivalent — verified migrator GREEN against it 2026-05-27, evidence § 3).
+  # Runs to completion; restart: on-failure.
   # ---------------------------------------------------------------------------
-  fsm-signoz-clickhouse:
-    image: clickhouse/clickhouse-server:24.1.2-alpine
+  init-clickhouse:
+    image: clickhouse/clickhouse-server:25.5.6
+    entrypoint:
+      - /bin/sh
+    command:
+      - -c
+      - |
+        cat > /cluster-config/cluster.xml <<'XML'
+        <clickhouse>
+          <remote_servers>
+            <cluster>
+              <shard>
+                <internal_replication>true</internal_replication>
+                <replica><host>fsm-signoz-clickhouse</host><port>9000</port></replica>
+              </shard>
+            </cluster>
+          </remote_servers>
+          <zookeeper>
+            <node><host>fsm-signoz-zookeeper</host><port>2181</port></node>
+          </zookeeper>
+          <macros><shard>01</shard><replica>replica-1</replica></macros>
+        </clickhouse>
+        XML
+        echo "init-clickhouse: wrote single-node cluster.xml"
     volumes:
-      - signoz-clickhouse-data:/var/lib/clickhouse
+      - signoz-clickhouse-config:/cluster-config
     networks:
       - fsm-dev
+    depends_on:
+      fsm-signoz-zookeeper:
+        condition: service_healthy
+    restart: on-failure
+
+  # ---------------------------------------------------------------------------
+  # fsm-signoz-clickhouse — SigNoz telemetry store (ADR-B8-SIG-002, 24→25 bump)
+  # Internal-only; no host port mapping. The cluster.xml written by
+  # init-clickhouse is mounted under config.d/ to define the `cluster` cluster.
+  # ---------------------------------------------------------------------------
+  fsm-signoz-clickhouse:
+    image: clickhouse/clickhouse-server:25.5.6
+    environment:
+      CLICKHOUSE_SKIP_USER_SETUP: "1"
+    volumes:
+      - signoz-clickhouse-data:/var/lib/clickhouse/
+      - signoz-clickhouse-config:/etc/clickhouse-server/config.d:ro
+    networks:
+      - fsm-dev
+    depends_on:
+      fsm-signoz-zookeeper:
+        condition: service_healthy
+      init-clickhouse:
+        condition: service_completed_successfully
     healthcheck:
-      test: ["CMD-SHELL", "wget --spider --quiet http://localhost:8123/ping || exit 1"]
-      interval: 10s
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://0.0.0.0:8123/ping || exit 1"]
+      interval: 30s
       timeout: 5s
       retries: 10
       start_period: 20s
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
-  # fsm-signoz-query — SigNoz query API (B.1.14, FR-IN-008)
-  # Internal-only; no host port mapping.
+  # fsm-signoz-telemetrystore-migrator — telemetry-store migrations (init, ADR-B8-SIG-001)
+  # Runs schema migrations once before the collector accepts traffic.
+  # Runs to completion; restart: on-failure.
   # ---------------------------------------------------------------------------
-  fsm-signoz-query:
-    image: signoz/query-service:0.55.1
-    command: ["--config=/etc/signoz/config.yaml"]
+  fsm-signoz-telemetrystore-migrator:
+    image: signoz/signoz-otel-collector:v0.144.4
+    environment:
+      SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_DSN: tcp://fsm-signoz-clickhouse:9000
+      SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_CLUSTER: cluster
+      SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_REPLICATION: "true"
+      SIGNOZ_OTEL_COLLECTOR_TIMEOUT: 10m
+    # Migrator invocation verbatim from upstream v0.125.1 Compose (EV-1) —
+    # the schema-migrator subcommands, NOT a --dsn flag (Article III.4).
+    entrypoint:
+      - /bin/sh
+    command:
+      - -c
+      - |
+        /signoz-otel-collector migrate bootstrap &&
+        /signoz-otel-collector migrate sync up &&
+        /signoz-otel-collector migrate async up
+    networks:
+      - fsm-dev
+    depends_on:
+      fsm-signoz-clickhouse:
+        condition: service_healthy
+    restart: on-failure
+
+  # ---------------------------------------------------------------------------
+  # fsm-signoz-otel-collector — SigNoz-flavoured OTel collector (ADR-B8-SIG-001/-003)
+  # Receivers: OTLP gRPC :4317 + OTLP HTTP :4318 (FR-IN-009 contract preserved).
+  # OPAMP-off — static ClickHouse config via env (no OPAMP_* vars).
+  # ---------------------------------------------------------------------------
+  fsm-signoz-otel-collector:
+    image: signoz/signoz-otel-collector:v0.144.4
+    environment:
+      SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_DSN: tcp://fsm-signoz-clickhouse:9000
+      SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_CLUSTER: cluster
+      SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_REPLICATION: "true"
+      SIGNOZ_OTEL_COLLECTOR_TIMEOUT: 10m
+      LOW_CARDINAL_EXCEPTION_GROUPING: "false"
+    # OPAMP-off (ADR-B8-SIG-003) : `--config` only, NO `--manager-config`.
+    # `migrate sync check` waits for the migrator schema before serving
+    # (verbatim from upstream v0.125.1 Compose, EV-1).
+    entrypoint:
+      - /bin/sh
+    command:
+      - -c
+      - |
+        /signoz-otel-collector migrate sync check &&
+        /signoz-otel-collector --config=/etc/otel-collector-config.yaml
     volumes:
-      - ./infra/observability/signoz-config.yaml:/etc/signoz/config.yaml:ro
+      - ./infra/observability/signoz-otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    # Loopback-bind (127.0.0.1) is the DEV security posture (Aegis, B.8.8) —
+    # OTLP ingest is reachable only from the host, not 0.0.0.0. Prod fronts
+    # the collector with ingress / NetworkPolicy (see infra/CLAUDE.md
+    # "Production hardening delta").
+    ports:
+      - "127.0.0.1:4317:4317"
+      - "127.0.0.1:4318:4318"
+    networks:
+      - fsm-dev
+    depends_on:
+      fsm-signoz-clickhouse:
+        condition: service_healthy
+      fsm-signoz-telemetrystore-migrator:
+        condition: service_completed_successfully
+    # No healthcheck block (matches upstream v0.125.1 Compose, EV-1) — the
+    # signoz/signoz-otel-collector image is minimal (no wget/curl/nc), so an
+    # HTTP probe is impossible ; readiness is gated upstream by depends_on +
+    # the migrator completing. The collector still exposes a health_check
+    # extension on :13133 for external monitoring.
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # fsm-signoz — unified SigNoz (UI + query-service + alertmanager + sqlite)
+  # (ADR-B8-SIG-001/-004) — only externally-exposed observability service.
+  # UI host port via ${SIGNOZ_UI_PORT:-3301} → container :8080 (ADR-B8-SIG-004).
+  # Browser entrypoint: http://localhost:3301 (override via SIGNOZ_UI_PORT).
+  # ---------------------------------------------------------------------------
+  fsm-signoz:
+    image: signoz/signoz:v0.125.1
+    environment:
+      SIGNOZ_SQLSTORE_SQLITE_PATH: /var/lib/signoz/signoz.db
+      SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN: tcp://fsm-signoz-clickhouse:9000
+    # Loopback-bind (127.0.0.1) is the DEV security posture (Aegis, B.8.8) —
+    # the UI has no auth gate (SigNoz CE default), so it MUST NOT bind 0.0.0.0
+    # in dev. Prod fronts the UI with an auth proxy + ingress (see
+    # infra/CLAUDE.md "Production hardening delta").
+    ports:
+      - "127.0.0.1:${SIGNOZ_UI_PORT:-3301}:8080"
+    volumes:
+      - signoz-sqlite:/var/lib/signoz/
     networks:
       - fsm-dev
     depends_on:
       fsm-signoz-clickhouse:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --spider --quiet http://localhost:8080/api/v1/health || exit 1"]
-      interval: 10s
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/api/v1/health || exit 1"]
+      interval: 30s
       timeout: 5s
       retries: 10
-      start_period: 15s
-    restart: unless-stopped
-
-  # ---------------------------------------------------------------------------
-  # fsm-signoz-frontend — SigNoz UI (B.1.14, FR-IN-008)
-  # Only externally-exposed observability service. Browser entrypoint.
-  # ---------------------------------------------------------------------------
-  fsm-signoz-frontend:
-    image: signoz/frontend:0.55.1
-    ports:
-      - "3301:3301"
-    networks:
-      - fsm-dev
-    depends_on:
-      fsm-signoz-query:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget --spider --quiet http://localhost:3301/ || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
+      start_period: 30s
     restart: unless-stopped
 
 # =============================================================================
@@ -200,7 +344,13 @@ networks:
 
 # =============================================================================
 # Volumes — named volumes for persistence between `task dev` invocations
+# B.8.8 / b8-signoz-unified : signoz-sqlite (app state, ADR-B8-SIG-001) +
+# signoz-clickhouse-data (telemetry store) + signoz-zookeeper-data (ADR-007) +
+# signoz-clickhouse-config (cluster.xml written by init-clickhouse, ADR-001).
 # =============================================================================
 volumes:
   fsm-db-data:
+  signoz-sqlite:
   signoz-clickhouse-data:
+  signoz-zookeeper-data:
+  signoz-clickhouse-config:

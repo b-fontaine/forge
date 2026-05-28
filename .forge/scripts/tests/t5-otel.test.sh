@@ -153,10 +153,14 @@ _test_otel_020_coroot_exists() {
   done
 }
 
-# FR-OTEL-021 image coroot/coroot:1.4.4
+# FR-OTEL-021 Coroot image pin (current trio state)
+# b8-coroot-rehost rehosted coroot docker.io/coroot/coroot:1.4.4 →
+# ghcr.io/coroot/coroot:1.20.2 (no v-prefix, ADR-B8-COR-001). Track the
+# current value ; the owning assertion lives in b8-coroot.test.sh::009.
+# Updated 2026-05-27 by b8-signoz-unified to fix a pre-existing CI-red escape.
 _test_otel_021_coroot_image() {
-  if ! grep -q "^[[:space:]]*image: coroot/coroot:1.4.4$" "$COROOT_TPL"; then
-    echo "    expected 'image: coroot/coroot:1.4.4' in $COROOT_TPL" >&2; return 1
+  if ! grep -q "^[[:space:]]*image: ghcr.io/coroot/coroot:1.20.2$" "$COROOT_TPL"; then
+    echo "    expected 'image: ghcr.io/coroot/coroot:1.20.2' in $COROOT_TPL" >&2; return 1
   fi
 }
 
@@ -216,18 +220,20 @@ _test_otel_050_example_mirror() {
   done
 }
 
-# FR-OTEL-080 observability.yaml v1.1.0 + REVIEW.md ledger entry
+# FR-OTEL-080 — t5-otel-stack's persistent observability.yaml deliverables.
+# observability.yaml is shared across the b8-observability-rearch trio, which
+# legitimately mutates the top-level `version:` (now 2.0.0) and `versions.coroot`
+# (now 1.20.2). Those moving targets are owned by the trio harnesses
+# (b8-coroot.test.sh, b8-signoz.test.sh). t5-otel-stack's STABLE contributions
+# are the beyla pin it introduced + the append-only REVIEW.md v1.1.0 birth row
+# (never removed). Narrowed 2026-05-27 by b8-signoz-unified to fix a pre-existing
+# CI-red escape: b8-coroot-rehost bumped the standard without updating this
+# sibling assertion.
 _test_otel_080_standard_bumped() {
-  if ! grep -q '^version: "1.1.0"$' "$STD_OBSERVABILITY"; then
-    echo "    observability.yaml not at version 1.1.0" >&2; return 1
-  fi
   if ! grep -qE '^[[:space:]]*beyla: "2\.0\.1"' "$STD_OBSERVABILITY"; then
     echo "    versions.beyla: \"2.0.1\" missing in observability.yaml" >&2; return 1
   fi
-  if ! grep -qE '^[[:space:]]*coroot: "1\.4\.4"' "$STD_OBSERVABILITY"; then
-    echo "    versions.coroot: \"1.4.4\" missing in observability.yaml" >&2; return 1
-  fi
-  # Full ledger scan for the matching v1.1.0 row in REVIEW.md
+  # Append-only ledger keeps the v1.1.0 birth row regardless of later bumps.
   if ! grep -qE '\| observability\.yaml +\| 1\.1\.0 +\|' "$REVIEW_MD"; then
     echo "    REVIEW.md ledger row for observability.yaml v1.1.0 missing" >&2; return 1
   fi

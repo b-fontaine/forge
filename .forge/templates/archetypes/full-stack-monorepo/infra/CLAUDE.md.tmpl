@@ -179,3 +179,120 @@ local-dev `docker-compose` workflows manually.
 `emptyDir: {}` for a `PersistentVolumeClaim` referencing a storage class
 appropriate for the cluster (block storage minimum 10 GiB, retention
 matching the trace retention budget).
+
+## SigNoz unified architecture (B.8.8 / b8-signoz-unified)
+
+The `docker-compose.dev.yml` SigNoz stack was migrated from the legacy
+3-service layout (`signoz/frontend` + `signoz/query-service` +
+`otel/opentelemetry-collector-contrib`) to the **unified architecture** that
+SigNoz upstream ships at `v0.125.1`. The old 3-service image pins rotted on
+Docker Hub (`signoz/frontend:0.55.1` + `signoz/query-service:0.55.1` →
+`no such manifest`), which is the root cause of the historical `task validate
+dev-up-matrix` RED — this change debloques it. Standard:
+`.forge/standards/observability.yaml` **v2.0.0** (BREAKING).
+
+### Service layout — 4 long-running + 2 init
+
+| Service | Image | Role | Exposure |
+|---|---|---|---|
+| `fsm-signoz` | `signoz/signoz:v0.125.1` | unified UI + query-service + alertmanager + embedded sqlite app state | host `${SIGNOZ_UI_PORT:-3301}` → ctr `:8080` |
+| `fsm-signoz-otel-collector` | `signoz/signoz-otel-collector:v0.144.4` | SigNoz-flavoured OTel collector | host `:4317` (gRPC) + `:4318` (HTTP) |
+| `fsm-signoz-clickhouse` | `clickhouse/clickhouse-server:25.5.6` | telemetry store | internal `:9000` + `:8123` |
+| `fsm-signoz-zookeeper` | `signoz/zookeeper:3.7.1` | ClickHouse replication coordinator | internal `:2181` |
+| `init-clickhouse` | `clickhouse/clickhouse-server:25.5.6` | cluster bootstrap (init, runs once) | — |
+| `fsm-signoz-telemetrystore-migrator` | `signoz/signoz-otel-collector:v0.144.4` | telemetry-store migrations (init, runs once) | — |
+
+### UI port mapping (ADR-B8-SIG-004)
+
+The SigNoz UI listens on container `:8080`. To preserve adopter muscle memory
+(the 3-service arch used `:3301`) AND avoid colliding with the
+`examples/.../backend` default `:8080`, the host port is indirected through
+`SIGNOZ_UI_PORT` with a default of `3301` :
+
+```yaml
+ports:
+  - "${SIGNOZ_UI_PORT:-3301}:8080"
+```
+
+The dashboard stays at `http://localhost:3301` (and `task observe` opens that
+URL). Adopters who prefer SigNoz upstream's `:8080:8080` mapping set
+`SIGNOZ_UI_PORT=8080` in `.env` (after remapping their backend if needed).
+
+### OPAMP is OFF in dev (ADR-B8-SIG-003)
+
+The upstream `v0.125.1` dev Compose wires the collector **statically** via
+`SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_{DSN,CLUSTER,REPLICATION}` env — there are
+**no** `OPAMP_*` env vars. Forge mirrors this: OPAMP (centralised collector
+config push) solves a fleet-scale problem that does not exist at dev scale
+(one collector). OPAMP-aware prod K8s overlays are deferred to a future B.8.x
+change with its own ADR.
+
+### Fresh-start only for dev (Risk #1 + #2)
+
+This is a **dev** compose. ClickHouse bumped 24.1.2 → 25.5.6, and SigNoz now
+uses embedded sqlite app state (was external Postgres in the 3-service arch).
+**No data-volume migration tooling ships** — adopters keep alerts/dashboards
+across `docker compose restart` (named volumes survive) but a `down -v`
+fresh-starts the stack. Prod adopters were already on rotted pins, not
+migrating in place. Do NOT reuse 3-service-era ClickHouse volumes.
+
+### Jurisdiction posture (ADR-B8-SIG-006)
+
+SigNoz Inc is Delaware-incorporated (US, San Francisco HQ + Indian engineering
+office). The CE binary `signoz/signoz:v0.125.1` is open-source and runs
+entirely on adopter infrastructure. **T1 / T2 : SigNoz CE is OK. T3 : SHOULD
+flag SigNoz as candidate-substitution** at the deployment-time Demeter pass —
+adopter decides per their compliance posture. SigNoz Cloud (hosted SaaS) is
+out of scope.
+
+**Usage beacon (NOT silent — opt-out required for T3).** SigNoz CE ships an
+anonymous usage/telemetry `statsreporter` that is **ON by default** on the
+unified image (deployment environment, platform, OS, arch, version — no PII by
+default). This is **not** a no-phone-home posture out of the box. **T3 adopters
+MUST disable it** via the config-file key `statsreporter.enabled: false` (see
+[SigNoz statistics reporting docs](https://signoz.io/docs/telemetry/)). Note
+the legacy `TELEMETRY_ENABLED` env var was **removed in SigNoz > 0.87.0** — it
+is a no-op on `v0.125.1`, so do NOT add it to the compose ; the opt-out lives in
+a mounted `config.yaml`, which this dev compose does not ship (tracked as Q-007
+in `.forge/changes/b8-signoz-unified/open-questions.md`).
+
+### Tag convention — v-prefix (evidence § 1.4)
+
+`signoz/signoz` and `signoz/signoz-otel-collector` Docker Hub tags are
+**v-prefixed** (`v0.125.1`, `v0.144.4`) — the unprefixed form returns no
+manifest. This is the **opposite** of `coroot/coroot` and `grafana/beyla`,
+which are NOT v-prefixed. `observability.yaml::versions.signoz` carries the
+v-prefix accordingly. The additive top-level `pin_review_cadence:` field (ISO
+8601 durations) needs no schema edit — `standard.schema.json` declares
+`additionalProperties: true` at root per **ADR-J7-004** (not ADR-J7-008).
+
+### Production hardening delta (this is a DEV compose — DO NOT ship to prod as-is)
+
+The `docker-compose.dev.yml` SigNoz stack is **local-dev only**, exactly like
+the OBI-DaemonSet and Coroot-persistence warnings above. It is deliberately
+unhardened to keep `task dev:up` frictionless. Before any production-bound
+SigNoz rollout, an **Aegis audit** MUST close these 5 deltas (each is a
+prod-only gap, not a dev bug) :
+
+- **(a) ClickHouse runs as the default user with no password**
+  (`fsm-signoz-clickhouse` sets `CLICKHOUSE_SKIP_USER_SETUP: "1"`). Prod needs
+  a `users.xml` with a password and a `cluster.xml` `<secret>` for
+  distributed-DDL (`ON CLUSTER`) authentication — anonymous cluster DDL is a
+  prod no-go.
+- **(b) Zookeeper allows anonymous login** (`fsm-signoz-zookeeper` sets
+  `ALLOW_ANONYMOUS_LOGIN: "yes"`). Prod needs SASL auth + ACLs so the ensemble
+  is not writable by anything on the network.
+- **(c) No TLS on any endpoint** — OTLP ingest, the SigNoz UI, ClickHouse
+  native/HTTP, and Zookeeper all speak plaintext in dev. Prod terminates TLS
+  (ingress / service mesh / native ClickHouse TLS).
+- **(d) The SigNoz UI has no auth gate** — SigNoz CE defaults to an open UI on
+  first boot. Prod MUST front it with an auth proxy (OIDC / SSO / basic-auth
+  reverse proxy), never expose the bare UI.
+- **(e) OTLP / UI / Kong ports are host-published** (now loopback-bound to
+  `127.0.0.1` for dev safety — see the compose audit comment). Prod MUST use a
+  Kubernetes `NetworkPolicy` + ingress, not raw host port publishing, so the
+  collector and UI are reachable only through controlled ingress paths.
+
+Until these are closed, the stack is safe for a single developer's laptop and
+nothing more. `infra/k8s/overlays/{staging,prod}/` are the home for the
+hardened variants (currently `.gitkeep` only — generated by a future B.8.x leg).

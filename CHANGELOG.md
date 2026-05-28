@@ -12,6 +12,99 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+## [0.4.0-rc.4] — 2026-05-28
+
+### Fixed — SigNoz 3-service → unified arch migration (B.8.8, `b8-signoz-unified`)
+
+- **Debloque the `task validate dev-up-matrix` RED known-issue** carried by
+  `v0.4.0-rc.2` / `v0.4.0-rc.3`. The legacy 3-service SigNoz pins
+  (`signoz/frontend:0.55.1` + `signoz/query-service:0.55.1` +
+  `otel/opentelemetry-collector-contrib:0.96.0`) rotted on Docker Hub
+  (`docker manifest inspect` → `no such manifest`, re-confirmed live
+  2026-05-27). Every adopter scaffolding the flagship inherited a compose
+  that failed ImagePull on the SigNoz services.
+- Migrated `docker-compose.dev.yml.tmpl` to the SigNoz **unified
+  architecture** (`v0.125.1`) — **6 services** (4 long-running + 2 init,
+  ADR-B8-SIG-001/-007) :
+  - `fsm-signoz` (`signoz/signoz:v0.125.1`) — unified UI + query-service +
+    alertmanager + embedded sqlite app state ; UI host
+    `${SIGNOZ_UI_PORT:-3301}` → container `:8080` (ADR-B8-SIG-004 preserves
+    the `:3301` default).
+  - `fsm-signoz-otel-collector` (`signoz/signoz-otel-collector:v0.144.4`) —
+    OTLP `:4317` (gRPC) + `:4318` (HTTP). OPAMP **OFF** in dev
+    (ADR-B8-SIG-003) — static config via `SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_*`
+    env, mirroring upstream (no `OPAMP_*` vars).
+  - `fsm-signoz-clickhouse` (`clickhouse/clickhouse-server:25.5.6`, bumped
+    24→25 per ADR-B8-SIG-002) + `fsm-signoz-zookeeper`
+    (`signoz/zookeeper:3.7.1`, replication coordinator, ADR-B8-SIG-007).
+  - `init-clickhouse` + `fsm-signoz-telemetrystore-migrator` init containers
+    (`restart: on-failure`).
+- `.forge/standards/observability.yaml` **v1.2.0 → v2.0.0 BREAKING** :
+  - ADD `versions.{signoz: "v0.125.1", signoz_otel_collector: "v0.144.4",
+    clickhouse: "25.5.6", signoz_zookeeper: "3.7.1"}`. v-prefix MANDATORY on
+    the two `signoz/*` repos (evidence § 1.4) — **opposite** of `coroot` /
+    `beyla` which carry no prefix.
+  - ADD top-level `pin_review_cadence:` map (ISO 8601 durations `P30D` /
+    `P12M`). Additive — **no `standard.schema.json` edit** required, accepted
+    via the `additionalProperties: true` root posture per **ADR-J7-004**.
+  - `breaking_change: true` marker + WAIVER block citing
+    `standards-lifecycle.md` § Bumps + ADR-J7-004.
+  - `last_reviewed: 2026-05-26` ; `expires_at: 2027-05-26`.
+  - `rationale:` extended with the SigNoz CE jurisdiction posture
+    (ADR-B8-SIG-006 — SigNoz Inc Delaware-incorporated US ; CE self-host
+    T1/T2 OK ; T3 candidate-substitution flag at deployment-time Demeter
+    pass ; SigNoz Cloud out of scope). `versions.beyla` UNCHANGED at `2.0.1`
+    (reserved for trio sibling 3 `b8-obi-refresh`, NFR-B8-SIG-011).
+- `.forge/standards/REVIEW.md` ledger appended 2026-05-26 with the new
+  **`ARCH-CHANGE`** flag (NOT `Updated`) — first use, distinguishing a
+  breaking architectural shift from a version refresh (FR-B8-SIG-H-006).
+- **6-copy mirror sync** byte-identical : canonical `.tmpl` + cli-bundle
+  `.tmpl` + example-side `.tmpl` + cli-bundle example `.tmpl` + rendered
+  example + cli-bundle rendered example.
+- New harness `.forge/scripts/tests/b8-signoz.test.sh` — 17 L1 grep tests +
+  6 L2 opt-in via `FORGE_B8_SIGNOZ_DOCKER=1` (4 manifests multi-arch
+  pullable + compose-up healthy + rotted 3-svc pins denied). Registered in
+  `.github/workflows/forge-ci.yml::harness` matrix (300/300 lines,
+  NFR-CI-002).
+- Snapshot regenerated (`bin/forge-snapshot.sh build full-stack-monorepo
+  1.0.0`) ; cli-bundle mirror byte-identical. A.7 forge-upgrade
+  backward-compat preserved (`a7.test.sh` 29/29 PASS across the breaking
+  bump).
+- Tracked at `.forge/changes/b8-signoz-unified/` ; 7 ADRs
+  (`ADR-B8-SIG-001..007`) ; Q-001..Q-006 all resolved. Sibling 2 of the
+  `b8-observability-rearch` trio. Release vehicle : `v0.4.0-rc.4`.
+
+### Archived — T5.3 Workiva → Dartastic OTel substitution (`t5-otel-dartastic-realign`)
+
+- Change `t5-otel-dartastic-realign` flipped `implemented` → `archived`
+  on 2026-05-26 (timeline entry `archived: 2026-05-26`).
+  Constitution version `1.1.0` (no amendment).
+- Consolidated spec promoted to `.forge/specs/otel-dartastic-realign.md`
+  with the 76 FRs `FR-T53-A-001..030 / B-001..015 / C-001..010 / D-001..006 /
+  E-001..018 / F-001..004 / G-001..004` + 10 NFRs `NFR-T53-001..010` +
+  3 BDD scenarios `BDD-T53-001..003` preserved verbatim from the
+  change's `specs.md`. Article V immutability honored — no edit
+  inside `.forge/changes/t5-otel-dartastic-realign/` other than the
+  YAML status flip.
+- Pre- and post-archive gates re-run from repo root :
+  `verify.sh` 282 PASS / 0 FAIL ; `constitution-linter.sh` 42 PASS /
+  0 FAIL ; `validate-change-yaml.sh` exit 0.
+
+### Archived — T5 Phase C traceparent E2E validation (`t5-otel-traceparent-e2e`)
+
+- Change `t5-otel-traceparent-e2e` flipped `implemented` → `archived`
+  on 2026-05-26 (timeline entry `archived: 2026-05-26`).
+  Constitution version `1.1.0` (no amendment).
+- Consolidated spec promoted to `.forge/specs/otel-traceparent-e2e.md`
+  with the 27 FRs `FR-T5-TPE-001..010 / 020..025 / 040..047 /
+  060..062 / 080 / 090..091` + 7 NFRs `NFR-T5-TPE-001..007` + the
+  three Article II scenarios (Direct / Kong / Sampled-off) preserved
+  verbatim. Article V immutability honored — no edit inside
+  `.forge/changes/t5-otel-traceparent-e2e/` other than the YAML
+  status flip.
+- Pre- and post-archive gates re-run from repo root with the same
+  282 / 42 / 0 result as above.
+
 ## [0.4.0-rc.3]
 
 ### Fixed — Coroot image rehosted ghcr.io (B.8.8, `b8-coroot-rehost`)
@@ -59,8 +152,9 @@ minor bump and will be called out under a `### BREAKING` subsection.
 - **Pilot of the `b8-observability-rearch` trio** (cf.
   `.forge/_memory/b8-observability-rearch-exploration.md`).
   Sibling sub-changes :
-  - `b8-signoz-unified` — SigNoz 4-services-archi → 5-services
-    unified rearch (rc.2 known issue blocker).
+  - `b8-signoz-unified` — SigNoz 4-service 3-component arch → unified
+    6-service (4 long-running + 2 init containers) rearch (rc.2 known
+    issue blocker).
   - `b8-obi-refresh` — Beyla 2.0.1 → 3.15.0 major bump.
 - Tracked at `.forge/changes/b8-coroot-rehost/` ; 4 ADRs
   (`ADR-B8-COR-001..004`) ; 13/13 harness L1 GREEN ; Q-001..Q-004

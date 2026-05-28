@@ -1,5 +1,5 @@
 name: t5-otel-dartastic-realign
-status: implemented
+status: archived
 created: 2026-05-18
 schema: default
 constitution_version: "1.1.0"
@@ -17,3 +17,4 @@ timeline:
   designed: 2026-05-18
   planned: 2026-05-18
   implemented: 2026-05-18
+  archived: 2026-05-26

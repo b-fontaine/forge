@@ -488,3 +488,58 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   + L2 opt-in (`FORGE_B8_COROOT_DOCKER=1`) asserts manifest pullable
   + `--config` flag valid + verify-then-pin invariant
   (`docker.io/coroot/coroot:1.4.4` still denied).
+
+---
+
+## 2026-05-26 — ARCH-CHANGE observability.yaml v1.2.0 → v2.0.0 (b8-signoz-unified)
+
+- **Reviewer**: @bfontaine
+- **Reviewed standards**:
+
+  | Standard           | Version | Decision    | Next review due | Notes                                                                                                                                                                            |
+  |--------------------|---------|-------------|-----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+  | observability.yaml | 2.0.0   | ARCH-CHANGE | 2027-05-26      | BREAKING. SigNoz 3-svc → unified arch : ADD versions.{signoz "v0.125.1", signoz_otel_collector "v0.144.4", clickhouse "25.5.6", signoz_zookeeper "3.7.1"} ; new top-level `pin_review_cadence:` (ISO 8601, ADR-J7-004 additive) ; `breaking_change: true`. Beyla stays 2.0.1 pending trio sibling 3. |
+
+- **Decision**: ARCH-CHANGE (NOT Updated). Updated by `b8-signoz-unified`
+  (sibling 2 of the `b8-observability-rearch` trio, B.8.8 in
+  `docs/new-archetypes-plan.md` §4.2). This is the **first** use of the
+  `ARCH-CHANGE` ledger flag, introduced here to semantically distinguish a
+  breaking architectural shift on a ratified standard from a `Updated`
+  version refresh (FR-B8-SIG-H-006 precedent). The shift is BREAKING (major
+  bump v1.2.0 → v2.0.0) because SigNoz upstream collapsed the 3-service
+  architecture into the unified `signoz/signoz` + `signoz/signoz-otel-collector`
+  layout — a structural rearch, not a version refresh.
+- **Next review due**: 2027-05-26 (12-month window from `last_reviewed:
+  2026-05-26`, preserving `expires_at > last_reviewed` per FR-J7-021).
+- **Notes**: SigNoz migration surfaced by the institutionalised
+  verify-then-pin pass — the old 3-service pins (`signoz/frontend:0.55.1`,
+  `signoz/query-service:0.55.1`) rotted on Docker Hub (`docker manifest
+  inspect` → "no such manifest", re-confirmed live 2026-05-27). The 4 unified
+  pins (`signoz/signoz:v0.125.1` amd64 sha256:e56541… / arm64 sha256:f2e0ce… ;
+  `signoz/signoz-otel-collector:v0.144.4` amd64 sha256:9b2cc1… / arm64
+  sha256:42727e… ; `clickhouse/clickhouse-server:25.5.6` amd64 sha256:5dcbe5… /
+  arm64 sha256:03c712… ; `signoz/zookeeper:3.7.1` amd64 sha256:1e6c92… / arm64
+  sha256:a123ea…) are all `docker manifest inspect` exit-0 multi-arch
+  (evidence.md § 2). The new top-level `pin_review_cadence:` field uses ISO
+  8601 durations (P30D / P12M) and needs **no** `standard.schema.json` edit —
+  the schema declares `additionalProperties: true` at root per **ADR-J7-004**
+  (the schema-location + additionalProperties policy in
+  `j7-validate-standards-yaml/design.md`), NOT ADR-J7-008 which the frozen
+  proposal/specs mis-cited. `breaking_change: true` marker added to the
+  frontmatter as the machine-readable signal. WAIVER block added to the
+  standard frontmatter citing `standards-lifecycle.md` § Bumps + ADR-J7-004.
+  SigNoz CE jurisdiction posture extended in `rationale:` per ADR-B8-SIG-006
+  (SigNoz Inc Delaware-incorporated, US ; CE self-host T1/T2 OK ; T3
+  candidate-substitution flag at deployment-time Demeter pass ; SigNoz Cloud
+  out of scope). `forbidden:` list UNCHANGED (SigNoz NOT added) ;
+  `linter_rule: null` UNCHANGED ; no new K.3 rule ; no `cloud-act-publishers.yml`
+  entry ; `versions.beyla` UNCHANGED at 2.0.1 (NFR-B8-SIG-011 trio coupling —
+  the Beyla 2.0.1 → 3.15.0 major bump is **reserved** for trio sibling 3
+  `b8-obi-refresh`, FR-B8-SIG-J-001/-J-002). Realised across 6 docker-compose
+  mirror copies (canonical .tmpl + cli-bundle .tmpl + example-side .tmpl +
+  cli-bundle example .tmpl + rendered example + cli-bundle rendered example)
+  all carrying the 4 unified pins + 6-service layout (4 long-running + 2
+  init) + audit comment. Harness `b8-signoz.test.sh --level 1` 17/17 GREEN +
+  L2 opt-in (`FORGE_B8_SIGNOZ_DOCKER=1`) asserts the 4 manifests multi-arch
+  pullable + compose-up healthy + rotted 3-svc pins denied. `a7.test.sh`
+  29/29 PASS preserved across the breaking bump.

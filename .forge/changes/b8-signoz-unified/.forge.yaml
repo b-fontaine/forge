@@ -1,0 +1,16 @@
+name: b8-signoz-unified
+status: archived
+created: 2026-05-26
+schema: default
+constitution_version: "1.1.0"
+parent_audit_items:
+  - B.8.8  # docs/new-archetypes-plan.md §4.2 B.8.8 (observability rearch, SigNoz leg)
+depends_on:
+  - b8-coroot-rehost  # pilot (archived v0.4.0-rc.3) — established verify-then-pin, versions field, 4-copy mirror sync, L2 manifest-pull pattern
+timeline:
+  proposed: 2026-05-26
+  specified: 2026-05-26
+  designed: 2026-05-26
+  planned: 2026-05-26
+  implemented: 2026-05-27
+  archived: 2026-05-28

@@ -507,6 +507,7 @@ v1.0.0 sont désormais résolus.
 | `b1-1-dev-up-matrix-fixes`   | archived               | T5.3.1 (full-stack-monorepo docker-compose.dev.yml template hygiene — `traefik/whoami` placeholder + `version:` removal ; archived 2026-05-19 ; release target `v0.4.0-rc.2`) |
 | `t5-3-3-vitest-bundle-preflight` | implemented        | T5.3.3 (vitest globalSetup runs `npm run bundle` once before any test suite, closes `npx vitest` bypass surfaced as T5.3.1 reviewer LOW finding ; `v0.4.0-rc.3`/`0.4.0` target) |
 | `b8-coroot-rehost`           | archived               | B.8.8 (Coroot rehost ghcr.io + 1.20.2 — no v-prefix per ADR-B8-COR-001 inverted at impl ; pilot of `b8-observability-rearch` trio ; T6 first additive brick — siblings `b8-signoz-unified` + `b8-obi-refresh` follow ; v0.4.0-rc.3 target) |
+| `b8-signoz-unified`          | implemented            | B.8.8 (SigNoz 3-svc → unified arch, T6 trio sibling 2 ; `observability.yaml` v1.2.0 → v2.0.0 BREAKING + ISO 8601 `pin_review_cadence:` + ARCH-CHANGE ledger flag ; 6-service compose 4+2 ; débloque `dev-up-matrix` RED ; v0.4.0-rc.4 target) |
 
 **31 archivés** au 2026-05-20 (30 archivés + 1 implemented ce
 jour : T5.3.3). T5.3.1 livré sans `task validate` GREEN
@@ -1462,6 +1463,210 @@ multi-arch + `--config` flag valide + verify-then-pin invariant
 - **Trio sibling 2** : `b8-obi-refresh` — major bump
   `grafana/beyla:2.0.1` → `3.15.0`. Aegis re-audit
   capabilities Linux + RBAC.
+
+### `ARCH-CHANGE` REVIEW.md ledger flag — precedent declaration (b8-signoz-unified, FR-B8-SIG-H-006)
+
+`b8-signoz-unified` (trio sibling 2) introduces **`ARCH-CHANGE`** as a new
+`.forge/standards/REVIEW.md` ledger flag, used in place of the established
+`Updated` / `KEEP-WITH-CHANGES` decision wording when a ratified standard
+undergoes a **breaking architectural shift** rather than a version refresh.
+The originating precedent is `observability.yaml` v1.2.0 → **v2.0.0**, where
+SigNoz upstream collapsed its 3-service architecture into the unified
+`signoz/signoz` + `signoz/signoz-otel-collector` layout — a structural rearch
+(major bump), not an additive version bump. The flag is purely semantic: it
+lets ledger readers (and future automation) distinguish a `breaking_change:
+true` major bump from the routine `Updated` minor refreshes that dominate the
+ledger.
+
+**Article XII compliance** : `ARCH-CHANGE` requires **no constitution
+amendment**. The new additive top-level `pin_review_cadence:` field that ships
+alongside the bump is accepted by `bin/validate-standards-yaml.sh` via the
+`standard.schema.json` `additionalProperties: true` root posture — the
+schema-relaxation precedent recorded in **ADR-J7-004** (`Schema location and
+additionalProperties policy`, `j7-validate-standards-yaml/design.md`), NOT
+ADR-J7-008 (which the frozen `b8-signoz-unified` proposal/specs mis-cited; the
+correction lands only in the WAIVER block, CHANGELOG, and this paragraph per
+Article V — the frozen files are not edited). The breaking major bump itself
+is governed by `standards-lifecycle.md` § Bumps + the WAIVER block in the
+standard frontmatter, which is the existing breaking-bump path — no new
+governance surface is created.
+
+---
+
+## 0.8 Status update — 2026-05-28 (B.8.8 — `b8-signoz-unified` ✅ archived)
+
+> **Origine** : trio sibling 2, suite du pilot `b8-coroot-rehost`
+> (§ 0.7). Débloque le `task validate dev-up-matrix` RED known-issue
+> hérité de v0.4.0-rc.2 / rc.3. T5.3.2 (`t5-otel-stack-image-refresh`
+> ABANDONED 2026-05-20, § 0.5) avait constaté la mort architecturale
+> upstream du 3-services SigNoz (`signoz/frontend:0.55.1` +
+> `signoz/query-service:0.55.1` + collector contrib) ; ce change
+> exécute la re-architecture vers l'image unifiée `signoz/signoz`.
+
+### Fix livré
+
+`b8-signoz-unified` réalise la rearch complète, scope multi-composant.
+Sept surfaces touchées :
+
+- **Compose** : `docker-compose.dev.yml.tmpl` réécrit en **6 services**
+  (4 long-running + 2 init containers, ADR-B8-SIG-001 + ADR-B8-SIG-007) :
+  - `fsm-signoz` (`signoz/signoz:v0.125.1`) — unified UI + query-service
+    + alertmanager + sqlite app state à `/var/lib/signoz/signoz.db` via
+    volume `signoz-sqlite`. Port UI `${SIGNOZ_UI_PORT:-3301}` → container
+    `:8080` (ADR-B8-SIG-004 préserve `:3301` par défaut, évite collision
+    avec backend example).
+  - `fsm-signoz-otel-collector` (`signoz/signoz-otel-collector:v0.144.4`)
+    — OTLP `:4317` (gRPC) + `:4318` (HTTP). **OPAMP OFF** dev
+    (ADR-B8-SIG-003) — config statique via
+    `SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_{DSN,CLUSTER,REPLICATION}` env,
+    aucun `OPAMP_*` (zero env upstream v0.125.1).
+  - `fsm-signoz-clickhouse` (`clickhouse/clickhouse-server:25.5.6`,
+    bumpé 24→25 per ADR-B8-SIG-002, fresh-start dev only).
+  - `fsm-signoz-zookeeper` (`signoz/zookeeper:3.7.1`, ADR-B8-SIG-007
+    émergent — requis par ClickHouse replication mode upstream).
+  - `init-clickhouse` + `fsm-signoz-telemetrystore-migrator` — init
+    containers, `restart: on-failure`, boot bootstrap déterministe.
+  - **v-prefix MANDATORY** sur les deux repos `signoz/*` (opposé de
+    Coroot/Beyla qui droppent le préfixe ; documenté inline pour éviter
+    récurrence de l'inversion ADR-B8-COR-001).
+  - Loopback-bind `127.0.0.1:` sur OTLP/UI/Kong (Aegis post-review
+    finding — dev posture, prod via ingress/network-policy).
+- **Standard** `observability.yaml` v1.2.0 → **v2.0.0 BREAKING** :
+  - ADD `versions.{signoz: "v0.125.1", signoz_otel_collector:
+    "v0.144.4", clickhouse: "25.5.6", signoz_zookeeper: "3.7.1"}`.
+  - ADD top-level **`pin_review_cadence:`** map ISO 8601 (`P30D` /
+    `P12M` — pas `30d` / `12mo`). Additif schema-side via
+    `additionalProperties: true` root posture (ADR-J7-004, **PAS**
+    ADR-J7-008 comme cité par erreur dans proposal/specs frozen ;
+    correction dans WAIVER + CHANGELOG + § 0.7 ledger forward-pointer
+    seulement, Article V).
+  - `breaking_change: true` + WAIVER block citant ADR-J7-004 +
+    `standards-lifecycle.md` § Bumps.
+  - `last_reviewed: 2026-05-26` ; `expires_at: 2027-05-26`.
+  - `rationale:` étendu : SigNoz Inc **Delaware US** (3 sources
+    indépendantes : Terms of Service + CBInsights + Crunchbase) ;
+    CE Apache 2.0 self-host T1/T2 OK ; T3 candidate-substitution
+    flag. Posture phone-home **doc-qualifiée** (statsreporter ON
+    par défaut sur v0.125.1, opt-out via config-file
+    `statsreporter.enabled: false` ; legacy env `TELEMETRY_ENABLED`
+    supprimé > 0.87.0 — pas de fabrication). Config-mount déféré
+    (Q-007 answered, follow-up future B.8.x).
+- **REVIEW.md** : appendé 2026-05-26 avec **nouveau flag
+  `ARCH-CHANGE`** (FR-B8-SIG-H-006, precedent declaration § 0.7
+  forward-section ci-dessus). Première utilisation du flag.
+- **6-copy mirror sync** byte-identical : canonical `.tmpl` +
+  cli-bundle `.tmpl` + example-side `.tmpl` + cli-bundle example
+  `.tmpl` + rendered example + cli-bundle rendered example. Plus
+  4-copy mirror du nouveau collector config template.
+- **Snapshot** régénéré déterministe `full-stack-monorepo/1.0.0.tar.gz`
+  → **668589 bytes** gzipped (`bin/forge-snapshot.sh build
+  full-stack-monorepo 1.0.0`, per-file SHA déterminisme). `a7.test.sh`
+  29/29 PASS (forge-upgrade backward compat préservée).
+- **Harness** `.forge/scripts/tests/b8-signoz.test.sh` — 20 L1 grep
+  tests (incl. 3 snapshot tests post-review fix : budget + cli-byte-
+  identity + tarball-grep) + 6 L2 fixtures opt-in
+  `FORGE_B8_SIGNOZ_DOCKER=1` (manifest pull ×4 + compose-up healthy
+  end-to-end live + rotted-pin denied invariant). Registered dans
+  `forge-ci.yml` matrix.
+- **Doc** : `infra/CLAUDE.md.tmpl` H2 SigNoz section + sous-section
+  **`Production hardening delta (DO NOT ship to prod as-is)`**
+  énumérant les 5 deltas dev→prod (Aegis HIGH post-review).
+
+### 8 ADRs résolus (`ADR-B8-SIG-001..008`)
+
+1. **ADR-001** — sqlite app state `/var/lib/signoz/signoz.db` volume
+   `signoz-sqlite` ; 4 long-running + 2 init = 6 services upstream-
+   verbatim v0.125.1.
+2. **ADR-002** — ClickHouse 24→25 bump, fresh-start dev declared,
+   prod migration deferred.
+3. **ADR-003** — OPAMP OFF dev (zero `OPAMP_*` upstream) ; prod K8s
+   wiring déféré à un follow-up B.8.x.
+4. **ADR-004** — UI port `${SIGNOZ_UI_PORT:-3301}:8080` env-var
+   indirection, préserve UX adopter `:3301`, évite collision backend
+   `:8080`.
+5. **ADR-005** — `pin_review_cadence:` top-level flat map ISO 8601,
+   `standard.schema.json` UNCHANGED via ADR-J7-004 precedent,
+   validator informational (enforcement déféré).
+6. **ADR-006** — SigNoz Inc Delaware-US ; T1/T2 OK CE self-host, T3
+   candidate-substitution flag dans `rationale` ; **pas** de
+   K3-RULE nouveau, **pas** d'entrée `cloud-act-publishers.yml`
+   (miroir précédent ADR-B8-COR-004).
+7. **ADR-007 (émergent)** — `signoz/zookeeper:3.7.1` first-class
+   service, requis par ClickHouse replication metadata. Inversé
+   à `/forge:design` après upstream Compose fetch (verify-then-pin
+   discipline).
+8. **ADR-008 (post-review)** — snapshot ceiling `_test_t5_024`
+   640 KiB → **700 KiB** (716800 B), WAIVER documentant la
+   croissance footprint observability unifié à travers le trio.
+   Headroom ~47 KB pour leg 3 `b8-obi-refresh`. NFR-B8-SIG-001
+   "≤600 KB" dans specs frozen reste superseded par cette ADR
+   (Article V — pattern de supersession identique à la correction
+   ADR-J7-008→ADR-J7-004).
+
+### Inverse proof + harness + indépendant reviewer
+
+`b8-signoz.test.sh --level 1` : **20/20 GREEN**. L2
+`FORGE_B8_SIGNOZ_DOCKER=1` : **26/26 GREEN** (live compose-up,
+docker 29.4.3, **PAS** skip-passed) — full 6-service stack atteint
+convergence (zookeeper + clickhouse + signoz `healthy`, collector
+`running`, migrator completed).
+
+Pre-existing main-CI-red escape attrapée : `b8-coroot-rehost`
+archivé v0.4.0-rc.3 avec `t5-otel.test.sh` 021/080 ROUGE (sibling
+harness hard-pinning shared standard state, oublié par leg 1). Fix
+appliqué sous la même ruling "update assertions" : test_021 →
+`ghcr.io/coroot/coroot:1.20.2` ; test_080 **NARROWED** aux
+délivrables stables t5-otel-stack (beyla + REVIEW.md v1.1.0
+birth row append-only), drops mutable whole-file version + coroot
+pin maintenant détenus par trio harnesses. Robuste aux futurs legs.
+Sibling `b8-coroot.test.sh` 008/010 updated parallèlement.
+
+Full CI harness sweep POST-archive flip : `t5.test.sh` 25/25
+(`_test_t5_024` GREEN, snapshot 668589 < 716800), `b8-signoz`
+20/20 L1, `b8-coroot` 13/13, `t5-otel` 14/14, `t5-otel-app` 16/16,
+`t5-otel-traceparent-e2e` 7/7, `t5-otel-live-run` 8/8,
+`t5-otel-dartastic` 13/13, `a7.test.sh` 29/29.
+`verify.sh` 288/0 PASS (Open Questions Gate enforces archived —
+7/7 Q-NNN answered, 0 open). `constitution-linter` 43/0 PASS
+(Article III.4 enforces archived — proposal markers backtick-wrapped
+survivent). `validate-change-yaml` + `validate-standards-yaml
+observability.yaml` exit 0. `forge-ci.yml` 300/300 lignes
+(NFR-CI-002 plafond).
+
+**Indépendant reviewer** (T5.2 self-validation discipline) a
+re-exécuté tous les gates from-scratch (no transcript trust) et a
+vérifié : pas de fabrication de symboles/env upstream (collector
+config byte-identical sauf le host ClickHouse documenté ; pas de
+`TELEMETRY_ENABLED` guessed — supprimé > 0.87.0 confirmé) ; 4 pins
+re-inspected live (8 digests amd64+arm64 byte-identical à evidence
+§ 1 et § 2 propose/implement captures) ; Article V freeze tenu
+(proposal/specs/design unchanged mtimes). Aegis = SECURITY PASS
+(0 CRITICAL, no secrets/privilege/egress, internal services ZK/CH
+non-published, OPAMP-off confirmé, exact multi-arch pins).
+
+### Effort + release + suite
+
+- **Effort réel** : `L` (multi-composant, schema breaking, schema
+  bump, 3 review rounds — post-implement reviewer + Aegis +
+  verifier → 1 fix-batch + ADR-008 + budget bump WAIVER). ~3 jours
+  total propose→archive.
+- **Release target** : **v0.4.0-rc.4** (ship signoz unifié solo,
+  débloque known-issue `task validate dev-up-matrix` SigNoz leg).
+  Kong leg (`kong:3.6-alpine` rotted) reste hors scope, séparé
+  futur B.8.x — `dev-up-matrix` end-to-end reste partiellement RED
+  sur Kong, contribution SigNoz au RED résolue (proven L2 live).
+- **Trio sibling 3** : `b8-obi-refresh` — major bump
+  `grafana/beyla:2.0.1` → `3.15.0`. Aegis re-audit caps Linux +
+  RBAC. Refresh `last_reviewed` standard (harnesses sibling tests
+  010 acceptent `2026-05-2[67]` — élargir pour leg 3 date).
+  **Lesson institutionnalisée** : tout change qui bumpe un
+  standard partagé doit run la FULL `forge-ci.yml` harness matrix
+  (pas que son propre harness) avant flip `planned→implemented`,
+  et updater tous les sibling-harnesses hard-pinning le standard
+  (mémoire `shared_standard_sibling_harness_coupling.md`).
+- **Snapshot budget pour leg 3** : ~47 KB headroom sous le 700 KiB
+  ceiling (668589 + ~47 KB ≈ 716800 B). Si Beyla 3.15.0 templates
+  ajoutent plus, leg 3 doit bumper le ceiling avec sa propre ADR.
 
 ---
 

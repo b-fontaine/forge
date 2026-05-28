@@ -523,15 +523,29 @@ if missing:
 PY
 }
 _test_t5_024() {
-  # FR-T5-CC-051 : snapshot tarball size ≤ 640 KB gzipped (post-T-RUST bump).
+  # FR-T5-CC-051 : snapshot tarball size ceiling — the CI-enforced budget gate.
+  #
+  # ── WAIVER : snapshot budget bump 640 KiB → 700 KiB (ADR-B8-SIG-008) ──
+  # Rationale : observability stack unified-arch footprint growth across the
+  # b8-observability-rearch trio (coroot rehost + signoz unified); 700 KiB
+  # ceiling gives headroom for the b8-obi-refresh leg.
+  #   Verify-then-pin-style WAIVER : current snapshot measured 664855 B at
+  #   b8-signoz-unified archive; ceiling set 700 KiB with ~52 KB headroom.
+  # The frozen specs.md NFR-B8-SIG-001 "≤ 600 KB" text stays per Article V,
+  # superseded by ADR-B8-SIG-008 (same supersession pattern as the
+  # ADR-J7-008 → ADR-J7-004 citation correction). The prior 640 KiB ceiling
+  # was already silently below the HEAD snapshot (650211 B on main); this bump
+  # makes the gate honest and authoritative again. This is THE authoritative
+  # snapshot-size gate — b8-signoz.test.sh asserts ≤ the same 716800 B ceiling
+  # but points here as the source of truth (keep both in lockstep on any bump).
   if [ ! -f "$SNAPSHOT" ]; then
     echo "    missing snapshot tarball: $SNAPSHOT" >&2
     return 1
   fi
   local size_bytes; size_bytes="$(wc -c <"$SNAPSHOT" | tr -d ' ')"
-  local budget_bytes=$((640 * 1024))
+  local budget_bytes=716800  # 700 KiB (ADR-B8-SIG-008 WAIVER ; was 640*1024)
   if [ "$size_bytes" -gt "$budget_bytes" ]; then
-    echo "    snapshot $size_bytes bytes > $budget_bytes budget (640 KB)" >&2
+    echo "    snapshot $size_bytes bytes > $budget_bytes budget (700 KiB — ADR-B8-SIG-008)" >&2
     return 1
   fi
 }

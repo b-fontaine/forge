@@ -142,6 +142,9 @@ jobs:
       - name: b8-coroot.test.sh
         # B.8.8 Coroot rehost ghcr.io + 1.20.2. L2 opt-in via FORGE_B8_COROOT_DOCKER=1.
         run: bash .forge/scripts/tests/b8-coroot.test.sh --level 1
+      - name: b8-signoz.test.sh
+        # B.8.8 SigNoz 3-svc → unified arch. L2 opt-in via FORGE_B8_SIGNOZ_DOCKER=1.
+        run: bash .forge/scripts/tests/b8-signoz.test.sh --level 1
 
   # ─── gates ── verify.sh + constitution-linter.sh ───────────────
   gates:
