@@ -209,11 +209,11 @@ _test_t5c_l1_010_changelog_entry() {
   if [ ! -f "$CHANGELOG_MD" ]; then
     echo "    CHANGELOG.md missing: $CHANGELOG_MD" >&2; return 1
   fi
-  # Extract the [Unreleased] section and confirm the change ID is mentioned.
-  local section
-  section=$(awk '/^## \[Unreleased\]/{f=1;next} /^## \[/{f=0} f' "$CHANGELOG_MD")
-  if ! printf '%s' "$section" | grep -Fq "t5-cargo-pin-refresh"; then
-    echo "    CHANGELOG.md [Unreleased] does not mention t5-cargo-pin-refresh" >&2
+  # The change shipped in v0.3.3, so its entry has graduated from [Unreleased]
+  # to a versioned section. Assert the permanent record exists anywhere in the
+  # changelog (mirrors the REVIEW.md ledger check above).
+  if ! grep -Fq "t5-cargo-pin-refresh" "$CHANGELOG_MD"; then
+    echo "    CHANGELOG.md does not mention t5-cargo-pin-refresh" >&2
     return 1
   fi
 }
