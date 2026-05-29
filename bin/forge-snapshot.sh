@@ -124,28 +124,84 @@ cmd_build() {
     err "no owned paths resolved — refusing to build empty snapshot"; exit 4
   fi
 
-  # Tar the staging tree. Reproducibility-friendly flags differ
-  # between GNU tar (Linux) and BSD tar (macOS) ; we keep the
-  # invocation portable and accept timestamp variance. Sameness
-  # in `forge upgrade` is SHA-256 per file (ADR-004), not over the
-  # tarball — so per-file determinism is what matters and is
-  # preserved by `cp -p` not setting any new flags.
+  # Tarball production — Python tarfile path (b8-obi-refresh /
+  # ADR-B8-OBI-011 determinism patch, 2026-05-29).
   #
-  # macOS-specific : strip xattrs + AppleDouble metadata so the tarball
-  # is byte-portable across BSD tar (build-side, macOS) and GNU tar
-  # (consume-side, Linux CI). Without these flags, bsdtar embeds
-  # `LIBARCHIVE.xattr.com.apple.provenance` headers + `._<file>`
-  # AppleDouble entries that GNU tar reads as plain files, doubling
-  # the entry count and breaking `tar -tzf | grep <real-file>` assertions
-  # downstream. Discovered via t5_023 CI failure on PR #3 (043 stage).
-  local _tar_extra_flags=()
-  if [ "$(uname -s)" = "Darwin" ]; then
-    _tar_extra_flags+=(--no-mac-metadata --no-xattrs)
+  # Two reproducibility properties enforced :
+  #   1. Per-file SHA-256 determinism — preserved by `cp -p` (was
+  #      already the case ; this is what `forge upgrade` checks via
+  #      ADR-004).
+  #   2. **Tarball byte-identity across rebuilds** — newly enforced
+  #      via SOURCE_DATE_EPOCH-pinned mtimes + sorted entry order +
+  #      uid/gid normalised to 0 + uname/gname blanked + gzip header
+  #      mtime stripped. Lifts the long-standing variance previously
+  #      acknowledged in this script (rebuild produced different
+  #      SHA-256). Triggered by the trio-3 review finding (HIGH)
+  #      that NFR-B8-OBI-011 claimed byte-identity the tooling did
+  #      not deliver.
+  #
+  # SOURCE_DATE_EPOCH source : env-var first, then `git log -1
+  # --pretty=%ct` HEAD timestamp (FORGE_ROOT), then 0. Mirrors the
+  # I.5 ADR-I5-CW-002 commit-ts precedent (`bin/forge-sbom.sh` uses
+  # the same fallback chain for CycloneDX SBOM determinism).
+  #
+  # macOS / Linux portability — Python tarfile is used instead of
+  # invoking `tar(1)` so the same code path runs on BSD tar (macOS)
+  # and GNU tar (Linux CI). The previous BSD-only
+  # `--no-mac-metadata --no-xattrs` flags are no longer needed
+  # because `cp -p` over Python tarfile addition does not surface
+  # AppleDouble / xattr headers (TarInfo objects are constructed
+  # from stat() output only).
+  local sde="${SOURCE_DATE_EPOCH:-}"
+  if [ -z "$sde" ]; then
+    sde=$(cd "$FORGE_ROOT" && git log -1 --pretty=%ct 2>/dev/null || echo 0)
   fi
-  ( cd "$tmp" && tar "${_tar_extra_flags[@]}" -czf "$out_file" . )
+
+  python3 - "$tmp" "$out_file" "$sde" <<'PY'
+import os, sys, tarfile, gzip, io
+src_dir, out_path, sde = sys.argv[1], sys.argv[2], int(sys.argv[3])
+
+# Walk + sort lexically (LC_ALL=C-equivalent — Python sort uses
+# byte-comparison on byte-strings or codepoint-comparison on str).
+entries = []
+for dirpath, dirs, files in os.walk(src_dir):
+    dirs.sort()
+    for f in sorted(files):
+        entries.append(os.path.join(dirpath, f))
+entries.sort()
+
+# Write tarball through a gzip stream with explicit mtime=0 so the
+# gzip header carries no embedded timestamp (otherwise gzip stamps
+# the wall-clock at compression time and breaks byte-identity).
+with open(out_path, 'wb') as fp:
+    with gzip.GzipFile(filename='', mode='wb', fileobj=fp, mtime=0) as gz:
+        # Use ustar format (POSIX, portable) — avoids the
+        # variable-length pax extended headers GNU tar emits by
+        # default.
+        with tarfile.open(fileobj=gz, mode='w', format=tarfile.USTAR_FORMAT) as tf:
+            for abs_path in entries:
+                rel = os.path.relpath(abs_path, src_dir)
+                # Tar entry name uses the POSIX './<rel>' shape that
+                # the previous `tar -czf <out> .` invocation produced,
+                # for backward identity with consumers that grep on
+                # the leading './'.
+                ti = tarfile.TarInfo(name=f'./{rel}')
+                st = os.stat(abs_path)
+                ti.size = st.st_size
+                ti.mtime = sde
+                ti.mode = st.st_mode & 0o7777
+                # Normalise owner/group — drop host-specific uids.
+                ti.uid = 0
+                ti.gid = 0
+                ti.uname = ''
+                ti.gname = ''
+                ti.type = tarfile.REGTYPE
+                with open(abs_path, 'rb') as content:
+                    tf.addfile(ti, content)
+PY
 
   local size; size=$(wc -c < "$out_file" | tr -d ' ')
-  echo "✓ snapshot built: $out_file ($count files, $size bytes gzipped)"
+  echo "✓ snapshot built: $out_file ($count files, $size bytes gzipped, SOURCE_DATE_EPOCH=$sde)"
 }
 
 cmd_extract() {

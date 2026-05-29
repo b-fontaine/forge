@@ -12,6 +12,73 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+## [0.4.0-rc.5] — 2026-05-29
+
+### Changed — OBI/Beyla major bump 2.0.1 → 3.15.0 (B.8.8, `b8-obi-refresh`)
+
+- **Closes the `b8-observability-rearch` trio** (sibling 3 of 3 — Coroot leg 1
+  v0.4.0-rc.3 + SigNoz leg 2 v0.4.0-rc.4 + OBI leg 3 v0.4.0-rc.5). Reserved
+  scope held by sibling 2 (NFR-B8-SIG-011 / FR-B8-SIG-J-001) is now consumed.
+- Refreshed `templates/full-stack-monorepo/.../infra/k8s/base/obi-daemonset.yaml.tmpl`
+  image pin `grafana/beyla:2.0.1` → `grafana/beyla:3.15.0`. Multi-arch
+  (amd64+arm64) confirmed live via `docker manifest inspect grafana/beyla:3.15.0`
+  on 2026-05-29 (digests captured in `evidence.md` § 1) — verify-then-pin
+  discipline (lesson T5.3.2 institutionalised).
+- ClusterRole **RBAC widened** (ADR-B8-OBI-003) — added `services` resource
+  to the `apiGroups: [""]` rule per Beyla 3.x official docs (Context7
+  `/grafana/beyla` cilium-compatibility.md). Read-only verbs preserved
+  (`get/list/watch`) ; least-privilege invariant upheld. No new API
+  groups ; no write verbs.
+- Aegis re-audit pass (per ADR-B8-OBI-002/003/004) :
+  - **Linux capabilities UNCHANGED** — the 8-cap set (BPF / SYS_PTRACE /
+    NET_RAW / CHECKPOINT_RESTORE / DAC_READ_SEARCH / PERFMON / NET_ADMIN /
+    SYS_ADMIN) matches Beyla 3.x distributed-traces.md verbatim. Forge
+    flagship enables W3C `traceparent` E2E propagation ⇒ NET_ADMIN
+    required + SYS_ADMIN recommended.
+  - **Kernel floor UNCHANGED** at 5.8 — Beyla 3.x README Requirements
+    section confirms 5.8+ with BTF still mandatory. Opt-in nodeSelector
+    `forge.dev/kernel-min-58: "true"` preserved verbatim ; zero migration
+    burden for adopters already labelling.
+- `.forge/standards/observability.yaml` **v2.0.0 → v2.1.0 additive minor** :
+  - UPDATE `versions.beyla: "2.0.1"` → `"3.15.0"` (no v-prefix preserved
+    per inline `versions:` block convention).
+  - UPDATE `last_reviewed: 2026-05-26 → 2026-05-29` ;
+    `expires_at: 2027-05-26 → 2027-05-29`.
+  - FLIP `breaking_change: true → false` (sibling 2 ARCH-CHANGE state
+    consumed ; additive minor bump per standards-lifecycle.md § Bumps —
+    NO WAIVER required, sibling 2 WAIVER block preserved Article V
+    append-only).
+  - `pin_review_cadence.beyla: "P12M"` preserved (slow OBI cadence).
+  - `rationale:` extended with the OBI bump trigger + RBAC widen +
+    Aegis re-audit outcomes section.
+- `.forge/standards/REVIEW.md` ledger appended 2026-05-29 with the
+  `Updated` flag (NOT `ARCH-CHANGE` — reserved for breaking shifts
+  per FR-B8-SIG-H-006 precedent).
+- **4-copy mirror sync** byte-identical : canonical `.tmpl` + cli-bundle
+  `.tmpl` + rendered example + cli-bundle rendered example (no example-side
+  `.forge/templates/...` mirror — unlike SigNoz 6-copy, this is K8s-only
+  not docker-compose).
+- New harness `.forge/scripts/tests/b8-obi.test.sh` — **22 L1 grep tests
+  + 2 L2 opt-in** via `FORGE_B8_OBI_DOCKER=1` (manifest pullable + old-pin
+  informational). Registered in `.github/workflows/forge-ci.yml::harness`
+  matrix ; line budget compressed by 3 audit comments per ADR-B8-OBI-007
+  (mirroring ADR-T533-002) ; **300/300 lines preserved** (NFR-CI-002).
+- **Sibling-harness coupling break** (ADR-B8-OBI-006 hybrid) — narrowed
+  `t5-otel.test.sh:128/233` (pin VALUE ownership transferred to
+  `b8-obi.test.sh` ; t5-otel asserts only invariants) + widened
+  `b8-coroot.test.sh` + `b8-signoz.test.sh` date / version / breaking_change
+  regex windows (1-char widening accepts trio-internal additive bumps
+  without future sibling-harness sweep). Closes the institutionalised
+  `shared_standard_sibling_harness_coupling.md` debt for this trio.
+- Snapshot regenerated (`bin/forge-snapshot.sh build full-stack-monorepo
+  1.0.0`) — 675088 B, well under the 716800 B ceiling (ADR-B8-SIG-008,
+  ~42 KB headroom remaining) ; cli-bundle mirror byte-identical.
+  `a7.test.sh` 29/29 PASS preserved.
+- Tracked at `.forge/changes/b8-obi-refresh/` ; 8 ADRs
+  (`ADR-B8-OBI-001..008`) ; Q-001..Q-007 all resolved at `/forge:design`.
+  Sibling 3 of 3 — release vehicle : **v0.4.0-rc.5** (trio closure
+  release).
+
 ## [0.4.0-rc.4] — 2026-05-28
 
 ### Fixed — SigNoz 3-service → unified arch migration (B.8.8, `b8-signoz-unified`)

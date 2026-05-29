@@ -507,10 +507,11 @@ v1.0.0 sont désormais résolus.
 | `b1-1-dev-up-matrix-fixes`   | archived               | T5.3.1 (full-stack-monorepo docker-compose.dev.yml template hygiene — `traefik/whoami` placeholder + `version:` removal ; archived 2026-05-19 ; release target `v0.4.0-rc.2`) |
 | `t5-3-3-vitest-bundle-preflight` | implemented        | T5.3.3 (vitest globalSetup runs `npm run bundle` once before any test suite, closes `npx vitest` bypass surfaced as T5.3.1 reviewer LOW finding ; `v0.4.0-rc.3`/`0.4.0` target) |
 | `b8-coroot-rehost`           | archived               | B.8.8 (Coroot rehost ghcr.io + 1.20.2 — no v-prefix per ADR-B8-COR-001 inverted at impl ; pilot of `b8-observability-rearch` trio ; T6 first additive brick — siblings `b8-signoz-unified` + `b8-obi-refresh` follow ; v0.4.0-rc.3 target) |
-| `b8-signoz-unified`          | implemented            | B.8.8 (SigNoz 3-svc → unified arch, T6 trio sibling 2 ; `observability.yaml` v1.2.0 → v2.0.0 BREAKING + ISO 8601 `pin_review_cadence:` + ARCH-CHANGE ledger flag ; 6-service compose 4+2 ; débloque `dev-up-matrix` RED ; v0.4.0-rc.4 target) |
+| `b8-signoz-unified`          | archived               | B.8.8 (SigNoz 3-svc → unified arch, T6 trio sibling 2 ; `observability.yaml` v1.2.0 → v2.0.0 BREAKING + ISO 8601 `pin_review_cadence:` + ARCH-CHANGE ledger flag ; 6-service compose 4+2 ; débloque `dev-up-matrix` RED ; archived 2026-05-28 ; v0.4.0-rc.4 released) |
+| `b8-obi-refresh`             | archived               | B.8.8 (OBI/Beyla refresh 2.0.1 → 3.15.0, T6 trio sibling 3 — closes the trio ; `observability.yaml` v2.0.0 → v2.1.0 additive ; ClusterRole RBAC widened `services` per Beyla 3.x docs ; caps + kernel-58 UNCHANGED ; 4-copy mirror sync ; sibling-harness coupling break hybrid per ADR-B8-OBI-006 ; snapshot determinism enforced via Python tarfile + SOURCE_DATE_EPOCH (post-review HIGH fix) ; archived 2026-05-29 ; v0.4.0-rc.5 target) |
 
-**31 archivés** au 2026-05-20 (30 archivés + 1 implemented ce
-jour : T5.3.3). T5.3.1 livré sans `task validate` GREEN
+**33 archivés** au 2026-05-29. Trio B.8.8 observability rearch
+**fully closed** (Coroot leg 1 rc.3 + SigNoz leg 2 rc.4 + OBI leg 3 rc.5). T5.3.1 livré sans `task validate` GREEN
 end-to-end : le L2 et `task validate` exposent **Q-005**
 (SigNoz image pins rotted upstream + architecture migration
 3-services → unified ; pin refresh impossible). Tentative
@@ -1667,6 +1668,107 @@ non-published, OPAMP-off confirmé, exact multi-arch pins).
 - **Snapshot budget pour leg 3** : ~47 KB headroom sous le 700 KiB
   ceiling (668589 + ~47 KB ≈ 716800 B). Si Beyla 3.15.0 templates
   ajoutent plus, leg 3 doit bumper le ceiling avec sa propre ADR.
+
+---
+
+## 0.9 Status update — 2026-05-29 (B.8.8 — `b8-obi-refresh` ✅ archived — trio closed)
+
+> **Origine** : trio sibling 3, clôture du `b8-observability-rearch` trio
+> (Coroot leg 1 v0.4.0-rc.3 → SigNoz leg 2 v0.4.0-rc.4 → OBI leg 3
+> v0.4.0-rc.5). Réservé scope porté par sibling 2 NFR-B8-SIG-011 /
+> FR-B8-SIG-J-001 (Beyla 2.0.1 → 3.15.0 major bump explicitly deferred
+> to this leg). Aucun blocage downstream — `task validate dev-up-matrix`
+> SigNoz leg déjà débloqué par rc.4 ; ce change additif clôture
+> proprement le trio sans risque rearch.
+
+### Fix livré
+
+`b8-obi-refresh` réalise le refresh major Beyla scope mono-composant.
+Sept surfaces touchées :
+
+- **Template canonique** `obi-daemonset.yaml.tmpl` (ADR-B8-OBI-001) :
+  - `image: grafana/beyla:2.0.1` → `image: grafana/beyla:3.15.0`
+    (no v-prefix per inline `versions:` block convention).
+  - ClusterRole `apiGroups: [""]` resources WIDENED `[pods, nodes]` →
+    `[pods, nodes, services]` (ADR-B8-OBI-003, Beyla 3.x official
+    cilium-compatibility.md). Read-only verbs préservés `get/list/watch`.
+  - Audit comment block injecté + annotation
+    `forge.dev/standard: "observability.yaml@2.1.0"`.
+- **Caps + kernel UNCHANGED** (ADR-B8-OBI-002/004) : 8-cap set verbatim
+  per Beyla 3.x distributed-traces.md ; kernel-58 nodeSelector
+  préservé per Beyla 3.x README Requirements section.
+- **Standard** `observability.yaml` **v2.0.0 → v2.1.0 additive minor** :
+  - `versions.beyla: "2.0.1"` → `"3.15.0"` (no v-prefix).
+  - `last_reviewed: 2026-05-26 → 2026-05-29` ;
+    `expires_at: 2027-05-26 → 2027-05-29`.
+  - `breaking_change: true → false` (sibling 2 ARCH-CHANGE state
+    consumed ; additive minor per standards-lifecycle.md § Bumps).
+  - `pin_review_cadence.beyla: "P12M"` préservé.
+  - Sibling 2 WAIVER block préservé Article V append-only ; NO new WAIVER.
+  - `rationale:` étendu avec section Beyla bump.
+- **REVIEW.md** appendé 2026-05-29 avec flag `Updated` (NOT
+  `ARCH-CHANGE` — réservé aux breaking shifts).
+- **4-copy mirror sync** byte-identical (canonical .tmpl + cli-bundle
+  .tmpl + rendered example + cli-bundle rendered example — no
+  example-side `.forge/templates/...` mirror car K8s-only, opposé du
+  6-copy pattern de SigNoz docker-compose).
+- **Harness** `.forge/scripts/tests/b8-obi.test.sh` — **22 L1 + 2 L2
+  opt-in** (manifest pullable + old-pin informational). Registered dans
+  `forge-ci.yml::harness` matrix.
+- **Sibling-harness coupling break** (ADR-B8-OBI-006 hybrid) — 8 sibling
+  assertions narrowed/widened à travers `t5-otel.test.sh` (lignes
+  128, 237 — pin VALUE ownership transferred to b8-obi.test.sh),
+  `b8-coroot.test.sh` (lignes 169, 196 — version + date regex widened
+  à v2.x.y et `2026-05-2[6789]`), `b8-signoz.test.sh` (lignes 229,
+  299, 304, 323 — version + dates + breaking_change widened). Sweep
+  grep post-edit : zéro leak Beyla 2.0.1 hors b8-obi.test.sh interne.
+
+### 8 ADRs résolus (`ADR-B8-OBI-001..008`)
+
+1. **ADR-001** — pin `grafana/beyla:3.15.0` confirmed live multi-arch
+   (amd64 sha256:8ff0dcb4… + arm64 sha256:ac770096…, evidence § 1).
+2. **ADR-002** — Linux caps UNCHANGED (8-cap distributed-traces set ;
+   Beyla 3.x docs verbatim, evidence § 2).
+3. **ADR-003** — RBAC WIDENED `services` resource (Beyla 3.x docs ;
+   read-only verbs only, no write verbs introduced, evidence § 3).
+4. **ADR-004** — kernel floor 5.8 UNCHANGED (Beyla 3.x README, evidence § 4).
+5. **ADR-005** — mirror count = 4 (find enumeration, evidence § 5).
+6. **ADR-006** — sibling-harness coupling break hybrid (narrow + widen,
+   evidence § 6). Closes `shared_standard_sibling_harness_coupling.md`
+   debt for this trio.
+7. **ADR-007** — `forge-ci.yml` 300/300 preserved via 3-comment
+   compression per ADR-T533-002 precedent (evidence § 7).
+8. **ADR-008** — snapshot ceiling 716800 B preserved ; post-change
+   675088 B with ~42 KB headroom remaining (evidence § 8).
+
+### Inverse proof + harness + indépendant reviewer
+
+`b8-obi.test.sh --level 1` : **22/22 GREEN**. Sibling trio full sweep
+post-edit : `t5-otel` 14/14 + `b8-coroot` 13/13 + `b8-signoz` 20/20 +
+`b8-obi` 22/22 = **69/69 trio GREEN**. `a7.test.sh` 29/29 PASS
+préservé. `validate-standards-yaml.sh observability.yaml` STD-PASS.
+`forge-ci.yml` 300/300 ≤ NFR-CI-002.
+
+**Indépendant reviewer** (T5.2 self-validation discipline) MUST
+re-exécuter from-scratch (no transcript trust) : (a) `docker manifest
+inspect grafana/beyla:3.15.0` → digests match evidence § 1 ; (b) full
+harness matrix → 69/69 + 29/29 + STD-PASS ; (c) `verify.sh` +
+`constitution-linter.sh` → 0 FAIL + OVERALL PASS ; (d)
+`grep -rn 'beyla.*2\.0\.1' .forge/scripts/tests/` → seul b8-obi.test.sh
+header + L2 OLD_PIN const persistent (intentionnel).
+
+### Effort + release + trio closure
+
+- **Effort réel** : `S` (single-component, additive bump, lower
+  complexity than sibling 2). ~quelques heures total propose→implemented.
+- **Release target** : **v0.4.0-rc.5** — trio closure release. Ship
+  OBI refresh solo, ferme proprement le trio B.8.8. Pas de Kong
+  leg dans ce scope (séparé futur B.8.x).
+- **Trio closed** : B.8.8 observability rearch terminé (Coroot
+  rc.3 + SigNoz rc.4 + OBI rc.5). Prochaine étape T6 : B.8 flagship
+  migration 1.0.0 → 2.0.0 (Envoy + DBOS + Connect + Zitadel +
+  Postgres+pgvector — non commencé) ou consolidation
+  v0.4.0 stable post-rc.5 si trilogie suffisante pour cut majeur.
 
 ---
 

@@ -27,7 +27,7 @@ metadata:
     app.kubernetes.io/component: obi
 rules:
   - apiGroups: [""]
-    resources: ["pods", "nodes"]
+    resources: ["pods", "nodes", "services"]
     verbs: ["get", "list", "watch"]
   - apiGroups: ["apps"]
     resources: ["replicasets"]
@@ -58,7 +58,7 @@ metadata:
     app.kubernetes.io/component: obi
   annotations:
     forge.dev/aegis-audit: "required"
-    forge.dev/standard: "observability.yaml@1.1.0"
+    forge.dev/standard: "observability.yaml@2.1.0"
 spec:
   selector:
     matchLabels:
@@ -82,9 +82,14 @@ spec:
           operator: Exists
         - effect: NoExecute
           operator: Exists
+      # ── B.8.8 / b8-obi-refresh (2026-05-29) — Beyla major bump ──
+      # Refreshed from grafana/beyla:2.0.1 (T.5 / t5-otel-stack 2026-05-09)
+      # to grafana/beyla:3.15.0 (verify-then-pin discipline, lesson T5.3.2).
+      # Aegis re-audited caps + RBAC + kernel floor at ADR-B8-OBI-002/003/004.
+      # ClusterRole gains `services` resource per Beyla 3.x docs (ADR-B8-OBI-003).
       containers:
         - name: obi
-          image: grafana/beyla:2.0.1
+          image: grafana/beyla:3.15.0
           imagePullPolicy: IfNotPresent
           terminationMessagePolicy: FallbackToLogsOnError
           securityContext:

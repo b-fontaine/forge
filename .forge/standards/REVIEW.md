@@ -543,3 +543,48 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   L2 opt-in (`FORGE_B8_SIGNOZ_DOCKER=1`) asserts the 4 manifests multi-arch
   pullable + compose-up healthy + rotted 3-svc pins denied. `a7.test.sh`
   29/29 PASS preserved across the breaking bump.
+
+---
+
+## 2026-05-29 — Updated observability.yaml to v2.1.0 (b8-obi-refresh)
+
+- **Reviewer**: @bfontaine
+- **Reviewed standards**:
+
+  | Standard           | Version | Decision | Next review due | Notes                                                                                                                                                                                                                                              |
+  |--------------------|---------|----------|-----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+  | observability.yaml | 2.1.0   | Updated  | 2027-05-29      | Additive minor bump (`b8-obi-refresh` — trio sibling 3 closure). versions.beyla 2.0.1 → 3.15.0 (no v-prefix). ClusterRole RBAC WIDENED — `services` resource added per Beyla 3.x docs (ADR-B8-OBI-003). Caps + kernel-58 UNCHANGED. `breaking_change: false` flipped back from sibling 2 ARCH-CHANGE state. |
+
+- **Decision**: Updated (NOT ARCH-CHANGE). This entry closes the
+  `b8-observability-rearch` trio (Coroot leg 1 v0.4.0-rc.3 → SigNoz leg 2
+  v0.4.0-rc.4 → OBI leg 3 v0.4.0-rc.5). The bump is additive : single
+  versions.beyla string change + read-only ClusterRole resource widening +
+  rationale extension. No new top-level fields, no schema surgery, no
+  WAIVER. Article XII compliance preserved per standards-lifecycle.md
+  § Bumps additive-only default.
+- **Next review due**: 2027-05-29 (12-month window from `last_reviewed:
+  2026-05-29`, preserving `expires_at > last_reviewed` per FR-J7-021).
+- **Notes**: Beyla 3.15.0 multi-arch (amd64+arm64) verified live via
+  `docker manifest inspect grafana/beyla:3.15.0` 2026-05-29 (digests
+  captured in `.forge/changes/b8-obi-refresh/evidence.md` § 1 :
+  amd64 sha256:8ff0dcb4aa31fab39ba0b40715d0c0441d4522b43fb7886768ec280cc401dd69
+  + arm64 sha256:ac770096bcb51bde0a810a1ef5009ddaed5b3b08dacdec856cccd1be6e65e30d
+  + 2 attestation manifests `unknown/unknown` cosign/SLSA).
+  Aegis re-audit (ADR-B8-OBI-002/003/004) : 8-cap distributed-traces
+  set UNCHANGED per Beyla 3.x docs/distributed-traces.md (Forge flagship
+  enables W3C traceparent E2E ⇒ NET_ADMIN required + SYS_ADMIN
+  recommended) ; ClusterRole apiGroups:[""] resources widened from
+  {pods, nodes} → {pods, nodes, services} per Beyla 3.x docs/cilium-
+  compatibility.md (read-only verbs only, least-privilege invariant
+  preserved) ; kernel floor 5.8 UNCHANGED per Beyla 3.x README
+  Requirements. Realised across 4 mirror copies (canonical .tmpl +
+  cli-bundle .tmpl + rendered example + cli-bundle rendered example,
+  byte-identical). Harness `b8-obi.test.sh --level 1` 22/22 GREEN +
+  L2 opt-in (`FORGE_B8_OBI_DOCKER=1`) asserts the 3.15.0 manifest
+  multi-arch pullable. `a7.test.sh` 29/29 PASS preserved across the
+  bump. Sibling harnesses updated per ADR-B8-OBI-006 hybrid : narrow
+  `t5-otel.test.sh:128/233` (pin ownership transferred to
+  b8-obi.test.sh), widen `b8-coroot.test.sh:196` + `b8-signoz.test.sh:295`
+  date regex `2026-05-2[6789]`. `forge-ci.yml` compressed by 3 trim-
+  comments per ADR-B8-OBI-007 ; matrix registered ; stays at 300/300
+  (NFR-CI-002 plafond preserved).

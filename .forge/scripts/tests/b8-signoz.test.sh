@@ -84,7 +84,7 @@ FAIL_NAMES=()
 # MANIFEST: _test_b8sig_l1_010_no_legacy_version_keys          — FR-B8-SIG-B-004
 # MANIFEST: _test_b8sig_l1_011_pin_review_cadence              — FR-B8-SIG-E-010 / B-005 / ADR-005
 # MANIFEST: _test_b8sig_l1_012_last_reviewed_expires           — FR-B8-SIG-E-011 / B-007/-008
-# MANIFEST: _test_b8sig_l1_013_waiver_breaking_change          — FR-B8-SIG-E-012 / B-009/-010
+# MANIFEST: _test_b8sig_l1_013_waiver_cite_appendonly          — FR-B8-SIG-E-012 / B-009 (Article V WAIVER + ADR-J7-004 cite preserved)
 # MANIFEST: _test_b8sig_l1_014_review_ledger_arch_change       — FR-B8-SIG-E-013 / H-002
 # MANIFEST: _test_b8sig_l1_015_validate_standards_yaml         — FR-B8-SIG-E-014 / C-001/-002
 # MANIFEST: _test_b8sig_l1_016_changelog_entry                 — FR-B8-SIG-E-015 / H-003
@@ -92,6 +92,7 @@ FAIL_NAMES=()
 # MANIFEST: _test_b8sig_l1_018_snapshot_exists_within_budget   — FR-B8-SIG-D-001 / ADR-B8-SIG-008
 # MANIFEST: _test_b8sig_l1_019_snapshot_cli_mirror_identical   — FR-B8-SIG-D-003
 # MANIFEST: _test_b8sig_l1_020_snapshot_carries_unified_pin    — FR-B8-SIG-D-001/-002
+# MANIFEST: _test_b8sig_l1_021_breaking_change_field_present   — FR-B8-SIG-B-010 (split 2026-05-29 post-review MEDIUM — value owned by current-version harness)
 #
 # L2 (6 tests, opt-in via FORGE_B8_SIGNOZ_DOCKER=1)
 # MANIFEST: _test_b8sig_l2_001_signoz_manifest_pullable        — FR-B8-SIG-E-016 / NFR-004
@@ -226,8 +227,12 @@ _test_b8sig_l1_008_standard_version_v200() {
   if [ ! -f "$OBSERV_YAML" ]; then
     echo "    observability.yaml missing" >&2; return 1
   fi
-  if ! grep -Eq '^version:\s*"?2\.0\.0"?\s*$' "$OBSERV_YAML"; then
-    echo "    observability.yaml::version is not '2.0.0' (FR-B8-SIG-B-001)" >&2
+  # Widened 2026-05-29 by b8-obi-refresh (ADR-B8-OBI-006) — leg 3 bumped
+  # additive 2.0.0 → 2.1.0. FR-B8-SIG-B-001 owns the major-bump invariant
+  # (v1.x → v2.x), not a frozen v2.0.0. Accept 2.x.y line so future
+  # additive minor bumps don't trigger sibling-harness churn.
+  if ! grep -Eq '^version:\s*"?2\.[0-9]+\.[0-9]+"?\s*$' "$OBSERV_YAML"; then
+    echo "    observability.yaml::version is not in v2.x.y line (FR-B8-SIG-B-001 ; widened by leg 3 b8-obi-refresh)" >&2
     grep -E '^version:' "$OBSERV_YAML" >&2 || true
     return 1
   fi
@@ -292,32 +297,43 @@ _test_b8sig_l1_012_last_reviewed_expires() {
   if [ ! -f "$OBSERV_YAML" ]; then
     echo "    observability.yaml missing" >&2; return 1
   fi
-  if ! grep -Eq '^last_reviewed:\s*2026-05-26\s*$' "$OBSERV_YAML"; then
-    echo "    observability.yaml::last_reviewed is not 2026-05-26 (FR-B8-SIG-B-007)" >&2
+  # Widened 2026-05-29 by b8-obi-refresh (ADR-B8-OBI-006 1-char date regex
+  # widening) — trio sibling 3 refreshed dates to 2026-05-29 / 2027-05-29.
+  # The widening accepts 2026-05-2[6789] / 2027-05-2[6789] so future trio
+  # legs landing inside the window can refresh without a sibling-harness sweep.
+  if ! grep -Eq '^last_reviewed:\s*2026-05-2[6789]\s*$' "$OBSERV_YAML"; then
+    echo "    observability.yaml::last_reviewed is not in 2026-05-2[6789] window (FR-B8-SIG-B-007 ; widened by b8-obi-refresh ADR-B8-OBI-006)" >&2
     grep -E '^last_reviewed:' "$OBSERV_YAML" >&2 || true
     return 1
   fi
-  if ! grep -Eq '^expires_at:\s*2027-05-26\s*$' "$OBSERV_YAML"; then
-    echo "    observability.yaml::expires_at is not 2027-05-26 (FR-B8-SIG-B-008)" >&2
+  if ! grep -Eq '^expires_at:\s*2027-05-2[6789]\s*$' "$OBSERV_YAML"; then
+    echo "    observability.yaml::expires_at is not in 2027-05-2[6789] window (FR-B8-SIG-B-008 ; widened by b8-obi-refresh ADR-B8-OBI-006)" >&2
     grep -E '^expires_at:' "$OBSERV_YAML" >&2 || true
     return 1
   fi
 }
 
-_test_b8sig_l1_013_waiver_breaking_change() {
+_test_b8sig_l1_013_waiver_cite_appendonly() {
   if [ ! -f "$OBSERV_YAML" ]; then
     echo "    observability.yaml missing" >&2; return 1
   fi
-  # WAIVER block citing ADR-J7-004 (Implementer Note 2 — NOT ADR-J7-008).
+  # STRICT — the WAIVER block + ADR-J7-004 citation shipped by
+  # b8-signoz-unified are Article V append-only historical evidence
+  # of the v1.2.0 → v2.0.0 BREAKING bump. They MUST remain
+  # byte-identical across all subsequent additive bumps. The
+  # current-version `breaking_change:` value is **NOT** asserted
+  # here — value ownership transferred to the harness owning the
+  # current standard version (b8-obi.test.sh
+  # `_test_b8obi_l1_017_standard_breaking_change_false`, post-2026-05-29).
+  # Field-presence (the boolean must exist with either value) is
+  # asserted by sibling test 021 below — split out of this test on
+  # 2026-05-29 (b8-obi-refresh post-review MEDIUM fix) so the test
+  # name no longer misrepresents what it asserts.
   if ! grep -Fq "WAIVER" "$OBSERV_YAML"; then
-    echo "    observability.yaml missing WAIVER block (FR-B8-SIG-B-009)" >&2; return 1
+    echo "    observability.yaml missing WAIVER block (FR-B8-SIG-B-009 ; Article V append-only)" >&2; return 1
   fi
   if ! grep -Fq "ADR-J7-004" "$OBSERV_YAML"; then
     echo "    observability.yaml WAIVER does not cite ADR-J7-004 (Implementer Note 2 / FR-B8-SIG-B-009)" >&2
-    return 1
-  fi
-  if ! grep -Eq '^breaking_change:\s*true\s*$' "$OBSERV_YAML"; then
-    echo "    observability.yaml missing 'breaking_change: true' marker (FR-B8-SIG-B-010)" >&2
     return 1
   fi
 }
@@ -493,6 +509,26 @@ except Exception as e:
 PY
 }
 
+# Split out of _test_b8sig_l1_013 on 2026-05-29 (b8-obi-refresh
+# post-review MEDIUM fix). The original test asserted both the
+# Article V WAIVER cite (kept strict in 013) AND `breaking_change:
+# true` (value-pinned to v2.0.0 ; not portable across additive
+# minor bumps). This new test asserts the boolean field is present
+# with EITHER `true` or `false` value — proving the schema slot
+# is preserved across trio refreshes, without claiming a specific
+# historical value. The CURRENT value belongs to the
+# current-version owner harness (e.g. b8-obi.test.sh
+# `_test_b8obi_l1_017_standard_breaking_change_false` for v2.1.0).
+_test_b8sig_l1_021_breaking_change_field_present() {
+  if [ ! -f "$OBSERV_YAML" ]; then
+    echo "    observability.yaml missing" >&2; return 1
+  fi
+  if ! grep -Eq '^breaking_change:\s*(true|false)\s*$' "$OBSERV_YAML"; then
+    echo "    observability.yaml missing 'breaking_change:' boolean field (FR-B8-SIG-B-010 ; field-presence invariant — value owned by current-version harness)" >&2
+    return 1
+  fi
+}
+
 # ─── L2 helpers ──────────────────────────────────────────────────
 
 _l2_gate_unmet() {
@@ -645,7 +681,7 @@ main() {
   run_test _test_b8sig_l1_010_no_legacy_version_keys
   run_test _test_b8sig_l1_011_pin_review_cadence
   run_test _test_b8sig_l1_012_last_reviewed_expires
-  run_test _test_b8sig_l1_013_waiver_breaking_change
+  run_test _test_b8sig_l1_013_waiver_cite_appendonly
   run_test _test_b8sig_l1_014_review_ledger_arch_change
   run_test _test_b8sig_l1_015_validate_standards_yaml
   run_test _test_b8sig_l1_016_changelog_entry
@@ -653,6 +689,7 @@ main() {
   run_test _test_b8sig_l1_018_snapshot_exists_within_budget
   run_test _test_b8sig_l1_019_snapshot_cli_mirror_identical
   run_test _test_b8sig_l1_020_snapshot_carries_unified_pin
+  run_test _test_b8sig_l1_021_breaking_change_field_present
 
   # L2 runs when --level includes 2.
   if [[ ",$LEVEL," == *",2,"* ]] || [[ "$LEVEL" == "1,2" ]] || [[ "$LEVEL" == "2" ]] || [[ "$LEVEL" == "all" ]]; then

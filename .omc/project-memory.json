@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1779782566923,
+  "lastScanned": 1779982307046,
   "projectRoot": "/Users/bfontaine/git/github/forge",
   "techStack": {
     "languages": [],
@@ -10,7 +10,7 @@
   },
   "build": {
     "buildCommand": null,
-    "testCommand": "rtk grep -n -E \"t5-otel-dart-api-realign|t5-otel-app|t5-3-3-vitest|t5-2-platform\" /Users/bfontaine/git/github/forge/.forge/product/roadmap.md | head -20",
+    "testCommand": "rtk grep -n \"ADR-T533\" .forge/changes/t5-3-3-vitest-bundle-preflight/design.md | head -5",
     "lintCommand": null,
     "devCommand": null,
     "scripts": {}
@@ -41,7 +41,7 @@
       "path": "bin",
       "purpose": "Executable scripts",
       "fileCount": 12,
-      "lastAccessed": 1779782566857,
+      "lastAccessed": 1779982307026,
       "keyFiles": [
         "_forge-init-helpers.sh",
         "forge-demeter-scan.sh",
@@ -54,7 +54,7 @@
       "path": "cli",
       "purpose": null,
       "fileCount": 8,
-      "lastAccessed": 1779782566858,
+      "lastAccessed": 1779982307026,
       "keyFiles": [
         "README.md",
         "VERSION",
@@ -67,7 +67,7 @@
       "path": "docs",
       "purpose": "Documentation",
       "fileCount": 15,
-      "lastAccessed": 1779782566858,
+      "lastAccessed": 1779982307027,
       "keyFiles": [
         "ARCHETYPES.md",
         "ARCHITECTURE-TARGET.md",
@@ -80,7 +80,7 @@
       "path": "examples",
       "purpose": "Example code",
       "fileCount": 1,
-      "lastAccessed": 1779782566859,
+      "lastAccessed": 1779982307028,
       "keyFiles": [
         "README.md"
       ]
@@ -89,7 +89,7 @@
       "path": "scripts",
       "purpose": "Build/utility scripts",
       "fileCount": 1,
-      "lastAccessed": 1779782566859,
+      "lastAccessed": 1779982307028,
       "keyFiles": [
         "release.sh"
       ]
@@ -98,7 +98,7 @@
       "path": "cli/assets",
       "purpose": "Static assets",
       "fileCount": 17,
-      "lastAccessed": 1779782566861,
+      "lastAccessed": 1779982307029,
       "keyFiles": [
         "CHANGELOG.md",
         "CLAUDE.md",
@@ -109,7 +109,7 @@
       "path": "cli/dist",
       "purpose": "Distribution/build output",
       "fileCount": 6,
-      "lastAccessed": 1779782566865,
+      "lastAccessed": 1779982307029,
       "keyFiles": [
         "cli.d.ts",
         "cli.js",
@@ -120,27 +120,27 @@
       "path": "cli/node_modules",
       "purpose": "Dependencies",
       "fileCount": 1,
-      "lastAccessed": 1779782566868,
+      "lastAccessed": 1779982307030,
       "keyFiles": []
     }
   },
   "hotPaths": [
     {
       "path": "docs/new-archetypes-plan.md",
-      "accessCount": 84,
-      "lastAccessed": 1779978756205,
+      "accessCount": 97,
+      "lastAccessed": 1780064775709,
       "type": "file"
     },
     {
       "path": ".forge/product/roadmap.md",
-      "accessCount": 44,
-      "lastAccessed": 1779956543944,
+      "accessCount": 50,
+      "lastAccessed": 1780058386681,
       "type": "file"
     },
     {
       "path": "CHANGELOG.md",
-      "accessCount": 32,
-      "lastAccessed": 1779978804288,
+      "accessCount": 36,
+      "lastAccessed": 1780065214674,
       "type": "file"
     },
     {

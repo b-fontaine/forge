@@ -128,13 +128,10 @@ jobs:
         # T5.1 CLI Trust Harness. L2 opt-in via FORGE_T51_LIVE=1 / FORGE_T51_PACK=1.
         run: bash .forge/scripts/tests/t5-1.test.sh --level 1
       - name: t5-cargo.test.sh
-        # T5.1.E Cargo pin refresh. L2 opt-in via FORGE_T5C_LIVE=1.
         run: bash .forge/scripts/tests/t5-cargo.test.sh --level 1
       - name: t5-bin-server.test.sh
-        # T5.1.E bin-server deps. L2 opt-in via FORGE_T5BSD_LIVE=1.
         run: bash .forge/scripts/tests/t5-bin-server.test.sh --level 1
       - name: t5-3-1.test.sh
-        # T5.3.1 docker-compose.dev.yml hygiene. L2 opt-in via FORGE_B1DUM_DOCKER=1.
         run: bash .forge/scripts/tests/t5-3-1.test.sh --level 1
       - name: t5-3-3.test.sh
         # T5.3.3 vitest globalSetup bundle preflight (no L2).
@@ -145,6 +142,9 @@ jobs:
       - name: b8-signoz.test.sh
         # B.8.8 SigNoz 3-svc → unified arch. L2 opt-in via FORGE_B8_SIGNOZ_DOCKER=1.
         run: bash .forge/scripts/tests/b8-signoz.test.sh --level 1
+      - name: b8-obi.test.sh
+        # B.8.8 OBI/Beyla refresh 2.0.1 → 3.15.0. L2 opt-in via FORGE_B8_OBI_DOCKER=1.
+        run: bash .forge/scripts/tests/b8-obi.test.sh --level 1
 
   # ─── gates ── verify.sh + constitution-linter.sh ───────────────
   gates:

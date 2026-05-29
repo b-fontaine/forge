@@ -1,0 +1,17 @@
+name: b8-obi-refresh
+status: archived
+created: 2026-05-29
+schema: default
+constitution_version: "1.1.0"
+parent_audit_items:
+  - B.8.8  # docs/new-archetypes-plan.md §4.2 B.8.8 (observability rearch, OBI/Beyla leg — sibling 3 of the trio)
+depends_on:
+  - b8-coroot-rehost   # pilot (archived v0.4.0-rc.3) — verify-then-pin, versions field, 4-copy mirror sync, L2 manifest-pull
+  - b8-signoz-unified  # sibling 2 (archived v0.4.0-rc.4) — ARCH-CHANGE ledger flag, pin_review_cadence, sibling-harness coupling lesson
+timeline:
+  proposed: 2026-05-29
+  specified: 2026-05-29
+  designed: 2026-05-29
+  planned: 2026-05-29
+  implemented: 2026-05-29
+  archived: 2026-05-29

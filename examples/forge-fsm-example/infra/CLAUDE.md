@@ -118,7 +118,10 @@ and the Janus agent definition at `.claude/agents/cross-layer-orchestrator.md`. 
 
 The OBI eBPF DaemonSet (`infra/k8s/base/obi-daemonset.yaml`) is shipped
 under T.5 `t5-otel-stack` as the realisation leg of `observability.yaml`
-v1.1.0 (ADR-008 + ADR-OTEL-004 in `.forge/changes/t5-otel-stack/design.md`).
+(currently v2.1.0 per `b8-obi-refresh` 2026-05-29 ; ADR-008 + ADR-OTEL-004
+in `.forge/changes/t5-otel-stack/design.md` ; Beyla major bump
+2.0.1 → 3.15.0 + RBAC `services` resource widening in
+`.forge/changes/b8-obi-refresh/design.md` ADR-B8-OBI-001..008).
 
 It carries elevated privileges that **MUST** be audited by Aegis before
 any production rollout :
@@ -139,7 +142,9 @@ any production rollout :
 **Aegis duty** stems from `observability.yaml::deployment_constraints
 .aegis_audit_required_for_prod: true`. The audit MUST verify : minimal
 capability set, no `privileged: true` blanket, kernel ≥ 5.8 fleet-wide,
-RBAC scoped to read-only on pods+nodes+replicasets.
+RBAC scoped to read-only on pods+nodes+services+replicasets (Beyla 3.x
+ClusterRole widened in `b8-obi-refresh` ADR-B8-OBI-003 — `services` added
+to the `apiGroups: [""]` rule, no write verbs introduced).
 
 **Opt-out path** for T1 environments where eBPF kernel ≥ 5.8 is not
 guaranteed : remove `obi-daemonset.yaml` from the observability

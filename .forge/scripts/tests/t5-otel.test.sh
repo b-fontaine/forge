@@ -60,7 +60,7 @@ FAIL_NAMES=()
 # MANIFEST: _test_otel_003_obi_caps        — FR-OTEL-003 capabilities BPF/SYS_PTRACE/NET_RAW/PERFMON
 # MANIFEST: _test_otel_004_obi_host        — FR-OTEL-004 hostPID/hostNetwork
 # MANIFEST: _test_otel_005_obi_kernel      — FR-OTEL-005 nodeSelector forge.dev/kernel-min-58
-# MANIFEST: _test_otel_006_obi_image       — FR-OTEL-007 grafana/beyla:2.0.1 (no :latest)
+# MANIFEST: _test_otel_006_obi_image       — FR-OTEL-007 grafana/beyla:<tag> (no :latest ; narrowed b8-obi-refresh)
 # MANIFEST: _test_otel_007_obi_aegis       — FR-OTEL-010 forge.dev/aegis-audit annotation
 # MANIFEST: _test_otel_020_coroot_exists   — FR-OTEL-020 Coroot manifest exists, multi-doc
 # MANIFEST: _test_otel_021_coroot_image    — FR-OTEL-021 coroot/coroot:1.4.4
@@ -123,10 +123,14 @@ _test_otel_005_obi_kernel() {
   fi
 }
 
-# FR-OTEL-007 image grafana/beyla:2.0.1 (no :latest)
+# FR-OTEL-007 image grafana/beyla:<any-tag> (no :latest)
+# Narrowed per ADR-B8-OBI-006 (sibling-harness coupling break, 2026-05-29) :
+# pin VALUE ownership transferred to b8-obi.test.sh ; t5-otel.test.sh now
+# asserts only the invariants this harness legitimately owns — image prefix
+# present + non-:latest invariant.
 _test_otel_006_obi_image() {
-  if ! grep -q "^[[:space:]]*image: grafana/beyla:2.0.1$" "$OBI_TPL"; then
-    echo "    expected 'image: grafana/beyla:2.0.1' in $OBI_TPL" >&2; return 1
+  if ! grep -qE "^[[:space:]]*image: grafana/beyla:[^[:space:]]+$" "$OBI_TPL"; then
+    echo "    expected 'image: grafana/beyla:<tag>' in $OBI_TPL" >&2; return 1
   fi
   if grep -q "image: grafana/beyla:latest" "$OBI_TPL"; then
     echo "    forbidden ':latest' tag found in $OBI_TPL" >&2; return 1
@@ -222,16 +226,18 @@ _test_otel_050_example_mirror() {
 
 # FR-OTEL-080 — t5-otel-stack's persistent observability.yaml deliverables.
 # observability.yaml is shared across the b8-observability-rearch trio, which
-# legitimately mutates the top-level `version:` (now 2.0.0) and `versions.coroot`
-# (now 1.20.2). Those moving targets are owned by the trio harnesses
-# (b8-coroot.test.sh, b8-signoz.test.sh). t5-otel-stack's STABLE contributions
-# are the beyla pin it introduced + the append-only REVIEW.md v1.1.0 birth row
-# (never removed). Narrowed 2026-05-27 by b8-signoz-unified to fix a pre-existing
-# CI-red escape: b8-coroot-rehost bumped the standard without updating this
-# sibling assertion.
+# legitimately mutates the top-level `version:`, `versions.coroot`, and
+# `versions.beyla`. Those moving targets are owned by the trio harnesses
+# (b8-coroot.test.sh, b8-signoz.test.sh, b8-obi.test.sh). t5-otel-stack's
+# STABLE contributions are the `versions.beyla` KEY (introduced here, no
+# longer pinned to a value) + the append-only REVIEW.md v1.1.0 birth row
+# (never removed). Narrowed 2026-05-29 by b8-obi-refresh per ADR-B8-OBI-006
+# — pin VALUE ownership transferred to b8-obi.test.sh ; this assertion now
+# guards only key existence to prevent accidental deletion of the OBI pin
+# slot by a future cross-cutting bump.
 _test_otel_080_standard_bumped() {
-  if ! grep -qE '^[[:space:]]*beyla: "2\.0\.1"' "$STD_OBSERVABILITY"; then
-    echo "    versions.beyla: \"2.0.1\" missing in observability.yaml" >&2; return 1
+  if ! grep -qE '^[[:space:]]*beyla:' "$STD_OBSERVABILITY"; then
+    echo "    versions.beyla: key missing in observability.yaml" >&2; return 1
   fi
   # Append-only ledger keeps the v1.1.0 birth row regardless of later bumps.
   if ! grep -qE '\| observability\.yaml +\| 1\.1\.0 +\|' "$REVIEW_MD"; then
