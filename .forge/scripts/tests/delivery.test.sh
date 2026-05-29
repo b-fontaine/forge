@@ -713,6 +713,12 @@ PY
 # ─── Phase 4 : Local observability stack ───────────────────────
 
 test_compose_otel_service_shape() {
+  # B.8.8 / b8-signoz-unified — the otel-collector-contrib service was
+  # replaced by the SigNoz-flavoured collector `fsm-signoz-otel-collector`
+  # (image signoz/signoz-otel-collector, OPAMP-off, mounts the static
+  # signoz-otel-collector-config.yaml). OTLP :4317/:4318 contract preserved
+  # (FR-IN-009). No service healthcheck block — the upstream v0.125.1 image
+  # ships no wget/curl/nc, so readiness is gated by depends_on (ADR-B8-SIG-003).
   if [ ! -f "$COMPOSE_TMPL" ]; then
     echo "    docker-compose.dev.yml.tmpl missing" >&2; return 1
   fi
@@ -722,35 +728,31 @@ with open(sys.argv[1]) as fh:
     doc = yaml.safe_load(fh)
 errors = []
 services = (doc or {}).get("services") or {}
-svc = services.get("fsm-otel-collector")
+svc = services.get("fsm-signoz-otel-collector")
 if not svc:
-    errors.append("missing service: fsm-otel-collector")
+    errors.append("missing service: fsm-signoz-otel-collector")
 else:
     img = str(svc.get("image", ""))
-    if not re.search(r"otel/opentelemetry-collector-contrib:\d+\.\d+\.\d+", img):
-        errors.append(f"image must be otel/opentelemetry-collector-contrib pinned to a specific version; got {img!r}")
+    if not re.search(r"signoz/signoz-otel-collector:v?\d+\.\d+\.\d+", img):
+        errors.append(f"image must be signoz/signoz-otel-collector pinned to a specific version; got {img!r}")
     if img.endswith(":latest") or "latest" in img.split(":")[-1]:
         errors.append(f"image MUST NOT use :latest tag; got {img!r}")
     port_str = " ".join(str(p) for p in (svc.get("ports") or []))
-    for p in ("4317", "4318", "13133"):
+    for p in ("4317", "4318"):
         if p not in port_str:
-            errors.append(f"missing host-exposed port {p}")
+            errors.append(f"missing host-exposed OTLP port {p}")
     nets = svc.get("networks") or []
     if "fsm-dev" not in nets:
         errors.append(f"must join fsm-dev network; got {nets}")
-    hc = svc.get("healthcheck") or {}
-    hc_test = " ".join(str(t) for t in (hc.get("test") or []))
-    if "13133" not in hc_test:
-        errors.append(f"healthcheck must probe :13133; got {hc_test!r}")
     vols = svc.get("volumes") or []
-    if not any("otel-collector-config" in str(v) for v in vols):
-        errors.append("missing config mount referencing otel-collector-config.yaml")
+    if not any("signoz-otel-collector-config.yaml" in str(v) for v in vols):
+        errors.append("missing config mount referencing signoz-otel-collector-config.yaml")
 for e in errors:
     print(f"    {e}", file=sys.stderr)
 sys.exit(1 if errors else 0)
 PY
-  # OTel collector config parses as valid YAML with required pipelines
-  python3 - "$OBS_DIR/otel-collector-config.yaml.tmpl" <<'PY' || return 1
+  # SigNoz collector config parses as valid YAML with required pipelines
+  python3 - "$OBS_DIR/signoz-otel-collector-config.yaml.tmpl" <<'PY' || return 1
 import sys, yaml
 with open(sys.argv[1]) as fh:
     doc = yaml.safe_load(fh)
@@ -775,13 +777,20 @@ PY
 }
 
 test_compose_signoz_services_shape() {
+  # B.8.8 / b8-signoz-unified — SigNoz 3-svc (frontend + query-service +
+  # otel-collector-contrib) migrated to the unified arch (ADR-B8-SIG-001):
+  # the single `fsm-signoz` service bundles UI + query + alertmanager and is
+  # the only externally-exposed observability service (UI :3301 → :8080,
+  # ADR-B8-SIG-004), backed by fsm-signoz-clickhouse (telemetry store) +
+  # fsm-signoz-zookeeper (ClickHouse replication coordinator, ADR-B8-SIG-007).
   python3 - "$COMPOSE_TMPL" <<'PY' || return 1
 import sys, yaml, re
 with open(sys.argv[1]) as fh:
     doc = yaml.safe_load(fh)
 errors = []
 services = (doc or {}).get("services") or {}
-expected = ["fsm-signoz-clickhouse", "fsm-signoz-query", "fsm-signoz-frontend"]
+# Long-running services that MUST have a healthcheck + restart policy.
+expected = ["fsm-signoz", "fsm-signoz-clickhouse", "fsm-signoz-zookeeper"]
 for name in expected:
     if name not in services:
         errors.append(f"missing service: {name}")
@@ -794,13 +803,13 @@ for name in expected:
         errors.append(f"{name}: missing healthcheck")
     if svc.get("restart") != "unless-stopped":
         errors.append(f"{name}: restart must be unless-stopped; got {svc.get('restart')!r}")
-# only signoz-frontend exposes 3301
-fe = services.get("fsm-signoz-frontend") or {}
-fe_ports = " ".join(str(p) for p in (fe.get("ports") or []))
-if "3301" not in fe_ports:
-    errors.append("fsm-signoz-frontend must expose :3301 to host")
-# clickhouse + query: no host-exposed ports
-for name in ["fsm-signoz-clickhouse", "fsm-signoz-query"]:
+# only fsm-signoz exposes the UI on 3301
+ui = services.get("fsm-signoz") or {}
+ui_ports = " ".join(str(p) for p in (ui.get("ports") or []))
+if "3301" not in ui_ports:
+    errors.append("fsm-signoz must expose :3301 to host")
+# clickhouse + zookeeper: no host-exposed ports (internal only)
+for name in ["fsm-signoz-clickhouse", "fsm-signoz-zookeeper"]:
     s = services.get(name) or {}
     if s.get("ports"):
         errors.append(f"{name}: ports must NOT be host-exposed (internal only)")
@@ -812,14 +821,16 @@ def dep_cond(svc, target):
         if isinstance(entry, dict):
             return entry.get("condition")
     return None
-qs = services.get("fsm-signoz-query") or {}
-if dep_cond(qs, "fsm-signoz-clickhouse") != "service_healthy":
-    errors.append("fsm-signoz-query must depends_on fsm-signoz-clickhouse: service_healthy")
-if dep_cond(fe, "fsm-signoz-query") != "service_healthy":
-    errors.append("fsm-signoz-frontend must depends_on fsm-signoz-query: service_healthy")
-# named volume
-if "signoz-clickhouse-data" not in (doc.get("volumes") or {}):
-    errors.append("named volume `signoz-clickhouse-data` must be declared")
+if dep_cond(ui, "fsm-signoz-clickhouse") != "service_healthy":
+    errors.append("fsm-signoz must depends_on fsm-signoz-clickhouse: service_healthy")
+ch = services.get("fsm-signoz-clickhouse") or {}
+if dep_cond(ch, "fsm-signoz-zookeeper") != "service_healthy":
+    errors.append("fsm-signoz-clickhouse must depends_on fsm-signoz-zookeeper: service_healthy")
+# named volumes
+vols = doc.get("volumes") or {}
+for v in ("signoz-clickhouse-data", "signoz-sqlite"):
+    if v not in vols:
+        errors.append(f"named volume `{v}` must be declared")
 for e in errors:
     print(f"    {e}", file=sys.stderr)
 sys.exit(1 if errors else 0)

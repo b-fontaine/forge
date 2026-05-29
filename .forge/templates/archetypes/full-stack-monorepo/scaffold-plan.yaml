@@ -218,6 +218,12 @@ templates:
   - source: infra/observability/signoz-config.yaml.tmpl
     target: infra/observability/signoz-config.yaml
     substitute: false
+  # B.8.8 / b8-signoz-unified — SigNoz-flavoured collector config, mounted
+  # by fsm-signoz-otel-collector (ADR-B8-SIG-003). Single source of pipeline
+  # truth (OPAMP-off). Replaces the otel-collector-contrib config at runtime.
+  - source: infra/observability/signoz-otel-collector-config.yaml.tmpl
+    target: infra/observability/signoz-otel-collector-config.yaml
+    substitute: false
 
   # ── shared/protos ───────────────────────────────────────────────
   - source: shared/protos/buf.yaml.tmpl
