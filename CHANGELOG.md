@@ -12,6 +12,8 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+## [0.4.0-rc.8] — 2026-05-30
+
 ### Fixed — `full-stack-monorepo` `task dev:up` dead pins (post-rc.7 hotfix)
 
 - **`kong:3.6-alpine` → `kong:3.6`** — Kong dropped the `-alpine` suffix;
