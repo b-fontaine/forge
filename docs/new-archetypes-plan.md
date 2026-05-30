@@ -1834,6 +1834,123 @@ OVERALL PASS · `forge-ci.yml` 300/300. **Release target**: next `0.4.0-rc.x`
 
 ---
 
+## 0.11 Status update — 2026-05-30 (L.1 — Multi-vendor agent core planned, T9+)
+
+> **Lis cette section comme une étude de faisabilité, pas un change planifié à
+> court terme.** Le mainteneur a demandé d'évaluer le coût d'une compatibilité
+> avec **Codex CLI** et **Antigravity CLI** (puis Cursor, etc.). La conclusion
+> architecturale est consignée ici et le module est ajouté à **§1.4** + **§11
+> (T9+)**. Aucun code touché. Élabore et supersède le seed Phase 4 roadmap
+> **G.6** (`forge-cli provider-neutral wrapper`).
+
+### Question posée
+
+Rendre Forge utilisable depuis Codex CLI, Antigravity CLI, Cursor… **sans**
+dégrader l'expérience Claude Code actuelle.
+
+### Constat de couplage (audit 2026-05-30)
+
+- **Couche couplée Claude Code** = `.claude/agents/` (27 personas) +
+  `.claude/commands/forge/` (19 slash commands) + `.claude/skills/` (3 skills
+  `alwaysApply`) + `CLAUDE.md` (racine + 5 `.tmpl` scaffoldés) + `.mcp.json`
+  (Context7 seul). **9 644 lignes de prose**. `.claude/settings.json` =
+  **zéro hook** (juste env + plugins).
+- **Couche agnostique** (zéro port) = **58 scripts bash** (`.forge/scripts/` +
+  `bin/` : verify.sh, constitution-linter.sh, harnesses, sbom, demeter-scan…) +
+  `.forge/` constitution / specs / standards YAML / schemas. C'est le cœur de
+  valeur de Forge et il tourne déjà quel que soit l'agent.
+- Couplage **code CLI** = seulement 3 fichiers TS (`init-archetype.ts`,
+  `scaffold.ts`, `bundle.ts`).
+- `.codex/` + `.agents/` existent déjà mais **vides** — placeholders, port
+  jamais commencé.
+
+### Décision d'architecture — source unique + connecteurs (pas port N×)
+
+Le port brute (réécrire la prose une fois par vendor) impose une **taxe synchro
+×N permanente** : chaque bump de standard ou nouvel archétype devrait
+synchroniser N arbres de prose, exactement le risque de
+[[shared_standard_sibling_harness_coupling]] (CI rote silencieusement quand un
+sibling n'est pas updaté). **Rejeté.**
+
+Le contenu personas/commands/skills est **sémantiquement neutre** ; ce qui
+diffère par vendor = packaging + surface de capacités. Forge est déjà un projet
+codegen (overlay renderer, `.tmpl`, bundle assets) → un émetteur d'artefacts
+agent est **idiomatique**, pas un corps étranger.
+
+```
+.forge/agent-core/              # SOURCE OF TRUTH (neutre, hand-authored)
+  personas/*.yaml               # 27 — name, role, triggers, body, capabilities[]
+  commands/*.yaml               # 19 — name, args, steps, body
+  skills/*.yaml                 # 3  — triggers, globs, body, always_apply
+  capabilities.yaml             # vocabulaire (subagent, auto-trigger, hooks, mcp)
+.forge/connectors/
+  vendor-capabilities.yaml      # matrice de support par vendor
+  claude/emit.*                 # → .claude/** + CLAUDE.md + .mcp.json + settings
+  codex/emit.*                  # → AGENTS.md + prompts/*.md + config.toml
+  antigravity/emit.*            # → AGENTS.md + workflows + MCP
+  cursor/emit.*                 # → .cursor/rules/*.mdc + .cursor/mcp.json + AGENTS.md
+bin/forge-agents-emit.sh        # forge agents emit --vendor claude,codex,...
+```
+
+`.claude/**` devient **généré, pas hand-authored** (guard « generated — do not
+edit » + linter). `AGENTS.md` converge en standard de facto (Codex, Cursor,
+Antigravity, Gemini CLI le lisent) → une grosse part du layer neutre = émettre
+un bon `AGENTS.md` + petits deltas vendor. Déterminisme via `SOURCE_DATE_EPOCH`
+(déjà partout dans Forge) → sortie diffable + golden-testable.
+
+### Gestion du gap de capacités — capability-tiering
+
+Seul point où « agnostique » fuit : **orchestration subagent** (Janus → Hera /
+Vulcan) et **skills auto-trigger**. Codex / Cursor n'ont pas la délégation
+Task-tool. Solution = capability-tiering, pas plus-petit-dénominateur-commun :
+
+- Core déclare le comportement **plein** (graphe de délégation, `always_apply`).
+- Émetteur **Claude** réalise tout → **Claude reste first-class, zéro
+  régression**.
+- Émetteurs autres = **dégradation gracieuse** (aplatir personas en sections
+  role-préfixées dans `AGENTS.md`, inliner contenu skill + reminder « MUST
+  consult »). Honnête sur ce qui est perdu.
+
+### Effort
+
+| Item | Effort |
+|------|--------|
+| Schéma neutre + JSON Schema | `M` |
+| Framework émetteur + moteur de dégradation | `L` |
+| Migrer 27 personas + 19 commands + 3 skills dans le core neutre | `L` |
+| Émetteur Claude (repro `.claude/**` byte-fidèle, dogfood-safe) | `M` |
+| Émetteur Codex | `M` |
+| Harness golden par vendor + déterminisme | `M` |
+| Intégration CLI (`--agent`) + `framework-owned-paths` | `M` |
+| **Premier cut (core + Claude + Codex)** | **`XL` (~14-16j)** |
+| Chaque vendor suivant (Antigravity, Cursor…) | **~1-2j pièce** |
+
+**Break-even vs port brute** : ~même upfront pour 2 vendors, mais vendors
+suivants quasi-gratuits + maintenance collapse à 1× édit core + regenerate.
+**Strictement supérieur dès vendor #3** — ce qui est le cas visé (Codex +
+Antigravity + Cursor + …).
+
+### Risques
+
+- **Migration dogfood-sensible** : Forge construit Forge avec son propre
+  `.claude/`. → émetteur Claude **en premier**, valider byte-diff vs `.claude/`
+  actuel avant de toucher au reste.
+- **Garde « generated — do not edit »** : changement culturel + guard linter.
+- **Surfaces vendor mouvantes** (surtout Antigravity, lancé nov. 2025) →
+  descripteurs de capacités versionnés ; Article III.4 impose de vérifier chaque
+  symbole vendor avant pin (cf. [[t5_2_self_validation_lesson]]).
+- **Expressivité du format neutre** : trop pauvre → perte de richesse Claude.
+  Capability-tiering résout, mais le schéma neutre est un vrai travail de design.
+
+### Placement — T9+, orthogonal à B.8
+
+C'est un change Forge à part entière (proposal → specs → design → ADRs → TDD →
+gate). **Ne bloque pas B.8.** À ordonnancer après stabilisation des 5
+archétypes, comme outillage périphérique. Codifié **Module L** en §1.4 + ligne
+**T9+** en §11.
+
+---
+
 ## 0. Executive Summary (1 page)
 
 À la sortie de **v0.3.0** (2026-05-02), Forge a clos T0, T1, T2 P1, T2 P2 et T3 robustesse :
@@ -1934,6 +2051,7 @@ sont créés. Cinq nouveaux agents Forge sont introduits. Plan de migration **4 
 | K.2       | Pythia (AI/RAG)                                                                                                                                    | ARCHITECTURE-TARGET §9.2          | `M`     | Pending (T7)                                                                                                                      |
 | K.3       | Demeter (data steward EU)                                                                                                                          | ARCHITECTURE-TARGET §9.2          | `M`     | **Done 2026-05-12** via `k3-demeter` (persona + scanner + deny-list + standard + Janus delta ; 22/22 tests `k3.test.sh --level 1,2`) |
 | K.4       | Iris-Web (Qwik/SvelteKit)                                                                                                                          | ARCHITECTURE-TARGET §9.2          | `M`     | Pending (T7)                                                                                                                      |
+| L.1       | **Multi-vendor agent core** — source unique `.forge/agent-core/` (27 personas + 19 commands + 3 skills en YAML neutre) + connecteurs émetteurs par vendor (`.forge/connectors/{claude,codex,antigravity,cursor}/emit.*`) + capability-tiering. Claude reste first-class (zéro régression) ; Codex / Antigravity / Cursor par dégradation gracieuse. Élabore + supersède roadmap G.6. | Demande mainteneur 2026-05-30 (feasibility §0.11) | `XL` premier cut puis ~`XS`/vendor | Pending (T9+) — orthogonal à B.8. Détails §0.11. |
 | K.5       | Themis (compliance officer)                                                                                                                        | ARCHITECTURE-TARGET §9.2          | `M`     | Pending (T7) — automation `forge review-standards` ; cycle 12 mois lui-même livré (P-3)                                           |
 
 ---
@@ -2473,7 +2591,7 @@ Reprise de ARCHITECTURE-TARGET §11.
 | **T6**    | **B.8 (flagship 1.0.0 → 2.0.0), Phase 2 ARCHITECTURE-TARGET, B.8.15 couche D upgrade-matrix**     | ⏸️ Pending.                                                                                                                                                                                                                             | Migration breaking flagship. **Point de non-retour**. B.8.15 ferme la dernière couche de T5.1 (upgrade matrix N-1 → N).                      |
 | **T7**    | **B.6 (event-driven-eu), B.7 (ai-native-rag), K.1, K.2, K.4, K.5**                               | ⏸️ Pending.                                                                                                                                                                                                                             | Deux nouveaux archétypes + 4 nouveaux agents.                                                                                                |
 | **T8**    | **B.9 (mobile-pwa-first / 2.0.0), B.3 (rust-cli-tui), pédagogie C.2-C.5**                        | ⏸️ Pending. **F.3 pulled forward, delivered 2026-05-12 via `f3-release-script-fix`.**                                                                                                                                                                | Renommage mobile + dernier archétype premium + walkthrough/anti-patterns/comparison/migration. F.3 release script fix shipped early (T5).    |
-| **T9+**   | **G.* (Forge Guardian, VSCode, pre-commit), H.* (multi-tenant, télémétrie, compliance reports)** | ⏸️ Pending.                                                                                                                                                                                                                             | Outillage périphérique et enterprise après que les 5 archétypes soient stables.                                                              |
+| **T9+**   | **L.1 (multi-vendor agent core — Codex/Antigravity/Cursor via émetteurs), G.* (Forge Guardian, VSCode, pre-commit ; G.6 superseded by L.1), H.* (multi-tenant, télémétrie, compliance reports)** | ⏸️ Pending.                                                                                                                                                                                                                             | Outillage périphérique et enterprise après que les 5 archétypes soient stables. L.1 = portabilité multi-CLI source-unique + connecteurs (feasibility §0.11). |
 
 ### Alternative « adoption lente, qualité maximale »
 
