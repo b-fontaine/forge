@@ -93,7 +93,7 @@ _test_b81_l1_002_component_matrix() {
   local pin
   for pin in \
     "postgres:16-alpine" \
-    "kong:3.6-alpine" \
+    "kong:3.6" \
     "signoz/zookeeper:3.7.1" \
     "clickhouse/clickhouse-server:25.5.6" \
     "signoz/signoz-otel-collector:v0.144.4" \

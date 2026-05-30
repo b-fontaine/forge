@@ -25,7 +25,7 @@ Source: `examples/forge-fsm-example/docker-compose.dev.yml` (dev stack) and
 |---------|-----------|-------|-------|
 | `fsm-db` | `postgres:16-alpine` | data | Postgres **16**, no pgvector — see §2 |
 | `fsm-backend` | _placeholder_ (`image: scratch`) | backend | **Not runnable** — Dockerfile TODO, see §3 |
-| `fsm-kong` | `kong:3.6-alpine` | gateway | API gateway (Kong → Envoy in 2.0.0) |
+| `fsm-kong` | `kong:3.6` | gateway | API gateway (Kong → Envoy in 2.0.0). Pin was `kong:3.6-alpine` at B.8.1 capture; corrected to `kong:3.6` 2026-05-30 — Kong dropped the `-alpine` suffix (`manifest unknown`), audited dev:up hotfix. |
 | `fsm-signoz-zookeeper` | `signoz/zookeeper:3.7.1` | observability | SigNoz unified stack (B.8.8 sibling 2) |
 | `init-clickhouse` | `clickhouse/clickhouse-server:25.5.6` | observability | init job (one-shot) |
 | `fsm-signoz-clickhouse` | `clickhouse/clickhouse-server:25.5.6` | observability | trace store |
