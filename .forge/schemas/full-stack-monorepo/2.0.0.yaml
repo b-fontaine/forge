@@ -1,0 +1,228 @@
+# Forge Schema — full-stack-monorepo 2.0.0 (CANDIDATE)
+# <!-- Audit: B.8.3 (b8-3-schema-candidate) — 2.0.0 target schema candidate -->
+#
+# The 2.0.0 TARGET of the flagship archetype, declared as a `candidate`
+# ahead of the 1.0.0 → 2.0.0 migration (plan §4 Module B.8). This file is
+# the single target-of-record consumed by the downstream migration bricks
+# B.8.4–B.8.12; the actual version bump + breaking-component removal happen
+# at B.8.14.
+#
+# Stage semantics (this file):
+#   - candidate : ratified 2.0.0 target. NOT scaffoldable by default
+#                 (see `scaffoldable: false`). Coexists with frozen
+#                 1.0.0 schema.yaml (B.8.2 maintenance-freeze).
+#                 Promoted to stable at B.8.14 after B.8.12 proves
+#                 zero regression on the 4 demos.
+#
+# CONSTITUTIONAL PROHIBITION (Articles VIII.1 + VIII.2 — IN FORCE):
+#   Constitution v1.1.0 §VIII.1 mandates Kong as API gateway.
+#   Constitution v1.1.0 §VIII.2 mandates Temporal for workflow orchestration.
+#   Both SHALL clauses remain binding until B.8.14 completes the
+#   GOVERNANCE.md § "Amendment Process" (7-day window, ## Amendments table).
+#   Scaffolding or deploying this candidate before that amendment would
+#   constitute a constitutional violation. This candidate declares the
+#   TARGET only; it does not authorise removing Kong or Temporal from
+#   any live stack before B.8.14.
+#
+# Migration strategy (plan §4.1): additive-first, breaking-second.
+#   New components (Envoy/DBOS/Connect/Zitadel/Qwik) added in parallel
+#   with 1.0.0 components; removal of Kong/Temporal/REST-bridge happens
+#   at B.8.14. This candidate declares the TARGET state only.
+#
+# On-disk coexistence (ADR-B8-3-001):
+#   schema.yaml          → frozen 1.0.0 stable (B.8.2, byte-untouched)
+#   2.0.0.yaml (this)    → 2.0.0 candidate, invisible to the three
+#                          existing gates until B.8.3.b (proposed —
+#                          not yet ratified in plan §4.2) rewires them.
+#                          Validated by b8-3.test.sh exclusively.
+#
+# Component references (ADR-B8-3-002): no inline version pins.
+#   Each component cites its owning standard yaml. The Envoy gateway
+#   pin has no standard source today; it arrives with B.8.4.
+
+name: full-stack-monorepo
+version: "2.0.0"
+stage: candidate
+scaffoldable: false   # ADR-B8-3-003/005 — opt-in only; B.8.14 promotes to stable
+
+description: >
+  Full-stack monorepo archetype 2.0.0 (candidate): Flutter backoffice +
+  Qwik public web + Rust backend + Envoy Gateway + DBOS embedded +
+  Connect-RPC + Zitadel auth + Postgres 17 + pgvector + SigNoz/OBI/Coroot.
+  Protos remain single source of truth. TDD + BDD enforced per layer;
+  multi-layer changes routed by Janus. Additive-first migration from 1.0.0;
+  breaking removal of Kong/Temporal/REST-bridge at B.8.14.
+
+tdd_enforced: true
+bdd_required_for_user_facing: true
+coverage_threshold: 80
+
+# ─── 2.0.0 Component SET (reference-only, ADR-B8-3-002) ────────────
+#
+# Each entry: component name + role + owning standard (no inline pins).
+# The standard yaml is the single source of truth for version pins.
+# Envoy: no standard yaml source yet; pin arrives with B.8.4.
+components:
+  - name: envoy-gateway
+    role: api-gateway
+    replaces: kong  # 1.0.0 baseline: kong:3.6 (docs/B8-BASELINE.md §1)
+    delivered_by: B.8.4
+    pin_source: B.8.4  # no *.yaml standard pins a gateway today (ADR-B8-3-002)
+
+  - name: dbos-embedded
+    role: workflow-orchestration
+    replaces: temporal-intent  # 1.0.0 baseline: doc-only, not deployed (B8-BASELINE §4)
+    delivered_by: B.8.5
+    standard: orchestration.yaml  # default: dbos
+
+  - name: connect-rpc
+    role: transport
+    replaces: rest-bridge
+    delivered_by: B.8.6
+    standard: transport.yaml  # protocol: connect-rpc
+
+  - name: zitadel
+    role: identity
+    replaces: implicit-auth
+    delivered_by: B.8.7
+    standard: identity.yaml  # default: zitadel
+
+  - name: postgres-17-pgvector
+    role: persistence
+    replaces: postgres-16  # 1.0.0 baseline: postgres:16-alpine, no pgvector (B8-BASELINE §2)
+    delivered_by: B.8.5  # DBOS state tables + B.7 RAG depend on this delta
+    standard: persistence.yaml  # default: postgres-17, extensions: pgvector
+    migration_note: >
+      CROSSING DELTA (B8-BASELINE §2): 1.0.0 ships postgres:16-alpine without
+      pgvector. This bump MUST NOT be silent; it crosses during B.8.5 migration.
+
+  - name: signoz-obi-coroot
+    role: observability
+    note: already closed at B.8.8 — observability standard at v2.1.0
+    standard: observability.yaml  # SigNoz unified + OBI/Beyla + Coroot (B.8.8 closed)
+
+# ─── 1.0.0 → 2.0.0 Breaking Deltas ────────────────────────────────
+#
+# Canonical target-of-record for B.8.12 (zero-regression gate) and
+# B.8.14 (version bump contract). Each delta cites the B.8 brick.
+migration_deltas:
+  - from: kong-gateway
+    to: envoy-gateway
+    brick: B.8.4
+    strategy: additive-first  # Envoy added in parallel, Kong removed at B.8.14
+
+  - from: temporal-intent     # doc-only, no running system (B8-BASELINE §4)
+    to: dbos-embedded
+    brick: B.8.5
+    note: replaces documented intent, not a live workflow system
+
+  - from: rest-bridge
+    to: connect-rpc
+    brick: B.8.6
+    strategy: additive-first
+
+  - from: implicit-auth
+    to: zitadel
+    brick: B.8.7
+    strategy: additive-first
+
+  - from: postgres-16-no-pgvector
+    to: postgres-17-pgvector
+    brick: B.8.5
+    note: crossing delta; pgvector also required by B.7 (ai-native-rag archetype)
+
+  - from: no-web-public-layer
+    to: qwik-web-public
+    brick: B.8.9
+    strategy: additive-first  # new web-public/ surface added alongside web-backoffice/
+
+bump_at: B.8.14  # actual 1.0.0 → 2.0.0 version bump + breaking-component removal
+
+# ─── Layers ─────────────────────────────────────────────────────────
+#
+# Minimum triple (backend/frontend/infra) preserved — FR-GL-001.
+# Frontend gains `surfaces:` sub-map for Qwik/Flutter-Web split (ADR-B8-3-004).
+# No new top-level layer entries; FR-GL-001 validator check unaffected.
+layers:
+  - id: backend
+    path: backend/
+    fr_id_prefix: FR-BE-
+    primary_agent: Vulcan
+    standards_scope: [rust, all]
+
+  - id: frontend
+    path: frontend/
+    fr_id_prefix: FR-FE-
+    primary_agent: Hera
+    standards_scope: [flutter, all]
+    # Web surface split (ADR-B8-3-004, plan §4.2 B.8.9).
+    # These are sub-paths under frontend/, not new top-level layers.
+    # Janus arbitrates both surfaces when a cross-layer change spans them.
+    surfaces:
+      - id: web-backoffice
+        path: web-backoffice/
+        stack: flutter-web
+        note: Flutter Web — backoffice / admin UI; was frontend/ in 1.0.0
+
+      - id: web-public
+        path: web-public/
+        stack: qwik
+        note: Qwik PWA — public-facing web; new in 2.0.0 (B.8.9)
+
+  - id: infra
+    path: infra/
+    fr_id_prefix: FR-IN-
+    primary_agent: Atlas
+    standards_scope: [infra, all]
+
+fr_id_prefix_cross_layer: FR-GL-
+
+# ─── Cross-layer orchestration ───────────────────────────────────────
+cross_layer:
+  agent: Janus
+  triggers:
+    - layers_count_ge: 2
+  delivered_by: b1-workflow  # unchanged from 1.0.0
+
+# ─── Phases ──────────────────────────────────────────────────────────
+phases:
+  - id: proposal
+    artifact: proposal.md
+    template: templates/proposal.md
+    gate: constitution_compliance
+    next: specs
+
+  - id: specs
+    artifact: specs.md
+    template: templates/spec.md
+    agent: Clio
+    gate: anti_hallucination_check
+    next: design
+
+  - id: design
+    artifact: design.md
+    template: templates/design.md
+    agent: auto_route
+    gate: constitution_compliance
+    next: tasks
+
+  - id: tasks
+    artifact: tasks.md
+    template: templates/tasks.md
+    gate: per_task_constitution_check
+    next: implementation
+
+  - id: implementation
+    artifact: source_code
+    protocol: tdd_cycle
+    agent: auto_route
+    next: review
+
+  - id: review
+    agent: quality_guardians
+    gate: quality_gate
+    next: archive
+
+  - id: archive
+    merges: specs.md into .forge/specs/
+    updates: .forge.yaml status to archived

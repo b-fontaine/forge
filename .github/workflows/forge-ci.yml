@@ -145,6 +145,8 @@ jobs:
         run: bash .forge/scripts/tests/b8-1.test.sh --level 1
       - name: b8-2.test.sh
         run: bash .forge/scripts/tests/b8-2.test.sh --level 1
+      - name: b8-3.test.sh
+        run: bash .forge/scripts/tests/b8-3.test.sh --level 1
 
   # ─── gates ── verify.sh + constitution-linter.sh ───────────────
   gates:

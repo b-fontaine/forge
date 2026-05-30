@@ -12,6 +12,34 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added — B.8.3 flagship 2.0.0 candidate schema (`b8-3-schema-candidate`)
+
+- **First code-bearing brick of the flagship 1.0.0 → 2.0.0 migration.** New
+  `.forge/schemas/full-stack-monorepo/2.0.0.yaml` (`stage: candidate`,
+  `scaffoldable: false`) — the single target-of-record consumed by the
+  downstream migration bricks B.8.4–B.8.12. The frozen 1.0.0 `schema.yaml`
+  (B.8.2 maintenance-freeze) is **byte-untouched**; the candidate is a
+  versioned sibling.
+- **Reference-only component SET** — declares the 6 target components
+  (Envoy gateway, DBOS, Connect-RPC, Zitadel, Postgres 17 + pgvector,
+  SigNoz/OBI/Coroot) by name + role + owning standard yaml, with **no inline
+  version pins** (pins arrive with B.8.4–B.8.7; the Envoy gateway has no
+  standard source yet and carries `pin_source: B.8.4`).
+- **`migration_deltas[]`** (6) — canonical 1.0.0 → 2.0.0 delta record for the
+  B.8.12 zero-regression gate and the B.8.14 version-bump contract.
+- **Web surface split** — `frontend.surfaces` declares `web-backoffice`
+  (Flutter Web) + `web-public` (Qwik, new in 2.0.0) as sub-paths under the
+  `frontend` layer; the backend/frontend/infra triple (FR-GL-001) and Janus
+  `layers_count_ge: 2` routing are preserved.
+- **Constitutional prohibition recorded in-schema** — Articles VIII.1 (Kong)
+  and VIII.2 (Temporal) remain IN FORCE; the candidate declares the target
+  only and MUST NOT be scaffolded/deployed before the B.8.14 `GOVERNANCE.md`
+  Amendment Process completes (plan §4.2 B.8.14).
+- New harness `.forge/scripts/tests/b8-3.test.sh` (17 L1) — the **only** gate
+  aware of the candidate; the three shared validators stay unaware until the
+  proposed follow-on brick B.8.3.b rewires versioned-schema discovery. L1 ≤ 5 s,
+  zero net/Docker. Registered in `forge-ci.yml` after `b8-2.test.sh`.
+
 ## [0.4.0-rc.8] — 2026-05-30
 
 ### Fixed — `full-stack-monorepo` `task dev:up` dead pins (post-rc.7 hotfix)

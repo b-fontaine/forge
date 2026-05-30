@@ -1,5 +1,5 @@
 name: b8-3-schema-candidate
-status: planned
+status: implemented
 created: 2026-05-30
 schema: default
 constitution_version: "1.1.0"
@@ -13,3 +13,4 @@ timeline:
   specified: 2026-05-30
   designed: 2026-05-30
   planned: 2026-05-30
+  implemented: 2026-05-30
