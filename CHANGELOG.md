@@ -12,6 +12,8 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+## [0.4.0-rc.7] — 2026-05-30
+
 ### Added — B.8.2 flagship 1.0.0 snapshot freeze (`b8-2-legacy-snapshot`)
 
 - **Second Module B.8 brick.** Freezes `full-stack-monorepo / 1.0.0` as the
