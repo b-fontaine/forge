@@ -11,7 +11,8 @@ INDEPENDENT reviewer + the maintainer, not self-approved here.
 - **Q-001** resolved by maintainer 2026-05-30 → option (a). ADR-B8-3-001 finalized.
 - **Q-002** resolved by maintainer 2026-05-30 → reference-only. ADR-B8-3-002 finalized.
 - Propose + specify artifacts passed independent code-reviewer APPROVE (no CRITICAL / HIGH / MEDIUM findings) 2026-05-30.
-- Q-003 / Q-004 remain open; resolved at /forge:design.
+- **Q-003** resolved by maintainer 2026-05-30 → option (a). ADR-B8-3-003 finalized at /forge:design.
+- **Q-004** resolved by maintainer 2026-05-30 → option (a). ADR-B8-3-004 finalized at /forge:design.
 -->
 
 ## Q-001: On-disk naming (`2.0.0.yaml`) vs single `schema.yaml` + validator wiring
@@ -95,7 +96,7 @@ Observed: DBOS/Postgres/Zitadel/Connect pins already live in
 
 ## Q-003: `candidate` semantics, scaffoldability, and promotion trigger
 
-- **Status**: open
+- **Status**: answered
 - **Raised in**: `proposal.md` (ADR-B8-3-003 seed), `specs.md` FR-B8-3-005/041/042
 - **Raised on**: 2026-05-30
 - **Raised by**: author (b8-3 specify pass)
@@ -120,17 +121,15 @@ What does `candidate` mean here, and how must the validator/scaffolder treat it?
 
 ### Resolution
 
-- **Resolved on**: _pending /forge:design_
-- **Decision**: _pending (lean: (a) — non-scaffoldable, promote at B.8.14 post
-  B.8.12)_
-- **Rationale**: _pending — must state promotion trigger explicitly and whether a
-  scaffolder gate is a separate brick._
+- **Resolved on**: 2026-05-30 (maintainer decision, finalized at /forge:design)
+- **Decision**: Option (a) — `candidate` = ratified 2.0.0 target, NOT scaffoldable by default. `forge init` keeps scaffolding 1.0.0; 2.0.0 is opt-in only. Promotion candidate→stable happens at B.8.14 after B.8.12 proves zero-regression on the 4 demos. B.8.3 declares `scaffoldable: false` as a top-level boolean field in `2.0.0.yaml` (ADR-B8-3-005) and asserts it via `b8-3.test.sh`. Enforcing non-scaffoldability in the scaffolder/validator is deferred to B.8.3.b.
+- **Rationale**: The `scaffoldable: false` field is machine-readable now and forward-stable (B.8.14 flips it to `true`). Scaffolder enforcement couples to the validator rewiring in B.8.3.b — correct separation of concerns.
 
 ---
 
 ## Q-004: Web layer modeling — `web-public` (Qwik) + `web-backoffice` (Flutter Web)
 
-- **Status**: open
+- **Status**: answered
 - **Raised in**: `proposal.md` (ADR-B8-3-004 seed), `specs.md` FR-B8-3-021
 - **Raised on**: 2026-05-30
 - **Raised by**: author (b8-3 specify pass)
@@ -152,7 +151,6 @@ this — as new `layers[]` entries, or as sub-paths/structure under the existing
 
 ### Resolution
 
-- **Resolved on**: _pending /forge:design_
-- **Decision**: _pending (lean: (a), confirm against B.8.9 template layout)_
-- **Rationale**: _pending — must keep the validator's backend/frontend/infra
-  triple and Janus `layers_count_ge: 2` routing coherent._
+- **Resolved on**: 2026-05-30 (maintainer decision, finalized at /forge:design)
+- **Decision**: Option (a) — model as `surfaces:` sub-map under the existing `frontend` layer entry. `frontend` keeps its top-level `id/path/fr_id_prefix/primary_agent` (Hera). Two named surfaces: `web-backoffice` (Flutter Web, path `web-backoffice/`) and `web-public` (Qwik, path `web-public/`, new in 2.0.0 per plan §4.2 B.8.9). Paths confirmed from plan §4.2 B.8.9: "web-public/" and "Flutter Web reste en `web-backoffice/`". No new top-level `layers[]` entries; FR-GL-001 backend/frontend/infra triple trivially satisfied. Janus `layers_count_ge: 2` trigger unaffected (intra-frontend surfaces do not add new layer count).
+- **Rationale**: Avoids new FR-ID prefixes and Janus routing churn. Keeps the validator's required triple satisfied without B.8.3.b. B.8.9 populates the surface templates; this schema records the topology contract.
