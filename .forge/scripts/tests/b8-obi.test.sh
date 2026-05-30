@@ -389,37 +389,59 @@ _test_b8obi_l1_022_snapshot_ceiling() {
 # SOURCE_DATE_EPOCH-pinned mtimes + sorted entry order + uid/gid
 # normalised + gzip mtime stripped.
 #
-# Methodology : delete the canonical artefact, rebuild once (capture
-# hash A), delete, rebuild again (capture hash B), assert A == B,
-# leave the second build in place (byte-identical to the first by
-# definition, so the canonical artefact is preserved). The canonical
-# hash that existed before this test ran is NOT used as the
-# comparand — it may legitimately differ if any owned source file
-# was edited between the previous build and this test run. The
-# property under test is **rebuild-vs-rebuild** determinism, not
-# rebuild-vs-historical.
+# Methodology : back up the committed artefact, delete it, rebuild
+# once (capture hash A), delete, rebuild again (capture hash B),
+# assert A == B, then RESTORE the committed artefact. The committed
+# hash is NOT the comparand — a rebuild may legitimately differ from
+# it (owned source edited since the last build, OR cross-OS file-mode
+# / scaffold-render divergence). The property under test is
+# **rebuild-vs-rebuild** determinism, not rebuild-vs-historical. The
+# restore is mandatory : the rebuild is NOT byte-identical to the
+# committed tarball across environments, so leaving it in place would
+# clobber the frozen 1.0.0 reverse target that b8-1/b8-2 verify later
+# in the same workspace.
 _test_b8obi_l1_023_snapshot_determinism() {
   if [ ! -f "$SNAPSHOT" ]; then
     echo "    canonical snapshot missing — run bin/forge-snapshot.sh build full-stack-monorepo 1.0.0" >&2
     return 1
   fi
-  local hash_a hash_b
+  # Preserve the COMMITTED canonical artefact. A rebuild is only
+  # byte-identical to another rebuild in the SAME environment — file
+  # modes + scaffold rendering diverge macOS↔Linux, so a CI rebuild
+  # legitimately differs from the macOS-authored committed tarball.
+  # Leaving the rebuild in place clobbered the frozen 1.0.0 reverse
+  # target for b8-1/b8-2, which run later in the same CI workspace and
+  # whose immutability guard (b8-2 FR-B8-2-011) hashes it against the
+  # frozen manifest. Back up + restore so this test mutates nothing.
+  local backup; backup="${TMPDIR:-/tmp}/b8obi-snap-backup.$$.tar.gz"
+  cp "$SNAPSHOT" "$backup"
+  # No RETURN trap : a function-scoped RETURN trap leaks into the
+  # run_test caller and trips `set -u` on the out-of-scope local.
+  # Restore explicitly on every exit path instead.
+  local hash_a hash_b rc=0
   rm "$SNAPSHOT"
-  if ! bash "$FORGE_ROOT_REAL/bin/forge-snapshot.sh" build full-stack-monorepo 1.0.0 > /dev/null 2>&1; then
+  if bash "$FORGE_ROOT_REAL/bin/forge-snapshot.sh" build full-stack-monorepo 1.0.0 > /dev/null 2>&1; then
+    hash_a=$(shasum -a 256 "$SNAPSHOT" | awk '{print $1}')
+    rm "$SNAPSHOT"
+    if bash "$FORGE_ROOT_REAL/bin/forge-snapshot.sh" build full-stack-monorepo 1.0.0 > /dev/null 2>&1; then
+      hash_b=$(shasum -a 256 "$SNAPSHOT" | awk '{print $1}')
+      if [ "$hash_a" != "$hash_b" ]; then
+        echo "    snapshot is NOT deterministic (NFR-B8-OBI-011) — A=$hash_a B=$hash_b" >&2
+        rc=1
+      fi
+    else
+      echo "    rebuild B failed — bin/forge-snapshot.sh build returned non-zero" >&2
+      rc=1
+    fi
+  else
     echo "    rebuild A failed — bin/forge-snapshot.sh build returned non-zero" >&2
-    return 1
+    rc=1
   fi
-  hash_a=$(shasum -a 256 "$SNAPSHOT" | awk '{print $1}')
-  rm "$SNAPSHOT"
-  if ! bash "$FORGE_ROOT_REAL/bin/forge-snapshot.sh" build full-stack-monorepo 1.0.0 > /dev/null 2>&1; then
-    echo "    rebuild B failed — bin/forge-snapshot.sh build returned non-zero" >&2
-    return 1
-  fi
-  hash_b=$(shasum -a 256 "$SNAPSHOT" | awk '{print $1}')
-  if [ "$hash_a" != "$hash_b" ]; then
-    echo "    snapshot is NOT deterministic (NFR-B8-OBI-011) — A=$hash_a B=$hash_b" >&2
-    return 1
-  fi
+  # Always restore the committed canonical artefact (frozen reverse
+  # target for b8-1/b8-2 later in the same workspace).
+  cp "$backup" "$SNAPSHOT"
+  rm -f "$backup"
+  return "$rc"
 }
 
 # ─── L2 tests (opt-in) ───────────────────────────────────────────
