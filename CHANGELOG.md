@@ -12,6 +12,25 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added — B.8.2 flagship 1.0.0 snapshot freeze (`b8-2-legacy-snapshot`)
+
+- **Second Module B.8 brick.** Freezes `full-stack-monorepo / 1.0.0` as the
+  immutable reverse target for `forge upgrade` ahead of the 1.0.0 → 2.0.0
+  point of no return. The tarball is **not rebuilt** — the existing rc.6
+  1.0.0-final artifact is frozen as-is.
+- New `.forge/scaffold-snapshots/full-stack-monorepo/1.0.0.sha256` integrity
+  manifest (`shasum -c` format) pinning the frozen tarball.
+- New harness `.forge/scripts/tests/b8-2.test.sh` (4 L1): sha guard (FAILS if
+  the tarball drifts/rebuilt/corrupted), extractable re-assert, freeze-section
+  + REVIEW.md reachability. Registered in `forge-ci.yml` (300/300 preserved).
+- `global/upgrade-policy.md` gains a "Snapshot maintenance-freeze" section +
+  REVIEW.md ledger entry: 1.0.0 enters maintenance-freeze (all changes target
+  2.0.0; the 2.0.0 snapshot builds to a new `2.0.0.tar.gz`, never overwriting
+  1.0.0). **No `legacy/` directory** — the version-keyed path
+  `<archetype>/<from_version>.tar.gz` that `forge-upgrade.sh` already reads IS
+  the legacy archive (reconciles plan §4.2 wording with the live mechanism).
+- New consolidated spec `.forge/specs/b8-legacy-snapshot.md` (`FR-B8-2-*`).
+
 ## [0.4.0-rc.6] — 2026-05-30
 
 ### Added — B.8.1 flagship baseline audit (`b8-1-audit-baseline`)

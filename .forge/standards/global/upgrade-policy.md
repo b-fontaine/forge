@@ -172,6 +172,40 @@ The identity fields — `project_name`, `reverse_domain`,
 MUST refuse to change them (changing the project name would
 conflict with file paths and Cargo / Flutter package identity).
 
+## Snapshot maintenance-freeze (point-of-no-return migrations)
+
+When an archetype crosses a **major schema migration** (e.g.
+`full-stack-monorepo / 1.0.0 → 2.0.0`, the B.8 point of no
+return), its last pre-migration snapshot becomes the **frozen
+reverse target** for `forge upgrade`. BASE recovery reads it from
+the version-keyed path
+`.forge/scaffold-snapshots/<archetype>/<from_version>.tar.gz`
+(`forge-upgrade.sh`) — there is **no `legacy/` directory**; the
+version-keyed path *is* the legacy archive.
+
+Freeze rules (first applied to `full-stack-monorepo / 1.0.0` at
+B.8.2, 2026-05-30):
+
+- The frozen tarball MUST NOT be rebuilt. A committed sibling
+  manifest `<from_version>.sha256` pins its sha256, and a harness
+  (`b8-2.test.sh`) FAILS if the tarball ever drifts. This guards
+  the only reverse target at the moment it matters most.
+- Once an archetype version is frozen, **no further template
+  edits target that version** — all changes target the new
+  (`2.0.0`) templates.
+- The new version's snapshot MUST build to a **new file**
+  (`2.0.0.tar.gz`) via `forge-snapshot.sh build <archetype>
+  2.0.0`. It MUST NOT overwrite the frozen `1.0.0.tar.gz`
+  (`forge-snapshot.sh` is version-keyed, so this is a discipline
+  the freeze harness enforces, not an automatic guarantee).
+- A deliberate, audited patch to a frozen version (e.g. a pinned
+  image CVE) updates the tarball **and** its `.sha256` manifest
+  together, with a REVIEW.md ledger entry. The freeze guard
+  catches *accidental* drift, not audited bumps.
+
+Legacy adopters stay on the frozen version until its deprecation
+window closes (T8 at the earliest for `1.0.0`, per the roadmap).
+
 ## Interdictions
 
 The following patterns are forbidden. Each is a constitutional

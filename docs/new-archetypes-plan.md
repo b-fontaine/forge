@@ -509,12 +509,14 @@ v1.0.0 sont désormais résolus.
 | `b8-coroot-rehost`           | archived               | B.8.8 (Coroot rehost ghcr.io + 1.20.2 — no v-prefix per ADR-B8-COR-001 inverted at impl ; pilot of `b8-observability-rearch` trio ; T6 first additive brick — siblings `b8-signoz-unified` + `b8-obi-refresh` follow ; v0.4.0-rc.3 target) |
 | `b8-signoz-unified`          | archived               | B.8.8 (SigNoz 3-svc → unified arch, T6 trio sibling 2 ; `observability.yaml` v1.2.0 → v2.0.0 BREAKING + ISO 8601 `pin_review_cadence:` + ARCH-CHANGE ledger flag ; 6-service compose 4+2 ; débloque `dev-up-matrix` RED ; archived 2026-05-28 ; v0.4.0-rc.4 released) |
 | `b8-obi-refresh`             | archived               | B.8.8 (OBI/Beyla refresh 2.0.1 → 3.15.0, T6 trio sibling 3 — closes the trio ; `observability.yaml` v2.0.0 → v2.1.0 additive ; ClusterRole RBAC widened `services` per Beyla 3.x docs ; caps + kernel-58 UNCHANGED ; 4-copy mirror sync ; sibling-harness coupling break hybrid per ADR-B8-OBI-006 ; snapshot determinism enforced via Python tarfile + SOURCE_DATE_EPOCH (post-review HIGH fix) ; archived 2026-05-29 ; v0.4.0-rc.5 target) |
-| `b8-1-audit-baseline`        | archived               | B.8.1 (flagship 1.0.0 baseline audit — **first B.8 item beyond the obs trio** ; pure audit, no migration code, zero template/standard/schema touch ; `docs/B8-BASELINE.md` + `.forge/baselines/…span-inventory.yaml` + `b8-1.test.sh` 10 L1 + 1 L2 ; 4 anti-hallucination findings — no Temporal worker / placeholder backend / Postgres 16 not 17 / 3 spans not 4 ; independent review round 1 CHANGES REQUIRED → round 2 APPROVE ; archived 2026-05-30 ; next-rc target) |
+| `b8-1-audit-baseline`        | archived               | B.8.1 (flagship 1.0.0 baseline audit — **first B.8 item beyond the obs trio** ; pure audit, no migration code, zero template/standard/schema touch ; `docs/B8-BASELINE.md` + `.forge/baselines/…span-inventory.yaml` + `b8-1.test.sh` 10 L1 + 1 L2 ; 4 anti-hallucination findings — no Temporal worker / placeholder backend / Postgres 16 not 17 / 3 spans not 4 ; independent review round 1 CHANGES REQUIRED → round 2 APPROVE ; archived 2026-05-30 ; v0.4.0-rc.6 released) |
+| `b8-2-legacy-snapshot`       | archived               | B.8.2 (freeze flagship 1.0.0 as the immutable `forge upgrade` reverse target ; sha256 manifest `1.0.0.sha256` + immutability guard `b8-2.test.sh` 4 L1 ; `upgrade-policy.md` maintenance-freeze section + REVIEW ledger ; **no `legacy/` dir** — version-keyed path reconciles plan §4.2 ; tarball NOT rebuilt ; independent review APPROVE ; archived 2026-05-30 ; v0.4.0-rc.7 target) |
 
-**34 archivés** au 2026-05-30. Trio B.8.8 observability rearch
+**35 archivés** au 2026-05-30. Trio B.8.8 observability rearch
 **fully closed** (Coroot leg 1 rc.3 + SigNoz leg 2 rc.4 + OBI leg 3 rc.5) ;
-**B.8.1 baseline archived 2026-05-30** as the first B.8 brick beyond the
-trio (additive audit, see §0.10). T5.3.1 livré sans `task validate` GREEN
+**B.8.1 baseline + B.8.2 legacy-snapshot freeze archived 2026-05-30** as the
+first two B.8 bricks beyond the trio (additive, see §0.10). Next B.8 step:
+**B.8.3** (schema 2.0.0 candidate). T5.3.1 livré sans `task validate` GREEN
 end-to-end : le L2 et `task validate` exposent **Q-005**
 (SigNoz image pins rotted upstream + architecture migration
 3-services → unified ; pin refresh impossible). Tentative

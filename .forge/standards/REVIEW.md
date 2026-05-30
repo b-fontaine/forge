@@ -588,3 +588,27 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   date regex `2026-05-2[6789]`. `forge-ci.yml` compressed by 3 trim-
   comments per ADR-B8-OBI-007 ; matrix registered ; stays at 300/300
   (NFR-CI-002 plafond preserved).
+
+## 2026-05-30 — Updated upgrade-policy.md (snapshot maintenance-freeze, b8-2-legacy-snapshot)
+
+  | Standard          | Version | Status  | Next review due | Notes |
+  |-------------------|---------|---------|-----------------|-------|
+  | global/upgrade-policy.md | n/a (stage: stable, no semver) | Updated | 2027-05-30 | Additive section "## Snapshot maintenance-freeze (point-of-no-return migrations)". No `version:` frontmatter on this markdown standard → section addition only, no semver increment. |
+
+- **Decision**: Updated by `b8-2-legacy-snapshot` (B.8.2). Codifies the
+  freeze of `full-stack-monorepo / 1.0.0` as the frozen reverse target for
+  `forge upgrade` ahead of the 1.0.0 → 2.0.0 point of no return.
+- **Rationale**: The version-keyed BASE-recovery path
+  (`.forge/scaffold-snapshots/<archetype>/<from_version>.tar.gz`, read by
+  `forge-upgrade.sh`) is the legacy archive — there is **no `legacy/`
+  directory** (ADR-B8-2-001, reconciling plan §4.2 wording with the live
+  mechanism). A committed sibling manifest `1.0.0.sha256`
+  (`1d0b05cd…cd45`) pins the frozen tarball ; the harness
+  `b8-2.test.sh --level 1` FAILS if it drifts (rebuilt / corrupted /
+  accidentally overwritten with 2.0.0 content). The 2.0.0 snapshot MUST
+  build to a new `2.0.0.tar.gz` file. A deliberate audited 1.0.0 patch
+  updates tarball + manifest + this ledger together. The tarball itself was
+  **not rebuilt** (ADR-B8-2-005 — SOURCE_DATE_EPOCH would churn bytes for no
+  gain) ; the frozen artifact is the rc.6 1.0.0-final that `a7.test.sh`
+  already exercises (29/29 PASS preserved). Flagship-only ; `mobile-only /
+  1.0.0` freeze deferred to B.9 (ADR-B8-2-004).
