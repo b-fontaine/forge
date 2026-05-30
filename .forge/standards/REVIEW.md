@@ -612,3 +612,31 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   gain) ; the frozen artifact is the rc.6 1.0.0-final that `a7.test.sh`
   already exercises (29/29 PASS preserved). Flagship-only ; `mobile-only /
   1.0.0` freeze deferred to B.9 (ADR-B8-2-004).
+
+## 2026-05-30 — AUDITED PATCH to frozen 1.0.0 snapshot (dev:up dead-pin hygiene)
+
+  | Artifact | Old | New | Notes |
+  |----------|-----|-----|-------|
+  | `full-stack-monorepo/1.0.0.tar.gz` | sha `1d0b05cd…cd45` | sha `8d439b94…4ca9` | Regenerated after the dead-pin/healthcheck fix below. |
+  | `full-stack-monorepo/1.0.0.sha256` | `1d0b05cd…` | `8d439b94…` | Manifest updated in lockstep (B.8.2 audited-patch protocol). |
+
+- **Decision**: AUDITED PATCH to the frozen `full-stack-monorepo / 1.0.0`
+  reverse target — the exact carve-out the B.8.2 maintenance-freeze section
+  allows ("a deliberate, audited 1.0.0 patch updates tarball + manifest +
+  this ledger together; the guard catches accidental drift, not audited
+  bumps").
+- **Rationale**: `task dev:up` failed on a fresh 1.0.0 scaffold (surfaced by
+  `task validate` dev-up-matrix). Two dead-pin / placeholder bugs fixed in
+  `docker-compose.dev.yml(.tmpl)` across all 6 mirror copies:
+  (1) `kong:3.6-alpine` → `kong:3.6` — Kong dropped the `-alpine` suffix
+  (`manifest unknown` ; verify-then-pin per b8-coroot lesson, `kong:3.6`
+  confirmed live). (2) `fsm-backend` placeholder `traefik/whoami:v1.11.0` is
+  FROM scratch (no shell/curl) so its `CMD-SHELL curl` healthcheck always
+  errored → never healthy → `fsm-kong` (depends_on service_healthy) blocked.
+  Fixed: healthcheck `disable: true` + `fsm-kong` depends_on `fsm-backend`
+  → `condition: service_started`. (3) Bonus drift fixed — the two rendered
+  examples were stale pre-T5.3.1 (`image: scratch`, which cannot run at
+  all) ; synced to the template (whoami). Verified GREEN: `task dev-up-matrix`
+  `[PASS] full-stack-monorepo : dev:up`, then full `task validate` →
+  "ALL CHECKS GREEN". `b8-2.test.sh` sha guard re-points at the new manifest ;
+  `a7.test.sh` extract preserved.

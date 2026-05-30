@@ -78,18 +78,19 @@ services:
     depends_on:
       fsm-db:
         condition: service_healthy
+    # The traefik/whoami placeholder is FROM scratch — no shell, no curl/wget —
+    # so it cannot self-probe. Healthcheck disabled for the placeholder ;
+    # dependents wait on service_started. When you swap in your real backend
+    # image, define a proper /health probe here and flip the fsm-kong
+    # dependency below back to condition: service_healthy.
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/ || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 15s
+      disable: true
 
   # ---------------------------------------------------------------------------
   # fsm-kong — API gateway (Kong 3.6, REST↔gRPC transcoding — Article VIII.1)
   # ---------------------------------------------------------------------------
   fsm-kong:
-    image: kong:3.6-alpine
+    image: kong:3.6
     env_file: .env
     environment:
       KONG_DATABASE: "off"
@@ -106,8 +107,11 @@ services:
     networks:
       - fsm-dev
     depends_on:
+      # Placeholder backend has no healthcheck (whoami is FROM scratch) — wait on
+      # start only. Restore service_healthy once a real backend with a /health
+      # probe is wired (see fsm-backend above).
       fsm-backend:
-        condition: service_healthy
+        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8001/status || exit 1"]
       interval: 10s

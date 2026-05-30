@@ -60,8 +60,10 @@ services:
   # Reference Dockerfile: infra/docker/Dockerfile.backend.example
   # ---------------------------------------------------------------------------
   fsm-backend:
-    # replace with project image once built (e.g. image: ghcr.io/org/forge-fsm-example-backend:dev)
-    image: scratch
+    # T5.3.1 placeholder — traefik/whoami responds 200 on GET / ; replace with
+    # the project image (e.g. ghcr.io/org/forge-fsm-example-backend:dev) once built.
+    image: traefik/whoami:v1.11.0
+    command: ["--port=8080"]
     env_file: .env
     environment:
       DATABASE_URL: ${DATABASE_URL}
@@ -73,18 +75,17 @@ services:
     depends_on:
       fsm-db:
         condition: service_healthy
+    # whoami is FROM scratch — no shell/curl — so it cannot self-probe.
+    # Healthcheck disabled for the placeholder ; fsm-kong waits on
+    # service_started. Restore a /health probe when a real backend is wired.
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 15s
+      disable: true
 
   # ---------------------------------------------------------------------------
   # fsm-kong — API gateway (Kong 3.6, REST↔gRPC transcoding — Article VIII.1)
   # ---------------------------------------------------------------------------
   fsm-kong:
-    image: kong:3.6-alpine
+    image: kong:3.6
     env_file: .env
     environment:
       KONG_DATABASE: "off"
@@ -101,8 +102,11 @@ services:
     networks:
       - fsm-dev
     depends_on:
+      # Placeholder backend has no healthcheck (whoami is FROM scratch) — wait on
+      # start only. Restore service_healthy once a real backend with a /health
+      # probe is wired (see fsm-backend above).
       fsm-backend:
-        condition: service_healthy
+        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8001/status || exit 1"]
       interval: 10s

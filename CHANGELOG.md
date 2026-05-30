@@ -12,6 +12,28 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Fixed — `full-stack-monorepo` `task dev:up` dead pins (post-rc.7 hotfix)
+
+- **`kong:3.6-alpine` → `kong:3.6`** — Kong dropped the `-alpine` suffix;
+  the pinned tag returned `manifest unknown`, breaking `task dev:up` /
+  `task validate`. New pin verified live (verify-then-pin, b8-coroot lesson).
+- **`fsm-backend` placeholder healthcheck** — `traefik/whoami` is FROM
+  scratch (no shell/curl), so its `CMD-SHELL curl` healthcheck always errored
+  → never healthy → `fsm-kong` (depends_on `service_healthy`) blocked. Fixed:
+  healthcheck `disable: true` + `fsm-kong` depends_on `fsm-backend` →
+  `condition: service_started`.
+- **Rendered-example drift** — the two `examples/forge-fsm-example/docker-compose.dev.yml`
+  mirrors were stale pre-T5.3.1 (`image: scratch`, which cannot run at all);
+  synced to the template (`traefik/whoami:v1.11.0`). Applied across all 6
+  mirror copies.
+- **Frozen 1.0.0 snapshot regenerated** (audited patch per the B.8.2
+  maintenance-freeze carve-out): `1.0.0.tar.gz` sha `1d0b05cd…` → `8d439b94…`,
+  `1.0.0.sha256` + REVIEW.md ledger updated in lockstep so the reverse target
+  is a working 1.0.0.
+- Verified: `task dev-up-matrix` `[PASS] full-stack-monorepo : dev:up`, full
+  `task validate` → "ALL CHECKS GREEN"; `b8-2.test.sh` 4/0, `a7.test.sh`
+  29/0, `t5-3-1.test.sh` 9/0.
+
 ## [0.4.0-rc.7] — 2026-05-30
 
 ### Added — B.8.2 flagship 1.0.0 snapshot freeze (`b8-2-legacy-snapshot`)
