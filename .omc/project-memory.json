@@ -127,14 +127,14 @@
   "hotPaths": [
     {
       "path": "docs/new-archetypes-plan.md",
-      "accessCount": 106,
-      "lastAccessed": 1780141870023,
+      "accessCount": 114,
+      "lastAccessed": 1780157428370,
       "type": "file"
     },
     {
       "path": ".forge/product/roadmap.md",
-      "accessCount": 53,
-      "lastAccessed": 1780084486223,
+      "accessCount": 56,
+      "lastAccessed": 1780157438322,
       "type": "file"
     },
     {
