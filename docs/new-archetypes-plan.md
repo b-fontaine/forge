@@ -509,9 +509,12 @@ v1.0.0 sont désormais résolus.
 | `b8-coroot-rehost`           | archived               | B.8.8 (Coroot rehost ghcr.io + 1.20.2 — no v-prefix per ADR-B8-COR-001 inverted at impl ; pilot of `b8-observability-rearch` trio ; T6 first additive brick — siblings `b8-signoz-unified` + `b8-obi-refresh` follow ; v0.4.0-rc.3 target) |
 | `b8-signoz-unified`          | archived               | B.8.8 (SigNoz 3-svc → unified arch, T6 trio sibling 2 ; `observability.yaml` v1.2.0 → v2.0.0 BREAKING + ISO 8601 `pin_review_cadence:` + ARCH-CHANGE ledger flag ; 6-service compose 4+2 ; débloque `dev-up-matrix` RED ; archived 2026-05-28 ; v0.4.0-rc.4 released) |
 | `b8-obi-refresh`             | archived               | B.8.8 (OBI/Beyla refresh 2.0.1 → 3.15.0, T6 trio sibling 3 — closes the trio ; `observability.yaml` v2.0.0 → v2.1.0 additive ; ClusterRole RBAC widened `services` per Beyla 3.x docs ; caps + kernel-58 UNCHANGED ; 4-copy mirror sync ; sibling-harness coupling break hybrid per ADR-B8-OBI-006 ; snapshot determinism enforced via Python tarfile + SOURCE_DATE_EPOCH (post-review HIGH fix) ; archived 2026-05-29 ; v0.4.0-rc.5 target) |
+| `b8-1-audit-baseline`        | archived               | B.8.1 (flagship 1.0.0 baseline audit — **first B.8 item beyond the obs trio** ; pure audit, no migration code, zero template/standard/schema touch ; `docs/B8-BASELINE.md` + `.forge/baselines/…span-inventory.yaml` + `b8-1.test.sh` 10 L1 + 1 L2 ; 4 anti-hallucination findings — no Temporal worker / placeholder backend / Postgres 16 not 17 / 3 spans not 4 ; independent review round 1 CHANGES REQUIRED → round 2 APPROVE ; archived 2026-05-30 ; next-rc target) |
 
-**33 archivés** au 2026-05-29. Trio B.8.8 observability rearch
-**fully closed** (Coroot leg 1 rc.3 + SigNoz leg 2 rc.4 + OBI leg 3 rc.5). T5.3.1 livré sans `task validate` GREEN
+**34 archivés** au 2026-05-30. Trio B.8.8 observability rearch
+**fully closed** (Coroot leg 1 rc.3 + SigNoz leg 2 rc.4 + OBI leg 3 rc.5) ;
+**B.8.1 baseline archived 2026-05-30** as the first B.8 brick beyond the
+trio (additive audit, see §0.10). T5.3.1 livré sans `task validate` GREEN
 end-to-end : le L2 et `task validate` exposent **Q-005**
 (SigNoz image pins rotted upstream + architecture migration
 3-services → unified ; pin refresh impossible). Tentative
@@ -1769,6 +1772,63 @@ header + L2 OLD_PIN const persistent (intentionnel).
   migration 1.0.0 → 2.0.0 (Envoy + DBOS + Connect + Zitadel +
   Postgres+pgvector — non commencé) ou consolidation
   v0.4.0 stable post-rc.5 si trilogie suffisante pour cut majeur.
+
+---
+
+## 0.10 Status update — 2026-05-30 (B.8.1 — `b8-1-audit-baseline` ✅ archived)
+
+> **First B.8 brick beyond the observability trio.** B.8.1 freezes the
+> measurable baseline of `full-stack-monorepo / 1.0.0` before any migration
+> template touches the flagship. Pure audit artifact — no migration code,
+> no template/standard/schema mutation, fully reversible.
+
+### Delivered
+
+- **`docs/B8-BASELINE.md`** — deployed component/version matrix, demo-005 W3C
+  trace coverage, re-measurement methodology. Consumed by B.8.12 (regression
+  gate), B.8.13 (rollback runbook), B.8.5 (DBOS).
+- **`.forge/baselines/full-stack-monorepo-1.0.0.span-inventory.yaml`** —
+  machine-readable, source-cross-checked span inventory ; forward-stable dir
+  for B.9/B.6/B.7 baselines (ADR-B8-1-005).
+- **`.forge/scripts/tests/b8-1.test.sh`** — 10 L1 + 1 L2 opt-in
+  (`FORGE_B8_1_DOCKER=1`), registered in `forge-ci.yml` (300/300 preserved via
+  3-comment compression, ADR-B8-1-006).
+- **`.forge/specs/b8-baseline.md`** consolidated spec (`FR-B8-1-*`).
+- 6 ADRs `ADR-B8-1-001..006` ; Q-001/002/003 all `answered`.
+
+### Four anti-hallucination findings (Article III.4 — the point of B.8.1)
+
+The plan's B.8.1 wording assumed a reality the live repo contradicts:
+
+1. **No Temporal worker deployed** — documentary only (`infra/CLAUDE.md`). No
+   MTBF fabricated ; negative harness guard (FR-B8-1-033). Forward-pointer:
+   B.8.5 DBOS replaces a documented intent, not a running system → **lower
+   risk than plan assumed**.
+2. **Backend is a placeholder** (`fsm-backend image: scratch`) → live e2e
+   latency not capturable from the example unmodified → latency baseline is
+   methodology, not committed numbers (ADR-B8-1-002).
+3. **Postgres 16, no pgvector** (not the 17 target) — delta recorded, not
+   normalized.
+4. **demo-005 emits 3 code-verified spans, not the doc's 4** — the phantom is
+   the Flutter `user.interaction greet` root span (no instrument site), NOT
+   the connectrpc handler (which IS the real client span).
+
+### Author/reviewer separation caught a real defect
+
+Finding #4 was **itself partly hallucinated** in the first author pass (named
+the connectrpc handler as the phantom). The independent separate-context
+reviewer (round 1 → **CHANGES REQUIRED**) proved the phantom is the Flutter
+root span ; fixed ; round 2 → **APPROVE**. This validates the
+`b8_coroot_inversion_lessons` / `t5_2_self_validation_lesson` mandate: even an
+anti-hallucination deliverable hallucinated, and only independent review
+(no transcript trust) caught it.
+
+### Gates + release
+
+Harness 10/0 · L2 11/0 · `a7` 29/0 · `verify.sh` PASS · `constitution-linter`
+OVERALL PASS · `forge-ci.yml` 300/300. **Release target**: next `0.4.0-rc.x`
+(Scenario A — v0.4.0 stable cut decision pending). **Next B.8 step**: B.8.2
+(legacy snapshot tarball) then B.8.3 (schema 2.0.0 candidate).
 
 ---
 

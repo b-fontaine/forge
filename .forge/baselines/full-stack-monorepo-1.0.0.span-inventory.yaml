@@ -1,0 +1,55 @@
+# Span inventory — flagship baseline (B.8.1, b8-1-audit-baseline)
+#
+# Code-verified W3C-trace coverage for the demo-005-connect-greeting
+# round-trip on full-stack-monorepo / 1.0.0. Article III.4 : every span
+# below corresponds to a live `#[tracing::instrument]` / span-creation
+# site, cross-checked by `.forge/scripts/tests/b8-1.test.sh`
+# (_test_b81_l1_009). No span is listed that is not emitted.
+#
+# IMPORTANT — 4-span-vs-3-span discrepancy (implement-time finding,
+# 2026-05-30, corrected after independent review) : the demo-005 doc
+# waterfall (examples/forge-fsm-example/docs/demo-005-connect-greeting.md §3)
+# draws a "4-span tree" : [Flutter] user.interaction greet (root) →
+# [Flutter] POST /connect (client) → [Rust] http.request (server) →
+# [Rust] greeter.greet (internal). Only THREE are real instrument sites.
+# The PHANTOM span is the Flutter `user.interaction greet` ROOT — no
+# `startSpan('user.interaction …')` exists in frontend/lib. The connectrpc
+# POST IS the real client span (first entry below), not a missing 4th.
+# B.8.12 MUST assert the 3 spans below, not the doc's phantom root.
+
+archetype: full-stack-monorepo
+version: "1.0.0"
+captured: "2026-05-29"
+demo: demo-005-connect-greeting
+
+spans:
+  - name: "<http-method> <path>"   # dynamic, e.g. "POST /connect/greeting.v1.GreeterService/Greet"
+    name_source: "'${options.method} ${_sanitizePath(options.path)}'"
+    otel_kind: client
+    layer: frontend
+    source: examples/forge-fsm-example/frontend/lib/core/telemetry/interceptors/tracing_interceptor.dart
+    verified_marker: "SpanKind.client"
+    role: "dio interceptor — emits client span + injects W3C traceparent on outbound call"
+
+  - name: "http.request"
+    otel_kind: server
+    layer: backend
+    source: examples/forge-fsm-example/backend/crates/infrastructure/src/telemetry/middleware.rs
+    verified_marker: 'otel.kind = "server"'
+    role: "tower-http make_span_with — extracts inbound traceparent, links to parent context"
+
+  - name: "greeter.greet"
+    otel_kind: internal
+    layer: backend
+    source: examples/forge-fsm-example/backend/crates/application/src/greet.rs
+    verified_marker: 'name = "greeter.greet"'
+    role: "GreetUseCase — #[tracing::instrument], child of the server span"
+
+notes:
+  - "3 code-verified spans ; demo-005 doc waterfall draws 4. The phantom is
+     the Flutter `user.interaction greet` root span — no instrument site in
+     frontend/lib. The connectrpc POST is the real client span (above)."
+  - "Frontend also ships tracing_navigation_observer.dart (navigation.push)
+     + tracing_bloc_observer.dart (<Bloc>.<Event>) + error_reporter.dart
+     (error.reported) ; those emit spans outside the demo-005 happy-path
+     request and are intentionally out of this request-path inventory."

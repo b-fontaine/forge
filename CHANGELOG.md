@@ -12,6 +12,29 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added — B.8.1 flagship baseline audit (`b8-1-audit-baseline`)
+
+- **First item of Module B.8** (flagship `full-stack-monorepo / 1.0.0` →
+  `2.0.0` migration). Pure audit artifact — no migration code, no template /
+  standard / schema mutation, fully reversible.
+- New `docs/B8-BASELINE.md`: deployed component/version matrix, demo-005 W3C
+  trace coverage, re-measurement methodology. Consumed by B.8.12 (regression
+  gate), B.8.13 (rollback runbook), B.8.5 (DBOS).
+- New `.forge/baselines/full-stack-monorepo-1.0.0.span-inventory.yaml`:
+  machine-readable, source-cross-checked span inventory (forward-stable for
+  B.9 / B.6 / B.7 baselines).
+- New harness `.forge/scripts/tests/b8-1.test.sh` (10 L1 + 1 L2 opt-in
+  `FORGE_B8_1_DOCKER=1`), registered in `forge-ci.yml`.
+- New consolidated spec `.forge/specs/b8-baseline.md` (`FR-B8-1-*` namespace).
+- **Four anti-hallucination findings recorded (Article III.4)** against the
+  plan's assumptions: (1) no Temporal worker is deployed (documentary only) —
+  no MTBF fabricated, guarded by a negative harness test; (2) `fsm-backend`
+  is a placeholder (`image: scratch`) so live end-to-end latency is not
+  capturable from the example unmodified — latency baseline is methodology,
+  not numbers; (3) Postgres is **16** (no pgvector), not the 17 target; (4)
+  demo-005 emits **3** code-verified spans, not the doc's claimed 4 (the
+  connectrpc handler shares the server span).
+
 ## [0.4.0-rc.5] — 2026-05-29
 
 ### Changed — OBI/Beyla major bump 2.0.1 → 3.15.0 (B.8.8, `b8-obi-refresh`)
