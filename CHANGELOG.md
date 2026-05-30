@@ -12,6 +12,8 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+## [0.4.0-rc.6] — 2026-05-30
+
 ### Added — B.8.1 flagship baseline audit (`b8-1-audit-baseline`)
 
 - **First item of Module B.8** (flagship `full-stack-monorepo / 1.0.0` →
@@ -34,6 +36,13 @@ minor bump and will be called out under a `### BREAKING` subsection.
   not numbers; (3) Postgres is **16** (no pgvector), not the 17 target; (4)
   demo-005 emits **3** code-verified spans, not the doc's claimed 4 (the
   connectrpc handler shares the server span).
+
+### Fixed — `t5-cargo` changelog test release-tolerant
+
+- `_test_t5c_l1_010_changelog_entry` now greps the whole `CHANGELOG.md`
+  instead of only the `[Unreleased]` section. `t5-cargo-pin-refresh` shipped
+  in v0.3.3, so its entry graduated to `## [0.3.3]` and the old
+  `[Unreleased]`-scoped assertion failed on every post-release CI run.
 
 ## [0.4.0-rc.5] — 2026-05-29
 
