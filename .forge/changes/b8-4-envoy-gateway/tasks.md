@@ -52,5 +52,5 @@ Concrete versions are **verify-then-pin LIVE** here (b8-coroot lesson).
 ## Phase 6 — Verification
 - [x] **T011** Full gate sweep: verify.sh PASS, constitution-linter PASS,
   b8-3 17/17, b8-3b 12/12, b8-4 12/12, 1.0.0 Kong tree + schema.yaml byte-untouched.
-- [ ] **T012** Independent reviewer validates impl before archive. (author does
+- [x] **T012** Independent reviewer validates impl before archive. (author does
   NOT self-approve — independent review + maintainer gate-sweep follow)

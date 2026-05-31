@@ -513,8 +513,9 @@ v1.0.0 sont désormais résolus.
 | `b8-2-legacy-snapshot`       | archived               | B.8.2 (freeze flagship 1.0.0 as the immutable `forge upgrade` reverse target ; sha256 manifest `1.0.0.sha256` + immutability guard `b8-2.test.sh` 4 L1 ; `upgrade-policy.md` maintenance-freeze section + REVIEW ledger ; **no `legacy/` dir** — version-keyed path reconciles plan §4.2 ; tarball NOT rebuilt ; independent review APPROVE ; archived 2026-05-30 ; v0.4.0-rc.7 target) |
 | `b8-3-schema-candidate`      | archived               | B.8.3 (2.0.0 candidate target schema — `2.0.0.yaml` reference-only, frozen-1.0.0-safe, gating B.8.4–B.8.12 ; 15 FRs + 5 NFRs ; `b8-3.test.sh` 17 L1 ; independent review APPROVE ; archived 2026-05-30) |
 | `b8-3b-validator-versioned-schema` | archived         | B.8.3.b (versioned-schema discovery in `validate-foundations.sh` / `verify.sh` / `constitution-linter.sh` — generic + strict-superset ; prereq FR-GL-017 dict-layers crash fix 6175a61 ; `b8-3b.test.sh` 12 L1 ; independent review APPROVE ; archived 2026-05-31) |
+| `b8-4-envoy-gateway`               | archived         | B.8.4 (first 2.0.0 template brick — Envoy Gateway templates `.../2.0.0/infra/k8s/envoy-gateway/` Gateway API native, root `gateway.yaml` standard J.7-compliant, verify-then-pin chart v1.8.0 / bundle v1.5.1, additive ∥ Kong, `b8-4.test.sh` 12 L1, independent review APPROVE, archived 2026-05-31) |
 
-**37 archivés** au 2026-05-31. Trio B.8.8 observability rearch
+**38 archivés** au 2026-05-31. Trio B.8.8 observability rearch
 **fully closed** (Coroot leg 1 rc.3 + SigNoz leg 2 rc.4 + OBI leg 3 rc.5) ;
 **B.8.1 baseline + B.8.2 legacy-snapshot freeze archived 2026-05-30** as the
 first two B.8 bricks beyond the trio (additive, see §0.10). Next B.8 step:
@@ -2268,7 +2269,7 @@ Migration **additive d'abord, breaking ensuite** :
 - **B.8.3.b.** Validator versioned-schema discovery — rewire `validate-foundations.sh` / `verify.sh` / `constitution-linter.sh` to discover + validate versioned schema filenames (e.g. `2.0.0.yaml`); enables enforcing `scaffoldable:false`. Effort `S`. **Done 2026-05-31** via `b8-3b-validator-versioned-schema` — generic + strict-superset, prereq FR-GL-017 crash fix (6175a61), `b8-3b.test.sh` 12 L1, scaffolder guard deferred to B.8.14, independent review APPROVE, archived 2026-05-31.
 - **B.8.4.** Templates Helm Envoy Gateway sous `templates/full-stack-monorepo/2.0.0/infra/k8s/envoy-gateway/`
   avec `Gateway`, `HTTPRoute`, `BackendTLSPolicy` Gateway API natifs. Helm chart
-  Atlas-fourni. Effort : `M`.
+  Atlas-fourni. Effort : `M`. **Done 2026-05-31** via `b8-4-envoy-gateway` — first 2.0.0 template brick ; Envoy Gateway (Gateway API native) additive ∥ Kong ; root standard `gateway.yaml` J.7-compliant ; verify-then-pin chart v1.8.0 / GW-API bundle v1.5.1 / all GA `v1` ; `2.0.0.yaml` `pin_source: B.8.4` → `standard: gateway.yaml` ; Article VIII.1 NOT amended (Envoy additive ; amendment deferred to B.8.14) ; `b8-4.test.sh` 12 L1 ; independent review APPROVE ; archived 2026-05-31.
 - **B.8.5.** Templates DBOS embedded — `Cargo.toml` ajout `dbos = "0.x"` (épingler
   version au commit du standard `orchestration.yaml`), boilerplate Rust pour
   `DBOSContext`, init Postgres state tables. Effort : `M`.
