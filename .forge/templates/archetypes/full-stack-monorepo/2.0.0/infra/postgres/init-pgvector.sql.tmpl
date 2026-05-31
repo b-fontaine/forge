@@ -1,0 +1,6 @@
+-- <!-- Audit: B.8.5 (b8-5-postgres-pgvector, FR-B85-012) -->
+-- Enable pgvector in the <project-name> database. Runs once on first DB init via
+-- docker-entrypoint-initdb.d (ADR-B85-003). The image ships the extension files;
+-- this CREATE EXTENSION makes it available in the target database. pgvector
+-- extension version target = pgvector-0.8 (policy: persistence.yaml).
+CREATE EXTENSION IF NOT EXISTS vector;

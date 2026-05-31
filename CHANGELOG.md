@@ -12,6 +12,44 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added — B.8.5 Postgres 17 + pgvector 2.0.0 datastore brick (`b8-5-postgres-pgvector`)
+
+- **2.0.0 datastore delta — Postgres 16 → 17 + pgvector.** New versioned subtree
+  `.forge/templates/archetypes/full-stack-monorepo/2.0.0/infra/postgres/` with
+  three `.tmpl` files: `docker-compose.fragment.yml` (a dev-compose `fsm-db`
+  service fragment mirroring the frozen 1.0.0 `fsm-db` shape — env, named
+  `fsm-db-data` volume, `pg_isready` healthcheck, `fsm-dev` network — bumped to
+  the pgvector image), `init-pgvector.sql` (`CREATE EXTENSION IF NOT EXISTS
+  vector;` mounted into `docker-entrypoint-initdb.d`), and a `README`. The image
+  is verify-then-pin RESOLVED LIVE 2026-05-31 to `pgvector/pgvector:0.8.2-pg17`
+  (Docker Hub; latest pgvector 0.8.x on Postgres 17, deterministic explicit tag,
+  satisfies `persistence.yaml` postgres-17 + pgvector-0.8; see
+  `.forge/changes/b8-5-postgres-pgvector/evidence.md`). `persistence.yaml` v1.0.0
+  is **consumed** as-is (no new standard, no bump). The flat 1.0.0
+  `docker-compose.dev.yml.tmpl` (`postgres:16-alpine`) and frozen `schema.yaml`
+  are **byte-untouched** (additive-first; ADR-B85-001).
+- **DBOS DEFERRED — no Rust SDK; Temporal RETAINED.** The plan's B.8.5
+  DBOS-embedded premise is FALSIFIED: DBOS has no Rust SDK (crates.io `dbos`
+  404; DBOS Transact = Python/TypeScript/Go/Java only — Context7
+  `docs.dbos.dev`). This brick ships **NO** `dbos` crate pin / `Cargo.toml dbos
+  = 0.x` / DBOSContext (Article III.4). `orchestration.yaml` 1.0.0 → 1.1.0
+  (additive) records the finding in a new `rust_sdk_status.dbos` block
+  (`available: false`, `rust_flagship_orchestrator: temporal`,
+  `default_is_language_conditional: true`); `default: dbos` is UNCHANGED but
+  recorded as a language-conditional aspirational non-Rust target. REVIEW.md
+  gains a `| orchestration.yaml | 1.1.0 |` KEEP-WITH-CHANGES ledger row;
+  `validate-standards-yaml.sh` (dir mode) PASSes. Article VIII.2 (Temporal SHALL)
+  is PRESERVED — no amendment.
+- **`2.0.0.yaml` dbos-embedded** gains `status: deferred` + a `note:`; the
+  `temporal-intent → dbos-embedded` migration_delta is annotated DEFERRED. The
+  `postgres-17-pgvector` component (`standard: persistence.yaml`) + the
+  `postgres-16-no-pgvector → postgres-17-pgvector` migration_delta are INTACT
+  and now actively delivered. b8-3 (17/17) + b8-3b (12/12) stay GREEN.
+- New harness `.forge/scripts/tests/b8-5.test.sh` (12 L1, ≤5 s, zero net/Docker;
+  registered in `forge-ci.yml` after `b8-4`), with anti-hallucination grep-guards
+  (no fabricated/non-pg17 image; no `dbos` crate token) + an exit-code coupling
+  guard re-running b8-3 + b8-3b.
+
 ### Added — B.8.4 Envoy Gateway 2.0.0 template brick (`b8-4-envoy-gateway`)
 
 - **First real 2.0.0 template brick of the flagship 1.0.0 → 2.0.0 migration.**

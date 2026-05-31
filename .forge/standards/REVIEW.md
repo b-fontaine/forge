@@ -664,3 +664,26 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   (v1.8.0), EG v1.8.0 `go.mod` for the bundle (v1.5.1), Context7 for the GA `v1`
   apiVersion + the Envoy controllerName. Evidence:
   `.forge/changes/b8-4-envoy-gateway/evidence.md`.
+
+---
+
+## 2026-05-31 — Updated orchestration.yaml to v1.1.0 (b8-5-postgres-pgvector)
+
+- **Reviewer**: @bfontaine
+- **Reviewed standards**:
+
+  | Standard           | Version | Decision           | Next review due | Notes                                                                                                                                                                                                                                                                                                                                                                  |
+  |--------------------|---------|--------------------|-----------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+  | orchestration.yaml | 1.1.0   | KEEP-WITH-CHANGES  | 2027-05-31      | Additive. Added `rust_sdk_status.dbos` block recording DBOS has NO Rust SDK (crates.io dbos 404; DBOS Transact = Python/TypeScript/Go/Java only — Context7 docs.dbos.dev). Temporal RETAINED for the Rust flagship (Article VIII.2 preserved). `default: dbos` UNCHANGED — recorded as a language-conditional aspirational non-Rust target, not a deployed Rust default. Closes the seed-entry "DBOS-rs maturity to revisit" concern. |
+
+- **Decision**: KEEP-WITH-CHANGES
+- **Next review due**: 2027-05-31
+- **Notes**: Updated by `b8-5-postgres-pgvector` (B.8.5). Additive minor bump
+  mirroring `transport.yaml` 1.0.0 → 1.1.0. `exception_constitutional: false`
+  preserved (dated expiry, FR-J7-020); `last_reviewed` resets to 2026-05-31,
+  `expires_at` to 2027-05-31 (FR-J7-021 ordering). The DBOS-Rust-absent finding
+  was verified 2026-05-31 (Context7 `docs.dbos.dev`; crates.io `dbos` 404). No
+  constitutional amendment — Article VIII.2 (Temporal SHALL) is PRESERVED by
+  retaining Temporal (a compliance positive over the abandoned DBOS plan, which
+  would have replaced Temporal and thus needed the B.8.14 VIII.2 amendment).
+  Evidence: `.forge/changes/b8-5-postgres-pgvector/evidence.md`.

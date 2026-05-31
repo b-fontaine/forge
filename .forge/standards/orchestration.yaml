@@ -2,10 +2,10 @@
 # Audit: T.4 (t4-adr-ratification, 2026-05-04)
 # Ratifies: ADR-002 from docs/ARCHITECTURE-TARGET.md
 
-version: "1.0.0"
-last_reviewed: 2026-05-04
-expires_at: 2027-05-04
-exception_constitutional: false
+version: "1.1.0"           # B.8.5 — additive bump (DBOS-Rust-deferred record; transport.yaml 1.0.0→1.1.0 precedent)
+last_reviewed: 2026-05-31   # reset (FR-J7-021 ordering: expires_at > last_reviewed)
+expires_at: 2027-05-31      # 12-month cycle reset
+exception_constitutional: false  # dated expiry ⇒ exc:false (FR-J7-020 — unchanged; orchestration.yaml is not structural)
 linter_rule: null
 enforcement:
   ci_blocking: false
@@ -17,6 +17,31 @@ rationale: |
   -50% TCO ops for monorepo workflows. Temporal is reserved for high
   cross-service volume (event-driven-eu archetype, B.6).
 
-default: dbos
+default: dbos              # UNCHANGED — language-conditional aspirational target (see rust_sdk_status)
 fallback: temporal
 fallback_trigger: "workflow_volume_per_day_gt_10000 OR cross_service_count_gt_10"
+
+# ── B.8.5 (b8-5-postgres-pgvector) — additive body field (root additionalProperties:true;
+#    gateway.yaml/observability.yaml versions:/pin_review_cadence: precedent). Records the
+#    DBOS-Rust-absent finding so `default: dbos` above is read as language-conditional,
+#    not a live Rust selection. Verified 2026-05-31 (Context7 docs.dbos.dev; crates.io dbos 404). ──
+rust_sdk_status:
+  dbos:
+    available: false        # DBOS has NO Rust SDK (verified 2026-05-31)
+    verified: 2026-05-31
+    evidence: >
+      crates.io has no `dbos` crate (cargo add dbos -> 404). DBOS Transact
+      ships SDKs for Python, TypeScript, Go, and Java/Kotlin only (Context7
+      docs.dbos.dev quickstart + explanations/portable-workflows). The
+      crates.io alternatives are too immature for the flagship. There is no
+      `dbos` crate to pin and no DBOSContext to scaffold for a Rust backend today.
+    rust_flagship_orchestrator: temporal   # RETAINED until a Rust DBOS SDK ships (Article VIII.2 preserved)
+    default_is_language_conditional: true
+    note: >
+      `default: dbos` above is a LANGUAGE-CONDITIONAL aspirational target for
+      non-Rust contexts (Python/TypeScript/Go/Java, where a DBOS SDK exists).
+      It is NOT an active selection for the Rust flagship: for Rust, Temporal
+      is the orchestrator (fallback: temporal applies; Article VIII.2 Temporal
+      SHALL preserved, no amendment). `default: dbos` is therefore left
+      UNCHANGED but is explicitly recorded here as aspirational/non-Rust, not
+      a deployed Rust default.

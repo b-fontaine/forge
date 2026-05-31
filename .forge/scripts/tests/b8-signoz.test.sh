@@ -392,14 +392,20 @@ _test_b8sig_l1_017_mirror_count() {
   done
   [ "$missing" = "0" ] || return 1
 
-  # Exactly 6 copies on disk, no 7th.
+  # Exactly 6 copies on disk, no 7th. Versioned candidate template subtrees
+  # (`N.N.N/`, e.g. 2.0.0/ from B.8.4+) are EXCLUDED: they ship their own
+  # docker-compose fragments (e.g. the B.8.5 postgres-17+pgvector datastore)
+  # that are NOT part of the 1.0.0 SigNoz 6-copy mirror inventory and are
+  # non-scaffoldable (candidate). Version-aware, like the delivery/b8-3b scans.
   local count
   count=$(find "$FORGE_ROOT_REAL" -name 'docker-compose*.yml*' \
-            -not -path '*/node_modules/*' -not -path '*/.git/*' 2>/dev/null | wc -l | tr -d ' ')
+            -not -path '*/node_modules/*' -not -path '*/.git/*' \
+            -not -path '*/[0-9]*.[0-9]*.[0-9]*/*' 2>/dev/null | wc -l | tr -d ' ')
   if [ "$count" != "6" ]; then
     echo "    expected exactly 6 docker-compose copies, found $count (FR-B8-SIG-G-005)" >&2
     find "$FORGE_ROOT_REAL" -name 'docker-compose*.yml*' \
-      -not -path '*/node_modules/*' -not -path '*/.git/*' 2>/dev/null >&2
+      -not -path '*/node_modules/*' -not -path '*/.git/*' \
+      -not -path '*/[0-9]*.[0-9]*.[0-9]*/*' 2>/dev/null >&2
     return 1
   fi
 

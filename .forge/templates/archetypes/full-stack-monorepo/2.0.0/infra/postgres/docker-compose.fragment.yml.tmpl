@@ -1,0 +1,44 @@
+# <!-- Audit: B.8.5 (b8-5-postgres-pgvector, FR-B85-010/011/012/013) -->
+#
+# 2.0.0 datastore DELTA — Postgres 17 + pgvector dev service. ADDITIVE sibling of
+# the FROZEN flat 1.0.0 docker-compose.dev.yml.tmpl fsm-db (postgres:16-alpine),
+# which is BYTE-UNTOUCHED (B.8.2 freeze; ADR-B85-001). Compose into the 2.0.0 dev
+# stack at B.8.10/B.8.14. Postgres major 17 (the 2.0.0 delta over 1.0.0's 16).
+#
+# IMAGE = verify-then-pin RESOLVED (ADR-B85-003 / Q-004): pgvector/pgvector:0.8.2-pg17
+# was resolved LIVE on Docker Hub at /forge:implement (the latest pgvector 0.8.x
+# build on Postgres 17; deterministic explicit tag, NOT the rolling :pg17 alias).
+# See .forge/changes/b8-5-postgres-pgvector/evidence.md. NEVER fabricated
+# (Article III.4; kong/b8-coroot/b8-signoz verify-then-pin lesson). pgvector
+# extension version target = pgvector-0.8 (policy: persistence.yaml — NOT pinned
+# inline here; the tag's 0.8.2 satisfies it).
+services:
+  fsm-db:
+    image: pgvector/pgvector:0.8.2-pg17   # verify-then-pin — pgvector 0.8.2 on Postgres major 17 (ADR-B85-003; evidence.md Pin 1)
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-<project-name>_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-<project-name>_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${FSM_DB_PORT:-5432}:5432"
+    volumes:
+      - fsm-db-data:/var/lib/postgresql/data
+      # init-SQL — runs CREATE EXTENSION IF NOT EXISTS vector; once on first DB init
+      - ./infra/postgres/init-pgvector.sql:/docker-entrypoint-initdb.d/init-pgvector.sql:ro
+    networks:
+      - fsm-dev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-<project-name>_user} -d ${POSTGRES_DB:-<project-name>_dev}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  fsm-db-data:
+
+networks:
+  fsm-dev:
+    driver: bridge
+    name: fsm-dev

@@ -1,0 +1,55 @@
+<!-- Audit: B.8.5 (b8-5-postgres-pgvector, FR-B85-010) -->
+# 2.0.0 datastore delta — Postgres 17 + pgvector (dev)
+
+This directory is the **2.0.0 datastore delta** for the `full-stack-monorepo`
+flagship. It is an **additive** sibling of the frozen flat 1.0.0
+`docker-compose.dev.yml.tmpl` `fsm-db` service (`postgres:16-alpine`), which is
+**byte-untouched** (B.8.2 maintenance freeze; ADR-B85-001). It declares the
+Postgres-16 → Postgres-17 + pgvector bump that B.7 (RAG vector store), B.8.12
+(zero-regression), and B.8.14 (version bump) depend on.
+
+It coexists with the flat 1.0.0 tree exactly as `2.0.0/infra/k8s/envoy-gateway/`
+(B.8.4) and `2.0.0.yaml` (B.8.3) coexist with their frozen 1.0.0 siblings. The
+`forge init` scaffolder still emits the flat 1.0.0 (`postgres:16-alpine`)
+datastore by default (the 2.0.0 candidate is `scaffoldable: false`); this subtree
+is an additive on-disk asset spliced into the 2.0.0 dev stack at B.8.10/B.8.14.
+
+## Files
+
+| File | Role |
+|------|------|
+| `docker-compose.fragment.yml.tmpl` | A dev-compose **service fragment** declaring the `fsm-db` Postgres-17 + pgvector service. Mirrors the 1.0.0 `fsm-db` shape (env, named `fsm-db-data` volume, `pg_isready` healthcheck, `fsm-dev` network) bumped to the pgvector image + the init-SQL mount. It is a *fragment* (not a full compose file) so it does not collide with the SigNoz/Kong/backend services in the flat 1.0.0 compose. |
+| `init-pgvector.sql.tmpl` | The extension-enable init script (`CREATE EXTENSION IF NOT EXISTS vector;`), mounted into `docker-entrypoint-initdb.d` so it runs once on first DB init. |
+
+## Image — verify-then-pin (`pgvector/pgvector:0.8.2-pg17`)
+
+The image is the official **`pgvector/pgvector`** family on Docker Hub. The
+concrete tag **`pgvector/pgvector:0.8.2-pg17`** was resolved **live** at
+`/forge:implement` (the latest pgvector 0.8.x build on Postgres 17; a
+deterministic explicit tag, NOT the rolling `:pg17` alias) — never fabricated
+upstream of implement (Article III.4; the kong / b8-coroot / b8-signoz
+verify-then-pin lesson). The verification is recorded in
+`.forge/changes/b8-5-postgres-pgvector/evidence.md` (Pin 1).
+
+## Extension enable
+
+The image ships the pgvector extension *files*, but the extension MUST be
+`CREATE EXTENSION`-d in the target database. `init-pgvector.sql` does this via
+`docker-entrypoint-initdb.d` (idempotent `IF NOT EXISTS`, re-runnable / safe
+under restart).
+
+## Policy source — `persistence.yaml` (CONSUMED, not pinned inline)
+
+The Postgres-17 default and the `pgvector-0.8` extension target are
+**policy-sourced** from `.forge/standards/persistence.yaml` v1.0.0
+(`default: postgres-17`, `extensions: [pgvector-0.8, …]`). They are NOT pinned
+as inline scalars in this fragment or the init-SQL — only the concrete image
+*tag* (resolved verify-then-pin) lives here; the *policy* lives in the standard
+(ADR-B85-004). B.8.5 consumes `persistence.yaml` as-is (no new standard, no bump).
+
+## No K8s manifest
+
+No Postgres K8s StatefulSet is shipped: the 1.0.0 tree has no Postgres
+StatefulSet to mirror (the dev compose is the only datastore manifest; the live
+1.0.0 prod DB is external/managed). A prod-hardening Postgres K8s surface, if
+ever needed, belongs to a later brick, not B.8.5 (ADR-B85-001).
