@@ -42,7 +42,7 @@ filename** `schema.yaml` — never a glob over versioned siblings:
   `.forge/schemas/full-stack-monorepo/2.0.0.yaml`. The other six archetype dirs
   (`default`, `ai-first`, `mobile-only`, `rapid`, `tdd-flutter`, `tdd-rust`)
   contain **only** a single canonical schema file and no `X.Y.Z.yaml` sibling.
-  Two of them (`mobile-only`) don't even use the `name/version/stage` shape —
+  One of them (`mobile-only`) doesn't even use the `name/version/stage` shape —
   `mobile-only/schema.yaml` uses `archetype:` / `schema_version:`. The shared
   validators only ever validate `full-stack-monorepo` today; the other
   archetypes are not validated by these three scripts.
@@ -199,8 +199,10 @@ shared-standard/sibling-harness lesson).
 - **Article III.4 (Anti-Hallucination)**: every validator path, line number, and
   rule cited above is re-read from the live scripts. The b8-3 design's framing
   that `validate-foundations.sh` ~271-281 performs an "env.example check" is
-  **recorded as incorrect** (it is the FR-GL-017 multi-layer change-metadata
-  check) rather than propagated.
+  **recorded as incorrect** (it is `check_multi_layer_change_metadata()`,
+  FR-GL-017, lines 269-354) rather than propagated. Closing evidence for
+  ADR-B83B-004: `cli/src/cli.ts:213-226` hard-codes `"schema.yaml"`;
+  `cli/src/commands/init-archetype.ts` reads no schema YAML file.
 - **Article IV (Delta-based)**: the validators are evolved additively
   (discovery + invariants added; the existing `schema.yaml` path stays); the
   candidate `2.0.0.yaml` is not rewritten; nothing is deprecated.

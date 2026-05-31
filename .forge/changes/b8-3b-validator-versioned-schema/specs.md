@@ -26,7 +26,7 @@ evolved additively, not rewritten).
 | **Candidate to make visible (observed)** | `.forge/schemas/full-stack-monorepo/2.0.0.yaml` — `name: full-stack-monorepo`, `version: "2.0.0"`, `stage: candidate`, `scaffoldable: false`, layers backend/frontend/infra (frontend has `surfaces:`), phases present. B.8.3 deliverable; B.8.3.b reads + validates it, never edits it. |
 | **Frozen 1.0.0 (observed)** | `.forge/schemas/full-stack-monorepo/schema.yaml` — `stage: stable`, `version: "1.0.0"`, **no** `scaffoldable` field. B.8.2 maintenance-freeze; byte-untouched. MUST keep validating. |
 | **On-disk versioned siblings (observed)** | `find .forge/schemas -name '<X.Y.Z>.yaml'` → only `full-stack-monorepo/2.0.0.yaml`. The six other archetype dirs (`default`, `ai-first`, `mobile-only`, `rapid`, `tdd-flutter`, `tdd-rust`) have **only** a single canonical schema file, no versioned sibling. `mobile-only/schema.yaml` uses a different shape (`archetype:`/`schema_version:`) and is NOT validated by the three shared scripts today. |
-| **Scaffolder reality (observed)** | `cli/src/commands/init.ts` dispatches by archetype **name** via the dispatch-table + snapshot tarball; it does **not** read `schemas/<archetype>/schema.yaml`. Only `cli/src/commands/upgrade.ts:32` references the canonical `schema.yaml` path — never a versioned `X.Y.Z.yaml`. The scaffolder genuinely cannot select a versioned schema today → ADR-B83B-004 deferral holds (no `[NEEDS CLARIFICATION]`). |
+| **Scaffolder reality (observed)** | `cli/src/commands/init-archetype.ts` dispatches by archetype name to a per-archetype wrapper script via the dispatch table; it reads **no** schema YAML file. `cli/src/cli.ts:213-226` (`resolveFrameworkVersion`) hard-codes the literal `"schema.yaml"` path component and reads it only to extract `version:` for upgrade tracking — never a versioned `X.Y.Z.yaml`. The scaffolder genuinely cannot select a versioned schema today → ADR-B83B-004 deferral holds (confirmed by independent reviewer). |
 | **CI harness loop (observed)** | `.github/workflows/forge-ci.yml:68-109` — declarative `harnesses=( … )` bash array; adding a harness is a one-line entry (NFR-CI-002). `b8-3.test.sh --level 1` is the last B.8 entry (line 108). |
 | **Lesson context** | Shared-standard sibling-harness coupling: bumping shared infra must update ALL siblings or CI rots silently on `main`. The three validators run repo-wide AND on every scaffolded project → backward compat is the dominant NFR. |
 | **Release target** | maintainer-set (high blast radius; gated on full CI matrix GREEN). |
@@ -147,9 +147,9 @@ per-harness step.
 ##### FR-B83B-040 — NO scaffolder code change (explicit non-goal)
 B.8.3.b MUST NOT modify the scaffolder (`cli/src/commands/init.ts` or any
 `init.sh`). The scaffolder dispatches by archetype name and cannot select a
-versioned schema file today (observed: `init.ts` reads the dispatch-table +
-snapshot tarball, not `schemas/<archetype>/schema.yaml`; only `upgrade.ts`
-references the canonical `schema.yaml`, never a versioned file). Enforcement of
+versioned schema file today (observed: `init-archetype.ts` dispatches by archetype
+name to a per-archetype wrapper script and reads no schema YAML; `cli.ts:213-226`
+(`resolveFrameworkVersion`) hard-codes `"schema.yaml"`, never a versioned file). Enforcement of
 non-scaffoldability in B.8.3.b is therefore the **validator invariant**
 (FR-B83B-011), not a runtime guard.
 
@@ -208,9 +208,9 @@ constant. This keeps it correct for future versioned candidates (plan §4.2 B.9.
 Every validator path, line number, and rule cited MUST be re-read from the live
 scripts. Contradictions in upstream framing MUST be recorded, not normalized:
 specifically, the b8-3 design's description of `validate-foundations.sh` ~271-281
-as an "env.example check" is incorrect — that region is the FR-GL-017
-`check_multi_layer_change_metadata` change-metadata check (the only env.example
-reference, `verify.sh:571`, is unrelated to the schema path). Recorded
+as an "env.example check" is incorrect — that region is `check_multi_layer_change_metadata()`
+(FR-GL-017, lines 269-354), a change-metadata check. The only env.example
+reference, `verify.sh:571`, is unrelated to the schema path. Recorded
 (Article III.4).
 
 ## BDD Acceptance Criteria
@@ -234,7 +234,7 @@ Scenario: Versioned candidate schemas become gate-visible without breaking singl
 ## Anti-Hallucination Pass
 
 - **`validate-foundations.sh` ~271-281 is NOT an env.example check** — re-read of
-  the live file shows lines 269-347 are `check_multi_layer_change_metadata()`
+  the live file shows lines 269-354 are `check_multi_layer_change_metadata()`
   (FR-GL-017), which reads the same literal `…/full-stack-monorepo/schema.yaml`
   to harvest known layer ids for cross-change metadata validation. The only
   env.example reference in the validators is `verify.sh:571` (a compose
