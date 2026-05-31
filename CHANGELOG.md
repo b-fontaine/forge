@@ -12,6 +12,37 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added — B.8.4 Envoy Gateway 2.0.0 template brick (`b8-4-envoy-gateway`)
+
+- **First real 2.0.0 template brick of the flagship 1.0.0 → 2.0.0 migration.**
+  New versioned subtree
+  `.forge/templates/archetypes/full-stack-monorepo/2.0.0/infra/k8s/envoy-gateway/`
+  with six `.tmpl` files: `gatewayclass`, `gateway`, `httproute`,
+  `backendtlspolicy` (Gateway-API-native, `gateway.networking.k8s.io/v1`),
+  `kustomization`, and a `README` documenting the Atlas-provided Helm
+  control-plane install. The flat 1.0.0 Kong tree and frozen `schema.yaml` are
+  **byte-untouched** (additive-first, Envoy ∥ Kong → `fsm-backend`).
+- **New ROOT-level J.7 standard `.forge/standards/gateway.yaml`** — the gateway
+  pin source born here. Verify-then-pin (resolved live 2026-05-31, see
+  `.forge/changes/b8-4-envoy-gateway/evidence.md`): Envoy Gateway Helm chart
+  `v1.8.0` (`oci://docker.io/envoyproxy/gateway-helm`) + Gateway API CRD bundle
+  `v1.5.1` (EG `v1.8.0` `go.mod`). `BackendTLSPolicy` is GA at
+  `gateway.networking.k8s.io/v1` as of Gateway API `v1.5.1` (Standard channel) —
+  all four resources use GA `v1`, no `v1alpha3`/`v1beta1` drift. Registered in
+  `index.yml` + a `| gateway.yaml | 1.0.0 |` REVIEW.md birth-ledger row;
+  `validate-standards-yaml.sh` (dir mode) PASSes.
+- **`2.0.0.yaml` envoy-gateway component** flips `pin_source: B.8.4` →
+  `standard: gateway.yaml` (candidate edit; the standard exists first so b8-3
+  `standard:`-ref resolution stays GREEN). Control-plane (Envoy Gateway
+  controller + Gateway API CRDs) is the upstream OCI Helm chart (Atlas-provided,
+  not vendored); data-plane is the kustomize manifests. Connect/gRPC-Web
+  pass-through — no gateway-side REST↔gRPC transcoding (that ownership is B.8.6).
+- New harness `.forge/scripts/tests/b8-4.test.sh` (12 L1, ≤5 s, zero net/Docker;
+  kustomize build is skip-pass). T-012 is an exit-code coupling guard that
+  re-runs b8-3 (17/17) + b8-3b (12/12) so the shared-standard sibling harnesses
+  stay GREEN under the `2.0.0.yaml` edit. Registered in `forge-ci.yml` after
+  `b8-3b.test.sh` (277/300, NFR-CI-002 preserved).
+
 ### Changed — bump GitHub Actions off Node 20 (deprecation deadline 2026-06-16)
 
 - Forge's own runnable workflows (`forge-ci.yml`, `forge-compliance.yml`) now

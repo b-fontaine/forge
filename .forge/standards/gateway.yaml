@@ -1,0 +1,55 @@
+# Forge Standard — API Gateway (Envoy Gateway + Gateway API)
+# Audit: B.8.4 (b8-4-envoy-gateway) — first *.yaml gateway pin source (pin_source: B.8.4 born here)
+#
+# Envoy Gateway control-plane chart + Gateway API CRD bundle pins.
+# VERIFY-THEN-PIN (resolved LIVE at /forge:implement 2026-05-31; see
+# .forge/changes/b8-4-envoy-gateway/evidence.md):
+#   - Envoy Gateway Helm chart        : v1.8.0 (gh releases/latest 2026-05-13;
+#                                        OCI oci://docker.io/envoyproxy/gateway-helm)
+#   - Gateway API CRD bundle           : v1.5.1 (EG v1.8.0 go.mod
+#                                        sigs.k8s.io/gateway-api v1.5.1)
+#   - Gateway-API apiVersion (all 4)   : gateway.networking.k8s.io/v1
+#                                        (GatewayClass/Gateway/HTTPRoute GA since
+#                                        GW-API v1.0; BackendTLSPolicy GA v1 since
+#                                        GW-API v1.5.1 → NO v1alpha3/v1beta1)
+#   - GatewayClass controllerName      : gateway.envoyproxy.io/gatewayclass-controller
+# Never fabricated upstream of implement (Article III.4; kong/b8-coroot/
+# b8-signoz verify-then-pin lesson).
+
+version: "1.0.0"
+last_reviewed: 2026-05-31
+expires_at: 2027-05-31            # 12-month cycle (NOT structural — gateway pins drift)
+exception_constitutional: false   # dated expiry ⇒ exc:false (FR-J7-020 coupling)
+linter_rule: null                 # advisory standard; no constitution-linter.sh anchor
+enforcement:
+  ci_blocking: true
+  pre_commit_hook: false
+forbidden: []                     # no forbidden gateway today (additive-first; Kong NOT forbidden — VIII.1 in force)
+rationale: |
+  B.8.4 first-real-template brick of the flagship 1.0.0 → 2.0.0 migration
+  (plan §4.2). Envoy Gateway replaces Kong (additive-first §4.1; Kong removed
+  at B.8.14). Gateway API native (GatewayClass/Gateway/HTTPRoute/
+  BackendTLSPolicy). Control-plane via the upstream OCI Helm chart
+  oci://docker.io/envoyproxy/gateway-helm (Atlas-provided install). The chart
+  version (v1.8.0), the Gateway API CRD bundle version (v1.5.1, vendored by EG
+  v1.8.0's go.mod), and the BackendTLSPolicy apiVersion were VERIFY-THEN-PIN at
+  /forge:implement (2026-05-31) — never fabricated (Article III.4; kong/
+  b8-coroot/b8-signoz lesson). BackendTLSPolicy is GA at gateway.networking.k8s.io/v1
+  as of Gateway API v1.5.1 (Standard channel), so all four resources use the GA
+  v1 apiVersion (no v1alpha3/v1beta1 drift). Evidence:
+  .forge/changes/b8-4-envoy-gateway/evidence.md.
+
+# ── Pins (verify-then-pin — resolved LIVE at /forge:implement 2026-05-31) ──
+versions:
+  envoy_gateway_chart: "v1.8.0"   # oci://docker.io/envoyproxy/gateway-helm --version v1.8.0
+  gateway_api_bundle: "v1.5.1"    # CRD bundle (EG v1.8.0 go.mod sigs.k8s.io/gateway-api v1.5.1)
+  # Gateway-API apiVersion for GatewayClass/Gateway/HTTPRoute/BackendTLSPolicy is
+  # gateway.networking.k8s.io/v1 (GA in the v1.5.1 Standard channel) — recorded
+  # in evidence.md + the rationale, not a semver scalar (it is an apiVersion
+  # string, not a version pin).
+
+controller_name: gateway.envoyproxy.io/gatewayclass-controller  # GatewayClass.spec.controllerName (Envoy Gateway default)
+
+pin_review_cadence:               # ISO 8601 durations (observability.yaml precedent)
+  envoy_gateway_chart: "P30D"     # Envoy Gateway upstream dev velocity
+  gateway_api_bundle: "P12M"      # Gateway API project cadence

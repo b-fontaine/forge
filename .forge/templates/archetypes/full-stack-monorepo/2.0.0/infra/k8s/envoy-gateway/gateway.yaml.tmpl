@@ -1,0 +1,35 @@
+# <!-- Audit: B.8.4 (b8-4-envoy-gateway, FR-B84-011) -->
+# Gateway + listener(s) for <project-name>. Listener protocol/port/TLS are
+# templated for per-environment override consistent with the 1.0.0 overlay
+# convention (infra/k8s/overlays/{dev,staging,prod}/). Standard:
+# .forge/standards/gateway.yaml.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: <project-name>-gateway
+  labels:
+    app.kubernetes.io/name: <project-name>
+    app.kubernetes.io/component: api-gateway
+    app.kubernetes.io/part-of: <project-name>
+spec:
+  gatewayClassName: <project-name>-envoy   # → the GatewayClass (gatewayclass.yaml)
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: Same
+    # HTTPS/TLS listener — wire per environment via an overlay patch
+    # (cert/secret refs are overlay-patchable, ADR-B84-003). Example:
+    # - name: https
+    #   protocol: HTTPS
+    #   port: 443
+    #   tls:
+    #     mode: Terminate
+    #     certificateRefs:
+    #       - kind: Secret
+    #         name: <project-name>-gateway-tls
+    #   allowedRoutes:
+    #     namespaces:
+    #       from: Same

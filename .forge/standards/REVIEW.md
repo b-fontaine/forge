@@ -640,3 +640,27 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   `[PASS] full-stack-monorepo : dev:up`, then full `task validate` →
   "ALL CHECKS GREEN". `b8-2.test.sh` sha guard re-points at the new manifest ;
   `a7.test.sh` extract preserved.
+
+---
+
+## 2026-05-31 — Initial ratification (b8-4-envoy-gateway)
+
+- **Reviewer**: @bfontaine
+- **Reviewed standards**:
+
+  | Standard     | Version | Decision | Next review due | Notes |
+  |--------------|---------|----------|-----------------|-------|
+  | gateway.yaml | 1.0.0   | KEEP     | 2027-05-31      | First *.yaml gateway pin source (pin_source: B.8.4 born here). Envoy Gateway chart v1.8.0 + Gateway API CRD bundle v1.5.1 verify-then-pin (resolved live 2026-05-31, evidence.md). BackendTLSPolicy GA at gateway.networking.k8s.io/v1 as of GW-API v1.5.1 — all four resources use GA v1 (no v1alpha3/v1beta1). controllerName gateway.envoyproxy.io/gatewayclass-controller. |
+
+- **Decision**: KEEP
+- **Next review due**: 2027-05-31
+- **Notes**: New standard `.forge/standards/gateway.yaml` (ROOT-level — required
+  by the non-recursive J.7 gate, ADR-B84-002). Realised by the
+  `2.0.0/infra/k8s/envoy-gateway/` template tree (additive-first, Envoy ∥ Kong,
+  HTTPRoute → `fsm-backend`). The `2.0.0.yaml` `envoy-gateway` component flips
+  `pin_source: B.8.4` → `standard: gateway.yaml`. No constitutional amendment
+  (VIII.1 Kong SHALL preserved; amendment deferred to B.8.14). Concrete pins
+  verify-then-pin LIVE at implement (Article III.4) — `helm`/OCI for the chart
+  (v1.8.0), EG v1.8.0 `go.mod` for the bundle (v1.5.1), Context7 for the GA `v1`
+  apiVersion + the Envoy controllerName. Evidence:
+  `.forge/changes/b8-4-envoy-gateway/evidence.md`.

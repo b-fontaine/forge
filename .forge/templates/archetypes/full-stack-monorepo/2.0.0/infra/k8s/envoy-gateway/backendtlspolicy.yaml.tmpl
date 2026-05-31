@@ -1,0 +1,24 @@
+# <!-- Audit: B.8.4 (b8-4-envoy-gateway, FR-B84-013) -->
+# BackendTLSPolicy — upstream TLS validation for <project-name>-backend.
+# GA at gateway.networking.k8s.io/v1 as of Gateway API v1.5.1 (the CRD bundle
+# vendored by the pinned Envoy Gateway chart; Standard channel) —
+# verify-then-pin resolved 2026-05-31 (evidence.md + gateway.yaml versions:),
+# so NO v1alpha3/v1beta1 form. The GA v1 shape uses plural spec.targetRefs +
+# spec.validation.{wellKnownCACertificates, hostname}. Standard:
+# .forge/standards/gateway.yaml.
+apiVersion: gateway.networking.k8s.io/v1
+kind: BackendTLSPolicy
+metadata:
+  name: <project-name>-backend-tls
+  labels:
+    app.kubernetes.io/name: <project-name>
+    app.kubernetes.io/component: api-gateway
+    app.kubernetes.io/part-of: <project-name>
+spec:
+  targetRefs:                                 # GA v1 plural shape
+    - group: ""
+      kind: Service
+      name: <project-name>-backend
+  validation:
+    wellKnownCACertificates: System           # GA v1 — trust the system CA bundle
+    hostname: <project-name>-backend

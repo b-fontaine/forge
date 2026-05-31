@@ -1,0 +1,73 @@
+# Envoy Gateway for `<project-name>` (2.0.0 candidate)
+
+<!-- Audit: B.8.4 (b8-4-envoy-gateway, FR-B84-020) -->
+
+This tree is the **2.0.0 target** API-gateway intent for `<project-name>`,
+authored as an additive sibling alongside the frozen 1.0.0 Kong tree
+(`infra/kong/`). It is Gateway-API-native (Envoy Gateway), routes to the same
+`<project-name>-backend` Service that Kong targets, and removes nothing —
+canary-by-route migration per `docs/new-archetypes-plan.md` §4.1. Standard:
+`.forge/standards/gateway.yaml`.
+
+> **Status**: the `full-stack-monorepo / 2.0.0` schema is a `candidate`
+> (`scaffoldable: false`). Kong remains the constitutional API gateway
+> (Article VIII.1) until the B.8.14 amendment + version bump. This tree
+> describes the target; it is not scaffolded by default.
+
+## Delivery model — hybrid (ADR-B84-003)
+
+| Plane | What | How |
+|-------|------|-----|
+| **Control plane** | Envoy Gateway controller **+** the Gateway API CRDs | Upstream OCI Helm chart (Atlas-provided install — below) |
+| **Data plane** | `GatewayClass` / `Gateway` / `HTTPRoute` / `BackendTLSPolicy` | The kustomize manifests in this dir |
+
+## Control-plane install (Atlas-provided)
+
+The Envoy Gateway controller and the Gateway API CRDs it requires are installed
+from the upstream OCI Helm chart — this tree vendors **no** CRD or controller
+copies:
+
+```sh
+helm install eg oci://docker.io/envoyproxy/gateway-helm \
+  --version v1.8.0 \
+  -n envoy-gateway-system --create-namespace
+```
+
+- **Chart**: `oci://docker.io/envoyproxy/gateway-helm` `--version v1.8.0`
+  (pinned in `.forge/standards/gateway.yaml` `versions.envoy_gateway_chart`).
+- **Gateway API CRD bundle**: `v1.5.1` (vendored by the chart; pinned in
+  `gateway.yaml` `versions.gateway_api_bundle`). Ships `GatewayClass`,
+  `Gateway`, `HTTPRoute`, and `BackendTLSPolicy` at GA
+  `gateway.networking.k8s.io/v1`.
+- **Namespace**: `envoy-gateway-system` (controller). The data-plane resources
+  below deploy into the application namespace.
+- **Values**: tune the chart values (replicas, resources, logging) Atlas-side;
+  no values file is vendored here.
+
+## Data-plane render
+
+```sh
+kustomize build infra/k8s/envoy-gateway
+
+# Strict schema validation (Gateway API CRDs must be on the cluster /
+# in kubeconform's schema set):
+kustomize build infra/k8s/envoy-gateway | kubeconform --summary --strict
+```
+
+## Resources
+
+| File | Kind | Role |
+|------|------|------|
+| `gatewayclass.yaml` | `GatewayClass` | Binds to the Envoy Gateway controller (`gateway.envoyproxy.io/gatewayclass-controller`). |
+| `gateway.yaml` | `Gateway` | HTTP listener (`:80`); HTTPS/TLS listener is overlay-patchable. |
+| `httproute.yaml` | `HTTPRoute` | Routes `/` → `<project-name>-backend:8080` (the same Service Kong targets — additive parity). |
+| `backendtlspolicy.yaml` | `BackendTLSPolicy` | Upstream TLS validation for `<project-name>-backend` (GA `v1`). |
+
+## Coexistence with Kong (additive-first)
+
+Both gateways converge on `<project-name>-backend` (`fsm-backend`, http port
+8080). B.8.4 adds Envoy **in parallel**; it does not touch
+`infra/kong/kong.yml.example.tmpl`. The route-cutover/canary mechanism is
+B.8.10; Kong removal + the actual 1.0.0 → 2.0.0 bump is B.8.14. Transport is
+Connect/gRPC-Web pass-through at the gateway (ADR-B84-006) — any REST↔gRPC
+transcoding decision belongs to B.8.6.

@@ -1,0 +1,15 @@
+# <!-- Audit: B.8.4 (b8-4-envoy-gateway, FR-B84-010) -->
+# Envoy Gateway GatewayClass — binds the data-plane Gateway to the Envoy
+# Gateway controller installed via the OCI Helm chart (see README.md).
+# Standard: .forge/standards/gateway.yaml (Gateway API native, additive ∥ Kong).
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: <project-name>-envoy
+  labels:
+    app.kubernetes.io/name: <project-name>
+    app.kubernetes.io/component: api-gateway
+    app.kubernetes.io/part-of: <project-name>
+spec:
+  # Envoy Gateway default controller id (gateway.yaml controller_name).
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller

@@ -366,6 +366,14 @@ standards:
     scope: all
     priority: high
 
+  # ─── B.8.4 — API gateway pin source (b8-4-envoy-gateway) ─────────
+
+  - id: standards/gateway
+    path: standards/gateway.yaml
+    triggers: [envoy gateway, gateway api, gatewayclass, httproute, backendtlspolicy, envoy, api gateway, gateway-helm, listener]
+    scope: infra
+    priority: high
+
   - id: global/standards-lifecycle
     path: standards/global/standards-lifecycle.md
     triggers: [standards lifecycle, expires_at, last_reviewed, exception_constitutional, REVIEW.md, themis, 12-month review, structural exception]

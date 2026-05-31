@@ -67,7 +67,7 @@ components:
     role: api-gateway
     replaces: kong  # 1.0.0 baseline: kong:3.6 (docs/B8-BASELINE.md §1)
     delivered_by: B.8.4
-    pin_source: B.8.4  # no *.yaml standard pins a gateway today (ADR-B8-3-002)
+    standard: gateway.yaml  # B.8.4 — gateway pin source created (was pin_source: B.8.4)
 
   - name: dbos-embedded
     role: workflow-orchestration
