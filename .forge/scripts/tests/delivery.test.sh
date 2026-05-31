@@ -594,7 +594,7 @@ test_scaffold_plan_lists_all_new_templates() {
     echo "    scaffold-plan.yaml missing" >&2; return 1
   fi
   python3 - "$SCAFFOLD_PLAN" "$ARCHETYPE_DIR" <<'PY' || return 1
-import sys, yaml, os, glob
+import sys, yaml, os, glob, re
 plan_path, archetype_dir = sys.argv[1], sys.argv[2]
 with open(plan_path) as fh:
     plan = yaml.safe_load(fh)
@@ -605,9 +605,17 @@ targets = {t.get("target") for t in templates if isinstance(t, dict)}
 
 # Every .tmpl file under the archetype tree (except scaffold-plan
 # itself) must have a templates: entry mapping it to a sane target.
+# EXCEPT versioned candidate subtrees `N.N.N/...` (e.g. 2.0.0/, B.8.4+):
+# those belong to a non-scaffoldable `stage: candidate` schema
+# (scaffoldable: false) and are NOT part of the 1.0.0 scaffold-plan. A
+# 2.0.0 scaffold-plan gets wired when the candidate is promoted to stable
+# at B.8.14. This scan is version-aware, mirroring the b8-3b validators.
+VERSIONED_SUBTREE = re.compile(r'^\d+\.\d+\.\d+/')
 expected_sources = []
 for path in glob.glob(os.path.join(archetype_dir, "**/*.tmpl"), recursive=True):
     rel = os.path.relpath(path, archetype_dir)
+    if VERSIONED_SUBTREE.match(rel):
+        continue
     expected_sources.append(rel)
 
 missing = [s for s in expected_sources if s not in sources]
