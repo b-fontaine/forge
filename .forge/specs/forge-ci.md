@@ -295,9 +295,9 @@ Article X. **Testable:** yes —
 <!-- From change: c1-reference-project (2026-04-30) -->
 
 - **SHOULD** — adding the `example` job MUST keep `forge-ci.yml`
-  ≤ 250 lines (the size budget from `NFR-CI-002`). Beyond that,
-  the job MUST be extracted into a composite action under
-  `.github/actions/forge-ci-example/action.yml`.
+  ≤ 300 lines (the size budget from `NFR-CI-002`; bumped 250→300 on
+  2026-05-12). Beyond that, the job MUST be extracted into a composite
+  action under `.github/actions/forge-ci-example/action.yml`.
 
 **Constitution reference:** Article X. **Testable:** yes —
 `test_forge_ci_under_size_budget` (c1.test.sh) — at archive
@@ -316,9 +316,13 @@ time of c1, `forge-ci.yml` is well under the 250-line cap.
 
 ### NFR-CI-002: Workflow file size
 
-- **SHOULD** — `forge-ci.yml` MUST be ≤ 250 lines. Beyond
-  that, refactor into composite actions or matrix
-  strategies. Enforced by `test_forge_ci_under_size_budget`.
+- **SHOULD** — `forge-ci.yml` MUST be ≤ 300 lines (bumped 250→300 on
+  2026-05-12 for the linear growth of harness entries). Beyond that,
+  refactor into composite actions or matrix strategies. Enforced by
+  `test_forge_ci_under_size_budget`. As of 2026-05-31 the `harness` job
+  runs its harnesses via a single declarative loop step (the prescribed
+  "matrix/loop" remedy) so adding a harness no longer grows the workflow
+  ~2 lines; the file sits at ~275 lines with comfortable headroom.
 
 ### NFR-CI-003: Failure semantics
 

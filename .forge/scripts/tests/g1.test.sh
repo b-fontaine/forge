@@ -135,11 +135,13 @@ for s in job.get("steps") or []:
     if isinstance(s, dict) and s.get("run"):
         runs.append(s["run"])
 joined = "\n".join(runs)
+# Needles match the declarative loop array entries (NFR-CI-002), not full
+# `bash …` commands — the path prefix is templated once inside the loop.
 for needle in [
-    "bash .forge/scripts/tests/foundations.test.sh",
-    "bash .forge/scripts/tests/scaffolder.test.sh --level 1,2",
-    "bash .forge/scripts/tests/workflow.test.sh --level 1,2",
-    "bash .forge/scripts/tests/delivery.test.sh",
+    "foundations.test.sh",
+    "scaffolder.test.sh --level 1,2",
+    "workflow.test.sh --level 1,2",
+    "delivery.test.sh",
 ]:
     if needle not in joined:
         errors.append(f"harness job missing invocation: `{needle}`")

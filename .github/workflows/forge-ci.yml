@@ -29,9 +29,9 @@ permissions:
   contents: read
 
 jobs:
-  # ─── harness ── 4 shell test harnesses (L1+L2 only) ────────────
+  # ─── harness ── all forge shell harnesses via a declarative loop ─
   harness:
-    name: Test harnesses (foundations + scaffolder + workflow + delivery)
+    name: Test harnesses (all forge shell harnesses)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -54,99 +54,72 @@ jobs:
         # (gitignored) required by `_test_t53_l1_011` (FR-T53-C-003).
         working-directory: cli
         run: npm run bundle
-      - name: foundations.test.sh
-        run: bash .forge/scripts/tests/foundations.test.sh
-      - name: scaffolder.test.sh (L1+L2)
-        run: bash .forge/scripts/tests/scaffolder.test.sh --level 1,2
-      - name: workflow.test.sh (L1+L2)
-        run: bash .forge/scripts/tests/workflow.test.sh --level 1,2
-      - name: delivery.test.sh
-        run: bash .forge/scripts/tests/delivery.test.sh
-      - name: g1.test.sh
-        run: bash .forge/scripts/tests/g1.test.sh
-      - name: c1.test.sh
-        run: bash .forge/scripts/tests/c1.test.sh
-      - name: a7.test.sh
-        run: bash .forge/scripts/tests/a7.test.sh
-      - name: b5.test.sh
-        run: bash .forge/scripts/tests/b5.test.sh
-      - name: d5.test.sh
-        run: bash .forge/scripts/tests/d5.test.sh
-      - name: b4.test.sh
-        run: bash .forge/scripts/tests/b4.test.sh --level 1,2
-      - name: f1.test.sh
-        run: bash .forge/scripts/tests/f1.test.sh --level 1,2
-      - name: f2.test.sh
-        run: bash .forge/scripts/tests/f2.test.sh --level 1,2
-      - name: f4.test.sh
-        run: bash .forge/scripts/tests/f4.test.sh --level 1,2
-      - name: t4.test.sh
-        run: bash .forge/scripts/tests/t4.test.sh --level 1,2
-      - name: t5.test.sh
-        # L2 fixtures (T-L2-001..007) deferred to a follow-up change ;
-        # see .forge/changes/t5-connect-codegen/tasks.md "DEFERRED 2026-05-06"
-        # note. L1 alone validates the post_cargo_new templates + the
-        # v1.1.0 transport standard + the demo-005 archived shape —
-        # sufficient for the T.5 archival gate.
-        run: bash .forge/scripts/tests/t5.test.sh --level 1
-      - name: j7.test.sh
-        run: bash .forge/scripts/tests/j7.test.sh --level 1,2
-      - name: t5-otel.test.sh
-        run: bash .forge/scripts/tests/t5-otel.test.sh --level 1
-      # T5.3 decommissioned t5-otel-dart-api-realign.test.sh (v1.1.0 Workiva
-      # superseded by v2.0.0 Dartastic — see archive .forge-update-notes).
-      - name: t5-otel-app.test.sh
-        # T.5 Phase B SDK instrumentation ; L2 toolchain smoke gated separately.
-        run: bash .forge/scripts/tests/t5-otel-app.test.sh --level 1
-      - name: t5-otel-traceparent-e2e.test.sh
-        # T.5 Phase C E2E traceparent harness ; live-run deferred to Phase D.
-        run: bash .forge/scripts/tests/t5-otel-traceparent-e2e.test.sh --level 1
-      - name: t5-otel-live-run.test.sh
-        # T.5 Phase D OTel live-run ; docker leg opt-in via FORGE_LIVE_RUN_DOCKER=1.
-        run: bash .forge/scripts/tests/t5-otel-live-run.test.sh --level 1
-      - name: t5-2.test.sh
-        run: bash .forge/scripts/tests/t5-2.test.sh --level 1  # T.5.2 ; L2 opt-in FORGE_T52_LIVE=1
-      - name: t5-otel-dartastic.test.sh
-        run: bash .forge/scripts/tests/t5-otel-dartastic.test.sh --level 1  # T.5.3 ; L2 opt-in FORGE_T53_LIVE=1
-      - name: j8.test.sh
-        run: bash .forge/scripts/tests/j8.test.sh --level 1,2
-      - name: k3.test.sh
-        run: bash .forge/scripts/tests/k3.test.sh --level 1,2
-      - name: i2.test.sh
-        run: bash .forge/scripts/tests/i2.test.sh --level 1
-      - name: i6.test.sh
-        run: bash .forge/scripts/tests/i6.test.sh --level 1,2
-      - name: i3.test.sh
-        run: bash .forge/scripts/tests/i3.test.sh --level 1,2
-      - name: i5.test.sh
-        # I.5 reusable compliance workflow harness. L2 opt-in via FORGE_I5_ACT=1 (ADR-I5-CW-003).
-        run: bash .forge/scripts/tests/i5.test.sh --level 1
-      - name: f3.test.sh
-        # F.3 release script fix harness. L2 opt-in via FORGE_F3_LIVE=1 (ADR-F3-004).
-        run: bash .forge/scripts/tests/f3.test.sh --level 1
-      - name: t5-1.test.sh
-        # T5.1 CLI Trust Harness. L2 opt-in via FORGE_T51_LIVE=1 / FORGE_T51_PACK=1.
-        run: bash .forge/scripts/tests/t5-1.test.sh --level 1
-      - name: t5-cargo.test.sh
-        run: bash .forge/scripts/tests/t5-cargo.test.sh --level 1
-      - name: t5-bin-server.test.sh
-        run: bash .forge/scripts/tests/t5-bin-server.test.sh --level 1
-      - name: t5-3-1.test.sh
-        run: bash .forge/scripts/tests/t5-3-1.test.sh --level 1
-      - name: t5-3-3.test.sh
-        run: bash .forge/scripts/tests/t5-3-3.test.sh --level 1
-      - name: b8-coroot.test.sh
-        run: bash .forge/scripts/tests/b8-coroot.test.sh --level 1
-      - name: b8-signoz.test.sh
-        run: bash .forge/scripts/tests/b8-signoz.test.sh --level 1
-      - name: b8-obi.test.sh
-        run: bash .forge/scripts/tests/b8-obi.test.sh --level 1
-      - name: b8-1.test.sh
-        run: bash .forge/scripts/tests/b8-1.test.sh --level 1
-      - name: b8-2.test.sh
-        run: bash .forge/scripts/tests/b8-2.test.sh --level 1
-      - name: b8-3.test.sh
-        run: bash .forge/scripts/tests/b8-3.test.sh --level 1
+      - name: shell test harnesses
+        # NFR-CI-002 — harnesses run via a declarative loop (not one step
+        # each) so adding a harness is a one-line list entry and the
+        # workflow no longer grows ~2 lines per harness. Each entry is the
+        # exact invocation suffix; the loop runs every harness, collects
+        # failures, and fails the job if any failed (full report, not
+        # fail-fast). Entry order is load-bearing: sibling harnesses assert
+        # presence (grep -F '<name>.test.sh') and adjacency (e.g.
+        # t5-otel-traceparent-e2e after t5-otel-app).
+        run: |
+          set -uo pipefail
+          harnesses=(
+            "foundations.test.sh"
+            "scaffolder.test.sh --level 1,2"
+            "workflow.test.sh --level 1,2"
+            "delivery.test.sh"
+            "g1.test.sh"
+            "c1.test.sh"
+            "a7.test.sh"
+            "b5.test.sh"
+            "d5.test.sh"
+            "b4.test.sh --level 1,2"
+            "f1.test.sh --level 1,2"
+            "f2.test.sh --level 1,2"
+            "f4.test.sh --level 1,2"
+            "t4.test.sh --level 1,2"
+            "t5.test.sh --level 1"
+            "j7.test.sh --level 1,2"
+            "t5-otel.test.sh --level 1"
+            "t5-otel-app.test.sh --level 1"
+            "t5-otel-traceparent-e2e.test.sh --level 1"
+            "t5-otel-live-run.test.sh --level 1"
+            "t5-2.test.sh --level 1"
+            "t5-otel-dartastic.test.sh --level 1"
+            "j8.test.sh --level 1,2"
+            "k3.test.sh --level 1,2"
+            "i2.test.sh --level 1"
+            "i6.test.sh --level 1,2"
+            "i3.test.sh --level 1,2"
+            "i5.test.sh --level 1"
+            "f3.test.sh --level 1"
+            "t5-1.test.sh --level 1"
+            "t5-cargo.test.sh --level 1"
+            "t5-bin-server.test.sh --level 1"
+            "t5-3-1.test.sh --level 1"
+            "t5-3-3.test.sh --level 1"
+            "b8-coroot.test.sh --level 1"
+            "b8-signoz.test.sh --level 1"
+            "b8-obi.test.sh --level 1"
+            "b8-1.test.sh --level 1"
+            "b8-2.test.sh --level 1"
+            "b8-3.test.sh --level 1"
+          )
+          fail=0
+          for entry in "${harnesses[@]}"; do
+            echo "::group::${entry}"
+            # shellcheck disable=SC2086
+            if bash .forge/scripts/tests/${entry}; then
+              echo "::endgroup::"
+            else
+              echo "::endgroup::"
+              echo "::error::forge-ci harness failed: ${entry}"
+              fail=1
+            fi
+          done
+          exit "$fail"
 
   # ─── gates ── verify.sh + constitution-linter.sh ───────────────
   gates:
