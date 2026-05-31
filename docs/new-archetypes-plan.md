@@ -514,8 +514,9 @@ v1.0.0 sont désormais résolus.
 | `b8-3-schema-candidate`      | archived               | B.8.3 (2.0.0 candidate target schema — `2.0.0.yaml` reference-only, frozen-1.0.0-safe, gating B.8.4–B.8.12 ; 15 FRs + 5 NFRs ; `b8-3.test.sh` 17 L1 ; independent review APPROVE ; archived 2026-05-30) |
 | `b8-3b-validator-versioned-schema` | archived         | B.8.3.b (versioned-schema discovery in `validate-foundations.sh` / `verify.sh` / `constitution-linter.sh` — generic + strict-superset ; prereq FR-GL-017 dict-layers crash fix 6175a61 ; `b8-3b.test.sh` 12 L1 ; independent review APPROVE ; archived 2026-05-31) |
 | `b8-4-envoy-gateway`               | archived         | B.8.4 (first 2.0.0 template brick — Envoy Gateway templates `.../2.0.0/infra/k8s/envoy-gateway/` Gateway API native, root `gateway.yaml` standard J.7-compliant, verify-then-pin chart v1.8.0 / bundle v1.5.1, additive ∥ Kong, `b8-4.test.sh` 12 L1, independent review APPROVE, archived 2026-05-31) |
+| `b8-5-postgres-pgvector`           | archived         | B.8.5 (RE-SCOPED: DBOS-Rust falsified→deferred; Postgres 17+pgvector delta; pin `pgvector/pgvector:0.8.2-pg17`; `orchestration.yaml` 1.1.0 DBOS-deferral; `2.0.0.yaml` dbos-embedded deferred; b8-signoz version-aware fix; `b8-5.test.sh` 12 L1; independent review APPROVE; archived 2026-05-31) |
 
-**38 archivés** au 2026-05-31. Trio B.8.8 observability rearch
+**39 archivés** au 2026-05-31. Trio B.8.8 observability rearch
 **fully closed** (Coroot leg 1 rc.3 + SigNoz leg 2 rc.4 + OBI leg 3 rc.5) ;
 **B.8.1 baseline + B.8.2 legacy-snapshot freeze archived 2026-05-30** as the
 first two B.8 bricks beyond the trio (additive, see §0.10). Next B.8 step:
@@ -2273,6 +2274,20 @@ Migration **additive d'abord, breaking ensuite** :
 - **B.8.5.** Templates DBOS embedded — `Cargo.toml` ajout `dbos = "0.x"` (épingler
   version au commit du standard `orchestration.yaml`), boilerplate Rust pour
   `DBOSContext`, init Postgres state tables. Effort : `M`.
+  **Done 2026-05-31** via `b8-5-postgres-pgvector`.
+  **RE-SCOPE NOTE (important)**: the DBOS-embedded premise is FALSIFIED — DBOS has NO
+  Rust SDK (crates.io `dbos` 404 confirmed; DBOS Transact = Python/TypeScript/Go/Java/Kotlin
+  only — Context7 `docs.dbos.dev`; `cargo add dbos` is unbuildable). DBOS is therefore
+  **DEFERRED**; Temporal is **RETAINED** as the 2.0.0 orchestrator (Article VIII.2
+  PRESERVED — no GOVERNANCE.md amendment required, a compliance positive). B.8.5 instead
+  delivered the **Postgres 16→17+pgvector delta** the plan also assigned to B.8.5:
+  datastore template `.../2.0.0/infra/postgres/` (compose fragment + init SQL `CREATE
+  EXTENSION vector` + README), pin `pgvector/pgvector:0.8.2-pg17` (verify-then-pin live
+  Docker Hub, satisfies persistence.yaml `postgres-17` + `pgvector-0.8`), `orchestration.yaml`
+  1.0.0 → 1.1.0 additive DBOS-deferral record (`rust_sdk_status:` body field, J.7 GREEN),
+  `2.0.0.yaml` `dbos-embedded` component + delta annotated `status: deferred`, `b8-signoz.
+  test.sh` mirror-count check made version-aware, `b8-5.test.sh` 12 L1 hermetic, independent
+  review APPROVE, archived 2026-05-31. **DBOS-in-Rust revisit when/if a Rust SDK ships.**
 - **B.8.6.** Templates Connect-RPC : `buf.gen.yaml` étendu avec
   `protoc-gen-connect-go`, `protoc-gen-connect-es`, `protoc-gen-connect-dart-community`.
   `tonic-build` continue côté serveur Rust (compat native). Effort : `M`.

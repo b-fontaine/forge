@@ -1,5 +1,5 @@
 name: b8-5-postgres-pgvector
-status: implemented
+status: archived
 created: 2026-05-31
 schema: default
 constitution_version: "1.1.0"
@@ -14,3 +14,4 @@ timeline:
   designed: 2026-05-31
   planned: 2026-05-31
   implemented: 2026-05-31
+  archived: 2026-05-31

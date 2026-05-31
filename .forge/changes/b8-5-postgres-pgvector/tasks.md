@@ -42,7 +42,7 @@ pgvector 0.8.x on pg17; satisfies persistence.yaml postgres-17 + pgvector-0.8).
 - [x] **T008** CHANGELOG `[Unreleased]` entry.
 
 ## Phase 6 — Verification
-- [ ] **T009** FULL gate sweep (lesson: run all ~43 harnesses, not just the brick):
+- [x] **T009** FULL gate sweep (lesson: run all ~43 harnesses, not just the brick):
   verify.sh PASS, constitution-linter PASS, b8-3/b8-3b/b8-4/b8-5 green, delivery green
   (versioned-tree scan), 1.0.0 postgres:16 + schema.yaml byte-untouched.
-- [ ] **T010** Independent reviewer validates impl before archive.
+- [x] **T010** Independent reviewer validates impl before archive.
