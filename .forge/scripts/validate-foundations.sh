@@ -309,8 +309,16 @@ for cdir in sorted(glob.glob(os.path.join(changes_dir, '*/'))):
         continue
     if not isinstance(layers, list):
         failures.append(f"{name}: layers must be a list"); continue
+    # Layer entries may be plain id strings OR {id, path, ...} mappings
+    # (the live .forge.yaml convention — every multi-layer change uses the
+    # mapping shape). Normalise to ids before the set-membership test: a
+    # dict in `l not in known_ids` raises TypeError: unhashable type, which
+    # silently killed FR-GL-017 on the live tree (set -e aborted the script
+    # mid-run; verify.sh masked it by grepping PASS/FAIL lines, not the
+    # exit code).
+    layer_ids = [l.get('id') if isinstance(l, dict) else l for l in layers]
     # Validate layer ids against schema enum.
-    unknown = [l for l in layers if l not in known_ids]
+    unknown = [i for i in layer_ids if i not in known_ids]
     if unknown:
         failures.append(f"{name}: unknown layer id {unknown!r} (known: {sorted(known_ids)})")
         continue
@@ -325,13 +333,13 @@ for cdir in sorted(glob.glob(os.path.join(changes_dir, '*/'))):
         continue
     # Each referenced file must exist.
     for layer, rel in designs.items():
-        if layer not in layers:
+        if layer not in layer_ids:
             failures.append(f"{name}: designs_per_layer has unknown layer '{layer}'"); break
         if not os.path.isfile(os.path.join(cdir, rel)):
             failures.append(f"{name}: designs_per_layer[{layer}] -> {rel} does not exist"); break
     else:
         for layer, rel in tasks.items():
-            if layer not in layers:
+            if layer not in layer_ids:
                 failures.append(f"{name}: tasks_per_layer has unknown layer '{layer}'"); break
             if not os.path.isfile(os.path.join(cdir, rel)):
                 failures.append(f"{name}: tasks_per_layer[{layer}] -> {rel} does not exist"); break

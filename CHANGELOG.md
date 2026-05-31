@@ -12,6 +12,22 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Fixed — `validate-foundations.sh` crash silently disabled FR-GL-017
+
+- `validate-foundations.sh` exited 1 standalone with `TypeError: unhashable
+  type: 'dict'` in `check_multi_layer_change_metadata` (FR-GL-017). The check
+  treated each change's `.forge.yaml` `layers:` as bare id-strings and did
+  `l not in known_ids` (set membership), but every multi-layer change uses the
+  `{id, path}` mapping shape — hashing a dict crashed. Under `set -e` the
+  script aborted mid-run, so FR-GL-017 (the last check) **never actually
+  validated multi-layer metadata**; `verify.sh` masked it by grepping
+  `PASS:`/`FAIL:` lines instead of the exit code, so CI stayed green.
+- Fix: normalise layer entries to ids (`l.get('id')` for mappings, else `l`)
+  before the membership test. FR-GL-017 is now live — inspects 43 changes,
+  all consistent, zero new failures. `validate-foundations.sh` exits 0
+  standalone again. Regression test added (`foundations.test.sh`:
+  `test_dict_shaped_layers_do_not_crash_fr_gl_017`).
+
 ### Added — B.8.3 flagship 2.0.0 candidate schema (`b8-3-schema-candidate`)
 
 - **First code-bearing brick of the flagship 1.0.0 → 2.0.0 migration.** New

@@ -366,6 +366,49 @@ test_green_state_passes_for_all_7() {
   fi
 }
 
+# Regression (FR-GL-017): a change whose .forge.yaml `layers:` uses the
+# live {id, path} mapping shape (not bare id strings) must be inspected
+# WITHOUT crashing. Before the dict->id normalisation, `l not in known_ids`
+# hashed a dict -> TypeError: unhashable type, which (under set -e) aborted
+# the script mid-run and silently killed FR-GL-017 on the live tree
+# (verify.sh masked it by grepping PASS/FAIL lines, not the exit code).
+test_dict_shaped_layers_do_not_crash_fr_gl_017() {
+  local root; root=$(mk_fixture_root); trap "rm -rf '$root'" RETURN
+  populate_fixture_with_deliverables "$root"
+  local cdir="$root/.forge/changes/regress-dict-layers"
+  mkdir -p "$cdir"
+  echo stub > "$cdir/design-backend.md"
+  echo stub > "$cdir/design-frontend.md"
+  echo stub > "$cdir/tasks-backend.md"
+  echo stub > "$cdir/tasks-frontend.md"
+  cat > "$cdir/.forge.yaml" <<'YML'
+name: regress-dict-layers
+status: archived
+layers:
+  - id: backend
+    path: backend/
+  - id: frontend
+    path: frontend/
+designs_per_layer:
+  backend: design-backend.md
+  frontend: design-frontend.md
+tasks_per_layer:
+  backend: tasks-backend.md
+  frontend: tasks-frontend.md
+YML
+  local out; out=$(run_validator "$root" || true)
+  if printf '%s' "$out" | grep -qiE 'Traceback|unhashable'; then
+    echo "    validator crashed on dict-shaped layers (FR-GL-017 regression)" >&2
+    printf '%s\n' "$out" | grep -iE 'Traceback|unhashable|Error' >&2
+    return 1
+  fi
+  assert_contains "$out" "PASS: FR-GL-017" "FR-GL-017 must inspect dict-shaped-layer changes and pass"
+  if ! FORGE_ROOT="$root" bash "$VALIDATOR" > /dev/null 2>&1; then
+    echo "    validator exit != 0 with a dict-shaped-layers change present" >&2
+    return 1
+  fi
+}
+
 # ─── Phase 3.3: NFR-001 idempotence, NFR-002 performance ────────
 
 test_idempotence() {
@@ -424,6 +467,7 @@ main() {
   run_test test_index_wrong_scope_fails
   run_test test_red_state_fails_for_all_7
   run_test test_green_state_passes_for_all_7
+  run_test test_dict_shaped_layers_do_not_crash_fr_gl_017
   run_test test_idempotence
   run_test test_performance_under_two_seconds
 
