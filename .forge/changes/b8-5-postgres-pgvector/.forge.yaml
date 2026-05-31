@@ -1,0 +1,13 @@
+name: b8-5-postgres-pgvector
+status: specified
+created: 2026-05-31
+schema: default
+constitution_version: "1.1.0"
+parent_audit_items:
+  - B.8.5  # docs/new-archetypes-plan.md §4.2 B.8.5 — RE-SCOPED. Plan premise "Templates DBOS embedded (Cargo.toml dbos = 0.x, DBOSContext boilerplate, init Postgres state tables)" is FALSIFIED: DBOS has NO Rust SDK (crates.io dbos = 404; DBOS Transact ships Python/TypeScript/Go/Java only — Context7 docs.dbos.dev). Maintainer DECISION: defer DBOS (keep Temporal as the 2.0.0 orchestrator), re-scope B.8.5 to the real Postgres 16→17 + pgvector datastore delta the plan also assigns to B.8.5 (unblocks B.7 RAG + any future DBOS state store).
+depends_on:
+  - B.8.3  # 2.0.0 candidate schema (.forge/schemas/full-stack-monorepo/2.0.0.yaml) — declares postgres-17-pgvector { replaces: postgres-16, delivered_by: B.8.5, standard: persistence.yaml } + the postgres-16-no-pgvector → postgres-17-pgvector migration_delta (brick B.8.5); and dbos-embedded { delivered_by: B.8.5, standard: orchestration.yaml }
+  - B.8.4  # versioned 2.0.0 template-subtree convention (.forge/templates/archetypes/full-stack-monorepo/2.0.0/...) + the J.7 additive-standard-edit + REVIEW.md ledger precedent this brick reuses
+timeline:
+  proposed: 2026-05-31
+  specified: 2026-05-31
