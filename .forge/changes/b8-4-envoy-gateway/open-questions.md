@@ -8,14 +8,33 @@ INDEPENDENT reviewer + the maintainer, NOT self-approved here.
 
 ## Resolution log
 
-- (none yet — author phase. Independent review + maintainer resolutions land
-  here at /forge:design. Q-005 (concrete pins / API versions) additionally
-  carries a verify-then-pin step at /forge:implement.)
+- 2026-05-31 (/forge:design, maintainer-resolved; ADRs encoded in design.md;
+  this design review pass logged here per b8-3 precedent — ratified by the
+  independent reviewer that follows, NOT self-approved):
+  - Q-001 → answered, option (a): versioned 2.0.0 template subtree
+    `.forge/templates/archetypes/full-stack-monorepo/2.0.0/infra/k8s/
+    envoy-gateway/`; flat 1.0.0 byte-untouched; scaffolder awareness deferred
+    (ADR-B84-001).
+  - Q-002 → answered, option (a): NEW ROOT-level `.forge/standards/gateway.yaml`
+    (J.7) + `2.0.0.yaml` envoy comp gains `standard: gateway.yaml`
+    (replaces `pin_source: B.8.4`); candidate edit confirmed permitted; ROOT
+    placement required by the non-recursive J.7 gate (ADR-B84-002).
+  - Q-003 → answered, option (a) hybrid: Helm OCI chart
+    `oci://docker.io/envoyproxy/gateway-helm` for the control-plane install
+    (Atlas-provided) + kustomize-native data-plane manifests (ADR-B84-003).
+  - Q-004 → answered, option (a): Connect/gRPC-Web pass-through, no
+    gateway-side transcoding; transcoding ownership deferred to B.8.6
+    (ADR-B84-006).
+  - Q-005 → answered as a verify-then-pin item: design records the API SHAPE +
+    the live verification procedure; the concrete Envoy Gateway chart version,
+    the Gateway API CRD bundle version, and the `BackendTLSPolicy` apiVersion
+    (v1beta1/v1alpha3/v1 + channel) are resolved LIVE at /forge:implement
+    (ADR-B84-005). NOT pinned in design.
 -->
 
 ## Q-001: Versioned 2.0.0 template tree vs the flat 1.0.0 convention
 
-- **Status**: open
+- **Status**: answered
 - **Raised in**: `proposal.md` (ADR-B84-001 seed), `specs.md` FR-B84-001/002/004
 - **Raised on**: 2026-05-31
 - **Raised by**: author (b8-4 specify pass)
@@ -53,15 +72,22 @@ validator rewiring), out of B.8.4 scope?]`
 
 ### Resolution
 
-- **Resolved on**: _pending (/forge:design, independent reviewer + maintainer)_
-- **Decision**: _pending_
-- **Rationale**: _pending_
+- **Resolved on**: 2026-05-31 (/forge:design, maintainer-resolved; independent review follows)
+- **Decision**: Option (a) — NEW versioned subtree
+  `.forge/templates/archetypes/full-stack-monorepo/2.0.0/`, Envoy under
+  `2.0.0/infra/k8s/envoy-gateway/`, coexisting with the byte-untouched flat
+  1.0.0 tree. Scaffolder/snapshot awareness of the versioned template root is a
+  separate downstream concern (parallels the ratified B.8.3.b validator
+  rewiring for versioned schema siblings), OUT of B.8.4 scope.
+- **Rationale**: Mirrors the ratified B.8.3 versioned-sibling precedent
+  (`2.0.0.yaml` beside flat `schema.yaml`, ADR-B8-3-001); freeze-safe (honors
+  B.8.2 + candidate `scaffoldable: false`). Encoded as ADR-B84-001 in design.md.
 
 ---
 
-## Q-002: Gateway pin source — new `infra/gateway.yaml` standard + candidate `standard:` ref
+## Q-002: Gateway pin source — new ROOT-level `gateway.yaml` standard + candidate `standard:` ref
 
-- **Status**: open
+- **Status**: answered
 - **Raised in**: `proposal.md` (ADR-B84-002 seed), `specs.md` FR-B84-030/031/032
 - **Raised on**: 2026-05-31
 - **Raised by**: author (b8-4 specify pass)
@@ -74,32 +100,53 @@ was deferred to B.8.4). No `*.yaml` standard pins a gateway today (only markdown
 `infra/kong.md`). Where does the Envoy Gateway version pin live?
 
 `[NEEDS CLARIFICATION: Should B.8.4 create a NEW J.7-compliant standard
-`.forge/standards/infra/gateway.yaml` (Envoy Gateway Helm chart + Gateway API
-CRD bundle pins, frontmatter contract, index.yml + REVIEW.md registration) and
-add a `standard: gateway.yaml` ref to the 2.0.0.yaml envoy component (a
+`.forge/standards/gateway.yaml` (ROOT-level; Envoy Gateway Helm chart + Gateway
+API CRD bundle pins, frontmatter contract, index.yml + REVIEW.md registration)
+and add a `standard: gateway.yaml` ref to the 2.0.0.yaml envoy component (a
 permitted *candidate* edit) — or keep `pin_source: B.8.4` and pin only inside
 the Helm chart values / template literals?]`
 
-- (a) **New `infra/gateway.yaml` standard + add `standard:` ref to the candidate
-  envoy component** — single source of truth, J.7-validated, `pin_review_cadence`
-  for verify-then-pin freshness; resolves the 2.0.0.yaml gap. Editing
-  `2.0.0.yaml` is allowed because it is the **candidate** (not the frozen 1.0.0
-  `schema.yaml`) — **must be explicitly confirmed**. **Lean here.**
+- (a) **New ROOT-level `gateway.yaml` standard + add `standard:` ref to the
+  candidate envoy component** — single source of truth, J.7-validated,
+  `pin_review_cadence` for verify-then-pin freshness; resolves the 2.0.0.yaml gap.
+  Editing `2.0.0.yaml` is allowed because it is the **candidate** (not the frozen
+  1.0.0 `schema.yaml`) — **must be explicitly confirmed**. The standard MUST sit
+  at the standards ROOT (`.forge/standards/gateway.yaml`), not a subdir: the J.7
+  gate globs `*.yaml` non-recursively at the root (`verify.sh:650` +
+  `validate-standards-yaml.sh:67`), so a subdir standard would escape validation.
+  **Lean here.**
 - (b) **Keep `pin_source: B.8.4`, pin in chart values only** — no new standard,
   no candidate edit; but the pin is not J.7-governed and drifts without a review
   cadence. Disfavored (loses the standards-lifecycle guardrail).
 
 ### Resolution
 
-- **Resolved on**: _pending (/forge:design)_
-- **Decision**: _pending_
-- **Rationale**: _pending_
+- **Resolved on**: 2026-05-31 (/forge:design, maintainer-resolved; independent review follows)
+- **Decision**: Option (a) — create a NEW J.7-compliant standard at the standards
+  ROOT, `.forge/standards/gateway.yaml` (NOT a subdir; Envoy Gateway Helm chart +
+  Gateway API CRD bundle pins as verify-then-pin PLACEHOLDERS, frontmatter
+  contract, index.yml trigger + REVIEW.md birth entry) and add
+  `standard: gateway.yaml` to the `2.0.0.yaml` envoy component, REPLACING its
+  `pin_source: B.8.4` marker. Editing `2.0.0.yaml` is CONFIRMED permitted (it is
+  the candidate, not the frozen 1.0.0 `schema.yaml`).
+- **Rationale**: Single J.7-governed source of truth with `pin_review_cadence`
+  for verify-then-pin freshness; closes the `pin_source: B.8.4` gap. ROOT
+  placement is REQUIRED, not optional: the standing J.7 gate is non-recursive —
+  `verify.sh:650` globs `"$STD_DIR_VFY"/*.yaml` and
+  `bin/validate-standards-yaml.sh:67` dir-mode globs `"$target"/*.yaml`, both
+  root-only — so a subdir standard would never be validated (silent
+  false-green); all 6 existing `*.yaml` standards are root-level. With the file
+  at the root the ref is the bare basename `gateway.yaml`, so b8-3 T-011
+  (`os.path.join(STANDARDS_DIR, ref)`) resolves; the standard file MUST be created
+  before/atomically with the `2.0.0.yaml` edit to keep b8-3 (17 L1) + b8-3b
+  (12 L1) GREEN. Encoded as ADR-B84-002 + the Implementation Ordering section in
+  design.md.
 
 ---
 
 ## Q-003: Helm chart vs raw kustomize manifests for the Envoy resources
 
-- **Status**: open
+- **Status**: answered
 - **Raised in**: `proposal.md` (ADR-B84-003 seed), `specs.md` FR-B84-020/021
 - **Raised on**: 2026-05-31
 - **Raised by**: author (b8-4 specify pass)
@@ -135,15 +182,26 @@ install expressed as manifests, no Helm)?]`
 
 ### Resolution
 
-- **Resolved on**: _pending (/forge:design)_
-- **Decision**: _pending_
-- **Rationale**: _pending_
+- **Resolved on**: 2026-05-31 (/forge:design, maintainer-resolved; independent review follows)
+- **Decision**: Hybrid (option a). Control-plane install (Envoy Gateway
+  controller + its required Gateway API CRDs) = the upstream OCI Helm chart
+  `oci://docker.io/envoyproxy/gateway-helm`, documented as an Atlas-provided
+  install (values + namespace `envoy-gateway-system`), NOT vendored as a chart
+  copy in the tree. Data-plane intent
+  (`GatewayClass`/`Gateway`/`HTTPRoute`/`BackendTLSPolicy`) = Gateway-API-native
+  kustomize manifests under `2.0.0/infra/k8s/envoy-gateway/` with a
+  `kustomization.yaml.tmpl`, matching the 1.0.0 `k8s/base/` + overlays
+  convention (`.tmpl` ext, `<project-name>` placeholder).
+- **Rationale**: Honors plan §4.2 "Helm chart Atlas-fourni" for the
+  controller+CRDs while keeping the route-level intent kustomize-native and
+  `kustomize build`-able, consistent with the existing overlay convention.
+  Encoded as ADR-B84-003 in design.md.
 
 ---
 
 ## Q-004: REST↔gRPC transcoding parity vs Connect / gRPC-Web pass-through
 
-- **Status**: open
+- **Status**: answered
 - **Raised in**: `proposal.md` (ADR-B84-005 seed), `specs.md` FR-B84-041
 - **Raised on**: 2026-05-31
 - **Raised by**: author (b8-4 specify pass)
@@ -173,15 +231,22 @@ route parity with Kong during the additive-first window? This couples to B.8.6
 
 ### Resolution
 
-- **Resolved on**: _pending (/forge:design, with the B.8.6 transport decision)_
-- **Decision**: _pending_
-- **Rationale**: _pending_
+- **Resolved on**: 2026-05-31 (/forge:design, maintainer-resolved; independent review follows)
+- **Decision**: Option (a) — Connect/gRPC-Web pass-through at the gateway; B.8.4
+  configures NO REST↔gRPC transcoding. The `HTTPRoute`s route to `fsm-backend`
+  which speaks Connect natively. The transcoding-vs-pass-through ownership is
+  DEFERRED to B.8.6 (Connect codegen); B.8.4 records the coupling and does not
+  design transcoding.
+- **Rationale**: Aligns with the 2.0.0 Connect-RPC transport target
+  (`transport.yaml` v1.2.0, B.8.6) and §13 caveat 2 (gRPC-Web via Envoy Gateway
+  fallback); avoids Envoy transcoding complexity that may be moot once
+  Connect-RPC lands. Encoded as ADR-B84-006 in design.md.
 
 ---
 
 ## Q-005: Concrete Envoy Gateway chart version + Gateway API resource API versions (verify-then-pin)
 
-- **Status**: open
+- **Status**: answered
 - **Raised in**: `proposal.md` ("External research" + ADR-B84-005 neighborhood),
   `specs.md` FR-B84-013/033, NFR-B84-005, Context7 Evidence
 - **Raised on**: 2026-05-31
@@ -213,7 +278,26 @@ BackendTLSPolicy, the impl MUST surface this rather than guess.]`
 
 ### Resolution
 
-- **Resolved on**: _pending — design records the verify procedure;
-  `/forge:implement` performs the LIVE pin_
-- **Decision**: _pending_
-- **Rationale**: _pending_
+- **Resolved on**: 2026-05-31 (/forge:design records the verify procedure +
+  acceptance; `/forge:implement` performs the LIVE pin)
+- **Decision**: Verify-then-pin (not a multiple-choice decision). The design
+  fixes the API SHAPE of every manifest (kinds + key spec fields) and leaves
+  four items as clearly-marked PLACEHOLDERS resolved LIVE at `/forge:implement`:
+  (1) Envoy Gateway Helm chart version (`helm show chart
+  oci://docker.io/envoyproxy/gateway-helm` / OCI registry inspect); (2) the
+  Gateway API CRD bundle version the chart vendors + its `bundle-version` /
+  `channel` annotations; (3) the exact `apiVersion` of `BackendTLSPolicy`
+  (`v1beta1`/`v1alpha3`/`v1`) + channel (Standard vs Experimental) via `kubectl
+  explain` / CRD annotation — target is GA `v1` Standard channel; if the shipped
+  bundle does not GA it in Standard, the impl surfaces `[NEEDS CLARIFICATION]`;
+  (4) the `GatewayClass.spec.controllerName` string for the pinned release. The
+  `gateway.yaml` `versions:` carries `VERIFY_THEN_PIN` sentinels; the templates
+  carry `<CHART_VER>` / `<GATEWAY_API_VERSION>` / `<BACKENDTLSPOLICY_APIVERSION>`
+  / `<ENVOY_CONTROLLER_NAME>` placeholders.
+- **Rationale**: Article III.4 anti-hallucination + the kong/b8-coroot/b8-signoz
+  verify-then-pin lesson (pins verified LIVE on registry/CRD, never fabricated
+  upstream of `/forge:implement`). The Gateway API `v1.5.1` figure in specs.md is
+  the project release LINE that GAs `BackendTLSPolicy`, NOT the CRD bundle pin;
+  the v1.8 Envoy Gateway docs-line marker may be stale by implement — both noted
+  in ADR-B84-005. Encoded as ADR-B84-005 in design.md; the b8-4 harness T-009 is
+  the anti-hallucination grep-guard.

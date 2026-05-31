@@ -49,7 +49,7 @@ the pin does not exist yet and is born here).
   citing "Article VIII.1 (API gateway via Kong, declarative only)").
   (2) A markdown standard `.forge/standards/infra/kong.md` (Kong plugins,
   decK, gRPC transcoding) — **NOT** a `*.yaml` version-pin standard. There
-  is no `infra/gateway.yaml` or equivalent. This confirms B.8.3
+  is no `gateway.yaml` or equivalent. This confirms B.8.3
   ADR-B8-3-002 and the `pin_source: B.8.4` marker.
 - **The 1.0.0 templates live FLAT** under
   `.forge/templates/archetypes/full-stack-monorepo/` with **no version
@@ -147,7 +147,7 @@ When built, the Envoy Gateway brick MUST:
    "Constitution Compliance" below).
 5. **Create the gateway version pin + its standard source** (this is the
    `pin_source: B.8.4` contract). Either a NEW gateway standard
-   (e.g. `.forge/standards/infra/gateway.yaml`) holding the Envoy Gateway
+   (e.g. `.forge/standards/gateway.yaml`) holding the Envoy Gateway
    Helm chart + Gateway API CRD bundle pins under the J.7 frontmatter
    contract, or an extension of an existing standard — decided by
    ADR-B84-002. The concrete versions are **verify-then-pin at implement**,
@@ -168,7 +168,7 @@ genuinely undecided (see `open-questions.md`):
   by an independent reviewer + maintainer.
 - **ADR-B84-002 — gateway pin source (`pin_source: B.8.4`).** The 2.0.0.yaml
   envoy component has `pin_source: B.8.4` and **no `standard:` ref**.
-  **Lean:** create a NEW `.forge/standards/infra/gateway.yaml` (J.7
+  **Lean:** create a NEW `.forge/standards/gateway.yaml` (J.7
   frontmatter-compliant) holding the Envoy Gateway Helm chart pin + the
   Gateway API CRD bundle pin, register it in `index.yml` + `REVIEW.md`, and
   add a `standard: gateway.yaml` ref to the 2.0.0.yaml envoy component.
@@ -230,7 +230,7 @@ Release vehicle: maintainer-set (additive template + standard brick on the
   and the CRD-bundle API versions are **verify-then-pin at implement**
   (live `helm`/registry + `kubectl`/CRD check), never fabricated in
   propose/specify. This change identifies the components + API shapes only.
-- **The gateway standard file itself** (`infra/gateway.yaml` or equivalent)
+- **The gateway standard file itself** (`gateway.yaml` or equivalent)
   — authored in the impl phase under ADR-B84-002 with the verified pin.
 - **Editing the frozen 1.0.0 template tree** or `infra/kong/` — additive
   only; Kong stays in parallel (additive-first §4.1). Removal is B.8.14.
@@ -314,7 +314,7 @@ Release vehicle: maintainer-set (additive template + standard brick on the
   envoy-gateway/`) vs the flat live 1.0.0 convention; possible
   scaffolder/snapshot rewiring (→ ADR-B84-001; open, resolved at
   `/forge:design`).
-- **Q-002** — gateway pin source: NEW `infra/gateway.yaml` standard +
+- **Q-002** — gateway pin source: NEW `gateway.yaml` standard +
   `standard:` ref added to the 2.0.0.yaml envoy component, vs pin-in-
   template-only (→ ADR-B84-002; open).
 - **Q-003** — Helm chart vs raw kustomize manifests for the Envoy

@@ -143,13 +143,13 @@ templates.
 ##### FR-B84-030 — create the gateway version pin + its standard source
 B.8.4 MUST create the gateway version pin that does not exist today (no `*.yaml`
 standard pins a gateway — only markdown `infra/kong.md`). Per ADR-B84-002 the
-leaning is a NEW `.forge/standards/infra/gateway.yaml` holding (a) the Envoy
+leaning is a NEW `.forge/standards/gateway.yaml` holding (a) the Envoy
 Gateway Helm chart version and (b) the Gateway API CRD bundle version, under the
 J.7 frontmatter contract. The pin source MUST be unambiguous and machine-
 checkable.
 
 ##### FR-B84-031 — new gateway standard satisfies the J.7 contract
-If a NEW `infra/gateway.yaml` standard is created (ADR-B84-002 lean), it MUST
+If a NEW `gateway.yaml` standard is created (ADR-B84-002 lean), it MUST
 carry the J.7-required frontmatter (`version`, `last_reviewed`, `expires_at`,
 `exception_constitutional`, `linter_rule`, `enforcement{ci_blocking,
 pre_commit_hook}`, `forbidden`, `rationale`), a `versions:` map for the pins,
@@ -216,7 +216,7 @@ paths). Respects B.8.2 freeze + its sha256 guard.
 `validate-foundations.sh` (FR-GL-001), `verify.sh`, and `constitution-linter.sh`
 MUST stay GREEN. They read the flat `schema.yaml` (untouched) and the flat 1.0.0
 tree (untouched). Adding the `.../2.0.0/...` template subtree + a new
-`infra/gateway.yaml` standard MUST NOT, by itself, break these gates; a new
+`gateway.yaml` standard MUST NOT, by itself, break these gates; a new
 standard MUST pass `validate-standards-yaml.sh` (J.7).
 
 ##### NFR-B84-005 — verify-then-pin at implement (no premature pins)
@@ -241,7 +241,7 @@ declared here, and that B.8.6 (Connect transport) coexists per Q-004.
   flat 1.0.0 untouched. Scaffolder/snapshot awareness of the versioned root =
   possible separate concern (parallels B.8.3.b). Resolved at design.
 - **ADR-B84-002 — gateway pin source (`pin_source: B.8.4`).** **Lean:** NEW
-  `.forge/standards/infra/gateway.yaml` (J.7-compliant) pins Envoy Gateway Helm
+  `.forge/standards/gateway.yaml` (J.7-compliant) pins Envoy Gateway Helm
   chart + Gateway API CRD bundle; register in `index.yml` + `REVIEW.md`; add
   `standard: gateway.yaml` to the 2.0.0.yaml envoy component (candidate edit —
   permitted, must be confirmed). Alt (b): keep `pin_source`, pin in
@@ -329,7 +329,7 @@ Feature: Envoy Gateway templates declared additively for the 2.0.0 candidate
     And the resources are Gateway API native: GatewayClass, Gateway, HTTPRoute, BackendTLSPolicy (no Ingress, no Kong CRDs)
     And the Envoy Gateway control plane installs via the Helm chart oci://docker.io/envoyproxy/gateway-helm
     And the concrete Envoy Gateway chart version and the BackendTLSPolicy apiVersion are verified live at /forge:implement, never fabricated
-    And the gateway version pin is created as the pin_source:B.8.4 contract (new infra/gateway.yaml standard, J.7-compliant)
+    And the gateway version pin is created as the pin_source:B.8.4 contract (new gateway.yaml standard, J.7-compliant)
     And the flat 1.0.0 tree, infra/kong/, schema.yaml, and 1.0.0.tar.gz remain byte-identical
     And full-stack-monorepo still scaffolds as 1.0.0/Kong by default (the 2.0.0 Envoy tree is scaffoldable:false, additive, parallel to Kong)
     And Article VIII.1 is NOT amended (Envoy is additive; the amendment, if any, lands at B.8.14)
@@ -366,7 +366,7 @@ Feature: Envoy Gateway templates declared additively for the 2.0.0 candidate
 ## Open Questions
 
 Tracked in `open-questions.md`: Q-001 (versioned 2.0.0 template tree path →
-ADR-B84-001, open), Q-002 (gateway pin source: new `infra/gateway.yaml` +
+ADR-B84-001, open), Q-002 (gateway pin source: new `gateway.yaml` +
 candidate `standard:` ref → ADR-B84-002, open), Q-003 (Helm vs kustomize
 delivery → ADR-B84-003, open), Q-004 (REST↔gRPC transcoding parity, couples to
 B.8.6 → ADR-B84-005, open), Q-005 (concrete Envoy Gateway chart version +
