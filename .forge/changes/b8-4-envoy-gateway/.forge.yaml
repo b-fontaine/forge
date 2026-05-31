@@ -1,0 +1,12 @@
+name: b8-4-envoy-gateway
+status: specified
+created: 2026-05-31
+schema: default
+constitution_version: "1.1.0"
+parent_audit_items:
+  - B.8.4  # docs/new-archetypes-plan.md §4.2 B.8.4 — Helm Envoy Gateway templates under templates/full-stack-monorepo/2.0.0/infra/k8s/envoy-gateway/ (Gateway / HTTPRoute / BackendTLSPolicy, Gateway API native); first real 2.0.0 template brick; first consumer of the B.8.3 candidate schema (envoy-gateway component, pin_source: B.8.4)
+depends_on:
+  - B.8.3  # 2.0.0 candidate schema (.forge/schemas/full-stack-monorepo/2.0.0.yaml) — declares the envoy-gateway component with replaces: kong, delivered_by: B.8.4, pin_source: B.8.4
+timeline:
+  proposed: 2026-05-31
+  specified: 2026-05-31
