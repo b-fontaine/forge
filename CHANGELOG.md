@@ -12,6 +12,28 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added — B.8.3.b validator versioned-schema discovery (`b8-3b-validator-versioned-schema`)
+
+- Makes the B.8.3 candidate (`full-stack-monorepo/2.0.0.yaml`) **gate-visible**.
+  `validate-foundations.sh` gains `check_versioned_schema_siblings()`: it
+  discovers versioned schema files `<archetype>/<X.Y.Z>.yaml` alongside the
+  canonical `schema.yaml` and validates each with the schema rule-set plus two
+  new invariants — **filename↔version** (`X.Y.Z.yaml` ⇒ `version: "X.Y.Z"`) and
+  **`stage: candidate` ⇒ `scaffoldable: false`** (stable/draft exempt, so the
+  frozen 1.0.0 `schema.yaml` keeps validating). Emits
+  `PASS/FAIL: FR-GL-001-versioned:<arch>/<file>`.
+- **Generic + strict superset**: archetypes with no versioned sibling are a
+  no-op (only `full-stack-monorepo/2.0.0.yaml` exists today). `verify.sh` and
+  `constitution-linter.sh` are **byte-unchanged** (they only resolve layer
+  paths, not validate schema content); the new PASS line surfaces through
+  verify.sh's existing aggregation.
+- Scaffolder runtime guard for `scaffoldable: false` is **deferred to B.8.14**
+  (the scaffolder cannot select a versioned schema today — `cli.ts` hard-codes
+  `schema.yaml`); today's enforcement is the validator invariant.
+- New harness `.forge/scripts/tests/b8-3b.test.sh` (12 L1, ≤5 s) with
+  discriminating negative fixtures (mutate a copy of `2.0.0.yaml` in a tmp
+  `FORGE_ROOT`; real schemas never touched). Registered in `forge-ci.yml`.
+
 ### Fixed — `validate-foundations.sh` crash silently disabled FR-GL-017
 
 - `validate-foundations.sh` exited 1 standalone with `TypeError: unhashable

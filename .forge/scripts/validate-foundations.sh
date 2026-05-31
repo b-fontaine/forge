@@ -382,6 +382,92 @@ check_versioning_monorepo_section() {
   pass_fr "FR-GL-006" "versioning monorepo models present"
 }
 
+# ─── FR-GL-001 (versioned schema siblings) — B.8.3.b ────────────
+#
+# Discover versioned schema files `<archetype>/<X.Y.Z>.yaml` alongside the
+# canonical `schema.yaml` and validate each with the same rule-set applied to
+# schema.yaml, PLUS two new invariants:
+#   - filename <-> version : `X.Y.Z.yaml` MUST declare `version: "X.Y.Z"`.
+#   - stage: candidate ⇒ scaffoldable: false (stable/draft are exempt — the
+#     frozen 1.0.0 schema.yaml is stable and carries no scaffoldable field).
+# Generic across all archetype dirs; a dir with no versioned sibling is a no-op
+# (the glob stays literal and the existence guard skips it). The emitted tag
+# `FR-GL-001-versioned:<arch>/<file>` extends the FR-GL-001 schema concern
+# (ADR-B83B-003) rather than leaking a change-scoped id into stdout.
+check_versioned_schema_siblings() {
+  local schemas_dir="$FORGE_ROOT/.forge/schemas"
+  [ -d "$schemas_dir" ] || return 0
+  # No-op when a dir has no versioned sibling: the glob stays a literal pattern
+  # and `[ -e ]` skips it. This relies on default (no `nullglob`/`failglob`)
+  # shell options, which this script does not set.
+  local arch_dir archetype vf basename_file result fr_tag
+  for arch_dir in "$schemas_dir"/*/; do
+    [ -d "$arch_dir" ] || continue
+    archetype=$(basename "$arch_dir")
+    for vf in "$arch_dir"[0-9]*.[0-9]*.[0-9]*.yaml; do
+      [ -e "$vf" ] || continue
+      basename_file=$(basename "$vf")
+      result=$(python3 - "$vf" "$archetype" "$basename_file" <<'PY'
+import sys, re, yaml
+path, archetype, fname = sys.argv[1], sys.argv[2], sys.argv[3]
+try:
+    with open(path, 'r', encoding='utf-8') as f:
+        data = yaml.safe_load(f)
+except Exception as e:
+    # Catch-all (not just YAMLError): an unreadable/permission error must
+    # surface as a clean KO line, never an uncaught traceback that aborts the
+    # script under set -e (the failure mode FR-GL-017 hit before 6175a61).
+    print(f"KO: load error: {e}"); sys.exit(0)
+if not isinstance(data, dict):
+    print("KO: schema root is not a mapping"); sys.exit(0)
+if data.get('name') != archetype:
+    print(f"KO: name mismatch (got {data.get('name')!r}, expected {archetype!r} from dir)"); sys.exit(0)
+version = data.get('version')
+if not isinstance(version, str) or not re.match(r'^\d+\.\d+\.\d+(-[\w.-]+)?$', version):
+    print(f"KO: version does not match SemVer (got {version!r})"); sys.exit(0)
+# NEW invariant 1: filename <-> version.
+expected = fname[:-5] if fname.endswith('.yaml') else fname
+if version != expected:
+    print(f"KO: filename/version mismatch (file {fname} implies {expected!r}, schema declares {version!r})"); sys.exit(0)
+layers = data.get('layers')
+if not isinstance(layers, list) or not layers:
+    print("KO: layers missing or empty"); sys.exit(0)
+layer_ids = {l.get('id') for l in layers if isinstance(l, dict)}
+required = {'backend', 'frontend', 'infra'}
+if not required.issubset(layer_ids):
+    print(f"KO: layers must include backend, frontend, infra (missing: {sorted(required - layer_ids)})"); sys.exit(0)
+for layer in layers:
+    if not isinstance(layer, dict):
+        print("KO: a layer entry is not a mapping"); sys.exit(0)
+    for key in ('id', 'path', 'fr_id_prefix', 'primary_agent'):
+        if key not in layer:
+            print(f"KO: layer {layer.get('id','?')!r} missing field {key!r}"); sys.exit(0)
+stage = data.get('stage')
+if stage not in ('draft', 'candidate', 'stable'):
+    print(f"KO: stage must be one of draft/candidate/stable (got {stage!r})"); sys.exit(0)
+if stage == 'stable':
+    m = re.match(r'^(\d+)\.(\d+)\.(\d+)(-.*)?$', version)
+    if not m or int(m.group(1)) < 1 or m.group(4):
+        print(f"KO: stage=stable requires version >= 1.0.0 without prerelease (got {version!r})"); sys.exit(0)
+# NEW invariant 2: candidate ⇒ scaffoldable: false (stable/draft exempt).
+if stage == 'candidate' and data.get('scaffoldable') is not False:
+    print(f"KO: stage=candidate requires scaffoldable: false (got {data.get('scaffoldable')!r})"); sys.exit(0)
+phases = data.get('phases')
+if not isinstance(phases, list) or not phases:
+    print("KO: phases missing or empty"); sys.exit(0)
+print(f"OK: versioned schema {version} stage={stage} layers={sorted(layer_ids)}")
+PY
+)
+      fr_tag="FR-GL-001-versioned:${archetype}/${basename_file}"
+      if [[ "$result" == OK:* ]]; then
+        pass_fr "$fr_tag" "${result#OK: }"
+      else
+        fail_fr "$fr_tag" "${archetype}/${basename_file}: ${result#KO: }"
+      fi
+    done
+  done
+}
+
 # ─── Main dispatcher ────────────────────────────────────────────
 
 main() {
@@ -397,6 +483,8 @@ main() {
   # b1-workflow additions (FR-GL-017, FR-GL-018).
   check_standard_multi_layer_workflow
   check_multi_layer_change_metadata
+  # B.8.3.b — versioned schema siblings (<archetype>/<X.Y.Z>.yaml).
+  check_versioned_schema_siblings
 
   finalize
 }
