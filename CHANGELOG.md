@@ -12,6 +12,24 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Changed — bump GitHub Actions off Node 20 (deprecation deadline 2026-06-16)
+
+- Forge's own runnable workflows (`forge-ci.yml`, `forge-compliance.yml`) now
+  pin the latest Node24-compatible majors: `actions/checkout@v6`,
+  `actions/setup-node@v6`, `actions/setup-python@v6`, `actions/upload-artifact@v7`,
+  `dorny/paths-filter@v4`. `ludeeus/action-shellcheck@2.0.0` is a Docker action,
+  unaffected. Clears the "Node.js 20 actions are deprecated" warnings ahead of
+  GitHub forcing Node 24 on 2026-06-16.
+- Coupled assertions updated in lockstep: `c1.test.sh` (forge-ci example-job
+  paths-filter pin → v4), `i5.test.sh` (forge-compliance pins → v6/v6/v7);
+  `g1.test.sh` error strings made version-agnostic. Specs/standards describing
+  these two workflows (`forge-ci.md`, `forge-compliance-workflow.md`,
+  `forge-self-ci.md`) synced.
+- **Out of scope (follow-up):** the archetype *template* CI workflows
+  (`.forge/templates/.../.github/workflows/*.tmpl`) still pin the older majors —
+  bumping them touches rendered examples + the frozen b8-2 1.0.0 snapshot
+  (sha-guarded), so it is deferred to a dedicated change.
+
 ### Added — B.8.3.b validator versioned-schema discovery (`b8-3b-validator-versioned-schema`)
 
 - Makes the B.8.3 candidate (`full-stack-monorepo/2.0.0.yaml`) **gate-visible**.

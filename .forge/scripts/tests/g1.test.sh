@@ -148,7 +148,7 @@ for needle in [
 # pyyaml install via setup-python + pip
 uses = [s.get("uses") for s in (job.get("steps") or []) if isinstance(s, dict)]
 if not any(u and u.startswith("actions/setup-python@") for u in uses):
-    errors.append("harness job missing actions/setup-python@v5 step")
+    errors.append("harness job missing actions/setup-python step")
 if "pyyaml" not in joined.lower():
     errors.append("harness job missing `pip install pyyaml` step")
 for e in errors:
@@ -189,13 +189,13 @@ runs_dir = (defaults.get("run") or {}).get("working-directory")
 if runs_dir != "cli":
     errors.append(f"cli job defaults.run.working-directory must be 'cli'; got {runs_dir!r}")
 steps = job.get("steps") or []
-# setup-node@v4 with .nvmrc + cache: 'npm'
+# setup-node with .nvmrc + cache: 'npm'
 node_step = None
 for s in steps:
     if isinstance(s, dict) and (s.get("uses") or "").startswith("actions/setup-node@"):
         node_step = s; break
 if not node_step:
-    errors.append("cli job missing actions/setup-node@v4 step")
+    errors.append("cli job missing actions/setup-node step")
 else:
     w = node_step.get("with") or {}
     if w.get("node-version-file") != "cli/.nvmrc":

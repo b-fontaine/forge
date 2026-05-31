@@ -648,7 +648,7 @@ if errs:
 PY
 }
 
-# FR-CI-012 — example job uses dorny/paths-filter@v3 on examples/**.
+# FR-CI-012 — example job uses dorny/paths-filter@v4 on examples/**.
 test_forge_ci_example_job_paths_filter() {
   python3 - "$WORKFLOW_FILE" <<'PY' || return 1
 import sys, yaml
@@ -660,8 +660,8 @@ filter_step = next((s for s in steps
                     and s["uses"].startswith("dorny/paths-filter@")), None)
 if filter_step is None:
     print("    no dorny/paths-filter@vN step in jobs.example", file=sys.stderr); sys.exit(1)
-if not filter_step["uses"].startswith("dorny/paths-filter@v3"):
-    print(f"    paths-filter must be pinned @v3, got {filter_step['uses']!r}", file=sys.stderr); sys.exit(1)
+if not filter_step["uses"].startswith("dorny/paths-filter@v4"):
+    print(f"    paths-filter must be pinned @v4, got {filter_step['uses']!r}", file=sys.stderr); sys.exit(1)
 filters = (filter_step.get("with") or {}).get("filters") or ""
 if "examples/**" not in filters:
     print(f"    paths-filter.filters does not declare 'examples/**' :\n      {filters!r}", file=sys.stderr); sys.exit(1)

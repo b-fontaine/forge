@@ -84,8 +84,8 @@ sub-directory) set `target-dir` explicitly.
 The workflow's `compliance` job runs on `ubuntu-latest` and executes
 the following steps in order :
 
-1. **`actions/checkout@v4`** — checkout the calling repo's HEAD.
-2. **`actions/setup-python@v5`** with `python-version: "3.11"` —
+1. **`actions/checkout@v6`** — checkout the calling repo's HEAD.
+2. **`actions/setup-python@v6`** with `python-version: "3.11"` —
    needed by every Forge compliance script.
 3. **`pip install pyyaml`** — required by
    `.forge/scripts/compliance/bundle.sh` and the linter.
@@ -106,7 +106,7 @@ the following steps in order :
 9. **Compliance bundle** — `bash .forge/scripts/compliance/bundle.sh
    --target <target-dir> --output <artefact-name>.tgz`. Step id
    `bundle`. Writes the output path to `$GITHUB_OUTPUT`.
-10. **`actions/upload-artifact@v4`** — upload the `.tgz` with
+10. **`actions/upload-artifact@v7`** — upload the `.tgz` with
     `if-no-files-found: error`.
 11. **Aggregator** — final inline bash step inspecting
     `steps.<id>.outcome` for all four constituent steps and exiting

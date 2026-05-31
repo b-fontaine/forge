@@ -170,9 +170,9 @@ _test_i5_008_action_pins() {
   fi
   local action
   for action in \
-    "actions/checkout@v4" \
-    "actions/setup-python@v5" \
-    "actions/upload-artifact@v4"; do
+    "actions/checkout@v6" \
+    "actions/setup-python@v6" \
+    "actions/upload-artifact@v7"; do
     if ! grep -Fq "$action" "$WORKFLOW_YML"; then
       echo "    action pin missing: $action" >&2; return 1
     fi

@@ -52,7 +52,7 @@ deviations are deliberate :
 
 | Convention in `infra/ci-workflows.md`                    | Why Forge `forge-ci.yml` deviates                                                                                                                                |
 |----------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `dorny/paths-filter@v3` per-layer scoping                | Forge is a flat repo with no `backend/` / `frontend/` / `infra/` layers. Every PR potentially touches gates or harnesses. Path-filtering would always match the whole repo and add complexity for no win. |
+| `dorny/paths-filter@v4` per-layer scoping                | Forge is a flat repo with no `backend/` / `frontend/` / `infra/` layers. Every PR potentially touches gates or harnesses. Path-filtering would always match the whole repo and add complexity for no win. |
 | Per-layer split (one workflow per layer)                 | Single `forge-ci.yml` is the right grain. ADR-001 of `g1-forge-ci`.                                                                                                |
 | Integration workflow on push:main + cron, never on PR    | Forge's gates are fast enough (~3 min warm) to run on every PR. No nightly-only workflow needed.                                                                  |
 | `forge-backend.yml` runs `cargo *` ; `forge-frontend.yml` runs `flutter *` | Forge has no application code in `cargo` or `flutter` ; the equivalents are the 4 shell harnesses + the Vitest CLI.                                                |

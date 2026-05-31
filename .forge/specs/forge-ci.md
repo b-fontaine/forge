@@ -51,7 +51,7 @@ The full standard governing this spec is
   `gates`, `cli`, `lint`, `example`, `summary`. The first five
   run in parallel ; `summary` declares
   `needs: [harness, gates, cli, lint, example]`. The `example`
-  job is conditionally active via `dorny/paths-filter@v3` on
+  job is conditionally active via `dorny/paths-filter@v4` on
   `examples/**` (FR-CI-012) and is **always** counted in the
   summary aggregation (a `skipped` result from `example` is
   treated as success — paths-filter mismatch is not a failure).
@@ -81,7 +81,7 @@ infrastructure), Article X (quality). **Testable:** yes —
 - **MUST** — each harness is invoked under `bash` explicitly
   (e.g. `bash .forge/scripts/tests/foundations.test.sh`).
 - **MUST** — the job installs Python 3.11 via
-  `actions/setup-python@v5` then `pip install pyyaml`.
+  `actions/setup-python@v6` then `pip install pyyaml`.
 - **MUST** — exit-code propagation : if any harness exits
   non-zero, the job fails immediately. No `|| true`, no `set
   +e`.
@@ -112,9 +112,9 @@ yes — `test_forge_ci_gates_job_invokes_both_scripts`.
   working directory : `npm ci`, `npm run lint`, `npm test`,
   `npm run bundle`.
 - **MUST** — Node version pinned via
-  `actions/setup-node@v4` with
+  `actions/setup-node@v6` with
   `node-version-file: cli/.nvmrc`.
-- **MUST** — `actions/setup-node@v4` built-in cache enabled :
+- **MUST** — `actions/setup-node@v6` built-in cache enabled :
   `cache: 'npm'`,
   `cache-dependency-path: cli/package-lock.json`.
 - **MUST** — exit-code propagation strict (no
@@ -197,7 +197,7 @@ asserts 5 needs) + `test_forge_ci_summary_aggregates_five_needs`
 - **MUST** — the version satisfies the `cli/package.json`
   `engines.node: ">=20"` declaration.
 - **MUST** — local maintainer tooling (`nvm use`) and CI
-  (`actions/setup-node@v4`) read this same file, ensuring
+  (`actions/setup-node@v6`) read this same file, ensuring
   byte-identical Node across environments.
 
 **Constitution reference:** Article X (reproducibility).
@@ -267,15 +267,15 @@ Article X. **Testable:** yes —
   top-level job `example` running `runs-on: ubuntu-latest` with
   `permissions: contents: read` only.
 - **MUST** — the `example` job runs **only** when the PR or
-  push touches `examples/**` (gated by `dorny/paths-filter@v3`,
+  push touches `examples/**` (gated by `dorny/paths-filter@v4`,
   pinned to the same major version as the archetype reference
   workflows of FR-IN-002..005). On a paths-filter miss, the job
   emits `skipped` and exits 0 — paths-filter mismatch is success,
   not failure (per the modified FR-CI-006).
 - **MUST** — when the filter matches, the job executes, in
-  order : (1) `actions/checkout@v4`, (2) `dorny/paths-filter@v3`
+  order : (1) `actions/checkout@v6`, (2) `dorny/paths-filter@v4`
   with `id: examples-filter` and `filters: examples: ['examples/**']`,
-  (3) `actions/setup-python@v5` + PyYAML install (gated on the
+  (3) `actions/setup-python@v6` + PyYAML install (gated on the
   filter output), (4) `cd examples/forge-fsm-example && bash
   .forge/scripts/verify.sh`, (5) `bash .forge/scripts/constitution-linter.sh`,
   (6) a Python `yaml.safe_load` over every

@@ -34,14 +34,14 @@ jobs:
     name: Test harnesses (all forge shell harnesses)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
       - name: Install PyYAML
         run: pip install pyyaml
       # b5.test.sh's Phase 2 tests exec node cli/dist/index.js — build it.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version-file: cli/.nvmrc
           cache: npm
@@ -127,8 +127,8 @@ jobs:
     name: Forge gates (verify + constitution-linter)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
       - name: Install PyYAML
@@ -139,7 +139,7 @@ jobs:
         run: bash .forge/scripts/constitution-linter.sh
       - name: forge-sbom.sh (J.8.d — CycloneDX 1.5)
         run: bash bin/forge-sbom.sh --target examples/forge-fsm-example/ --output sbom.cdx.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with: { name: sbom-cyclonedx, path: sbom.cdx.json, if-no-files-found: error }
 
   # ─── cli ── Vitest + lint + bundle ─────────────────────────────
@@ -150,8 +150,8 @@ jobs:
       run:
         working-directory: cli
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version-file: cli/.nvmrc
           cache: npm
@@ -170,7 +170,7 @@ jobs:
     name: Shell lint (shellcheck)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: shellcheck on .forge/scripts
         uses: ludeeus/action-shellcheck@2.0.0
         with:
@@ -193,14 +193,14 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - id: examples-filter
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@v4
         with:
           filters: |
             examples:
               - 'examples/**'
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         if: steps.examples-filter.outputs.examples == 'true'
         with:
           python-version: "3.11"
