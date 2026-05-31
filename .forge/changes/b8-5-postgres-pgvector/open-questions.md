@@ -8,9 +8,24 @@ an INDEPENDENT reviewer + the maintainer, NOT self-approved here. The concrete
 pgvector image tag (Q-004) is verify-then-pin at /forge:implement.
 -->
 
+## Resolution Log (/forge:design, 2026-05-31)
+
+All four questions resolved at /forge:design (maintainer decisions, encoded in
+`design.md` ADR-B85-001..006). The author flips them to answered here; an
+INDEPENDENT reviewer ratifies before `/forge:plan` (NOT self-approved). The
+Q-004 image tag is recorded as a verify-then-pin SHAPE in design + a LIVE pin at
+`/forge:implement` (registry inspect), never fabricated.
+
+| Q | Decision | ADR |
+|---|----------|-----|
+| Q-001 | **(a)** dev-compose fragment + init-SQL under `2.0.0/infra/postgres/`, **NO k8s** (1.0.0 has no Postgres StatefulSet; prod DB external/managed) | ADR-B85-001/002 |
+| Q-002 | **(a)** orchestration.yaml additive bump 1.0.0 → 1.1.0 + `rust_sdk_status` body field + REVIEW.md KEEP-WITH-CHANGES row; `default: dbos` UNCHANGED, recorded language-conditional | ADR-B85-005 |
+| Q-003 | **(a)** `2.0.0.yaml` `dbos-embedded` `status: deferred` + `note:` + delta `note:`; keeps b8-3 (17 L1) + b8-3b (12 L1) GREEN (status/note ∉ {version,pin,image}; no `^\d+\.\d+` scalar); NO companion b8-3 test update | ADR-B85-006 |
+| Q-004 | verify-then-pin SHAPE recorded (`pgvector/pgvector:VERIFY_THEN_PIN`, pg17-family, init-SQL); concrete tag LIVE at `/forge:implement` | ADR-B85-003 |
+
 ## Q-001: Datastore template shape (dev-compose fragment vs +K8s)
 
-- **Status**: open
+- **Status**: answered
 - **Raised in**: `proposal.md` (ADR-B85-002 seed), `specs.md` FR-B85-010/013
 - **Raised on**: 2026-05-31
 - **Raised by**: author (b8-5 specify pass)
@@ -41,15 +56,28 @@ wired elsewhere? And what exact path under 2.0.0/ does the datastore live at?]`
 
 ### Resolution
 
-- **Resolved on**: _(pending — /forge:design, INDEPENDENT reviewer + maintainer)_
-- **Decision**: _(pending)_
-- **Rationale**: _(pending)_
+- **Resolved on**: 2026-05-31 (/forge:design — maintainer; INDEPENDENT reviewer ratifies before /forge:plan)
+- **Decision**: **(a)** Dev-compose fragment + init-SQL, **NO k8s**. The 2.0.0
+  datastore ships under `.forge/templates/archetypes/full-stack-monorepo/2.0.0/infra/postgres/`
+  as three files: `docker-compose.fragment.yml.tmpl` (a `fsm-db` Postgres-17 +
+  pgvector dev service mirroring the 1.0.0 `fsm-db` shape, with a verify-then-pin
+  image placeholder), `init-pgvector.sql.tmpl` (`CREATE EXTENSION IF NOT EXISTS
+  vector;` via `docker-entrypoint-initdb.d`), and `README.md.tmpl`. No K8s
+  Postgres StatefulSet is added. (ADR-B85-001 / ADR-B85-002.)
+- **Rationale**: The live 1.0.0 datastore is pinned ONLY in the dev compose
+  (`docker-compose.dev.yml.tmpl:38`, `postgres:16-alpine`); `infra/k8s/base/`
+  carries NO Postgres StatefulSet (the live 1.0.0 prod DB is external/managed).
+  Mirroring the 1.0.0 datastore footprint means a dev-compose + init-SQL delta in
+  the B.8.4 versioned subtree — the smallest additive, freeze-safe delta over the
+  only existing datastore manifest. A K8s StatefulSet would introduce a new
+  surface shape with no 1.0.0 analogue to mirror; it belongs to a later
+  prod-hardening brick if ever needed.
 
 ---
 
 ## Q-002: orchestration.yaml DBOS-deferral representation (version bump + body field vs frontmatter note)
 
-- **Status**: open
+- **Status**: answered
 - **Raised in**: `proposal.md` (ADR-B85-005 seed), `specs.md` FR-B85-003/004
 - **Raised on**: 2026-05-31
 - **Raised by**: author (b8-5 specify pass)
@@ -80,15 +108,32 @@ but no REVIEW.md ledger event)? In both cases default: dbos is UNCHANGED.]`
 
 ### Resolution
 
-- **Resolved on**: _(pending — /forge:design, INDEPENDENT reviewer + maintainer)_
-- **Decision**: _(pending)_
-- **Rationale**: _(pending)_
+- **Resolved on**: 2026-05-31 (/forge:design — maintainer; INDEPENDENT reviewer ratifies before /forge:plan)
+- **Decision**: **(a)** Additive version bump 1.0.0 → 1.1.0 + a body field +
+  a REVIEW.md KEEP-WITH-CHANGES row (the `transport.yaml` additive-bump
+  precedent). The body field is a top-level `rust_sdk_status.dbos` block
+  (`available: false`, `verified: 2026-05-31`, `rust_flagship_orchestrator:
+  temporal`, `default_is_language_conditional: true`, `note:` prose). Frontmatter
+  resets `last_reviewed: 2026-05-31` / `expires_at: 2027-05-31` (FR-J7-021
+  ordering), keeps `exception_constitutional: false` (FR-J7-020). `default: dbos`
+  is UNCHANGED but recorded as a **language-conditional** aspirational non-Rust
+  target (not a live Rust selection). (ADR-B85-005.)
+- **Rationale**: Full standards-lifecycle traceability (J.7 + append-only
+  ledger) over a frontmatter-only note, mirroring `transport.yaml` 1.0.0 → 1.1.0.
+  The bump keeps `validate-standards-yaml.sh` GREEN in dir-mode: the MANDATORY
+  REVIEW.md `| orchestration.yaml | 1.1.0 |` row satisfies FR-J7-023 (without it
+  the validator FAILs); `2027-05-31 > 2026-05-31` satisfies FR-J7-021 (the
+  canonical enforcement pair); dated expiry ⇒ `exc:false` satisfies FR-J7-020.
+  The additive body field is allowed by root `additionalProperties: true`
+  (gateway.yaml/observability.yaml precedent). Per the review, the language-
+  conditional nature of `default: dbos` is recorded explicitly in the body field,
+  not merely left "unchanged."
 
 ---
 
 ## Q-003: 2.0.0.yaml dbos-deferred annotation shape (b8-3 / b8-3b coupling)
 
-- **Status**: open
+- **Status**: answered
 - **Raised in**: `proposal.md` (ADR-B85-006 seed), `specs.md` FR-B85-005/006
 - **Raised on**: 2026-05-31
 - **Raised by**: author (b8-5 specify pass)
@@ -131,15 +176,32 @@ need a companion test update?]`
 
 ### Resolution
 
-- **Resolved on**: _(pending — /forge:design, INDEPENDENT reviewer + maintainer)_
-- **Decision**: _(pending)_
-- **Rationale**: _(pending)_
+- **Resolved on**: 2026-05-31 (/forge:design — maintainer; INDEPENDENT reviewer ratifies before /forge:plan)
+- **Decision**: **(a)** `status: deferred` + `note:` (free-text prose) on the
+  `dbos-embedded` component, plus a `note:` on the `temporal-intent →
+  dbos-embedded` migration_delta. The `postgres-17-pgvector` component, its
+  `migration_note`, and the `postgres-16-no-pgvector → postgres-17-pgvector`
+  delta are left INTACT (the postgres delta is actively delivered, NOT deferred).
+  **NO companion b8-3 test update** — the deferral is asserted positively by the
+  new `b8-5.test.sh` (T-006/T-010), not b8-3. (ADR-B85-006.)
+- **Rationale**: Confirmed against b8-3.test.sh source (lines 104-162): `status`
+  and `note` are NOT in the forbidden key-set `{version, pin, image}` (T-012 does
+  an exact `set(c.keys()) & forbidden` intersection); `status: deferred` and the
+  `note:` prose are direct scalars that do NOT start with `^\d+\.\d+` (T-015 is a
+  `version_re.match` value-walk over `components` direct scalars only — the
+  drafting rule is that the `note:` must not BEGIN with a version token; the
+  mid-string `2026-05-31` is safe). The delta `note:` lives under
+  `migration_deltas`, which T-015 does NOT walk. `standard:` refs stay (T-011),
+  `name` stays (T-010), the postgres `migration_note` + postgres-16 delta stay
+  (T-016). b8-3 (17/17) + b8-3b (12/12) stay GREEN; the b8-5 harness re-runs both
+  exit-code-only as a coupling guard (T-009). Smallest additive candidate-shape
+  extension; the candidate (not the frozen schema.yaml) is editable.
 
 ---
 
 ## Q-004: Concrete pgvector image tag + extension-enable mechanism (verify-then-pin)
 
-- **Status**: open
+- **Status**: answered (shape recorded; concrete tag deferred to /forge:implement)
 - **Raised in**: `proposal.md` (ADR-B85-003 seed), `specs.md` FR-B85-011/012/030,
   NFR-B85-005, Context7 Evidence
 - **Raised on**: 2026-05-31
@@ -172,7 +234,25 @@ kong/b8-coroot/b8-signoz verify-then-pin lesson).]`
 
 ### Resolution
 
-- **Resolved on**: _(pending — /forge:design records the verify procedure +
-  shape; /forge:implement performs the LIVE pin)_
-- **Decision**: _(pending)_
-- **Rationale**: _(pending)_
+- **Resolved on**: 2026-05-31 (/forge:design records the verify procedure + shape;
+  /forge:implement performs the LIVE pin — INDEPENDENT reviewer ratifies the
+  design before /forge:plan)
+- **Decision**: Verify-then-pin SHAPE recorded; concrete tag NOT pinned here.
+  Image FAMILY = `pgvector/pgvector:pg17`-family (Postgres major 17). In
+  `docker-compose.fragment.yml.tmpl` the `image:` is the placeholder token
+  `pgvector/pgvector:VERIFY_THEN_PIN` (carries Postgres-major-17 intent in a
+  comment, asserts NO concrete distro tag). Extension-enable mechanism =
+  init-SQL (`init-pgvector.sql.tmpl`, `CREATE EXTENSION IF NOT EXISTS vector;`)
+  mounted into `docker-entrypoint-initdb.d`. Extension version target =
+  `pgvector-0.8` (policy: persistence.yaml, NOT inline). The concrete tag
+  (distro suffix; `pg17` vs `pg17-trixie`) is resolved LIVE at `/forge:implement`
+  via `docker manifest inspect` / Docker Hub tag listing, the digest recorded in
+  `evidence.md`, and the `VERIFY_THEN_PIN` token replaced with the verified tag.
+  (ADR-B85-003.)
+- **Rationale**: This is a verify-then-pin item, not a multiple-choice design
+  decision (kong / b8-coroot / b8-signoz lesson + Article III.4). The design
+  fixes the FAMILY + the extension-enable shape + the verification procedure; the
+  implementation phase performs the live check and pins. No concrete tag is
+  asserted as registry-verified in design (NFR-B85-005). If the live registry
+  lacks a `pg17`-family pgvector image at implement, the impl surfaces
+  `[NEEDS CLARIFICATION]` rather than guessing.

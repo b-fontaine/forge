@@ -1,5 +1,5 @@
 name: b8-5-postgres-pgvector
-status: specified
+status: designed
 created: 2026-05-31
 schema: default
 constitution_version: "1.1.0"
@@ -11,3 +11,4 @@ depends_on:
 timeline:
   proposed: 2026-05-31
   specified: 2026-05-31
+  designed: 2026-05-31

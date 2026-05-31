@@ -92,7 +92,7 @@ a `pin_review_cadence` for verify-then-pin freshness; the `2.0.0.yaml`
 placeholder until live verification). **Critical ordering coupling** with b8-3 /
 b8-3b harnesses — see "Implementation Ordering" below.
 
-**Compliance**: Article X (J.7 standard contract); FR-B84-030/031/032; b8-3
+**Compliance**: `standards-lifecycle.md` (J.7 standard contract); Article XII (Governance); FR-B84-030/031/032; b8-3
 T-011 (ref resolves) + T-012 (`standard:`/`pin_source` are not forbidden keys).
 
 ### ADR-B84-003 — Hybrid delivery: Helm for the control-plane install, kustomize-native manifests for the data-plane
