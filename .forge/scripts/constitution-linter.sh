@@ -799,7 +799,7 @@ REMEDIATION = {
     "firebase-auth":   "replace with Zitadel (identity.yaml::default) or downgrade tier",
     "auth0-saas-us":   "replace with Zitadel or self-hosted Keycloak / Authentik",
     "datadog":         "replace with SigNoz + OBI eBPF (observability.yaml::backend) or downgrade tier",
-    "inngest":         "replace with DBOS (orchestration.yaml::default) or Temporal fallback",
+    "inngest":         "replace with Temporal (orchestration.yaml::default_by_language.rust, §VIII.2) ; DBOS is a future-option pending a Rust SDK",
     "firebase":        "remove ; Firebase disqualified at all EU tiers per compliance-tiers.md §10.2",
     "aws-managed":     "replace with self-host EU / OVHcloud / Scaleway / Outscale (T3)",
 }

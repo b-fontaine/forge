@@ -687,3 +687,28 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   retaining Temporal (a compliance positive over the abandoned DBOS plan, which
   would have replaced Temporal and thus needed the B.8.14 VIII.2 amendment).
   Evidence: `.forge/changes/b8-5-postgres-pgvector/evidence.md`.
+
+---
+
+## 2026-06-01 — Updated orchestration.yaml to v1.2.0 (b8-orchestration-temporal-realign)
+
+- **Reviewer**: @bfontaine
+- **Reviewed standards**:
+
+  | Standard           | Version | Decision          | Next review due | Notes                                                                                                                                                                                                                                                                                                                                       |
+  |--------------------|---------|-------------------|-----------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+  | orchestration.yaml | 1.2.0   | KEEP-WITH-CHANGES | 2027-05-31      | Additive. Reconciles the default with Constitution §VIII.2 (Temporal). Replaces flat `default: dbos`/`fallback`/`fallback_trigger` with `default_by_language: { rust: temporal }`; folds the v1.1.0 `rust_sdk_status.dbos` facts into a `dbos:` watch-list `future-option` block (`available: false`); adds a `temporal:` crate-family block (`temporalio-sdk`, `stability: pre-alpha` — NO version, verify-then-pin downstream). ADR-002's Temporal→DBOS swap CANCELLED for Rust (ADR-B8O-001). |
+
+- **Decision**: KEEP-WITH-CHANGES
+- **Next review due**: 2027-05-31
+- **Notes**: Updated by `b8-orchestration-temporal-realign` (B.8.5 follow-on).
+  Additive minor bump (transport.yaml precedent). `exception_constitutional: false`
+  preserved (dated expiry, FR-J7-020); `last_reviewed` resets to 2026-06-01,
+  `expires_at` 2027-05-31 (FR-J7-021 ordering). **No constitutional amendment** —
+  §VIII.2 already mandates Temporal, so making Temporal the Rust default ALIGNS the
+  standard with the Constitution (contrast B.8.4 VIII.1 Kong→Envoy, which needs a
+  deferred amendment). DBOS demoted from default to a watch-list future-option, NOT
+  deleted — re-evaluate if a production-grade Rust DBOS SDK ships. Crate verify-then-pin
+  (LIVE 2026-06-01): `temporalio-sdk = 0.4.0` (crates.io), API realigned in
+  `infra/temporal.md`. Evidence:
+  `.forge/changes/b8-orchestration-temporal-realign/evidence.md`.

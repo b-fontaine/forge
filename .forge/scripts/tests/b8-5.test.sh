@@ -10,12 +10,12 @@
 #   T-004  fragment mirrors 1.0.0 fsm-db shape (pg_isready, named vol, env)     (FR-B85-013, ADR-B85-002)
 #   T-005  anti-hallucination image grep-guard (VERIFY_THEN_PIN OR :pg17; no    (NFR-B85-005, FR-B85-030, ADR-B85-003)
 #          non-pg17 / postgres:16 literal leaked into the 2.0.0 postgres tree)
-#   T-006  orchestration.yaml records DBOS-Rust deferral + default:dbos kept    (FR-B85-054/005, ADR-B85-005/006)
-#          AND 2.0.0.yaml dbos-embedded status: deferred
+#   T-006  [REPURPOSED b8o] orchestration.yaml dbos:future-option (available:false)+ (ADR-B8O-002/003, FR-B8O-010/017)
+#          default_by_language.rust:temporal (no flat default:); 2.0.0 dbos-embedded status:future-option
 #   T-007  orchestration.yaml passes J.7 DIRECTORY mode + REVIEW.md 1.1.0 row   (FR-B85-054/004, ADR-B85-005)
 #   T-008  2.0.0.yaml postgres comp refs persistence.yaml (resolves) + no pin   (FR-B85-053/021, ADR-B85-004)
 #   T-009  coupling guard: b8-3 (17/17) + b8-3b (12/12) stay GREEN (exit-code)  (NFR-B85-004, FR-B85-056)
-#   T-010  2.0.0.yaml temporal->dbos delta deferred + postgres-16 delta intact  (FR-B85-055/014, ADR-B85-006)
+#   T-010  [REPURPOSED b8o] 2.0.0 temporal->dbos delta cancelled:true + pg16 intact (FR-B8O-011/017, ADR-B8O-003)
 #   T-011  additive — flat 1.0.0 postgres:16-alpine + frozen schema.yaml intact (FR-B85-056, NFR-B85-003)
 #   T-012  anti-hallucination: NO dbos crate / Cargo.toml dbos / DBOSContext    (NFR-B85-001, FR-B85-030)
 #
@@ -146,18 +146,28 @@ _test_b85_l1_005_image_anti_hallucination() {
 }
 
 _test_b85_l1_006_dbos_deferral_recorded() {
+  # REPURPOSED by b8-orchestration-temporal-realign (ADR-B8O-002/003): the B.8.5
+  # interim ("default: dbos" kept + dbos-embedded status: deferred) is SUPERSEDED.
+  # This guard now protects the realigned invariant — Temporal is the Rust default,
+  # DBOS is a future-option. (Was: rust_sdk_status block + default:dbos kept +
+  # status:deferred.)
   local ok=1
-  # orchestration.yaml records the DBOS-Rust deferral.
-  grep -qF 'rust_sdk_status' "$ORCH_STD" \
-    || { echo "    FAIL T-006: orchestration.yaml has no rust_sdk_status block (FR-B85-003, ADR-B85-005)" >&2; ok=0; }
+  # orchestration.yaml: DBOS demoted to a future-option block (folds the former
+  # rust_sdk_status facts), still recording available: false (no Rust SDK).
+  grep -qE '^dbos:' "$ORCH_STD" \
+    || { echo "    FAIL T-006: orchestration.yaml has no dbos: future-option block (ADR-B8O-002)" >&2; ok=0; }
   grep -qE 'available:[[:space:]]*false' "$ORCH_STD" \
-    || { echo "    FAIL T-006: orchestration.yaml rust_sdk_status does not record available: false (FR-B85-003)" >&2; ok=0; }
-  # default: dbos is UNCHANGED in VALUE (language-conditional aspirational
-  # target). The value must remain `dbos`; an optional trailing #comment is
-  # permitted (the bump annotates it inline but does not change the value).
-  grep -qE '^default:[[:space:]]*dbos[[:space:]]*(#.*)?$' "$ORCH_STD" \
-    || { echo "    FAIL T-006: orchestration.yaml 'default: dbos' value was changed (must stay unchanged) (ADR-B85-005)" >&2; ok=0; }
-  # 2.0.0.yaml dbos-embedded carries status: deferred.
+    || { echo "    FAIL T-006: orchestration.yaml dbos block does not record available: false (ADR-B8O-002)" >&2; ok=0; }
+  # Temporal is the Rust default (Constitution §VIII.2): default_by_language.rust == temporal.
+  grep -qE '^default_by_language:' "$ORCH_STD" \
+    || { echo "    FAIL T-006: orchestration.yaml has no default_by_language map (ADR-B8O-002)" >&2; ok=0; }
+  grep -qE '^[[:space:]]+rust:[[:space:]]*temporal([[:space:]].*)?$' "$ORCH_STD" \
+    || { echo "    FAIL T-006: orchestration.yaml default_by_language.rust != temporal (ADR-B8O-001)" >&2; ok=0; }
+  # The flat 'default: dbos' MUST be gone (superseded by the language map).
+  if grep -qE '^default:[[:space:]]' "$ORCH_STD"; then
+    echo "    FAIL T-006: flat 'default:' key still present — superseded by default_by_language (ADR-B8O-002)" >&2; ok=0
+  fi
+  # 2.0.0.yaml dbos-embedded carries status: future-option (was: deferred).
   local out
   out=$(python3 - "$SCHEMA_20" <<'PY'
 import sys, yaml
@@ -172,10 +182,10 @@ print("NO_DBOS" if c is None else f"status={c.get('status','MISSING')}")
 PY
 )
   case "$out" in
-    ERR:*)   echo "    FAIL T-006: 2.0.0.yaml parse error — ${out#ERR:} (FR-B85-005)" >&2; ok=0 ;;
-    NO_DBOS) echo "    FAIL T-006: no dbos-embedded component in 2.0.0.yaml (FR-B85-005)" >&2; ok=0 ;;
-    status=deferred) ;;
-    *) echo "    FAIL T-006: dbos-embedded $out != status=deferred (ADR-B85-006)" >&2; ok=0 ;;
+    ERR:*)   echo "    FAIL T-006: 2.0.0.yaml parse error — ${out#ERR:} (FR-B8O-010)" >&2; ok=0 ;;
+    NO_DBOS) echo "    FAIL T-006: no dbos-embedded component in 2.0.0.yaml (FR-B8O-010)" >&2; ok=0 ;;
+    status=future-option) ;;
+    *) echo "    FAIL T-006: dbos-embedded $out != status=future-option (ADR-B8O-003)" >&2; ok=0 ;;
   esac
   [ "$ok" = "1" ]
 }
@@ -250,6 +260,9 @@ _test_b85_l1_009_sibling_harness_coupling() {
 }
 
 _test_b85_l1_010_deltas_deferred_and_intact() {
+  # REPURPOSED by b8-orchestration-temporal-realign (ADR-B8O-003): the temporal->dbos
+  # delta is now CANCELLED (the Temporal→DBOS swap does not proceed), not "deferred".
+  # Guard the cancelled-state invariant + the postgres-16 delta intactness.
   local out
   out=$(python3 - "$SCHEMA_20" <<'PY'
 import sys, yaml
@@ -260,24 +273,23 @@ except Exception as e:
     print(f"ERR:{e}"); sys.exit(0)
 deltas = d.get('migration_deltas', []) if isinstance(d, dict) else []
 tdb = next((x for x in deltas if isinstance(x, dict) and x.get('to') == 'dbos-embedded'), None)
-tnote = (tdb or {}).get('note', '') if tdb else 'NO_DELTA'
+tcancelled = (tdb or {}).get('cancelled', 'MISSING') if tdb else 'NO_DELTA'
 pg16 = any(isinstance(x, dict) and str(x.get('from','')).startswith('postgres-16') for x in deltas)
-print(f"temporal_note={tnote}")
+print(f"temporal_cancelled={tcancelled}")
 print(f"pg16_delta={pg16}")
 PY
 )
   case "$out" in
-    ERR:*) echo "    FAIL T-010: 2.0.0.yaml parse error — ${out#ERR:} (FR-B85-055)" >&2; return 1 ;;
+    ERR:*) echo "    FAIL T-010: 2.0.0.yaml parse error — ${out#ERR:} (FR-B8O-011)" >&2; return 1 ;;
   esac
-  local tnote pg16 ok=1
-  tnote=$(printf '%s' "$out" | grep '^temporal_note=' | cut -d= -f2-)
+  local tcancelled pg16 ok=1
+  tcancelled=$(printf '%s' "$out" | grep '^temporal_cancelled=' | cut -d= -f2-)
   pg16=$(printf '%s' "$out" | grep '^pg16_delta=' | cut -d= -f2-)
-  # The temporal->dbos delta is annotated deferred (note containing DEFERRED or
-  # the no-Rust-SDK reason).
-  case "$tnote" in
-    *DEFERRED*|*"no Rust SDK"*|*"no rust sdk"*) ;;
-    NO_DELTA) echo "    FAIL T-010: no temporal-intent->dbos-embedded migration_delta (FR-B85-055)" >&2; ok=0 ;;
-    *) echo "    FAIL T-010: temporal->dbos delta note not marked deferred: '$tnote' (FR-B85-055)" >&2; ok=0 ;;
+  # The temporal->dbos delta is annotated CANCELLED (swap does not proceed; ADR-B8O-001).
+  case "$tcancelled" in
+    True|true) ;;
+    NO_DELTA) echo "    FAIL T-010: no temporal-intent->dbos-embedded migration_delta (FR-B8O-011)" >&2; ok=0 ;;
+    *) echo "    FAIL T-010: temporal->dbos delta not marked cancelled: true (got '$tcancelled') (FR-B8O-011)" >&2; ok=0 ;;
   esac
   # The postgres-16 delta is INTACT (still present, actively delivered).
   [ "$pg16" = "True" ] || { echo "    FAIL T-010: postgres-16-no-pgvector delta missing — must stay intact (FR-B85-014)" >&2; ok=0; }

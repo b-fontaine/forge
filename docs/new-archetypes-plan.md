@@ -2288,6 +2288,16 @@ Migration **additive d'abord, breaking ensuite** :
   `2.0.0.yaml` `dbos-embedded` component + delta annotated `status: deferred`, `b8-signoz.
   test.sh` mirror-count check made version-aware, `b8-5.test.sh` 12 L1 hermetic, independent
   review APPROVE, archived 2026-05-31. **DBOS-in-Rust revisit when/if a Rust SDK ships.**
+  **FINALISED 2026-06-01 via `b8-orchestration-temporal-realign` (B8O follow-on):** the
+  orchestration default is reconciled with Constitution §VIII.2 — `orchestration.yaml`
+  v1.1.0 → **v1.2.0** replaces the flat `default: dbos` with `default_by_language:
+  { rust: temporal }`; **DBOS demoted from default to a watch-list `future-option`**
+  (NOT deleted; `requires: rust-sdk-ga`); the `2.0.0.yaml` `temporal-intent →
+  dbos-embedded` delta is marked `cancelled: true` (the swap does not proceed) and
+  `dbos-embedded` → `status: future-option`; `infra/temporal.md` realigned to the real
+  `temporalio-sdk = 0.4.0` API (pre-alpha; verify-then-pin). ADR-002's Temporal→DBOS
+  swap is CANCELLED for Rust (ADR-B8O-001); no Constitution amendment (§VIII.2 already
+  mandates Temporal). The DBOS-templates premise below is **struck**.
 - **B.8.6.** Templates Connect-RPC : `buf.gen.yaml` étendu avec
   `protoc-gen-connect-go`, `protoc-gen-connect-es`, `protoc-gen-connect-dart-community`.
   `tonic-build` continue côté serveur Rust (compat native). Effort : `M`.
@@ -2302,7 +2312,8 @@ Migration **additive d'abord, breaking ensuite** :
   Flutter Web reste en `web-backoffice/`. Janus arbitre les deux. Effort : `L`.
 - **B.8.10.** Migration scripts `bin/forge-migrate-flagship.sh` orchestrant les 4 phases
   ARCHITECTURE-TARGET §11 (Phase 0 audit, Phase 1 obs+contrats, Phase 2 bascule
-  Envoy/DBOS/Bloc, Phase 3 nouveaux archétypes, Phase 4 deprecation). Hooks dans
+  Envoy/Bloc — **DBOS leg dropped per B8O** (Temporal retained, nothing to bascule),
+  Phase 3 nouveaux archétypes, Phase 4 deprecation). Hooks dans
   `forge upgrade`. Effort : `L`.
 - **B.8.11.** Linter `no-state-management-alternatives` (Hera) — refuse tout import
   Flutter de `flutter_riverpod`, `riverpod`, `provider`, `get`, `getx`, `mobx`,
@@ -2312,7 +2323,8 @@ Migration **additive d'abord, breaking ensuite** :
 - **B.8.13.** Critères de rollback documentés (ARCHITECTURE-TARGET §11.3) :
     - p99 augmente > 20 % après Envoy → rollback Kong.
     - Erreurs traceparent > 1 % → rollback OTel SDK seul.
-    - DBOS Postgres saturé > 70 % CPU → fallback Temporal pour workflows lourds.
+    - ~~DBOS Postgres saturé > 70 % CPU → fallback Temporal pour workflows lourds.~~
+      **REMOVED per B8O** — moot: Temporal is the orchestrator (no DBOS leg to roll back to).
       Effort : `S`.
 - **B.8.14.** Bump schema `1.0.0` → `2.0.0` + amendement Constitution si nécessaire
   (Article XII). Annoncer la deprecation 1.0.0 à T+6 mois (CHANGELOG + `GOVERNANCE.md`
@@ -2389,9 +2401,14 @@ fallback natif si push critique.
   avec phases `event-design` (specs AsyncAPI 3.1 avant design) et
   `saga-orchestration` (workflows Temporal). Effort : `S`.
 - **B.6.2.** Scaffolder `/forge:init --archetype event-driven-eu` : workspace Rust
-  (axum + async-nats + tonic + Temporal Go SDK via FFI ou client REST), NATS JetStream
-  cluster Helm chart, AsyncAPI 3.1 in `shared/asyncapi/`, Postgres event store, Temporal
-  cluster optionnel. Effort : `L`.
+  (axum + async-nats + tonic + Temporal via the **native Rust SDK** `temporalio-sdk`),
+  NATS JetStream cluster Helm chart, AsyncAPI 3.1 in `shared/asyncapi/`, Postgres event
+  store, Temporal cluster optionnel. Effort : `L`.
+  **B8O note (2026-06-01):** the original "Temporal Go SDK via FFI ou client REST" idea
+  is superseded — an official native Rust SDK exists (`temporalio-sdk = 0.4.0`), so B.6
+  uses it directly (no Go FFI / REST bridge). **Caveat:** the native crate is **pre-alpha**
+  (workflow API "very unstable"); prefer activity-only workers where possible and pin
+  exactly. Shares `infra/temporal.md` (realigned by B8O) with the flagship.
 - **B.6.3.** Standards :
     - `standards/global/event-driven.md` — patterns saga / process manager / outbox /
       inbox, idempotency keys, event versioning.

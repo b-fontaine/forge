@@ -1,11 +1,13 @@
 # Forge Standard — Workflow orchestration
-# Audit: T.4 (t4-adr-ratification, 2026-05-04)
-# Ratifies: ADR-002 from docs/ARCHITECTURE-TARGET.md
+# Audit: T.4 (t4-adr-ratification, 2026-05-04); reconciled with Constitution §VIII.2 by
+#        b8-orchestration-temporal-realign (B.8.5 follow-on, 2026-06-01).
+# Ratifies: ADR-002 (docs/ARCHITECTURE-TARGET.md) — its Temporal→DBOS swap is CANCELLED
+#           for Rust by ADR-B8O-001 (DBOS has no Rust SDK; §VIII.2 mandates Temporal).
 
-version: "1.1.0"           # B.8.5 — additive bump (DBOS-Rust-deferred record; transport.yaml 1.0.0→1.1.0 precedent)
-last_reviewed: 2026-05-31   # reset (FR-J7-021 ordering: expires_at > last_reviewed)
-expires_at: 2027-05-31      # 12-month cycle reset
-exception_constitutional: false  # dated expiry ⇒ exc:false (FR-J7-020 — unchanged; orchestration.yaml is not structural)
+version: "1.2.0"           # B8O — additive bump: default_by_language map + dbos future-option (was 1.1.0)
+last_reviewed: 2026-06-01   # reset (FR-J7-021 ordering: expires_at > last_reviewed)
+expires_at: 2027-05-31      # 12-month review cycle
+exception_constitutional: false  # dated expiry ⇒ exc:false (FR-J7-020 — orchestration.yaml is not structural)
 linter_rule: null
 enforcement:
   ci_blocking: false
@@ -13,35 +15,41 @@ enforcement:
 forbidden:
   - inngest            # saas-first eu-sovereignty-low
 rationale: |
-  ADR-002. DBOS by default removes one external control plane and yields
-  -50% TCO ops for monorepo workflows. Temporal is reserved for high
-  cross-service volume (event-driven-eu archetype, B.6).
+  Constitution §VIII.2 mandates Temporal for workflow orchestration. ADR-002's
+  proposed Temporal→DBOS default is CANCELLED for Rust (ADR-B8O-001): DBOS has no
+  Rust SDK and Forge backends are Rust end-to-end, so a DBOS default is
+  unbuildable — it delivers none of its rationale (embedded library, your-existing-
+  Postgres, -1 control plane) without a Rust library. Temporal is therefore the
+  default-by-language for Rust; DBOS is retained as a watch-list future-option
+  pending a production-grade Rust DBOS SDK. Temporal also serves event-driven-eu
+  (B.6) and ai-native-rag (B.7).
 
-default: dbos              # UNCHANGED — language-conditional aspirational target (see rust_sdk_status)
-fallback: temporal
-fallback_trigger: "workflow_volume_per_day_gt_10000 OR cross_service_count_gt_10"
+# ── Orchestration default is language-conditional, anchored on Constitution §VIII.2 (Temporal).
+#    default_by_language REPLACES the former flat `default: dbos` (+ `fallback`/`fallback_trigger`),
+#    which named an orchestrator with no Rust SDK. (ADR-B8O-002.) ──
+default_by_language:
+  rust: temporal          # Constitution §VIII.2 — SHALL use Temporal. The only backend language Forge ships.
 
-# ── B.8.5 (b8-5-postgres-pgvector) — additive body field (root additionalProperties:true;
-#    gateway.yaml/observability.yaml versions:/pin_review_cadence: precedent). Records the
-#    DBOS-Rust-absent finding so `default: dbos` above is read as language-conditional,
-#    not a live Rust selection. Verified 2026-05-31 (Context7 docs.dbos.dev; crates.io dbos 404). ──
-rust_sdk_status:
-  dbos:
-    available: false        # DBOS has NO Rust SDK (verified 2026-05-31)
-    verified: 2026-05-31
-    evidence: >
-      crates.io has no `dbos` crate (cargo add dbos -> 404). DBOS Transact
-      ships SDKs for Python, TypeScript, Go, and Java/Kotlin only (Context7
-      docs.dbos.dev quickstart + explanations/portable-workflows). The
-      crates.io alternatives are too immature for the flagship. There is no
-      `dbos` crate to pin and no DBOSContext to scaffold for a Rust backend today.
-    rust_flagship_orchestrator: temporal   # RETAINED until a Rust DBOS SDK ships (Article VIII.2 preserved)
-    default_is_language_conditional: true
-    note: >
-      `default: dbos` above is a LANGUAGE-CONDITIONAL aspirational target for
-      non-Rust contexts (Python/TypeScript/Go/Java, where a DBOS SDK exists).
-      It is NOT an active selection for the Rust flagship: for Rust, Temporal
-      is the orchestrator (fallback: temporal applies; Article VIII.2 Temporal
-      SHALL preserved, no amendment). `default: dbos` is therefore left
-      UNCHANGED but is explicitly recorded here as aspirational/non-Rust, not
-      a deployed Rust default.
+# ── DBOS — watch-list future-option, NOT a default (ADR-B8O-001/002). NOT deleted: the door stays
+#    open if a production-grade Rust DBOS SDK ships. Folds the former v1.1.0 rust_sdk_status.dbos facts. ──
+dbos:
+  status: future-option
+  available: false        # DBOS has NO Rust SDK (crates.io `dbos` 404; verified 2026-06-01)
+  verified: 2026-06-01
+  requires: rust-sdk-ga   # a production-grade Rust DBOS SDK reaching GA
+  revisit: 2027-05-31     # = expires_at (standard review cadence)
+  evidence: >
+    crates.io has no `dbos` crate (`cargo add dbos` -> 404). DBOS Transact ships SDKs
+    for Python, TypeScript, Go, and Java/Kotlin only (docs.dbos.dev). There is no
+    `dbos` crate to pin and no DBOSContext to scaffold for a Rust backend today.
+  note: >
+    `default_by_language.rust: temporal` is the live default (Article VIII.2). DBOS was
+    ADR-002's proposed default but is unbuildable in Rust; retained here as a
+    future-option, superseded as default by ADR-B8O-001. Re-evaluate at `revisit`.
+
+# ── Temporal — the Rust default orchestrator (Article VIII.2). Crate FAMILY only here; the
+#    concrete version is verify-then-pin in the worker-template Cargo.toml (downstream brick) —
+#    see b8-orchestration-temporal-realign evidence.md §1/§2. ──
+temporal:
+  crate_family: temporalio-sdk   # official native Rust SDK (imports temporalio_sdk); client crate: temporalio-client
+  stability: pre-alpha           # docs.rs: activity-only worker most stable; workflow worker API still very unstable — see infra/temporal.md

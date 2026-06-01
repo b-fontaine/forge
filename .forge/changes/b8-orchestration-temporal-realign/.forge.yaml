@@ -1,0 +1,18 @@
+name: b8-orchestration-temporal-realign
+status: archived
+created: 2026-05-31
+schema: default
+constitution_version: "1.1.0"
+parent_audit_items:
+  - B.8.5  # docs/new-archetypes-plan.md §4.2 — orchestration-default FOLLOW-ON that b8-5-postgres-pgvector explicitly deferred. b8-5 left orchestration.yaml `default: dbos` standing (annotated "language-conditional", v1.1.0 rust_sdk_status block) and 2.0.0.yaml dbos-embedded `status: deferred`. This change FINALISES the orchestration decision: DBOS has no Rust SDK (crates.io dbos 404; SDKs = Python/TS/Go/Java/Kotlin only) and Forge backends are Rust end-to-end, so `default: dbos` is unbuildable. Maintainer DECISION (C-map + DBOS watch-list, 2026-05-31): reconcile orchestration.yaml with Constitution Article VIII.2 (which already mandates Temporal), make Temporal the real default-by-language for Rust, demote DBOS to a watch-list future-option (NOT deleted).
+depends_on:
+  - B.8.5  # orchestration.yaml v1.1.0 (rust_sdk_status.dbos block; `default: dbos` + `fallback: temporal`) + 2.0.0.yaml dbos-embedded { status: deferred } + the temporal-intent → dbos-embedded migration_delta this change reclassifies/cancels
+  - B.8.3  # 2.0.0 candidate schema (.forge/schemas/full-stack-monorepo/2.0.0.yaml) + b8-3.test.sh coupling (forbidden keys {version,pin,image}; no `^\d+\.\d+` scalar; standard refs resolve; name present; postgres delta intact) — must stay 17/17 GREEN
+  - B.8.3.b # b8-3b.test.sh versioned-schema discovery (12/12) — must stay GREEN after the 2.0.0.yaml candidate edit
+timeline:
+  proposed: 2026-05-31
+  specified: 2026-06-01
+  designed: 2026-06-01
+  planned: 2026-06-01
+  implemented: 2026-06-01
+  archived: 2026-06-01

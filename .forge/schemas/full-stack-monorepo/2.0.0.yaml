@@ -71,15 +71,15 @@ components:
 
   - name: dbos-embedded
     role: workflow-orchestration
-    replaces: temporal-intent  # 1.0.0 baseline: doc-only, not deployed (B8-BASELINE §4)
     delivered_by: B.8.5
-    standard: orchestration.yaml  # default: dbos (language-conditional; see orchestration.yaml rust_sdk_status)
-    status: deferred              # B.8.5 — DBOS has NO Rust SDK (verified 2026-05-31); Temporal RETAINED for the Rust flagship (Article VIII.2 preserved)
+    standard: orchestration.yaml  # default_by_language.rust: temporal (§VIII.2); dbos is a future-option (orchestration.yaml v1.2.0)
+    status: future-option         # B8O — DBOS has NO Rust SDK; NOT replacing Temporal. Watch-list, re-evaluate if a Rust DBOS SDK ships (ADR-B8O-001/003)
     note: >
-      DBOS Transact ships Python/TypeScript/Go/Java only; there is no Rust
-      crate (crates.io dbos 404). For the Rust flagship Temporal is retained
-      until a production-grade Rust DBOS SDK ships. See orchestration.yaml
-      v1.1.0 rust_sdk_status.
+      DBOS Transact ships Python/TypeScript/Go/Java/Kotlin only; there is no Rust
+      crate (crates.io dbos 404). Temporal is the Rust default orchestrator
+      (Constitution §VIII.2; orchestration.yaml v1.2.0 default_by_language.rust).
+      DBOS is retained as a future-option, NOT a pending replacement of Temporal;
+      ADR-002's Temporal→DBOS swap is cancelled for Rust (ADR-B8O-001).
 
   - name: connect-rpc
     role: transport
@@ -120,11 +120,13 @@ migration_deltas:
   - from: temporal-intent     # doc-only, no running system (B8-BASELINE §4)
     to: dbos-embedded
     brick: B.8.5
+    cancelled: true           # B8O — the Temporal→DBOS swap is CANCELLED for Rust (not deferred): DBOS has no Rust SDK; §VIII.2 mandates Temporal (ADR-B8O-001)
     note: >
-      DEFERRED — DBOS has no Rust SDK (verified 2026-05-31); replaces
-      documented intent, not a live workflow system. Temporal retained for
-      the Rust flagship (Article VIII.2 preserved). Re-evaluated when a Rust
-      DBOS SDK ships. See orchestration.yaml v1.1.0 rust_sdk_status.
+      CANCELLED for Rust (no Rust SDK) — ADR-002's Temporal→DBOS swap does not
+      proceed. DBOS Transact has no Rust crate (crates.io dbos 404); Constitution
+      §VIII.2 mandates Temporal, which stays the Rust default. The delta entry is
+      kept (auditable) but marked cancelled; dbos-embedded is a future-option, not
+      a pending replacement. See orchestration.yaml v1.2.0 + ADR-B8O-001.
 
   - from: rest-bridge
     to: connect-rpc

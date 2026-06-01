@@ -12,6 +12,36 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Changed — B.8 orchestration default reconciled with Constitution §VIII.2 (`b8-orchestration-temporal-realign`)
+
+- **Temporal is now the orchestration default for Rust; DBOS demoted to a
+  watch-list future-option.** `orchestration.yaml` v1.1.0 → **v1.2.0** (additive):
+  the flat `default: dbos` / `fallback` / `fallback_trigger` are replaced by
+  `default_by_language: { rust: temporal }` (Constitution §VIII.2 — workflows SHALL
+  use Temporal), and DBOS moves to a `dbos:` `future-option` block
+  (`available: false`, `requires: rust-sdk-ga`, `revisit: 2027-05-31`) — **NOT
+  deleted**. Rationale: DBOS has **no Rust SDK** (crates.io `dbos` 404; Python/TS/
+  Go/Java/Kotlin only), and Forge backends are Rust end-to-end, so `default: dbos`
+  was unbuildable. **No Constitution amendment** — §VIII.2 already mandates Temporal,
+  so this aligns the standard with the Constitution (contrast B.8.4's VIII.1
+  Kong→Envoy). ADR-002's Temporal→DBOS swap is **cancelled for Rust** (ADR-B8O-001).
+- **`2.0.0.yaml` candidate:** `dbos-embedded` → `status: future-option`; the
+  `temporal-intent → dbos-embedded` migration_delta marked `cancelled: true` (kept
+  for audit). b8-3 (17/17) + b8-3b (12/12) stay GREEN.
+- **`infra/temporal.md` realigned** to the real published `temporalio-sdk` 0.4.0 API
+  (attribute macros `temporalio_macros::{workflow,activities}`, `WorkflowContext` /
+  `ActivityContext`, `Worker` / `WorkerOptionsBuilder`), replacing fabricated
+  community-crate symbols. Added a **pre-alpha stability caveat** (native Rust SDK
+  workflow API "very unstable"; activity-only workers are the stable path). Crate
+  version verify-then-pin LIVE 2026-06-01: `temporalio-sdk = 0.4.0`,
+  `temporalio-client = 0.4.0` (crates.io) — pinned in consuming `Cargo.toml`, not
+  the standard. Evidence: `.forge/changes/b8-orchestration-temporal-realign/evidence.md`.
+- **Coupled updates:** `b8-5.test.sh` T-006 + T-010 repurposed to guard the realigned
+  invariants; `constitution-linter.sh` + `forbidden-components-rules.md` T3-RULE-003
+  remediation hints point at Temporal. New harness `b8o.test.sh` (10 L1) registered in
+  `forge-ci.yml`. Roadmap (`docs/new-archetypes-plan.md`) B.8.5/B.8.10/B.8.13/B.6.2
+  deltas applied (B.6 now uses the native Rust SDK, not a Go-SDK FFI/REST bridge).
+
 ### Added — B.8.5 Postgres 17 + pgvector 2.0.0 datastore brick (`b8-5-postgres-pgvector`)
 
 - **2.0.0 datastore delta — Postgres 16 → 17 + pgvector.** New versioned subtree
