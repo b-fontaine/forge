@@ -12,6 +12,8 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+## [0.4.0-rc.9] — 2026-06-02
+
 ### Added — B.8.6 Connect-RPC 2.0.0 transport brick (`b8-6-connect-rpc`)
 
 - **2.0.0 transport delta — modernized Connect-RPC codegen + Rust crate line.**
