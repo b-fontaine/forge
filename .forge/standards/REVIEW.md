@@ -740,3 +740,32 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   comment block records the re-review trigger at the 1.0 milestone. Realised
   alongside the `2.0.0/shared/protos/` + `2.0.0/backend/crates/grpc-api/` template
   subtree. Evidence: `.forge/changes/b8-6-connect-rpc/evidence.md`.
+
+---
+
+## 2026-06-02 — Updated identity.yaml to v1.1.0 (b8-7-zitadel)
+
+- **Reviewer**: @bfontaine
+- **Reviewed standards**:
+
+  | Standard       | Version | Decision          | Next review due | Notes |
+  |----------------|---------|-------------------|-----------------|-------|
+  | identity.yaml  | 1.1.0   | KEEP-WITH-CHANGES | 2027-06-02      | Additive. First `versions:` map (Zitadel chart 10.0.2 / app v4.14.0 / login v4.14.0 — all ghcr.io; chart-tested pair per evidence.md P-15..P-17). Added `pin_review_cadence:` (zitadel_chart P30D, images P12M). `default`/`alternatives`/`forbidden` byte-unchanged. No breaking change. Machine enforcement stays off (`ci_blocking: false`, `linter_rule: null`). |
+
+- **Decision**: KEEP-WITH-CHANGES
+- **Next review due**: 2027-06-02
+- **Notes**: Updated by `b8-7-zitadel` (B.8.7). Additive minor bump (the
+  `gateway.yaml` first-`versions:`-map precedent). `exception_constitutional: false`
+  preserved (dated expiry, FR-J7-020); `last_reviewed` resets to 2026-06-02,
+  `expires_at` to 2027-06-02 (FR-J7-021 ordering). identity.yaml becomes the second
+  standard (after `gateway.yaml`) to carry a `versions:` map — Zitadel becomes a pin
+  source. `default: zitadel`, `alternatives: [keycloak, authentik]`, and
+  `forbidden: [firebase-auth, auth0-saas-us]` are byte-unchanged. No
+  `breaking_change` field added (FR-B87-047). No constitutional amendment. Pins
+  verified LIVE 2026-06-02 — chart-tested pair chart 10.0.2 ↔ appVersion v4.14.0
+  (NOT the newer v4.15.0, which is not chart-tested); registry `ghcr.io` (NOT
+  docker.io, b8-coroot lesson); v-prefix `v4.14.0`. Final re-verify at implement:
+  evidence.md P-15..P-21. Realised alongside the `2.0.0/infra/zitadel/` identity
+  subtree (4 files: values-forge.yaml.tmpl + README.md.tmpl +
+  docker-compose.fragment.yml.tmpl + bootstrap.md.tmpl — chart-referenced hybrid,
+  no kustomization). Evidence: `.forge/changes/b8-7-zitadel/evidence.md`.

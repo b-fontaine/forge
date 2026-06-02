@@ -1,0 +1,130 @@
+<!-- Audit: B.8.7 (b8-7-zitadel, FR-B87-020/024/027) -->
+# Zitadel bootstrap — `<project-name>` (2.0.0 candidate)
+
+Post-deploy bootstrap recipe for the Zitadel IdP introduced by B.8.7. The chart
+does the heavy lifting (first org + admin + machine user via its `setupJob`); this
+doc covers the **FirstInstance contract**, the **OIDC client registration** recipe
+(Admin/Management API), and the **JWT signing-key rotation** posture. All
+credentials are placeholders — **no secret value is committed** (FR-B87-021).
+
+> All endpoints, env-var names, and rotation cadences below were verified LIVE
+> 2026-06-02 against the upstream Zitadel source (evidence.md P-18..P-21). They
+> are NOT fabricated (Article III.4).
+
+## Bootstrap stages (chart-native, ADR-B87-003)
+
+1. **Stage 1 — initJob** (Helm hook weight 1): creates the `zitadel` DB schema,
+   user, and grants on the B.8.5 `fsm-db` Postgres 17 instance. Runs before the
+   main Deployment.
+2. **Stage 2 — setupJob** (Helm hook weight 2, after initJob): runs `zitadel
+   setup` with the `FirstInstance` config from `values-forge.yaml.tmpl` →
+   creates the first organisation, the human admin, and the machine user
+   (`iam-admin`, IAM_OWNER). It writes the machine user's PAT into a **K8s Secret
+   auto-named after the machine `Username`** (e.g. derived from `iam-admin`).
+3. **Stage 3 — Admin API recipe** (below): use the machine-user PAT to register
+   the OIDC client application. This is a documented post-deploy recipe, NOT a
+   shipped K8s Job (the subtree stays minimal).
+
+## FirstInstance contract
+
+The chart wires FirstInstance under `zitadel.configmapConfig.FirstInstance` in
+`values-forge.yaml.tmpl` (evidence.md P-18 / Finding 8). The underlying Zitadel
+binary also accepts the equivalent **top-level** `ZITADEL_FIRSTINSTANCE_*` env
+mirrors (live `cmd/setup/steps.yaml`, P-11) — relevant if you bypass the chart:
+
+| Env var | Settable? | Notes |
+|---------|-----------|-------|
+| `ZITADEL_FIRSTINSTANCE_INSTANCENAME` | ✅ user | instance name |
+| `ZITADEL_FIRSTINSTANCE_ORG_NAME` | ✅ user | first org name |
+| `ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME` | ✅ user | human admin username |
+| `ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD` | ✅ user (env/secret only — never committed) | initial admin password |
+| `ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORDCHANGEREQUIRED` | ✅ user | force change on first login |
+| `ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINE_USERNAME` | ✅ user | machine user (service account) |
+| `ZITADEL_FIRSTINSTANCE_MACHINEKEYPATH` | ⛔ **CHART-MANAGED — do NOT set** | setting it manually is unsupported and will fail the deploy (P-18) |
+| `ZITADEL_FIRSTINSTANCE_PATPATH` | ⛔ **CHART-MANAGED — do NOT set** | the chart auto-generates the PAT into a K8s Secret |
+| `ZITADEL_FIRSTINSTANCE_LOGINCLIENTPATPATH` | ⛔ **CHART-MANAGED — do NOT set** | login-client PAT, chart-managed |
+
+**Note** (P-18 / Finding 8): under the Helm chart, prefer the YAML form
+(`configmapConfig.FirstInstance.*`) over the env mirrors. `MachineKeyPath`,
+`PatPath`, and `LoginClientPatPath` are managed automatically by the chart;
+setting them manually "is not supported and will cause the deployment to fail."
+
+## Retrieve the machine-user PAT
+
+The chart `setupJob` writes the `iam-admin` PAT into a K8s Secret named after the
+machine user's `Username`. Read it (placeholder secret name + key — confirm the
+exact name against your release):
+
+```sh
+# Secret name is derived from the machine Username ('iam-admin') by the chart.
+kubectl get secret <project-name>-zitadel-iam-admin \
+  -o jsonpath='{.data.pat}' | base64 -d > /tmp/zitadel-pat   # do NOT commit
+PAT="$(cat /tmp/zitadel-pat)"
+```
+
+## Register the OIDC client application (Admin / Management API)
+
+Use the machine-user PAT to create an OIDC application under a project. The
+Management API endpoint (verified LIVE 2026-06-02 — `proto/zitadel/management.proto`
+`rpc AddOIDCApp`, evidence.md P-19) is:
+
+```
+POST /management/v1/projects/{project_id}/apps/oidc
+Authorization: Bearer <pat>
+```
+
+Example (placeholders — `<zitadel-instance-url>`, `<project-id>`, `$PAT`):
+
+```sh
+curl -fsSL -X POST \
+  "https://<zitadel-instance-url>/management/v1/projects/<project-id>/apps/oidc" \
+  -H "Authorization: Bearer ${PAT}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "<project-name>-web",
+    "redirectUris": ["http://127.0.0.1:8123/auth/callback"],
+    "responseTypes": ["OIDC_RESPONSE_TYPE_CODE"],
+    "grantTypes": ["OIDC_GRANT_TYPE_AUTHORIZATION_CODE"],
+    "appType": "OIDC_APP_TYPE_WEB",
+    "authMethodType": "OIDC_AUTH_METHOD_TYPE_NONE",
+    "accessTokenType": "OIDC_TOKEN_TYPE_JWT"
+  }'
+```
+
+**Compliance note**: in dev the OIDC client MUST use a **loopback / internal**
+redirect URI (e.g. `http://127.0.0.1:8123/auth/callback`, matching the compose
+fragment's loopback bind). Production redirect URIs require adopter configuration
+(public hostname + HTTPS). The returned `clientId` (and `clientSecret` for
+confidential apps) is a secret — store it in a K8s Secret, never in the repo.
+
+## JWT signing-key rotation (FR-B87-027)
+
+Zitadel **manages JWT signing keys internally — automatic rotation, no operator
+duty by default** (verified LIVE 2026-06-02, `cmd/defaults.yaml`, evidence.md P-20):
+
+- **Rotation lifetimes** — `SystemDefaults.KeyConfig`
+  (env `ZITADEL_SYSTEMDEFAULTS_KEYCONFIG_*`):
+  - `PrivateKeyLifetime: 6h` — signing key rotated every 6 hours.
+  - `PublicKeyLifetime: 30h` — public (verification) key retained 30 hours so
+    in-flight tokens validate across rotations.
+- **WebKeys** — `DefaultInstance.WebKeys`: OIDC token signing keys are generated
+  when a new instance is created; default `Type: rsa`, `RSABits: 2048`,
+  `RSAHasher: sha256` (ECDSA P256 also available).
+- **Explicit rotation**: the WebKeys v2 management API
+  (`proto/zitadel/webkey/v2/webkey_service.proto`) supports operator-triggered
+  rotation if a policy requires it.
+
+No manual rotation is required for the default posture; relying parties fetch the
+current keys from the JWKS endpoint (`/oauth/v2/keys`) and tolerate rotation via
+the 30h public-key overlap.
+
+## Secrets posture recap (ADR-B87-004)
+
+- **Masterkey** — pre-created K8s Secret, referenced by `masterkeySecretName` in
+  `values-forge.yaml.tmpl`; "Must be exactly 32 bytes" (P-06). Value never committed.
+- **DB DSN** — pre-created K8s Secret, referenced via `valueFrom.secretKeyRef`
+  (DSN mode); the connection string (with password) is never committed.
+- **Machine-user PAT** — auto-generated by the chart `setupJob` into a K8s Secret;
+  read at deploy time, never committed.
+- **OIDC client secret** (confidential apps) — returned by the Admin API call
+  above; store in a K8s Secret, never in the repo.

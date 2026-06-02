@@ -522,13 +522,14 @@ v1.0.0 sont désormais résolus.
 | `b8-5-postgres-pgvector`           | archived         | B.8.5 (RE-SCOPED: DBOS-Rust falsified→deferred; Postgres 17+pgvector delta; pin `pgvector/pgvector:0.8.2-pg17`; `orchestration.yaml` 1.1.0 DBOS-deferral; `2.0.0.yaml` dbos-embedded deferred; b8-signoz version-aware fix; `b8-5.test.sh` 12 L1; independent review APPROVE; archived 2026-05-31) |
 | `b8-orchestration-temporal-realign` | archived        | B.8.5 follow-on (B8O — orchestration default réconcilié avec Constitution §VIII.2 : `orchestration.yaml` v1.1.0 → v1.2.0 `default_by_language: { rust: temporal }` ; DBOS rétrogradé watch-list `future-option` (`requires: rust-sdk-ga`) ; `2.0.0.yaml` delta temporal→dbos `cancelled: true` ; `infra/temporal.md` réaligné `temporalio-sdk` 0.4.0 (verify-then-pin LIVE) ; ADR-B8O-001 annule ADR-002 pour Rust ; `b8o.test.sh` 10 L1 ; archived 2026-06-01) |
 | `b8-6-connect-rpc` | archived | B.8.6 (Connect-RPC 2.0.0 transport brick — subtree `2.0.0/shared/protos/` + `grpc-api` adapter 0.6.x surface ; pins `connectrpc =0.6.1`/`buffa =0.6.0` verify-then-pin LIVE ; connect-go v1.20.0 BSR-confirmed ; `transport.yaml` v1.3.0 `codegen.versions_2_0_0` ; S2S re-defer B.8.12 ; `b8-6.test.sh` 12 L1 ; independent review APPROVE ; archived 2026-06-02) |
+| `b8-7-zitadel` | archived | B.8.7 (Zitadel identity brick — INTRODUCES identity, 1.0.0 = implicit-auth ; chart-referenced hybrid zitadel 10.0.2/v4.14.0 ghcr verify-then-pin LIVE + helm-template ; subtree 4 fichiers `2.0.0/infra/zitadel/` ; `identity.yaml` v1.1.0 première versions: map ; secrets masterkeySecretName 32-byte zéro valeur committée ; Envoy-OIDC doc-only → B.8.10/B.8.12 ; `b8-7.test.sh` 12 L1 ; independent review APPROVE ; archived 2026-06-02) |
 
-**47 archivés** au 2026-06-02 (zéro change en cours). Trio B.8.8 observability rearch
+**48 archivés** au 2026-06-02 (zéro change en cours, B.8.7 Zitadel archivé 2026-06-02). Trio B.8.8 observability rearch
 **fully closed** (Coroot leg 1 rc.3 + SigNoz leg 2 rc.4 + OBI leg 3 rc.5) ;
 **B.8.1 baseline + B.8.2 legacy-snapshot freeze archived 2026-05-30**,
-puis **B.8.3 + B.8.3.b + B.8.4 + B.8.5 (re-scoped) + B8O + B.8.6 archivés
+puis **B.8.3 + B.8.3.b + B.8.4 + B.8.5 (re-scoped) + B8O + B.8.6 + B.8.7 archivés
 2026-05-30 → 2026-06-02** (additive, see §0.10). Next B.8 step:
-**B.8.7** (Zitadel templates). T5.3.1 livré sans `task validate` GREEN
+**B.8.9** (Qwik web-public templates). T5.3.1 livré sans `task validate` GREEN
 end-to-end : le L2 et `task validate` exposent **Q-005**
 (SigNoz image pins rotted upstream + architecture migration
 3-services → unified ; pin refresh impossible). Tentative
@@ -2311,7 +2312,7 @@ Migration **additive d'abord, breaking ensuite** :
   `tonic-build` continue côté serveur Rust (compat native). Effort : `M`. ✅ **Done 2026-06-02 via `b8-6-connect-rpc`** (re-scoped per Ground-Truth: plugins already on 1.0.0 since t5-connect-codegen ; real delta = 2.0.0 subtree + crate modernization 0.3.x→0.6.1 + transport.yaml v1.3.0 ; independent review APPROVE).
 - **B.8.7.** Templates Zitadel : Helm chart self-host EU + script de bootstrap
   (création tenant root, OIDC client app, JWT signing key rotation). Documentation
-  pour T1 (Zitadel Cloud SaaS) vs T2/T3 (self-host EU strict). Effort : `M`.
+  pour T1 (Zitadel Cloud SaaS) vs T2/T3 (self-host EU strict). Effort : `M`. ✅ **Done 2026-06-02 via `b8-7-zitadel`** (chart-referenced hybrid per ADR-B87-001 — chart 10.0.2/v4.14.0 ; identity.yaml v1.1.0 ; bootstrap chart-native setupJob+FirstInstance ; Envoy-OIDC wiring déféré B.8.10/B.8.12 ; independent review APPROVE).
 - **B.8.8.** Templates SigNoz + OBI + Coroot dans
   `docker-compose.dev.yml` + Helm overlays K8s prod. Sampler 100% staging /
   10% prod. Audit Aegis sur le DaemonSet privilégié OBI requis. Effort : `M`.

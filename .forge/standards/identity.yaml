@@ -1,10 +1,20 @@
 # Forge Standard — Identity / IdP
 # Audit: T.4 (t4-adr-ratification, 2026-05-04)
 # Ratifies: ADR-007 from docs/ARCHITECTURE-TARGET.md
+#
+# Version history:
+#   1.0.0 (2026-05-04, t4-adr-ratification) — initial ratification; no versions: map.
+#   1.1.0 (2026-06-02, b8-7-zitadel) — additive. First versions: map (Zitadel chart
+#     + image pins — ADR-B87-001) + pin_review_cadence: (ISO 8601). last_reviewed /
+#     expires_at refreshed (12-month cycle). default / alternatives / forbidden /
+#     compliance_tier_aware / enforcement / linter_rule / rationale BYTE-STABLE.
+#     No breaking_change (FR-B87-047). Pins verified LIVE 2026-06-02 — chart-tested
+#     pair chart 10.0.2 ↔ appVersion v4.14.0; registry ghcr.io (NOT docker.io);
+#     v-prefix v4.14.0. Re-verify clause: evidence.md P-15..P-21 (b8-coroot lesson).
 
-version: "1.0.0"
-last_reviewed: 2026-05-04
-expires_at: 2027-05-04
+version: "1.1.0"
+last_reviewed: 2026-06-02
+expires_at: 2027-06-02
 exception_constitutional: false
 linter_rule: null
 enforcement:
@@ -23,3 +33,19 @@ alternatives:
   - keycloak
   - authentik
 compliance_tier_aware: true       # T3 requires self-host
+
+# ── Pins (verify-then-pin — resolved LIVE 2026-06-02; re-verified at
+#    /forge:implement, evidence.md P-15..P-21; b8-coroot lesson) ──
+# Chart-tested pair: chart 10.0.2 declares appVersion v4.14.0 (P-15). The latest
+# Zitadel app release v4.15.0 exists but is NOT chart-tested — use the chart-tested
+# pair only (ADR-B87-001). Registry: ghcr.io (GitHub Container Registry), NOT
+# docker.io. v-prefix convention: v4.14.0.
+versions:
+  zitadel_chart: "10.0.2"          # helm install zitadel/zitadel --version 10.0.2 (charts.zitadel.com / oci helm-repo source)
+  zitadel: "v4.14.0"               # ghcr.io/zitadel/zitadel:v4.14.0 (chart-tested appVersion; v-prefix + ghcr registry)
+  zitadel_login: "v4.14.0"         # ghcr.io/zitadel/zitadel-login:v4.14.0 (separate login-UI image, login.enabled: true)
+
+pin_review_cadence:                # ISO 8601 durations (gateway.yaml / observability.yaml precedent)
+  zitadel_chart: "P30D"            # active upstream chart dev velocity
+  zitadel: "P12M"                  # app image: annual cycle (less volatile than chart)
+  zitadel_login: "P12M"            # login image: same cadence as the main image

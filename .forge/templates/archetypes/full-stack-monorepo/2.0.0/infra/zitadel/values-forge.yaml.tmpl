@@ -1,0 +1,117 @@
+# <!-- Audit: B.8.7 (b8-7-zitadel, FR-B87-006/007/021/022/025) -->
+# Standard: .forge/standards/identity.yaml
+#
+# Forge Helm values OVERLAY for the upstream Zitadel chart, installed by Atlas:
+#
+#   helm repo add zitadel https://charts.zitadel.com
+#   helm install zitadel zitadel/zitadel --version 10.0.2 \
+#     -f values-forge.yaml --set postgresql.enabled=false
+#
+# This is the 2.0.0 identity DELTA (chart-referenced hybrid — ADR-B87-001). It is
+# an ADDITIVE sibling of the frozen flat 1.0.0 template tree (which ships NO
+# identity component); no 1.0.0 file is touched (NFR-B87-002). No raw K8s
+# manifests are vendored — the chart owns the Deployment/Service/initJob/setupJob.
+#
+# Pins (verify-then-pin, identity.yaml v1.1.0 versions: map; re-verified LIVE
+# 2026-06-02, evidence.md P-15..P-21):
+#   chart  zitadel/zitadel      --version 10.0.2  (chart-tested pair)
+#   app    ghcr.io/zitadel/zitadel:v4.14.0        (chart appVersion; NOT docker.io)
+#   login  ghcr.io/zitadel/zitadel-login:v4.14.0  (login.enabled: true topology)
+#
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║  NEVER PUT SECRETS HERE.                                                   ║
+# ║  The masterkey, the DB DSN (with password), and admin/machine credentials ║
+# ║  are K8s Secrets generated/pre-created at deploy time. No secret VALUE is  ║
+# ║  committed to the repository — only Secret NAMES and secretKeyRef pointers ║
+# ║  appear below. See README.md and bootstrap.md for the deploy-time recipe.  ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+
+zitadel:
+  # ── Masterkey ──────────────────────────────────────────────────────────────
+  # Reference to a PRE-CREATED K8s Secret holding the 32-byte masterkey under the
+  # key "masterkey". The masterkey VALUE is NEVER in this file (ADR-B87-004).
+  # Constraint (values.yaml P-06, verbatim): "Must be exactly 32 bytes".
+  # Generate + create the Secret (placeholder — see README.md / bootstrap.md):
+  #   kubectl create secret generic <project-name>-zitadel-masterkey \
+  #     --from-literal=masterkey="$(tr -dc A-Za-z0-9 </dev/urandom | head -c 32)"
+  masterkeySecretName: <project-name>-zitadel-masterkey
+
+  # ── ZITADEL runtime config (passed to the binary; mirrors cmd/defaults.yaml) ──
+  configmapConfig:
+    ExternalSecure: true
+    ExternalDomain: <zitadel-external-domain>   # e.g. id.<project-name>.example.eu
+
+    # Database: DSN MODE (P-05). The DSN (which contains the password) is injected
+    # via the env var ZITADEL_DATABASE_POSTGRES_DSN below (valueFrom.secretKeyRef),
+    # NOT as discrete plaintext fields here. When a DSN is set, ZITADEL ignores any
+    # discrete Database.Postgres.* fields, so none are declared here (ADR-B87-004).
+
+    # FirstInstance: chart setupJob (Helm hook weight 2) runs `zitadel setup` with
+    # this config to create the first org, human admin, and machine user (ADR-B87-003).
+    # CHART-MANAGED — DO NOT SET (evidence.md P-18 / Finding 8):
+    #   FirstInstance.MachineKeyPath, FirstInstance.PatPath, and LoginClientPatPath
+    #   are managed automatically by the Helm chart. Setting them manually "is not
+    #   supported and will cause the deployment to fail." The chart writes the
+    #   machine key / PAT into a K8s Secret named after the machine Username
+    #   ('iam-admin' → 'iam-admin' for the key, 'iam-admin-pat' for the PAT).
+    #   Therefore NO MachineKeyPath: or PatPath: key appears in this overlay
+    #   (T-005 harness guard enforces this).
+    FirstInstance:
+      Skip: false
+      InstanceName: <project-name>
+      Org:
+        Name: <project-name>
+        # Machine user (service account, IAM_OWNER). The `Pat:` block triggers the
+        # chart to auto-generate a PAT into a K8s Secret named '<Username>-pat'
+        # (e.g. 'iam-admin-pat'). That PAT is the credential for the post-bootstrap
+        # Admin API OIDC-client recipe (bootstrap.md). Nesting (Machine.Machine.*)
+        # is the chart's verified schema (helm show values 10.0.2).
+        Machine:
+          Machine:
+            Username: iam-admin
+            Name: 'Automatically Initialized IAM Admin'
+          Pat:
+            ExpirationDate: <pat-expiration-date>   # RFC3339, e.g. 2099-01-01T00:00:00Z
+
+# ── Extra env (TOP-LEVEL .Values.env — chart 10.0.2 verified): DB DSN via K8s
+#    Secret reference. DSN MODE (P-05) — no plaintext (ADR-B87-004). ──
+env:
+  - name: ZITADEL_DATABASE_POSTGRES_DSN
+    valueFrom:
+      secretKeyRef:
+        name: <project-name>-zitadel-db   # pre-created K8s Secret (DSN with password)
+        key: dsn
+
+# ── Aegis annotations on the ZITADEL pods (TOP-LEVEL .Values.podAnnotations —
+#    chart 10.0.2 verified; FR-B87-006; obi-daemonset precedent). ──
+podAnnotations:
+  forge.dev/aegis-audit: "required"
+  forge.dev/standard: "identity.yaml@1.1.0"
+
+# ── Chart-wide container securityContext override (TOP-LEVEL .Values.securityContext
+#    — chart 10.0.2 verified; FR-B87-007; no privileged). Overriding this key
+#    replaces the chart default map, so the chart's hardening fields
+#    (runAsNonRoot / readOnlyRootFilesystem / privileged:false) are restated
+#    here and we ADD allowPrivilegeEscalation:false + capabilities.drop:[ALL].
+#    Zitadel is a standard Go HTTP server; no extra capabilities required. ──
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  readOnlyRootFilesystem: true
+  privileged: false
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+# ── Login UI: separate zitadel-login Deployment in K8s (chart default; P-07) ──
+# Uses ghcr.io/zitadel/zitadel-login:v4.14.0. The dev compose fragment diverges
+# (built-in login, single service) — documented in README.md (ADR-B87-001 Q-004).
+login:
+  enabled: true
+
+# ── Datastore: B.8.5 fsm-db (Postgres 17) is used; suppress the bundled Bitnami
+#    postgresql subchart (ADR-B87-002). Also expressible as
+#    `--set postgresql.enabled=false` on the helm install line (README.md). ──
+postgresql:
+  enabled: false

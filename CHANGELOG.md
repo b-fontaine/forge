@@ -12,6 +12,59 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added — B.8.7 Zitadel 2.0.0 identity brick (`b8-7-zitadel`)
+
+- **2.0.0 identity delta — Zitadel IdP introduced (ground truth: introduction,
+  NOT migration).** The frozen flat 1.0.0 flagship ships NO identity component;
+  this brick introduces Zitadel additively. New versioned subtree under
+  `.forge/templates/archetypes/full-stack-monorepo/2.0.0/infra/zitadel/` with
+  **four** `.tmpl` files (chart-referenced hybrid — ADR-B87-001; NO
+  `kustomization.yaml.tmpl`, no raw K8s manifests vendored): `values-forge.yaml`
+  (Forge Helm values overlay — `masterkeySecretName` ref, DSN `secretKeyRef`,
+  `configmapConfig.FirstInstance` first-org/admin/machine-user config,
+  `login.enabled: true`, `postgresql.enabled: false`, Aegis pod annotations +
+  hardened `securityContext`), `README.md` (chart-referenced delivery model,
+  helm install block, T1/T2/T3 compliance table citing `compliance-tiers.md:121`,
+  AGPL note, Envoy→Zitadel OIDC delegation doc with verbatim scope-out,
+  shared-fsm-db datastore posture, dev-vs-K8s login topology note, J8-RULE-002
+  xref), `docker-compose.fragment.yml` (single `fsm-zitadel` dev service,
+  built-in login, `127.0.0.1:8123:8080` loopback, `depends_on: fsm-db`,
+  `start-from-init --masterkeyFromEnv`), and `bootstrap.md` (FirstInstance
+  contract with CHART-MANAGED `MachineKeyPath`/`PatPath` marked do-not-set, chart
+  setupJob flow, OIDC client recipe via Management API `POST
+  /projects/{project_id}/apps/oidc`, JWT signing-key rotation posture).
+- **Chart-referenced hybrid + verify-then-pin LIVE 2026-06-02.** Atlas installs
+  the upstream chart `zitadel/zitadel --version 10.0.2`; the brick vendors only
+  the values overlay + docs. Pins: chart `10.0.2` ↔ appVersion `v4.14.0`
+  (chart-tested pair; the newer `v4.15.0` is NOT chart-tested → not used); images
+  `ghcr.io/zitadel/zitadel:v4.14.0` + `ghcr.io/zitadel/zitadel-login:v4.14.0`
+  (ghcr.io, NOT docker.io — b8-coroot lesson; v-prefix). Re-verified live at
+  implement (evidence.md P-15..P-21); `helm template` of chart 10.0.2 + overlay
+  renders cleanly (HELM_RC=0, Aegis annotations + DSN secretKeyRef +
+  securityContext effective in the rendered manifests).
+- **`identity.yaml` v1.0.0 → v1.1.0 (additive).** First `versions:` map for this
+  standard (Zitadel chart `10.0.2` / app `v4.14.0` / login `v4.14.0`, all ghcr.io)
+  + `pin_review_cadence:` (chart P30D, images P12M); `last_reviewed`/`expires_at`
+  refreshed to 2026-06-02/2027-06-02. `default: zitadel`, `alternatives`,
+  `forbidden`, `compliance_tier_aware`, `enforcement`, `linter_rule`, `rationale`
+  are **byte-stable**; no `breaking_change`. Machine enforcement stays off.
+  REVIEW.md gains a `| identity.yaml | 1.1.0 |` KEEP-WITH-CHANGES ledger row;
+  `validate-standards-yaml.sh` (dir mode) PASSes.
+- **`2.0.0.yaml` zitadel component** gains a `# … B.8.7 delivered; versions
+  (identity.yaml v1.1.0)` annotation on its `standard: identity.yaml` line
+  (comment-only; the loaded dict is byte-identical to a YAML parser). The
+  `implicit-auth → zitadel` migration_delta with `strategy: additive-first` is
+  **intact** (implicit-auth removal only at B.8.14). b8-3 (17/17) + b8-3b (12/12)
+  stay GREEN.
+- **Frozen 1.0.0 surfaces byte-untouched** (additive-first; NFR-B87-002):
+  `schema.yaml`, the flat 1.0.0 template tree, and `1.0.0.tar.gz` are unchanged.
+- **Envoy OIDC wiring + backend auth middleware DEFERRED to B.8.10/B.8.12**
+  (ADR-B87-006) — explicit verbatim scope-out in the README, not silently omitted.
+- New harness `.forge/scripts/tests/b8-7.test.sh` (12 L1, ≤2 s, zero
+  net/Docker/Helm; registered in `forge-ci.yml` after `b8-6`), with a secrets
+  grep-guard, a CHART-MANAGED-key guard (no `MachineKeyPath`/`PatPath`), and an
+  exit-code coupling guard re-running b8-3 + b8-3b.
+
 ## [0.4.0-rc.9] — 2026-06-02
 
 ### Added — B.8.6 Connect-RPC 2.0.0 transport brick (`b8-6-connect-rpc`)

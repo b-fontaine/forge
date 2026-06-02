@@ -91,7 +91,7 @@ components:
     role: identity
     replaces: implicit-auth
     delivered_by: B.8.7
-    standard: identity.yaml  # default: zitadel
+    standard: identity.yaml  # default: zitadel — B.8.7 delivered; versions (identity.yaml v1.1.0)
 
   - name: postgres-17-pgvector
     role: persistence

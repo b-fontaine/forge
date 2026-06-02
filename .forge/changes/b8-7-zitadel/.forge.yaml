@@ -1,0 +1,19 @@
+name: b8-7-zitadel
+status: archived
+created: 2026-06-02
+schema: default
+constitution_version: "1.1.0"
+parent_audit_items:
+  - B.8.7  # docs/new-archetypes-plan.md §4.2 B.8.7 — "Templates Zitadel : Helm chart self-host EU + script de bootstrap (création tenant root, OIDC client app, JWT signing key rotation). Documentation pour T1 (Zitadel Cloud SaaS) vs T2/T3 (self-host EU strict)". Ratified by ADR-007 (ARCHITECTURE-TARGET.md — REPLACE Firebase implicite → Zitadel; Schrems II + CLOUD Act). GROUND-TRUTH NOTE (Article III.4): the 1.0.0 flagship ships NO identity at all — B8-BASELINE §7 records the delta as `implicit auth → Zitadel (B.8.7)`; the only identity surface is a commented OIDC stub in .env.example.tmpl. This brick INTRODUCES identity (additive), it does not migrate an existing IdP.
+depends_on:
+  - B.8.3  # 2.0.0 candidate schema — declares zitadel { role: identity, replaces: implicit-auth, delivered_by: B.8.7, standard: identity.yaml } + the implicit-auth → zitadel migration_delta (brick B.8.7, strategy additive-first)
+  - B.8.4  # versioned 2.0.0 subtree convention + the hybrid control-plane/data-plane split precedent (ADR-B84-003) + the standard frontmatter model (gateway.yaml versions: map + pin_review_cadence) + Envoy Gateway templates that terminate and delegate AuthN to Zitadel via OIDC (AT C4: Rel envoy→zitadel)
+  - B.8.5  # Postgres 17 + pgvector datastore brick — Zitadel self-host requires a Postgres datastore; the 2.0.0 dev stack's fsm-db delta is the natural host (decision Q-002)
+  - T.4    # identity.yaml v1.0.0 (J.5, t4-adr-ratification) — default: zitadel, forbidden: firebase-auth/auth0-saas-us, compliance_tier_aware: true; this brick makes the standard deployable
+timeline:
+  proposed: 2026-06-02
+  specified: 2026-06-02
+  designed: 2026-06-02
+  planned: 2026-06-02
+  implemented: 2026-06-02
+  archived: 2026-06-02

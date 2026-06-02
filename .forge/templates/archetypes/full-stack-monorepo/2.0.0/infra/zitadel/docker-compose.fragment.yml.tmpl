@@ -1,0 +1,70 @@
+# <!-- Audit: B.8.7 (b8-7-zitadel, FR-B87-031) -->
+# Standard: .forge/standards/identity.yaml
+#
+# 2.0.0 identity DELTA — dev Zitadel compose fragment. ADDITIVE sibling of the
+# FROZEN flat 1.0.0 docker-compose.dev.yml.tmpl (which ships NO identity service),
+# which is BYTE-UNTOUCHED (B.8.2 freeze; NFR-B87-002). Composed into the 2.0.0 dev
+# stack at B.8.10/B.8.14. Depends on the B.8.5 `fsm-db` Postgres 17 service
+# (ADR-B87-002) — Zitadel uses a dedicated `zitadel` database on fsm-db.
+#
+# Self-validating fragment (B.8.5 pattern): it redeclares the `networks:` and
+# `volumes:` it references so `docker compose -f docker-compose.fragment.yml config`
+# validates standalone (FR-B87-031).
+#
+# IMAGE = ghcr.io/zitadel/zitadel:v4.14.0 — verify-then-pin (chart-tested
+# appVersion; identity.yaml v1.1.0 versions.zitadel; ghcr.io NOT docker.io;
+# re-verified LIVE 2026-06-02, evidence.md P-15..P-17). NEVER fabricated
+# (Article III.4; b8-coroot lesson).
+#
+# DEV LOGIN TOPOLOGY (ADR-B87-001 Q-004): single `fsm-zitadel` service using the
+# main image with its BUILT-IN login UI — NO separate zitadel-login container in
+# dev (deliberate divergence from the K8s `login.enabled: true` topology;
+# documented in README.md).
+#
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║  NEVER PUT SECRETS HERE.                                                   ║
+# ║  ${ZITADEL_MASTERKEY} and ${ZITADEL_DB_DSN} are sourced from the .env file ║
+# ║  (gitignored). No secret VALUE is committed — only ${ENV_VAR} references.  ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+services:
+  fsm-zitadel:
+    image: ghcr.io/zitadel/zitadel:v4.14.0   # verify-then-pin — chart-tested appVersion (ADR-B87-001; evidence.md P-16)
+    # `start-from-init` runs the DB init + first-instance setup, then starts the
+    # server (chart initJob+setupJob equivalent for dev). `--masterkeyFromEnv`
+    # reads ZITADEL_MASTERKEY from the environment (keeps the 32-byte masterkey
+    # OFF the process command line — Aegis dev posture; never committed).
+    command: start-from-init --masterkeyFromEnv --tlsMode disabled
+    env_file: .env
+    environment:
+      # DSN MODE (P-05) — the full connection string (with password) is sourced
+      # from .env, never hardcoded. Points at the B.8.5 fsm-db dedicated `zitadel`
+      # database (ADR-B87-002).
+      ZITADEL_DATABASE_POSTGRES_DSN: ${ZITADEL_DB_DSN}
+      # Masterkey via env (read by --masterkeyFromEnv). Sourced from .env; the
+      # 32-byte value is NEVER committed (ADR-B87-004).
+      ZITADEL_MASTERKEY: ${ZITADEL_MASTERKEY}
+      ZITADEL_EXTERNALSECURE: "false"
+      ZITADEL_EXTERNALPORT: "8123"
+      ZITADEL_EXTERNALDOMAIN: ${ZITADEL_EXTERNALDOMAIN:-localhost}
+      ZITADEL_TLS_ENABLED: "false"
+    ports:
+      # Loopback bind ONLY (FR-B87-008 / Aegis dev posture; NO 0.0.0.0). Host port
+      # 8123 chosen to avoid the existing dev-stack ports: 8000/8001 (kong),
+      # 3301 (signoz), 4317/4318 (otel). Container listens on 8080.
+      - "127.0.0.1:8123:8080"
+    depends_on:
+      fsm-db:
+        condition: service_healthy   # the B.8.5 fsm-db pg_isready healthcheck
+    networks:
+      - fsm-dev
+
+# Self-validating: redeclare the volumes referenced by the B.8.5 fsm-db fragment
+# so this fragment `config`-validates standalone (B.8.5 pattern). Zitadel itself
+# is stateless (state lives in fsm-db); no dedicated volume is required here.
+volumes:
+  fsm-db-data:
+
+networks:
+  fsm-dev:
+    driver: bridge
+    name: fsm-dev

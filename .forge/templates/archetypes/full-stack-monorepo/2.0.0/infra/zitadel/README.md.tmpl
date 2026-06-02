@@ -1,0 +1,173 @@
+<!-- Audit: B.8.7 (b8-7-zitadel, FR-B87-003) -->
+# Zitadel IdP for `<project-name>` (2.0.0 candidate)
+
+This directory is the **2.0.0 identity delta** for the `full-stack-monorepo`
+flagship. It introduces **Zitadel** as the project's first Identity Provider
+(IdP), authored as an **additive** sibling alongside the frozen flat 1.0.0
+template tree — which ships **no** identity component at all (this brick is an
+**introduction**, not a migration). It removes nothing; the route/auth cutover
+and Kong removal happen at B.8.10/B.8.14. Standard:
+`.forge/standards/identity.yaml`.
+
+> **Status**: the `full-stack-monorepo / 2.0.0` schema is a `candidate`
+> (`scaffoldable: false`). This subtree is an additive on-disk asset spliced into
+> the 2.0.0 stack at B.8.10/B.8.14; `forge init` still emits the flat 1.0.0 tree
+> (no identity) by default. It is **not scaffoldable until B.8.14**.
+
+## Delivery model — chart-referenced hybrid (ADR-B87-001)
+
+Zitadel is **Atlas-installed from the upstream Helm chart**; this tree vendors
+only the Forge **values overlay** + docs (no raw K8s manifests, no
+`kustomization.yaml.tmpl`). The chart carries operator-grade machinery — an
+`initJob` (DB schema/user/grants) and a `setupJob` (`zitadel setup`: first org +
+human admin + machine user + K8s Secret generation) — that would require
+significant re-implementation if vendoring raw manifests. The chart-referenced
+hybrid mirrors the B.8.4 Envoy Gateway posture (ADR-B84-003).
+
+| Plane | What | How |
+|-------|------|-----|
+| **Control + data plane** | Zitadel Deployment, login-UI Deployment, Service, initJob, setupJob, Secrets | Upstream Helm chart `zitadel/zitadel` (Atlas-provided install — below) |
+| **Forge overlay** | masterkey ref, DSN secretKeyRef, FirstInstance config, Aegis annotations, securityContext, `postgresql.enabled: false` | `values-forge.yaml.tmpl` (this dir) |
+
+## Resources
+
+| Resource | Pin | Provenance |
+|----------|-----|------------|
+| Helm chart `zitadel/zitadel` | `10.0.2` | chart-tested pair (Chart.yaml `appVersion: v4.14.0`); `identity.yaml` `versions.zitadel_chart` |
+| App image `ghcr.io/zitadel/zitadel` | `v4.14.0` | chart appVersion; `versions.zitadel`; ghcr.io (NOT docker.io) |
+| Login-UI image `ghcr.io/zitadel/zitadel-login` | `v4.14.0` | `login.enabled: true` topology; `versions.zitadel_login` |
+| `values-forge.yaml.tmpl` | — | Forge values overlay (this dir) |
+| `docker-compose.fragment.yml.tmpl` | — | dev compose fragment (built-in login, single service) |
+| `bootstrap.md.tmpl` | — | post-deploy OIDC-client + JWT-rotation recipe |
+
+Pins are verify-then-pin LIVE (chart-tested pair chart `10.0.2` ↔ app `v4.14.0`;
+the newer `v4.15.0` is NOT chart-tested — not used). Registry identity confirmed
+`ghcr.io` (b8-coroot lesson). Re-verified 2026-06-02 — evidence.md P-15..P-21.
+
+## Control-plane install (Atlas-provided)
+
+```sh
+helm repo add zitadel https://charts.zitadel.com
+helm install zitadel zitadel/zitadel \
+  --version 10.0.2 \
+  -f values-forge.yaml \
+  --set postgresql.enabled=false
+```
+
+- **`--set postgresql.enabled=false`** (or the equivalent `postgresql: {enabled:
+  false}` already in `values-forge.yaml.tmpl`) suppresses the chart's bundled
+  Bitnami postgresql subchart — we supply the **B.8.5 `fsm-db`** instead
+  (ADR-B87-002). Do not let adopters pull a second Postgres.
+- **Namespace**: deploy into the application namespace; the chart's `initJob` +
+  `setupJob` Helm hooks run pre-install (weights 1 → 2) before the Deployment.
+
+## Datastore (ADR-B87-002)
+
+Zitadel **requires PostgreSQL 14+** (chart values.yaml line 26, verbatim:
+*"ZITADEL requires PostgreSQL 14+ as its backing database"*). The B.8.5 datastore
+ships `pgvector/pgvector:0.8.2-pg17` (Postgres **17** ≥ 14) — **compatible**.
+
+- **Dev / shared posture**: a dedicated `zitadel` database + `zitadel_user` role
+  on the shared B.8.5 `fsm-db` Postgres 17 instance. The DSN is injected via a K8s
+  Secret (`secretKeyRef`); the chart `initJob` creates the schema/user/grants
+  K8s-side. The dev compose fragment uses `depends_on: fsm-db`.
+- **T2/T3 production posture**: a **dedicated Postgres instance** with network
+  isolation (separate from the application datastore) is recommended.
+
+## Login topology — dev vs K8s (ADR-B87-001, Q-004)
+
+- **K8s** (`values-forge.yaml.tmpl`): `login.enabled: true` (chart default) — a
+  **separate** `ghcr.io/zitadel/zitadel-login:v4.14.0` Deployment alongside the
+  main Zitadel container. Realistic production topology.
+- **Dev** (`docker-compose.fragment.yml.tmpl`): a **single** `fsm-zitadel` service
+  using the main image with its **built-in** login interface (no separate login
+  container — simpler dev stack). This is a deliberate dev/K8s difference, not an
+  error.
+
+## Secrets posture
+
+> **NEVER PUT SECRETS HERE.**
+> The masterkey and admin credentials are K8s Secrets generated at deploy time.
+> No secret value is committed to the repository. See the bootstrap section below.
+
+- **Masterkey**: "Must be exactly 32 bytes" (chart values.yaml P-06). Generate +
+  pre-create the K8s Secret, then reference it by NAME via `masterkeySecretName`:
+  ```sh
+  kubectl create secret generic <project-name>-zitadel-masterkey \
+    --from-literal=masterkey="$(tr -dc A-Za-z0-9 </dev/urandom | head -c 32)"
+  ```
+  (Placeholder command — the masterkey VALUE is never templated into the repo.)
+- **DB DSN**: pre-create a K8s Secret with the connection string (which contains
+  the password) and reference it via `valueFrom.secretKeyRef` (DSN mode, P-05):
+  ```sh
+  kubectl create secret generic <project-name>-zitadel-db \
+    --from-literal=dsn="postgres://zitadel_user:<password>@<fsm-db-host>:5432/zitadel?sslmode=require"
+  ```
+  (Placeholder — `<password>` is supplied at deploy time, never committed.)
+
+## Bootstrap (overview — full recipe in `bootstrap.md`)
+
+1. **initJob** (Helm hook weight 1): creates the `zitadel` DB schema, user, grants.
+2. **setupJob** (Helm hook weight 2): runs `zitadel setup` with the FirstInstance
+   config → first org + human admin + machine user (IAM_OWNER); writes the machine
+   user's PAT into a K8s Secret (named after the machine `Username`).
+3. **Admin API recipe** (`bootstrap.md`): use the machine-user PAT to register the
+   OIDC client application via the Management API. JWT signing-key rotation is
+   Zitadel-managed (automatic). See `bootstrap.md` for the exact endpoints + cadence.
+
+## Compliance posture — T1 / T2 / T3 (FR-B87-060)
+
+Per `.forge/standards/global/compliance-tiers.md:121` (Zitadel row, verbatim):
+
+| Tier | Posture | Verdict |
+|------|---------|---------|
+| **T1** | Zitadel Cloud SaaS (with a Data Processing Agreement) | ⚠️ Cloud SaaS T1 |
+| **T2** | Zitadel self-hosted on EU infrastructure | ✅ self-host T2 |
+| **T3** | Zitadel self-hosted on EU + SecNumCloud (OVHcloud / Scaleway / Outscale) | ✅ self-host EU+SecNumCloud |
+
+> `compliance-tiers.md:121` — *"Zitadel | ⚠️ Cloud SaaS T1 | ✅ self-host T2 | ✅
+> self-host EU+SecNumCloud | T3 = self-host obligatoire"*
+
+This brick ratifies ADR-007 (`docs/ARCHITECTURE-TARGET.md`): Schrems II + the
+CLOUD Act disqualify US-managed IdPs for EU-strict tiers, so Zitadel (Go, AGPL,
+multi-tenant native) is the `default` in `identity.yaml`.
+
+### J8-RULE-002 cross-reference (FR-B87-061)
+
+The T3 refusal — `--eu-tier T3` + a non-self-host Zitadel → `[REFUSAL:]` exit 3 —
+is **already enforced** by `bin/forge-init-fsm.sh` and the Janus orchestration
+rules (`global/janus-orchestration-rules.md`, J8-RULE-002). This brick adds **no
+new refusal logic**; it only makes the guarded `identity` component deployable.
+
+## License note (FR-B87-062)
+
+> **License note**: Zitadel is licensed under the GNU Affero General Public
+> License v3 (AGPL-3.0). Review your organisation's open-source policy and
+> any applicable DPA requirements before deploying Zitadel in a commercial
+> product. See [zitadel.com](https://zitadel.com) for commercial licensing options.
+
+## Envoy → Zitadel OIDC delegation (FR-B87-063 — document-only)
+
+Envoy Gateway (B.8.4 templates, `2.0.0/infra/k8s/envoy-gateway/`) delegates
+authentication to Zitadel via OIDC — the target architecture relationship
+`AT C4: Rel(envoy, zitadel, "OIDC")`. The intended shape: Envoy validates JWTs
+issued by Zitadel at the gateway, and the Rust backend re-validates the bearer
+token.
+
+> The Envoy SecurityPolicy, JWTAuthn filter, and backend JWT validation
+> middleware are NOT shipped in this brick. They are deferred to B.8.10 (Envoy
+> OIDC wiring) and B.8.12 (E2E migration tests).
+
+Shipping a minimal SecurityPolicy example here would require fabricating Envoy
+Gateway API versions and Zitadel JWT issuer URL patterns that belong to B.8.10
+design — Article III.4 bars this (ADR-B87-006; b8-coroot lesson).
+
+## Scope out (this brick)
+
+- **Envoy SecurityPolicy / JWT-filter wiring** → B.8.10 (Envoy OIDC wiring).
+- **Backend Rust auth middleware** (bearer JWT validation) → B.8.12 (E2E tests).
+- **Flutter / Qwik OIDC client** (PKCE, token storage) → B.8.10 / B.8.12.
+- **Keycloak / Authentik alternative templates** — `identity.yaml` alternatives
+  stay documentation-only; no alternative IdP templates ship here.
+- **`identity.yaml` machine enforcement** (`linter_rule`, `ci_blocking`) — stays
+  OFF; machine enforcement is a later brick (B.8.11 / B.8.14 territory).
