@@ -127,20 +127,20 @@
   "hotPaths": [
     {
       "path": "docs/new-archetypes-plan.md",
-      "accessCount": 156,
-      "lastAccessed": 1780414011078,
+      "accessCount": 164,
+      "lastAccessed": 1780429266952,
       "type": "file"
     },
     {
       "path": ".forge/product/roadmap.md",
-      "accessCount": 81,
-      "lastAccessed": 1780413955190,
+      "accessCount": 85,
+      "lastAccessed": 1780429221903,
       "type": "file"
     },
     {
       "path": "CHANGELOG.md",
-      "accessCount": 55,
-      "lastAccessed": 1780414162283,
+      "accessCount": 59,
+      "lastAccessed": 1780429437176,
       "type": "file"
     },
     {
@@ -168,6 +168,12 @@
       "type": "file"
     },
     {
+      "path": "bin/forge-init-fsm.sh",
+      "accessCount": 6,
+      "lastAccessed": 1780419457640,
+      "type": "file"
+    },
+    {
       "path": ".forge/changes/j8-janus-rules/open-questions.md",
       "accessCount": 5,
       "lastAccessed": 1778412697659,
@@ -183,12 +189,6 @@
       "path": "cli/src/commands/init-archetype.ts",
       "accessCount": 5,
       "lastAccessed": 1778772800700,
-      "type": "file"
-    },
-    {
-      "path": "bin/forge-init-fsm.sh",
-      "accessCount": 5,
-      "lastAccessed": 1778772815409,
       "type": "file"
     },
     {
@@ -219,6 +219,12 @@
       "path": ".worktrees/k3-demeter/docs/ARCHITECTURE-TARGET.md",
       "accessCount": 3,
       "lastAccessed": 1778432812166,
+      "type": "file"
+    },
+    {
+      "path": ".forge/standards/global/janus-orchestration-rules.md",
+      "accessCount": 3,
+      "lastAccessed": 1780420318488,
       "type": "file"
     },
     {
@@ -285,12 +291,6 @@
       "path": ".forge/changes/j8-janus-rules/design.md",
       "accessCount": 1,
       "lastAccessed": 1778412648842,
-      "type": "file"
-    },
-    {
-      "path": ".forge/standards/global/janus-orchestration-rules.md",
-      "accessCount": 1,
-      "lastAccessed": 1778423391464,
       "type": "file"
     },
     {
