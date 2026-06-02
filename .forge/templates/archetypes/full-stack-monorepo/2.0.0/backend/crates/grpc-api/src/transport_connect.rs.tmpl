@@ -1,0 +1,125 @@
+//! Connect-RPC transport adapter (2.0.0 line) — parallel route to the tonic
+//! gRPC server.
+//!
+//! Audit: B.8.6 (b8-6-connect-rpc) ; ADR-B86-001 / ADR-B86-002.
+//!
+//! # 0.3.x → 0.6.x surface changes (why this is a 2.0.0 rewrite, not a copy)
+//!
+//! This adapter is a rewrite of the frozen 1.0.0 `transport_connect.rs.tmpl`
+//! on the `connectrpc 0.6.x` surface. The 1.0.0 template targets `connectrpc
+//! 0.3.3`; two breaking changes upstream make a verbatim copy non-compiling,
+//! so the 1.0.0 file stays frozen (NFR-B86-002) and this 2.0.0 variant carries
+//! the new shape (evidence.md P-06 / P-14, verified live 2026-06-02):
+//!
+//!   1. **Handler signatures redesigned in 0.4.0** (CHANGELOG #7). Handlers now
+//!      take a `Context` + a zero-copy `OwnedView<…View<'static>>` request and
+//!      return `Result<(Response, Context), ConnectError>` (the response is
+//!      returned alongside the response-side `Context`). The 0.3.x handler block
+//!      shape is gone.
+//!   2. **Axum mount surface changed**. 0.6.x uses `ConnectRouter::new()` +
+//!      `service.register(…)` + `into_axum_service()`. The 0.3.x
+//!      `connectrpc::Router::new()` + `into_axum_router()` API (in the frozen
+//!      1.0.0 template) does not exist in 0.6.x.
+//!
+//! The `axum` feature is still non-default; `features = ["axum"]` is declared in
+//! this crate's `Cargo.toml.tmpl`. Pinned at `connectrpc = "=0.6.1"` (evidence.md
+//! P-12, verify-then-pin LIVE 2026-06-02).
+//!
+//! # Mount point
+//!
+//! Mounted under `/connect` on the bin-server's top-level axum router (see
+//! `bin-server/src/main.rs`). The single handler exposes the Connect+proto,
+//! Connect+JSON, gRPC, and gRPC-Web wire formats on the same routes (per the
+//! `connectrpc` crate's protocol multiplexing). gRPC-Web is the documented
+//! Connect-Dart fallback ingress via the B.8.4 Envoy Gateway (see
+//! `2.0.0/shared/protos/README.md` § "gRPC-Web-via-Envoy Fallback").
+//!
+//! # Tracing layer ordering (FR-T5-CC-013, preserved)
+//!
+//! The tracing layer is applied via Tower middleware on the **outer**
+//! `axum::Router` returned by `into_router`, NOT registered with the
+//! `ConnectRouter` directly. This guarantees the span lifecycle wraps the
+//! entire request (including the connectrpc codec dispatch). The seed template
+//! ships with `tower_http::trace::TraceLayer` as a generic HTTP tracing
+//! placeholder. **The adopter is expected to swap it for an OTel-specific layer**
+//! (e.g. `axum_tracing_opentelemetry::OtelAxumLayer`) to satisfy traceparent W3C
+//! end-to-end propagation (FR-T5-CC-014). Layering stays adopter-side at the
+//! outer router.
+//!
+//! # Hexagonal preservation (Article VII)
+//!
+//! This adapter takes an `Arc<application::GreeterUseCase>` (or any domain-side
+//! trait object) at construction. The Connect-generated service trait delegates
+//! to the use case ; no business logic lives in this module.
+
+use std::sync::Arc;
+
+use axum::Router;
+// 0.6.x surface (evidence.md P-14): `Router` is the connectrpc router, aliased
+// `ConnectRouter` to keep it distinct from `axum::Router`. `Context`,
+// `ConnectError`, and the `OwnedView` zero-copy request wrapper are the handler
+// building blocks redesigned in 0.4.0.
+#[allow(unused_imports)]
+use connectrpc::{ConnectError, Context, Router as ConnectRouter};
+#[allow(unused_imports)]
+use buffa::OwnedView;
+
+// The build.rs (run by the post_cargo_new pass of overlay.sh) produces
+// `_connectrpc.rs` in OUT_DIR via `connectrpc_build::Config::include_file(...)`.
+// We pull it in here via the stdlib `include!` macro. This path-α codegen
+// mechanism (ADR-T5-006) is PRESERVED on 0.6.x — the 0.6.0 CHANGELOG confirms
+// `connectrpc-build` / build.rs users are unaffected by the dispatcher change
+// ("Cargo rebuilds OUT_DIR automatically"). If build.rs did not run, this line
+// fails to compile with a clear file-not-found message.
+include!(concat!(env!("OUT_DIR"), "/_connectrpc.rs"));
+
+/// Build the Connect adapter as an `axum::Router` ready to be nested under
+/// `/connect` (or any prefix) in the top-level server.
+///
+/// `use_case` is the domain entry point the adapter delegates to once the
+/// adopter registers a generated service below ; the type parameter `U` keeps
+/// the transport layer ignorant of the concrete application use case
+/// (Article VII).
+///
+/// **Tower middleware (tracing, retries, rate-limiting, …) is applied at the
+/// call site**, not inside this function — see the module-level doc for the
+/// canonical swap from `TraceLayer` to an OTel-specific layer that propagates
+/// W3C `traceparent` (FR-T5-CC-014).
+pub fn into_router<U>(_use_case: Arc<U>) -> Router
+where
+    U: Send + Sync + 'static,
+{
+    // Build the ConnectRouter and register service handlers (0.6.x surface).
+    //
+    // TODO(adopter): wire your proto-generated service handlers here. On the
+    // 0.6.x surface a handler is an `impl` of the generated service trait whose
+    // methods take a `Context` + a zero-copy `OwnedView<…View<'static>>` and
+    // return `Result<(Response, Context), ConnectError>`, e.g.:
+    //
+    //     struct GreeterHandler<U> { use_case: Arc<U> }
+    //
+    //     impl GreeterService for GreeterHandler<application::GreeterUseCase> {
+    //         async fn greet(
+    //             &self,
+    //             ctx: Context,
+    //             request: OwnedView<GreetRequestView<'static>>,
+    //         ) -> Result<(GreetResponse, Context), ConnectError> {
+    //             let name = request.name();            // zero-copy view accessor
+    //             let reply = self.use_case.greet(name); // delegate to the domain
+    //             Ok((GreetResponse { message: reply }, ctx))
+    //         }
+    //     }
+    //
+    //     let service = GreeterHandler { use_case: _use_case.clone() };
+    //     let connect = service.register(ConnectRouter::new());
+    //     return connect.into_axum_service();
+    //
+    // Without a registered service the router is empty and every request returns
+    // 404 — this is intentional in the seed template.
+    let connect_router = ConnectRouter::new();
+
+    // `into_axum_service()` is gated behind connectrpc's `axum` feature (enabled
+    // by this crate's Cargo.toml.tmpl). CHANGED from the 0.3.x
+    // `into_axum_router()` surface (frozen 1.0.0 template) — evidence.md P-14.
+    connect_router.into_axum_service()
+}

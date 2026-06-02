@@ -3,17 +3,30 @@
 # Ratifies: ADR-003 + ADR-009 from docs/ARCHITECTURE-TARGET.md
 # Structural exception per Article XII : not subject to 12-month review.
 #
-# v1.1.0 (t5-connect-codegen 2026-05-05) : additive — no breaking change.
-#   - Added codegen.connect_layout_version: 1 (FR-T5-CC-021).
-#   - Added codegen.versions: map with concrete pins (FR-T5-CC-022, ADR-T5-002).
-#   - Refreshed codegen.tools list per Context7 investigation 2026-05-05 :
-#     replaced retired `protoc-gen-connect-es` (Connect v2 migration) with
-#     `protoc-gen-es` ; replaced abandoned `protoc-gen-connect-dart-community`
-#     with the official `connectrpc/connect-dart` plugin ; added the
-#     `connectrpc` Rust crate family (Anthropic OSS) per ADR-T5-001.
+# Version history (additive bumps — no breaking change on this structural standard) :
+#   1.1.0 (t5-connect-codegen 2026-05-05) :
+#     - Added codegen.connect_layout_version: 1 (FR-T5-CC-021).
+#     - Added codegen.versions: map with concrete pins (FR-T5-CC-022, ADR-T5-002).
+#     - Refreshed codegen.tools list per Context7 investigation 2026-05-05 :
+#       replaced retired `protoc-gen-connect-es` (Connect v2 migration) with
+#       `protoc-gen-es` ; replaced abandoned `protoc-gen-connect-dart-community`
+#       with the official `connectrpc/connect-dart` plugin ; added the
+#       `connectrpc` Rust crate family (Anthropic OSS) per ADR-T5-001.
+#   1.2.0 (t5-cargo-pin-refresh 2026-05-16) : corrected buffa / buffa-types pins
+#     `=0.3.3` (never published) → `=0.3.0` (only resolvable 0.3 series version
+#     satisfying connectrpc 0.3.3's `buffa = "^0.3"`). Error-of-fact fix.
+#   1.3.0 (b8-6-connect-rpc 2026-06-02) : additive — no breaking change.
+#     - Added codegen.versions_2_0_0 block carrying the modernized 2.0.0-line
+#       Rust Connect crate pins (connectrpc / connectrpc-build =0.6.1,
+#       buffa / buffa-types =0.6.0 — driven by connectrpc 0.6.1's `buffa = "^0.6"`
+#       constraint; 0.7.0 out-of-range). ADR-B86-001/005.
+#     - Fixed the stale header drift (the version: field read 1.2.0 since
+#       t5-cargo-pin-refresh while this comment still narrated only the 1.1.0
+#       changeset, omitting the 1.2.0 and 1.3.0 history above).
+#     1.0.0-line pins (codegen.versions) are byte-unchanged.
 
-version: "1.2.0"
-last_reviewed: 2026-05-04
+version: "1.3.0"    # B.8.6 additive bump (2.0.0-line Rust Connect crate pins block + header fix)
+last_reviewed: 2026-06-02
 expires_at: never
 exception_constitutional: true
 linter_rule: null
@@ -78,6 +91,39 @@ codegen:
     buffa: "=0.3.0"              # CORRECTION (see Amend 2026-05-16 above)
     buffa-types: "=0.3.0"        # CORRECTION
     connectrpc-build: "=0.3.3"   # WAIVER (build-dep)
+
+  # ── 2.0.0-line Rust Connect crate pins (B.8.6 / b8-6-connect-rpc; ADR-B86-001/005) ──
+  #
+  # Sibling of `versions:` above. `versions:` is the FROZEN 1.0.0-line record
+  # (byte-unchanged); this block carries the modernized 2.0.0-line set consumed
+  # by the `2.0.0/backend/crates/grpc-api/Cargo.toml.tmpl` overlay. The two pin
+  # sets are separately addressable per schema version (the 1.0.0 flat templates
+  # still resolve `versions:`; the 2.0.0 subtree resolves `versions_2_0_0:`).
+  #
+  # WAIVER (re-review trigger) : `connectrpc` / `connectrpc-build` are pre-1.0
+  # crates (0.6.x) pinned exactly at the current stable line. No age waiver is
+  # needed (the T5 13-day age waiver does not apply — 0.6.1 published 2026-05-27,
+  # mature line) but the pre-1.0 status keeps these on the upstream-release
+  # watch-list ; re-review when the connectrpc family reaches 1.0. Anthropic OSS
+  # pedigree (`anthropics/connect-rust`) + ConnectRPC conformance suite.
+  #
+  # connectrpc 0.6.1 declares `buffa = "^0.6"` → resolves to `>=0.6.0, <0.7.0`.
+  # Only 0.6.0 satisfies it; 0.7.0 is OUT-OF-RANGE (irresolvable conflict).
+  # MSRV 1.88 (unchanged vs T5 target environment). Verified LIVE 2026-06-02
+  # (evidence.md P-12; final re-verify clause ADR-B86-001 / b8-coroot lesson).
+  versions_2_0_0:
+    connectrpc: "=0.6.1"         # WAIVER (pre-1.0 crate; re-review trigger at 1.0)
+    connectrpc-build: "=0.6.1"   # WAIVER (build-dep; lockstep with connectrpc)
+    buffa: "=0.6.0"              # ^0.6 constraint from connectrpc 0.6.1; 0.7.0 excluded
+    buffa-types: "=0.6.0"        # ^0.6 constraint from connectrpc 0.6.1; 0.7.0 excluded
+    # JS/Dart/Go entries — carry-over annotations (ranges unchanged from versions:
+    # above remain valid for the 2.0.0 line per evidence.md P-09/P-10/P-13).
+    buf: "1.68.2"
+    protoc-gen-connect-go: "1.20.0"   # BSR v1.20.0 confirmed live 2026-06-02 (evidence.md P-13; was 1.19.2 on the 1.0.0 line)
+    protoc-gen-es: ">=2.2.0"          # npm latest 2.12.0 — range valid (P-10)
+    "@connectrpc/connect": "^2.0.0"   # npm latest 2.1.1 — range valid (P-09)
+    "@connectrpc/connect-web": "^2.0.0"
+    connectrpc-dart: ">=1.0.0"        # pub.dev latest 1.0.0 (P-08; no advancement, P-13)
   derived_outputs: [openapi-3.1, asyncapi-3.1]
 
 breaking_change_check: "buf breaking --against '.git#branch=main'"

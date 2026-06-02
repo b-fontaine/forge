@@ -107,11 +107,16 @@ _test_t5c_l1_003_mirror_template() {
 }
 
 _test_t5c_l1_004_standard_version() {
+  # v1.2.0 corrected the buffa pin (t5-cargo-pin-refresh, 2026-05-16) ;
+  # v1.3.0 added the additive codegen.versions_2_0_0 block for the B.8.6
+  # 2.0.0 line (b8-6-connect-rpc, 2026-06-02) — the 1.0.0 codegen.versions
+  # map this harness pins below is byte-unchanged (sibling-harness coupling
+  # bump per ADR-B8-OBI-006 hybrid precedent).
   if [ ! -f "$STANDARD" ]; then
     echo "    transport.yaml missing: $STANDARD" >&2; return 1
   fi
-  if ! grep -Eq '^version:[[:space:]]*"1\.2\.0"' "$STANDARD"; then
-    echo "    transport.yaml::version is not \"1.2.0\"" >&2
+  if ! grep -Eq '^version:[[:space:]]*"1\.3\.0"' "$STANDARD"; then
+    echo "    transport.yaml::version is not \"1.3.0\"" >&2
     grep -E '^version:' "$STANDARD" | head -1 | sed 's/^/      /' >&2
     return 1
   fi

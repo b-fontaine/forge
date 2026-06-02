@@ -1,0 +1,18 @@
+name: b8-6-connect-rpc
+status: archived
+created: 2026-06-02
+schema: default
+constitution_version: "1.1.0"
+parent_audit_items:
+  - B.8.6  # docs/new-archetypes-plan.md §4.2 B.8.6 — "Templates Connect-RPC : buf.gen.yaml étendu avec protoc-gen-connect-go/-es/-dart-community ; tonic-build continue côté serveur Rust". GROUND-TRUTH NOTE (Article III.4): the three Connect plugins ALREADY ship on the frozen 1.0.0 buf.gen.yaml.tmpl since t5-connect-codegen (2026-05-06). The real B.8.6 delta is (1) the versioned 2.0.0 transport subtree consecrating Connect-RPC as the default transport (2.0.0.yaml `connect-rpc { replaces: rest-bridge, delivered_by: B.8.6 }`), and (2) the connectrpc Rust crate modernization 0.3.x → current line, explicitly deferred from T5.1.E to B.8 (plan line 734-735).
+depends_on:
+  - B.8.3  # 2.0.0 candidate schema (.forge/schemas/full-stack-monorepo/2.0.0.yaml) — declares connect-rpc { role: transport, replaces: rest-bridge, delivered_by: B.8.6, standard: transport.yaml } + the rest-bridge → connect-rpc migration_delta (brick B.8.6, strategy additive-first)
+  - B.8.4  # versioned 2.0.0 template-subtree convention (.forge/templates/archetypes/full-stack-monorepo/2.0.0/...) + the delivered-flip precedent on 2.0.0.yaml + Envoy Gateway templates that host the gRPC-Web fallback posture (plan §13 caveat 2 — Connect-Dart risk #1)
+  - T.5    # t5-connect-codegen (Connect plugins + transport_connect.rs.tmpl + transport.yaml codegen pins on 1.0.0) + t5-cargo-pin-refresh (buffa =0.3.0 correction + WAIVER posture this brick modernizes)
+timeline:
+  proposed: 2026-06-02
+  specified: 2026-06-02
+  designed: 2026-06-02
+  planned: 2026-06-02
+  implemented: 2026-06-02
+  archived: 2026-06-02

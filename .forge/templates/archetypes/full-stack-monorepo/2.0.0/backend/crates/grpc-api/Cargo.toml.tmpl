@@ -1,0 +1,80 @@
+# <!-- Audit: B.8.6 (b8-6-connect-rpc) — 2.0.0 grpc-api crate manifest;
+#      ADR-B86-001. Full standalone copy of the frozen 1.0.0 manifest with the
+#      Connect-RPC family modernized to the 0.6.x line. The 1.0.0 flat
+#      Cargo.toml.tmpl (=0.3.3 / =0.3.0) stays byte-unchanged (NFR-B86-002,
+#      FR-B86-011). -->
+#
+# Rendered AFTER `cargo new --lib crates/grpc-api` by overlay.sh in the
+# `phase: post_cargo_new` pass (ADR-T5-006). The cargo-generated
+# Cargo.toml is overwritten by this template so the dependencies +
+# build-dependencies for Connect-RPC + tonic gRPC are pinned in
+# accordance with ADR-B86-001 (2.0.0 line) + ADR-004 (tonic KEEP).
+#
+# Workspace-aware : every dep flagged `workspace = true` inherits its
+# version from backend/Cargo.toml [workspace.dependencies]. Direct
+# version pins below are local to this crate (Connect-RPC family).
+
+[package]
+name        = "grpc-api"
+version     = "0.1.0"
+edition     = "2021"
+publish     = false
+
+[dependencies]
+# ── tonic gRPC server / messages (ADR-004 KEEP) — workspace-pinned ──
+tonic       = { workspace = true }
+prost       = { workspace = true }
+
+# ── Connect-RPC family (ADR-B86-001) — exact 2.0.0-line pins ──
+# See transport.yaml v1.3.0 codegen.versions_2_0_0. Resolved verify-then-pin
+# LIVE 2026-06-02 (evidence.md P-12): connectrpc max-stable 0.6.1.
+#   - connectrpc 0.6.1 declares `buffa = "^0.6"` → only =0.6.0 resolves
+#     (>=0.6.0, <0.7.0); 0.7.0 is OUT-OF-RANGE (irresolvable conflict).
+#   - `features = ["axum"]` is required to expose
+#     `ConnectRouter::into_axum_service()` (the axum feature is opt-in /
+#     non-default per connectrpc 0.6.x — evidence.md P-14).
+#   - buffa-types is carried as a NORMAL dep: the upstream canonical example
+#     (anthropics/connect-rust examples/eliza/Cargo.toml) carries BOTH buffa
+#     and buffa-types as normal [dependencies] ("Serialization (for generated
+#     message types)") — the generated code references buffa_types:: at runtime
+#     (evidence.md P-15). Mirrors the 1.0.0 template's normal-dep posture.
+#   - The connectrpc family is still pre-1.0 (0.6.x) — re-review at the 1.0
+#     milestone (WAIVER note in transport.yaml::codegen.versions_2_0_0).
+connectrpc  = { version = "=0.6.1", features = ["axum"] }
+buffa        = "=0.6.0"
+buffa-types  = "=0.6.0"
+
+# ── Async runtime + Tower middleware ──
+tokio       = { workspace = true }
+tower       = "0.5"
+tower-http  = { version = "0.6", features = ["trace"] }
+http        = "1"
+http-body   = "1"
+
+# ── Axum (Connect adapter target) ──
+axum        = { version = "0.8" }
+
+# ── Domain + application — workspace-internal ──
+domain      = { path = "../domain" }
+application = { path = "../application" }
+
+# ── Observability ──
+tracing                = { workspace = true }
+tracing-opentelemetry  = "0.27"
+
+# ── Error handling ──
+thiserror   = { workspace = true }
+anyhow      = { workspace = true }
+
+# ── Serialization (connectrpc generated code consumes serde_json on Connect+JSON path) ──
+serde       = { workspace = true }
+serde_json  = { workspace = true }
+
+[build-dependencies]
+# ── Connect codegen (ADR-T5-001 Path α / Option 2) — 2.0.0 lockstep pin ──
+# Replaces a buf-driven local plugin to preserve the codebase
+# convention "remote plugins only" in buf.gen.yaml. Lockstep with
+# connectrpc (=0.6.1). build.rs users are unaffected by the 0.6.0
+# dispatcher breaking change (evidence.md P-06; "Cargo rebuilds OUT_DIR
+# automatically").
+connectrpc-build = "=0.6.1"

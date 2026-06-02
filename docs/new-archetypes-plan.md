@@ -521,13 +521,14 @@ v1.0.0 sont désormais résolus.
 | `b8-4-envoy-gateway`               | archived         | B.8.4 (first 2.0.0 template brick — Envoy Gateway templates `.../2.0.0/infra/k8s/envoy-gateway/` Gateway API native, root `gateway.yaml` standard J.7-compliant, verify-then-pin chart v1.8.0 / bundle v1.5.1, additive ∥ Kong, `b8-4.test.sh` 12 L1, independent review APPROVE, archived 2026-05-31) |
 | `b8-5-postgres-pgvector`           | archived         | B.8.5 (RE-SCOPED: DBOS-Rust falsified→deferred; Postgres 17+pgvector delta; pin `pgvector/pgvector:0.8.2-pg17`; `orchestration.yaml` 1.1.0 DBOS-deferral; `2.0.0.yaml` dbos-embedded deferred; b8-signoz version-aware fix; `b8-5.test.sh` 12 L1; independent review APPROVE; archived 2026-05-31) |
 | `b8-orchestration-temporal-realign` | archived        | B.8.5 follow-on (B8O — orchestration default réconcilié avec Constitution §VIII.2 : `orchestration.yaml` v1.1.0 → v1.2.0 `default_by_language: { rust: temporal }` ; DBOS rétrogradé watch-list `future-option` (`requires: rust-sdk-ga`) ; `2.0.0.yaml` delta temporal→dbos `cancelled: true` ; `infra/temporal.md` réaligné `temporalio-sdk` 0.4.0 (verify-then-pin LIVE) ; ADR-B8O-001 annule ADR-002 pour Rust ; `b8o.test.sh` 10 L1 ; archived 2026-06-01) |
+| `b8-6-connect-rpc` | archived | B.8.6 (Connect-RPC 2.0.0 transport brick — subtree `2.0.0/shared/protos/` + `grpc-api` adapter 0.6.x surface ; pins `connectrpc =0.6.1`/`buffa =0.6.0` verify-then-pin LIVE ; connect-go v1.20.0 BSR-confirmed ; `transport.yaml` v1.3.0 `codegen.versions_2_0_0` ; S2S re-defer B.8.12 ; `b8-6.test.sh` 12 L1 ; independent review APPROVE ; archived 2026-06-02) |
 
-**46 archivés** au 2026-06-01 (zéro change en cours). Trio B.8.8 observability rearch
+**47 archivés** au 2026-06-02 (zéro change en cours). Trio B.8.8 observability rearch
 **fully closed** (Coroot leg 1 rc.3 + SigNoz leg 2 rc.4 + OBI leg 3 rc.5) ;
 **B.8.1 baseline + B.8.2 legacy-snapshot freeze archived 2026-05-30**,
-puis **B.8.3 + B.8.3.b + B.8.4 + B.8.5 (re-scoped) + B8O archivés
-2026-05-30 → 2026-06-01** (additive, see §0.10). Next B.8 step:
-**B.8.6** (Connect-RPC templates). T5.3.1 livré sans `task validate` GREEN
+puis **B.8.3 + B.8.3.b + B.8.4 + B.8.5 (re-scoped) + B8O + B.8.6 archivés
+2026-05-30 → 2026-06-02** (additive, see §0.10). Next B.8 step:
+**B.8.7** (Zitadel templates). T5.3.1 livré sans `task validate` GREEN
 end-to-end : le L2 et `task validate` exposent **Q-005**
 (SigNoz image pins rotted upstream + architecture migration
 3-services → unified ; pin refresh impossible). Tentative
@@ -2307,7 +2308,7 @@ Migration **additive d'abord, breaking ensuite** :
   mandates Temporal). The DBOS-templates premise below is **struck**.
 - **B.8.6.** Templates Connect-RPC : `buf.gen.yaml` étendu avec
   `protoc-gen-connect-go`, `protoc-gen-connect-es`, `protoc-gen-connect-dart-community`.
-  `tonic-build` continue côté serveur Rust (compat native). Effort : `M`.
+  `tonic-build` continue côté serveur Rust (compat native). Effort : `M`. ✅ **Done 2026-06-02 via `b8-6-connect-rpc`** (re-scoped per Ground-Truth: plugins already on 1.0.0 since t5-connect-codegen ; real delta = 2.0.0 subtree + crate modernization 0.3.x→0.6.1 + transport.yaml v1.3.0 ; independent review APPROVE).
 - **B.8.7.** Templates Zitadel : Helm chart self-host EU + script de bootstrap
   (création tenant root, OIDC client app, JWT signing key rotation). Documentation
   pour T1 (Zitadel Cloud SaaS) vs T2/T3 (self-host EU strict). Effort : `M`.

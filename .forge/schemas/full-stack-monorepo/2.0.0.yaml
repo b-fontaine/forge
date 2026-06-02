@@ -85,7 +85,7 @@ components:
     role: transport
     replaces: rest-bridge
     delivered_by: B.8.6
-    standard: transport.yaml  # protocol: connect-rpc
+    standard: transport.yaml  # protocol: connect-rpc — B.8.6 delivered; codegen.versions_2_0_0 (transport.yaml v1.3.0)
 
   - name: zitadel
     role: identity

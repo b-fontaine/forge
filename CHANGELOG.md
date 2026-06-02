@@ -12,6 +12,59 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added — B.8.6 Connect-RPC 2.0.0 transport brick (`b8-6-connect-rpc`)
+
+- **2.0.0 transport delta — modernized Connect-RPC codegen + Rust crate line.**
+  New versioned subtree under
+  `.forge/templates/archetypes/full-stack-monorepo/2.0.0/` with **four** `.tmpl`
+  files: `shared/protos/buf.gen.yaml` (full standalone 6-plugin codegen manifest —
+  `neoeinstein-tonic`/`-prost`, `protocolbuffers/dart`, `connectrpc/go`,
+  `bufbuild/es`, `connectrpc/dart` — connect-go refreshed `v1.19.2 → v1.20.0`,
+  every other pin carried verbatim), `shared/protos/README` (Connect-RPC as the
+  2.0.0 default transport + the gRPC-Web-via-Envoy fallback doc),
+  `backend/crates/grpc-api/src/transport_connect.rs` (the adapter rewritten for the
+  connectrpc 0.6.x handler surface — `Context` + `OwnedView<…View<'static>>` →
+  `Result<(Resp, Context), ConnectError>`; axum mount `ConnectRouter::new()` +
+  `into_axum_service()`, CHANGED from the 0.3.x `into_axum_router()`; build.rs
+  path-α codegen preserved), and `backend/crates/grpc-api/Cargo.toml` (the
+  modernized pin set).
+- **Rust Connect crate pins modernized 0.3.x → 0.6.x (verify-then-pin LIVE
+  2026-06-02).** `connectrpc = "=0.6.1"` + `connectrpc-build = "=0.6.1"`
+  (build-dep) + `buffa = "=0.6.0"` + `buffa-types = "=0.6.0"` (normal dep, upstream
+  `eliza` posture). `connectrpc 0.6.1` declares `buffa = "^0.6"` → only `0.6.0`
+  resolves (`0.7.0` out-of-range). `features = ["axum"]` required (non-default).
+  Resolved live against the crates.io REST API (evidence.md P-12); BSR
+  `buf.build/connectrpc/go:v1.20.0` availability confirmed live (P-13); the 0.6.x
+  handler + mount surface confirmed live (P-14). The connectrpc family stays
+  pre-1.0 — WAIVER comment records the re-review trigger at the 1.0 milestone.
+- **`transport.yaml` v1.2.0 → v1.3.0 (additive).** Added a
+  `codegen.versions_2_0_0:` sibling block carrying the 2.0.0-line Rust Connect
+  crate pins (+ JS/Dart/Go carry-over annotations; connect-go `1.20.0` in the
+  2.0.0 sub-block only); fixed the stale "v1.1.0" header drift. The 1.0.0-line
+  `codegen.versions` map is **byte-unchanged**; no breaking change. REVIEW.md gains
+  a `| transport.yaml | 1.3.0 |` KEEP-WITH-CHANGES ledger row;
+  `validate-standards-yaml.sh` (dir mode) PASSes.
+- **`2.0.0.yaml` connect-rpc component** gains a `# … B.8.6 delivered` annotation
+  on its `standard: transport.yaml` line (comment-only; the loaded dict is
+  byte-identical to a YAML parser). The `rest-bridge → connect-rpc`
+  migration_delta with `strategy: additive-first` is **intact** (REST-bridge
+  removal only at B.8.14). b8-3 (17/17) + b8-3b (12/12) stay GREEN.
+- **Frozen 1.0.0 surfaces byte-untouched** (additive-first; NFR-B86-002): the flat
+  `shared/protos/buf.gen.yaml.tmpl` (connect-go `v1.19.2`, connectrpc `=0.3.3`),
+  the flat `transport_connect.rs.tmpl` (`into_axum_router()`), the flat
+  `Cargo.toml.tmpl`, and `schema.yaml` are all unchanged.
+- **Rust S2S Connect client RE-DEFERRED to B.8.12** (ADR-B86-004) — explicit, not
+  silently omitted (TLS/auth/deadline/retry belong to the E2E convergence gate).
+- New harness `.forge/scripts/tests/b8-6.test.sh` (12 L1, ≤2 s, zero net/Docker;
+  registered in `forge-ci.yml` after `b8-5`), with frozen-1.0.0 byte-sentinel
+  guards + an exit-code coupling guard re-running b8-3 + b8-3b.
+- **Sibling-harness coupling bumps** (full ~45-harness pre-push sweep caught
+  both, per the `full_harness_suite_before_push` discipline): `t5.test.sh`
+  `_test_t5_009` and `t5-cargo.test.sh` `_test_t5c_l1_004_standard_version`
+  hard-pinned `transport.yaml` `version: "1.2.0"` — both bumped to `"1.3.0"`
+  with comment trails (ADR-B8-OBI-006 hybrid precedent); the 1.0.0 pin
+  assertions they carry are untouched and stay GREEN. Full suite 45/45 GREEN.
+
 ### Changed — B.8 orchestration default reconciled with Constitution §VIII.2 (`b8-orchestration-temporal-realign`)
 
 - **Temporal is now the orchestration default for Rust; DBOS demoted to a

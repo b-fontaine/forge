@@ -712,3 +712,31 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   (LIVE 2026-06-01): `temporalio-sdk = 0.4.0` (crates.io), API realigned in
   `infra/temporal.md`. Evidence:
   `.forge/changes/b8-orchestration-temporal-realign/evidence.md`.
+
+---
+
+## 2026-06-02 — Updated transport.yaml to v1.3.0 (b8-6-connect-rpc)
+
+- **Reviewer**: @bfontaine
+- **Reviewed standards**:
+
+  | Standard       | Version | Decision          | Next review due | Notes |
+  |----------------|---------|-------------------|-----------------|-------|
+  | transport.yaml | 1.3.0   | KEEP-WITH-CHANGES | never           | Additive. Added `codegen.versions_2_0_0` block with the modernized 2.0.0-line Rust Connect crate pins (connectrpc / connectrpc-build `=0.6.1`, buffa / buffa-types `=0.6.0` — driven by connectrpc 0.6.1's `buffa = "^0.6"` constraint; 0.7.0 out-of-range). connect-go bumped `1.19.2 → 1.20.0` (BSR-confirmed) in the 2.0.0 sub-block only. Fixed the stale "v1.1.0" header drift. 1.0.0-line pins (`codegen.versions`) byte-unchanged. No breaking change. |
+
+- **Decision**: KEEP-WITH-CHANGES
+- **Next review due**: never (exception_constitutional: true — structural, Article XII)
+- **Notes**: Updated by `b8-6-connect-rpc` (B.8.6). Additive minor bump
+  (transport.yaml 1.2.0 → 1.3.0). `exception_constitutional: true` preserved
+  (`expires_at: never`); `last_reviewed` resets to 2026-06-02. No constitutional
+  amendment — `protocol: connect-rpc`, `fallback: grpc-web`, `server_runtime`, and
+  the existing `codegen.versions` map are all unchanged. The new `versions_2_0_0`
+  block is a sibling of the existing `versions:` map under `codegen:`, separately
+  addressable per schema version (ADR-B86-005) — the 1.0.0 flat templates resolve
+  `versions:`, the 2.0.0 subtree resolves `versions_2_0_0:`. Rust pins verified
+  LIVE 2026-06-02 (evidence.md P-12; final re-verify clause ADR-B86-001 /
+  b8-coroot lesson); connect-go BSR `v1.20.0` availability confirmed live
+  (evidence.md P-13). The connectrpc family stays pre-1.0 (0.6.x) — a WAIVER
+  comment block records the re-review trigger at the 1.0 milestone. Realised
+  alongside the `2.0.0/shared/protos/` + `2.0.0/backend/crates/grpc-api/` template
+  subtree. Evidence: `.forge/changes/b8-6-connect-rpc/evidence.md`.

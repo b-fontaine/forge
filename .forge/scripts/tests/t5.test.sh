@@ -69,7 +69,7 @@ FAIL_NAMES=()
 # MANIFEST: _test_t5_006 — ADR-T5-001 grpc-api Cargo.toml.tmpl declares connectrpc-build build-dep
 # MANIFEST: _test_t5_007 — FR-T5-CC-004 tonic-build invocation preserved in build.rs
 # MANIFEST: _test_t5_008 — FR-T5-CC-005 template .gitignore lists gen/connect/
-# MANIFEST: _test_t5_009 — FR-T5-CC-020 transport.yaml version is 1.1.0
+# MANIFEST: _test_t5_009 — FR-T5-CC-020 transport.yaml version is 1.3.0 (v1.2.0 t5-cargo-pin-refresh ; v1.3.0 b8-6-connect-rpc)
 # MANIFEST: _test_t5_010 — FR-T5-CC-021 transport.yaml has codegen.connect_layout_version: 1
 # MANIFEST: _test_t5_011 — FR-T5-CC-022 transport.yaml codegen.versions includes connectrpc =0.3.3
 # MANIFEST: _test_t5_012 — FR-T5-CC-023 REVIEW.md has Updated entry for transport.yaml v1.1.0
@@ -262,14 +262,18 @@ _test_t5_008() {
   done
 }
 _test_t5_009() {
-  # FR-T5-CC-020 : transport.yaml version is 1.2.0 since 2026-05-16
-  # (t5-cargo-pin-refresh, T5.1.E / ADR-T5CPR-001). v1.1.0 introduced the
-  # `codegen.versions` map ; v1.2.0 corrected the buffa pin from invalid
-  # `=0.3.3` (never published on crates.io) to `=0.3.0`. The REVIEW.md
-  # ledger 2026-05-16 entry is the authoritative anchor.
+  # FR-T5-CC-020 : transport.yaml version is 1.3.0 since 2026-06-02
+  # (b8-6-connect-rpc, B.8.6). v1.1.0 introduced the `codegen.versions`
+  # map ; v1.2.0 corrected the buffa pin from invalid `=0.3.3` (never
+  # published on crates.io) to `=0.3.0` (t5-cargo-pin-refresh, T5.1.E /
+  # ADR-T5CPR-001) ; v1.3.0 added the additive `codegen.versions_2_0_0`
+  # block for the 2.0.0 line — the 1.0.0 `codegen.versions` map asserted
+  # by _test_t5_011 is byte-unchanged (sibling-harness coupling bump per
+  # ADR-B8-OBI-006 hybrid precedent). REVIEW.md ledger entries
+  # (2026-05-16, 2026-06-02) are the authoritative anchors.
   local v
   v="$(_yq_eval '.version' "$STD_DIR/transport.yaml")"
-  assert_eq "1.2.0" "$v" "transport.yaml version"
+  assert_eq "1.3.0" "$v" "transport.yaml version"
 }
 _test_t5_010() {
   # FR-T5-CC-021 : transport.yaml has codegen.connect_layout_version: 1

@@ -1,0 +1,67 @@
+# <!-- Audit: B.8.6 (b8-6-connect-rpc) — 2.0.0 transport codegen manifest;
+#      ADR-B86-001 / ADR-B86-002 / ADR-B86-003. Full standalone copy of the
+#      frozen 1.0.0 manifest (NOT an import/overlay of it) — the 1.0.0 flat
+#      shared/protos/buf.gen.yaml.tmpl stays byte-unchanged (NFR-B86-002). -->
+#
+# 2.0.0-line code-generation configuration for <project-name>'s proto
+# contracts. Drives the same outputs as the frozen 1.0.0 manifest from a
+# single proto source :
+#   - Rust gRPC stubs (server + client) consumed by backend/crates/grpc-api/
+#   - Rust prost message types
+#   - Dart message + gRPC client stubs consumed by frontend/lib/generated/protos/
+#   - Connect codegen (Go forward-compat, TS / Connect v2, Dart / Connect)
+#
+# 2.0.0 delta vs the frozen 1.0.0 manifest (additive-first, ADR-B86-003) :
+#   - connect-go remote plugin refreshed v1.19.2 → v1.20.0 (BSR availability of
+#     buf.build/connectrpc/go:v1.20.0 confirmed LIVE 2026-06-02 — evidence.md
+#     P-13). The 1.0.0 manifest keeps v1.19.2 (frozen).
+#   - All other plugin pins are identical to the frozen 1.0.0 manifest (carried
+#     verbatim) : neoeinstein-tonic / -prost (Article VII.2 gRPC retained —
+#     FR-B86-006), protocolbuffers/dart, bufbuild/es v2.2.0, connectrpc/dart
+#     v1.0.0 (official plugin — NOT the stale protoc-gen-connect-dart-community
+#     naming; ADR-B86-003 / FR-T5-CC-003).
+#
+# Regenerate both with : `task proto` (or `cd shared/protos && buf generate`).
+
+version: v2
+
+managed:
+  enabled: true
+
+plugins:
+  # ── Rust (tonic — server + client) — Article VII.2 gRPC SHALL retained ──
+  - remote: buf.build/community/neoeinstein-tonic:v0.4.0
+    out: ../../backend/crates/grpc-api/src/generated
+    opt:
+      - no_server=false
+      - no_client=false
+
+  # ── Rust (prost — messages) ──
+  - remote: buf.build/community/neoeinstein-prost:v0.4.0
+    out: ../../backend/crates/grpc-api/src/generated
+
+  # ── Dart (messages + gRPC clients) ──
+  - remote: buf.build/protocolbuffers/dart:v21.1.2
+    out: ../../frontend/lib/generated/protos
+
+  # ── Connect codegen — Go (forward-compat for B.6/B.7 ; FR-T5-CC-001) ──
+  # 2.0.0 delta : v1.19.2 → v1.20.0 (BSR-confirmed live 2026-06-02, P-13).
+  - remote: buf.build/connectrpc/go:v1.20.0
+    out: ../../backend/crates/grpc-api/src/generated/connect/go
+    opt:
+      - paths=source_relative
+
+  # ── Connect codegen — TS (Connect v2 / Protobuf-ES v2 ; FR-T5-CC-002) ──
+  # Connect v2 retired protoc-gen-connect-es ; service descriptors come
+  # from @bufbuild/protoc-gen-es ≥ 2.2.0. Runtime: @connectrpc/connect@^2.
+  - remote: buf.build/bufbuild/es:v2.2.0
+    out: ../../frontend/lib/generated/connect/ts
+    opt:
+      - target=ts
+      - import_extension=js
+
+  # ── Connect codegen — Dart (OFFICIAL connectrpc/connect-dart ; FR-T5-CC-003) ──
+  # Replaces abandoned skadero/protoc-gen-connect-dart-community.
+  # pub.dev latest 1.0.0 (P-08); no advancement (P-13).
+  - remote: buf.build/connectrpc/dart:v1.0.0
+    out: ../../frontend/lib/generated/connect/dart
