@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1780074076590,
+  "lastScanned": 1780393590567,
   "projectRoot": "/Users/bfontaine/git/github/forge",
   "techStack": {
     "languages": [],
@@ -10,7 +10,7 @@
   },
   "build": {
     "buildCommand": null,
-    "testCommand": "cd /Users/bfontaine/git/github/forge\ngit commit -m \"$(cat <<'EOF'\nfix(ci): realign delivery.test.sh to unified SigNoz arch + pin whoami tag\n\ndelivery.test.sh was frozen at v0.3.0 while the flagship templates moved\nunderneath it, leaving main CI red since rc.2/rc.4 (shipped via admin\nbypass):\n\n  - rc.2 (T5.3.1): traefik/whoami:latest placeholder broke\n    test_no_latest_tag_anywhere (NFR-018).\n  - rc.4 (b8-signoz-unified): SigNoz 3-svc -> unified migration broke\n    test_compose_signoz_services_shape, test_compose_otel_service_shape,\n    and test_scaffold_plan_lists_all_new_templates. b8-signoz updated its\n    own harness but not the sibling structural harness.\n\nFixes:\n  - Pin traefik/whoami:latest -> v1.11.0 (verified live on Docker Hub),\n    in both the canonical and example source compose templates so the\n    b8-signoz 6-copy mirror stays byte-identical (npm run bundle\n    regenerates the cli/assets copies).\n  - Register infra/observability/signoz-otel-collector-config.yaml.tmpl\n    in scaffold-plan.yaml.\n  - Realign test_compose_otel_service_shape to fsm-signoz-otel-collector\n    (OTLP 4317/4318, no service healthcheck per ADR-B8-SIG-003, signoz\n    collector config mount).\n  - Realign test_compose_signoz_services_shape to the unified topology\n    (fsm-signoz UI :3301 + fsm-signoz-clickhouse + fsm-signoz-zookeeper).\n\nVerified green: delivery 24/0, b8-signoz 21/0, foundations 21/0,\nscaffolder 21/0, workflow 16/0, verify.sh PASS, constitution-linter PASS,\nCLI vitest 72/72, shellcheck clean, no :latest in any compose copy.\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nEOF\n)\"\ngit log --oneline -1",
+    "testCommand": "rtk grep -c 'DBOS' .forge/product/roadmap.md; rtk grep -n -o '.\\{0,60\\}DBOS.\\{0,60\\}' .forge/product/roadmap.md | head -20; echo '--plan--'; rtk grep -c '^| `' docs/new-archetypes-plan.md | head -1; rtk grep -n '46 archivés\\|39 archivés\\|B.8.6.*Connect-RPC templates' docs/new-archetypes-plan.md | head -5; rtk grep -n 't5-3-3-vitest-bundle-preflight` | archived' docs/new-archetypes-plan.md | cut -c1-80",
     "lintCommand": null,
     "devCommand": null,
     "scripts": {}
@@ -41,7 +41,7 @@
       "path": "bin",
       "purpose": "Executable scripts",
       "fileCount": 12,
-      "lastAccessed": 1780074076562,
+      "lastAccessed": 1780393590524,
       "keyFiles": [
         "_forge-init-helpers.sh",
         "forge-demeter-scan.sh",
@@ -53,8 +53,8 @@
     "cli": {
       "path": "cli",
       "purpose": null,
-      "fileCount": 8,
-      "lastAccessed": 1780074076562,
+      "fileCount": 9,
+      "lastAccessed": 1780393590525,
       "keyFiles": [
         "README.md",
         "VERSION",
@@ -66,21 +66,21 @@
     "docs": {
       "path": "docs",
       "purpose": "Documentation",
-      "fileCount": 15,
-      "lastAccessed": 1780074076563,
+      "fileCount": 16,
+      "lastAccessed": 1780393590525,
       "keyFiles": [
         "ARCHETYPES.md",
         "ARCHITECTURE-TARGET.md",
         "ARCHITECTURE.md",
-        "COMPLIANCE.md",
-        "CONTRIBUTING.md"
+        "B8-BASELINE.md",
+        "COMPLIANCE.md"
       ]
     },
     "examples": {
       "path": "examples",
       "purpose": "Example code",
       "fileCount": 1,
-      "lastAccessed": 1780074076563,
+      "lastAccessed": 1780393590526,
       "keyFiles": [
         "README.md"
       ]
@@ -89,7 +89,7 @@
       "path": "scripts",
       "purpose": "Build/utility scripts",
       "fileCount": 1,
-      "lastAccessed": 1780074076564,
+      "lastAccessed": 1780393590527,
       "keyFiles": [
         "release.sh"
       ]
@@ -98,7 +98,7 @@
       "path": "cli/assets",
       "purpose": "Static assets",
       "fileCount": 17,
-      "lastAccessed": 1780074076565,
+      "lastAccessed": 1780393590529,
       "keyFiles": [
         "CHANGELOG.md",
         "CLAUDE.md",
@@ -109,7 +109,7 @@
       "path": "cli/dist",
       "purpose": "Distribution/build output",
       "fileCount": 6,
-      "lastAccessed": 1780074076565,
+      "lastAccessed": 1780393590530,
       "keyFiles": [
         "cli.d.ts",
         "cli.js",
@@ -120,27 +120,27 @@
       "path": "cli/node_modules",
       "purpose": "Dependencies",
       "fileCount": 1,
-      "lastAccessed": 1780074076566,
+      "lastAccessed": 1780393590531,
       "keyFiles": []
     }
   },
   "hotPaths": [
     {
       "path": "docs/new-archetypes-plan.md",
-      "accessCount": 120,
-      "lastAccessed": 1780257402560,
+      "accessCount": 156,
+      "lastAccessed": 1780414011078,
       "type": "file"
     },
     {
       "path": ".forge/product/roadmap.md",
-      "accessCount": 59,
-      "lastAccessed": 1780257375928,
+      "accessCount": 81,
+      "lastAccessed": 1780413955190,
       "type": "file"
     },
     {
       "path": "CHANGELOG.md",
-      "accessCount": 44,
-      "lastAccessed": 1780145618495,
+      "accessCount": 55,
+      "lastAccessed": 1780414162283,
       "type": "file"
     },
     {
