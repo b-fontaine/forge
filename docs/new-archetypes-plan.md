@@ -497,7 +497,12 @@ v1.0.0 sont désormais résolus.
 | `t5-otel-dart-api-realign`   | archived               | T5 (Q-004 — flutter/opentelemetry.md v1.1.0 Workiva realign) |
 | `t5-otel-app`                | archived               | T5 (OTel App SDK — Phase B)   |
 | `i2-compliance-tiers`        | archived               | T5 (I.2)                      |
+| `i3-t3-forbidden-linter`     | archived               | T5 (I.3 — linter rule `t3-forbidden-components` ADR-I3-001 ; archived 2026-05-12) |
+| `i5-compliance-workflow`     | archived               | T5 (I.5 — reusable workflow `forge-compliance.yml` ; archived 2026-05-12) |
+| `i6-compliance-artefacts`    | archived               | T5 (I.6 — compliance bundle generator ; archived 2026-05-12) |
+| `doc-workiva-otel-status`    | archived               | T5 (doc — annotation §9 `ARCHITECTURE-TARGET.md` Dart OTel signal coverage ; archived 2026-05-12) |
 | `t5-otel-live-run`           | archived               | T5 Phase D (live-run collector contract validation) |
+| `t5-otel-traceparent-e2e`    | archived               | T5 Phase C (W3C traceparent E2E à travers Kong, BDD zero prod-code ; archived 2026-05-26) |
 | `f3-release-script-fix`      | archived               | T8 / F.3 (pulled forward) — release script fix |
 | `cli-trust-harness`          | archived               | T5.1 (CLI Trust Harness)                       |
 | `t5-cargo-pin-refresh`       | archived               | T5.1.E (Cargo pin correction)                  |
@@ -505,7 +510,7 @@ v1.0.0 sont désormais résolus.
 | `t5-2-platform-verification` | archived               | T5.2 (Anti-Hallucination Platform Verification — 3-axis checklist + standards-lifecycle.md v1.1.0) |
 | `t5-otel-dartastic-realign`  | archived               | T5.3 (Workiva → Dartastic substitution, breaking standard v2.0.0 ; released `v0.4.0-rc.1` 2026-05-19) |
 | `b1-1-dev-up-matrix-fixes`   | archived               | T5.3.1 (full-stack-monorepo docker-compose.dev.yml template hygiene — `traefik/whoami` placeholder + `version:` removal ; archived 2026-05-19 ; release target `v0.4.0-rc.2`) |
-| `t5-3-3-vitest-bundle-preflight` | implemented        | T5.3.3 (vitest globalSetup runs `npm run bundle` once before any test suite, closes `npx vitest` bypass surfaced as T5.3.1 reviewer LOW finding ; `v0.4.0-rc.3`/`0.4.0` target) |
+| `t5-3-3-vitest-bundle-preflight` | archived           | T5.3.3 (vitest globalSetup runs `npm run bundle` once before any test suite, closes `npx vitest` bypass surfaced as T5.3.1 reviewer LOW finding ; `v0.4.0-rc.3`/`0.4.0` target ; archived 2026-05-20) |
 | `b8-coroot-rehost`           | archived               | B.8.8 (Coroot rehost ghcr.io + 1.20.2 — no v-prefix per ADR-B8-COR-001 inverted at impl ; pilot of `b8-observability-rearch` trio ; T6 first additive brick — siblings `b8-signoz-unified` + `b8-obi-refresh` follow ; v0.4.0-rc.3 target) |
 | `b8-signoz-unified`          | archived               | B.8.8 (SigNoz 3-svc → unified arch, T6 trio sibling 2 ; `observability.yaml` v1.2.0 → v2.0.0 BREAKING + ISO 8601 `pin_review_cadence:` + ARCH-CHANGE ledger flag ; 6-service compose 4+2 ; débloque `dev-up-matrix` RED ; archived 2026-05-28 ; v0.4.0-rc.4 released) |
 | `b8-obi-refresh`             | archived               | B.8.8 (OBI/Beyla refresh 2.0.1 → 3.15.0, T6 trio sibling 3 — closes the trio ; `observability.yaml` v2.0.0 → v2.1.0 additive ; ClusterRole RBAC widened `services` per Beyla 3.x docs ; caps + kernel-58 UNCHANGED ; 4-copy mirror sync ; sibling-harness coupling break hybrid per ADR-B8-OBI-006 ; snapshot determinism enforced via Python tarfile + SOURCE_DATE_EPOCH (post-review HIGH fix) ; archived 2026-05-29 ; v0.4.0-rc.5 target) |
@@ -515,12 +520,14 @@ v1.0.0 sont désormais résolus.
 | `b8-3b-validator-versioned-schema` | archived         | B.8.3.b (versioned-schema discovery in `validate-foundations.sh` / `verify.sh` / `constitution-linter.sh` — generic + strict-superset ; prereq FR-GL-017 dict-layers crash fix 6175a61 ; `b8-3b.test.sh` 12 L1 ; independent review APPROVE ; archived 2026-05-31) |
 | `b8-4-envoy-gateway`               | archived         | B.8.4 (first 2.0.0 template brick — Envoy Gateway templates `.../2.0.0/infra/k8s/envoy-gateway/` Gateway API native, root `gateway.yaml` standard J.7-compliant, verify-then-pin chart v1.8.0 / bundle v1.5.1, additive ∥ Kong, `b8-4.test.sh` 12 L1, independent review APPROVE, archived 2026-05-31) |
 | `b8-5-postgres-pgvector`           | archived         | B.8.5 (RE-SCOPED: DBOS-Rust falsified→deferred; Postgres 17+pgvector delta; pin `pgvector/pgvector:0.8.2-pg17`; `orchestration.yaml` 1.1.0 DBOS-deferral; `2.0.0.yaml` dbos-embedded deferred; b8-signoz version-aware fix; `b8-5.test.sh` 12 L1; independent review APPROVE; archived 2026-05-31) |
+| `b8-orchestration-temporal-realign` | archived        | B.8.5 follow-on (B8O — orchestration default réconcilié avec Constitution §VIII.2 : `orchestration.yaml` v1.1.0 → v1.2.0 `default_by_language: { rust: temporal }` ; DBOS rétrogradé watch-list `future-option` (`requires: rust-sdk-ga`) ; `2.0.0.yaml` delta temporal→dbos `cancelled: true` ; `infra/temporal.md` réaligné `temporalio-sdk` 0.4.0 (verify-then-pin LIVE) ; ADR-B8O-001 annule ADR-002 pour Rust ; `b8o.test.sh` 10 L1 ; archived 2026-06-01) |
 
-**39 archivés** au 2026-05-31. Trio B.8.8 observability rearch
+**46 archivés** au 2026-06-01 (zéro change en cours). Trio B.8.8 observability rearch
 **fully closed** (Coroot leg 1 rc.3 + SigNoz leg 2 rc.4 + OBI leg 3 rc.5) ;
-**B.8.1 baseline + B.8.2 legacy-snapshot freeze archived 2026-05-30** as the
-first two B.8 bricks beyond the trio (additive, see §0.10). Next B.8 step:
-**B.8.3** (schema 2.0.0 candidate). T5.3.1 livré sans `task validate` GREEN
+**B.8.1 baseline + B.8.2 legacy-snapshot freeze archived 2026-05-30**,
+puis **B.8.3 + B.8.3.b + B.8.4 + B.8.5 (re-scoped) + B8O archivés
+2026-05-30 → 2026-06-01** (additive, see §0.10). Next B.8 step:
+**B.8.6** (Connect-RPC templates). T5.3.1 livré sans `task validate` GREEN
 end-to-end : le L2 et `task validate` exposent **Q-005**
 (SigNoz image pins rotted upstream + architecture migration
 3-services → unified ; pin refresh impossible). Tentative
@@ -2220,7 +2227,7 @@ Effort : `M` (J.1-J.5 du tableau §1.4).
 
 ### 3.6 B.7 `ai-native-rag` — `NEW`
 
-- Stack : Rust (axum + DBOS) + LLM gateway (Mistral on Scaleway / vLLM EU
+- Stack : Rust (axum + Temporal — DBOS annulé pour Rust per B8O) + LLM gateway (Mistral on Scaleway / vLLM EU
   self-host pour T3, OpenAI proxy en T1) + Postgres + pgvector 0.8 + MCP servers +
   Qwik streaming UI + Flutter optionnel.
 - Cibles : RGPD + AI Act + DORA si finance. Profil compliance `T2/T3`.
@@ -2439,7 +2446,7 @@ fallback natif si push critique.
   phases `embeddings-pipeline` (specs pipeline avant design) et
   `prompt-audit` (gates). Effort : `S`.
 - **B.7.2.** Scaffolder `/forge:init --archetype ai-native-rag` : workspace Rust
-  (axum + DBOS), Postgres + pgvector 0.8 + HNSW indexes pré-câblés, LLM gateway proxy
+  (axum + Temporal — DBOS annulé pour Rust per B8O, ADR-B8O-001), Postgres + pgvector 0.8 + HNSW indexes pré-câblés, LLM gateway proxy
   (Mistral on Scaleway / vLLM EU / OpenAI fallback), MCP servers stub
   (`db`, `file`, `search`), Qwik streaming UI (SSE / WebTransport). Effort : `XL`.
 - **B.7.3.** Standards :
