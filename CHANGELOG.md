@@ -12,6 +12,8 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+## [0.4.0-rc.10] — 2026-06-02
+
 ### Added — B.8.7 Zitadel 2.0.0 identity brick (`b8-7-zitadel`)
 
 - **2.0.0 identity delta — Zitadel IdP introduced (ground truth: introduction,
