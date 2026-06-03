@@ -127,20 +127,20 @@
   "hotPaths": [
     {
       "path": "docs/new-archetypes-plan.md",
-      "accessCount": 180,
-      "lastAccessed": 1780464988702,
+      "accessCount": 194,
+      "lastAccessed": 1780478935217,
       "type": "file"
     },
     {
       "path": ".forge/product/roadmap.md",
-      "accessCount": 88,
-      "lastAccessed": 1780464961512,
+      "accessCount": 91,
+      "lastAccessed": 1780478881277,
       "type": "file"
     },
     {
       "path": "CHANGELOG.md",
-      "accessCount": 63,
-      "lastAccessed": 1780465143643,
+      "accessCount": 67,
+      "lastAccessed": 1780479083740,
       "type": "file"
     },
     {
@@ -189,6 +189,12 @@
       "path": "cli/src/commands/init-archetype.ts",
       "accessCount": 5,
       "lastAccessed": 1778772800700,
+      "type": "file"
+    },
+    {
+      "path": "bin/forge-sbom.sh",
+      "accessCount": 5,
+      "lastAccessed": 1780476823268,
       "type": "file"
     },
     {
@@ -249,12 +255,6 @@
       "path": "bin/_forge-init-helpers.sh",
       "accessCount": 2,
       "lastAccessed": 1778423411738,
-      "type": "file"
-    },
-    {
-      "path": "bin/forge-sbom.sh",
-      "accessCount": 2,
-      "lastAccessed": 1778423873239,
       "type": "file"
     },
     {
