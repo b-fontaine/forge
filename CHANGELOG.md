@@ -12,6 +12,8 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+## [0.4.0-rc.11] — 2026-06-03
+
 ### Added — B.8.9 Qwik web-public 2.0.0 frontend brick (`b8-9-qwik-web-public`)
 
 - **2.0.0 web-public surface introduced — Qwik City public-facing web (additive).**
