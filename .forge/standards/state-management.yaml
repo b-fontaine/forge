@@ -3,15 +3,18 @@
 # Ratifies: ADR-006 from docs/ARCHITECTURE-TARGET.md
 # Structural exception per Article XII : not subject to 12-month review.
 
-version: "1.0.0"
-last_reviewed: 2026-05-04
+version: "1.1.0"
+# Version history:
+#   1.0.0 (T.4, 2026-05-04) — initial ratification; enforcement deferred (ci_blocking: false)
+#   1.1.0 (b8-11-nsma-linter, 2026-06-03) — ci_blocking activated; enforcement now CI-blocking
+last_reviewed: 2026-06-03
 expires_at: never
 exception_constitutional: true
 linter_rule: no-state-management-alternatives
 enforcement:
-  ci_blocking: false              # Q-001 Option A — warn-only at v0.4.0-rc.1
-  pre_commit_hook: false
-  activation_planned: "B.8 (T6)"  # planned warn → error transition
+  ci_blocking: true   # activated B.8.11 (b8-11-nsma-linter, 2026-06-03) — formerly warn-only
+  pre_commit_hook: false  # runner is G.2 territory; flip to true when dep-linting hook ships
+  activated_by: "b8-11-nsma-linter (B.8.11, 2026-06-03)"
 forbidden:
   - flutter_riverpod
   - riverpod

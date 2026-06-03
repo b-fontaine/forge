@@ -12,6 +12,36 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Changed — B.8.11 NSMA linter activation (`b8-11-nsma-linter`)
+
+- **`state-management.yaml` bumped to v1.1.0 — `no-state-management-alternatives`
+  (NSMA / ADR-006) rule activated.** `enforcement.ci_blocking` flipped
+  `false → true`: the already-existing linter rule now emits `FAIL` (not `WARN`)
+  when a `pubspec.yaml` declares a forbidden state-management package
+  (`flutter_riverpod`, `riverpod`, `provider`, `get`, `getx`, `mobx`,
+  `flutter_mobx`, `states_rebuilder`). Article VI.3 (`flutter_bloc` exclusively)
+  is now machine-enforced.
+- **Pure data + governance flip — NO new bash.** `constitution-linter.sh` is
+  byte-unchanged (FAIL/WARN branch already keyed on `ci_blocking:`). The change
+  is the YAML enforcement field, the governance docs, and the harness only.
+- **`activation_planned: "B.8 (T6)"` replaced with `activated_by:
+  "b8-11-nsma-linter (B.8.11, 2026-06-03)"`** — machine-readable audit trail
+  (schema-legal under `enforcement.additionalProperties: true`). In-file
+  version-history comment added; `pre_commit_hook` stays `false` (no runner ships).
+- **`global/linting-rules.md`** gains an NSMA section (warn→fail activation,
+  Article VI.3 + ADR-006 basis, FAIL message, backward-compat note) +
+  `FORGE_LINTER_SKIP_NSMA=1` opt-out matrix row.
+- **Q-001 ruling: no fresh Article XII amendment** — VI.3 + ADR-006 already
+  mandate the blocking gate; B.8.11 is the scheduled activation, not a new rule
+  (independent reviewer, 2026-06-03).
+- **Backward-compat by construction:** zero scannable `pubspec.yaml` in the live
+  tree after `/.forge/` + `/examples/` + `/.dart_tool/` exclusions — the live
+  linter stays OVERALL PASS post-flip.
+- **`REVIEW.md`** records the v1.1.0 `KEEP-WITH-CHANGES` row (structural exception
+  preserved; transport.yaml v1.1.0 precedent). Harness `b8-11.test.sh`
+  (16 L1 hermetic + 2 L2 opt-in `FORGE_LINTER_FIXTURE_ROOT`), registered in
+  `.github/workflows/forge-ci.yml`. Release target v0.4.0-rc.13.
+
 ## [0.4.0-rc.12] — 2026-06-03
 
 ### Added — B.8.10 flagship 1.0.0→2.0.0 migration orchestrator (`b8-10-migrate-flagship`)

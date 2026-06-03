@@ -804,3 +804,33 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   the 2.0.0 buf.gen es out-path re-point (ADR-B89-004), and the 2.0.0.yaml
   comment-only delivered annotation (ADR-B89-007). Evidence:
   `.forge/changes/b8-9-qwik-web-public/evidence.md`.
+
+---
+
+## 2026-06-03 — Updated state-management.yaml to v1.1.0 (b8-11-nsma-linter)
+
+- **Reviewer**: @bfontaine
+- **Reviewed standards**:
+
+  | Standard | Version | Decision | Next review due | Notes |
+  |----------|---------|----------|-----------------|-------|
+  | state-management.yaml | 1.1.0 | KEEP-WITH-CHANGES | never (structural) | NSMA warn→fail activation per B.8.11/ADR-006; ci_blocking false→true. Evidence: .forge/changes/b8-11-nsma-linter/evidence.md |
+
+- **Decision**: KEEP-WITH-CHANGES — `ci_blocking: false → true` activates the
+  ratified-blocking `no-state-management-alternatives` (NSMA / ADR-006) gate in
+  `constitution-linter.sh` (the FAIL/WARN branch already keyed on `ci_blocking:`;
+  NO new bash — data flip only). `activation_planned: "B.8 (T6)"` replaced with
+  `activated_by: "b8-11-nsma-linter (B.8.11, 2026-06-03)"` (machine-readable audit
+  trail, schema-legal under `enforcement.additionalProperties: true`). Version
+  bumped 1.0.0 → 1.1.0 (additive minor: enforcement fields only; `forbidden:` (8
+  pkgs), `flutter:` block, `linter_rule:`, `rationale:`, and the structural-exception
+  pair `expires_at: never` + `exception_constitutional: true` byte-unchanged).
+  Enforces Article VI.3 — no fresh Article XII amendment (Q-001 ruling (a),
+  independent reviewer 2026-06-03). Precedent: transport.yaml v1.1.0
+  (t5-connect-codegen, REVIEW.md:51-58). Satisfies J.7 FR-J7-023 (version⇔REVIEW
+  coupling) + FR-J7-020 (structural-exception pair).
+- **Next review due**: never (structural exception preserved).
+- **Notes**: `pre_commit_hook` stays `false` (no dep-linting runner ships; runner
+  is G.2 territory — ADR-B811-002). Backward-compat by construction: zero scannable
+  pubspec.yaml in the live tree after `/.forge/` + `/examples/` + `/.dart_tool/`
+  exclusions — live linter stays OVERALL PASS post-flip.

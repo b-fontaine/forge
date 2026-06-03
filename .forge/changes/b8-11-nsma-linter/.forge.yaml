@@ -1,0 +1,18 @@
+name: b8-11-nsma-linter
+status: archived
+created: 2026-06-03
+schema: default
+constitution_version: "1.1.0"
+parent_audit_items:
+  - B.8.11  # docs/new-archetypes-plan.md §4.2 B.8.11 (lines 2330-2332) — "Linter no-state-management-alternatives (Hera) — refuse tout import Flutter de flutter_riverpod/riverpod/provider/get/getx/mobx/flutter_mobx/states_rebuilder. Échec CI bloquant. Pre-commit hook." Ratified by ADR-006 (ARCHITECTURE-TARGET.md:376-397 — flutter_bloc seul standard, alternatives bloquées par linter CI). GROUND-TRUTH NOTES (Article III.4): (1) the NSMA linter rule ALREADY EXISTS and runs in constitution-linter.sh:665-731 — it branches warn-vs-fail on state-management.yaml::enforcement.ci_blocking (L715-719); it is WARN-only today only because ci_blocking:false (Q-001 Option A deferral at v0.4.0-rc.1, with activation_planned: "B.8 (T6)"). B.8.11 is that SCHEDULED activation — a DATA flip (ci_blocking false→true), NOT new bash. (2) The flip ENFORCES an existing constitutional SHALL — Article VI.3 mandates flutter_bloc exclusively + forbids alternatives "without explicit constitutional amendment"; ADR-006 + the ARCHITECTURE-TARGET.md state-management.yaml spec block already prescribe ci_blocking:true. So this is the planned activation of a ratified-blocking rule, not a net-new rule or a tightening beyond the Constitution (F.4 linting-rules.md §1 amendment-for-new-rules does not re-trigger — to be confirmed by independent reviewer, Q-001). (3) Backward-compat (F.4 §3): the NSMA scan excludes /.forge/ + /examples/ + /.dart_tool/, so it never scans template .tmpl files; the live tree must stay GREEN post-flip (no scannable forbidden dep) — verified at implement. (4) NO shipped pre-commit runner exists (G.2 commit-msg hook is scope-only, different concern) — pre_commit_hook flip is a declared-contract decision (Q-002).
+depends_on:
+  - T.4    # state-management.yaml v1.0.0 (J.1, t4-adr-ratification) ratifying ADR-006 — the standard whose ci_blocking flag this brick flips; structural exception (expires_at: never + exception_constitutional: true)
+  - F.4    # f4-linter-extension — the constitution-linter.sh rule framework + the global/linting-rules.md add-a-rule / opt-out-matrix governance this brick updates (NSMA section + FORGE_LINTER_SKIP_NSMA row)
+  - I.3    # i3-t3-forbidden-linter — the NSMA linter section (constitution-linter.sh:665-731) + the i3.test.sh fixture+black-box harness pattern this brick's b8-11.test.sh mirrors ; I.3 explicitly excludes state-management.yaml from its generic walk to avoid double-fire (NFR-I3-T3F-001)
+timeline:
+  proposed: 2026-06-03
+  specified: 2026-06-03
+  designed: 2026-06-03
+  planned: 2026-06-03
+  implemented: 2026-06-03
+  archived: 2026-06-03

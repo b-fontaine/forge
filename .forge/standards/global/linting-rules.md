@@ -163,6 +163,7 @@ neither pass nor fail to the summary).
 | `FORGE_LINTER_SKIP_X_3=1` | Skip Article X.3 (public API doc) |
 | `FORGE_LINTER_SKIP_XI_3=1` | Skip Article XI.3 (GenUI warning) |
 | `FORGE_LINTER_SKIP_XI_5=1` | Skip Article XI.5 (fallback test) |
+| `FORGE_LINTER_SKIP_NSMA=1` | Skip ADR-006 NSMA state-management rule |
 | `FORGE_LINTER_X3_THRESHOLD=<0..100>` | Override X.3 ratio threshold (default 80) |
 
 Adopters SHOULD use opt-outs sparingly and document the rationale
@@ -188,3 +189,72 @@ change to the framework's quality gates. It requires :
 
 A rule MUST NOT be tightened (lower threshold, stricter heuristic)
 without going through the same process.
+
+---
+
+## ADR-006 State Management Discipline — no-state-management-alternatives (NSMA, B.8.11 activation)
+
+The `no-state-management-alternatives` (NSMA) rule in
+`constitution-linter.sh` enforces **Article VI.3** ("State management SHALL
+use `flutter_bloc` exclusively … No other state management library
+(Provider, Riverpod, GetX, MobX, etc.) is permitted without explicit
+constitutional amendment") and **ADR-006** (`docs/ARCHITECTURE-TARGET.md` —
+`flutter_bloc` sole standard, alternatives blocked by CI linter).
+
+### Warn → fail activation (B.8.11)
+
+The NSMA rule has existed and run since T.4. It was WARN-only by default
+under a temporary deferral (`enforcement.activation_planned: "B.8 (T6)"`).
+**B.8.11 (`b8-11-nsma-linter`, 2026-06-03)** performs the scheduled
+activation by flipping `state-management.yaml::enforcement.ci_blocking`
+from `false` to `true`. The linter's existing FAIL/WARN branch reads this
+flag — **no new bash scan logic is added**; this is a pure data flip.
+
+This is the **scheduled activation of a ratified-blocking rule, NOT a new
+rule and NOT a fresh tightening that requires its own Article XII amendment**
+(Q-001 ruling (a), independent reviewer 2026-06-03): Article VI.3 + ADR-006
+already mandate the blocking gate; the amendment clause guards *loosening*
+the SHALL, not *machine-enforcing* it. The §"Adding a new rule" / tightening
+protocol above is satisfied by the pre-existing VI.3 + ADR-006 ratification
+(§1), this change (§2 F.x change), the backward-compat audit (§3, below),
+and this section (§4 update of the standard).
+
+### What triggers the rule
+
+A forbidden state-management package declared in any `pubspec.yaml` under the
+scan root. The scan EXCLUDES `/.forge/`, `/examples/`, and `/.dart_tool/`.
+Forbidden packages (8): `flutter_riverpod`, `riverpod`, `provider`, `get`,
+`getx`, `mobx`, `flutter_mobx`, `states_rebuilder`.
+
+### FAIL message (verbatim)
+
+With `ci_blocking: true` active, a forbidden dep emits:
+
+```
+forbidden state-mgmt dep '${pkg}' in <path> (no-state-management-alternatives, ci_blocking=true)
+```
+
+and the overall linter exits non-zero. (Pre-activation it emitted a
+`warn-only` line instead.)
+
+### Backward-compat note (F.4 §3 audit)
+
+The NSMA `find` excludes `/.forge/`, `/examples/`, and `/.dart_tool/`, so
+template `.tmpl` files and archived examples under those paths are never
+retroactively failed. At activation (verified 2026-06-03):
+
+```
+find . -name pubspec.yaml | grep -v "/.forge/" | grep -v "/examples/" | grep -v "/.dart_tool/"
+```
+
+returned **zero scannable results** — the live Forge tree stays OVERALL PASS
+post-flip. (Two real `pubspec.yaml` files exist under `examples/`, but are
+excluded by the structural filter and are `flutter_bloc`-only regardless.)
+
+### Activation state
+
+- `ci_blocking: true` — the CI gate (`constitution-linter.sh` via
+  `forge-ci.yml`) is the active enforcement mechanism.
+- `pre_commit_hook: false` — the dep-linting pre-commit runner is G.2
+  territory; flip to `true` when a runner artifact ships (ADR-B811-002).
+- Opt-out: `FORGE_LINTER_SKIP_NSMA=1` (see the opt-out matrix above).
