@@ -12,6 +12,8 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+## [0.4.0-rc.13] — 2026-06-03
+
 ### Changed — B.8.11 NSMA linter activation (`b8-11-nsma-linter`)
 
 - **`state-management.yaml` bumped to v1.1.0 — `no-state-management-alternatives`
