@@ -12,6 +12,8 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+## [0.4.0-rc.12] — 2026-06-03
+
 ### Added — B.8.10 flagship 1.0.0→2.0.0 migration orchestrator (`b8-10-migrate-flagship`)
 
 - **`bin/forge-migrate-flagship.sh` introduced — phased, additive 1.0.0→2.0.0
