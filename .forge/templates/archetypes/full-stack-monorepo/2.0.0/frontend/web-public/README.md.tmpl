@@ -1,0 +1,129 @@
+<!-- Audit: B.8.9 (b8-9-qwik-web-public, FR-B89-009) -->
+<!-- Standard: .forge/standards/web-frontend.yaml -->
+# Qwik web-public surface for `<project-name>` (2.0.0 candidate)
+
+This directory is the **2.0.0 web-public delta** for the `full-stack-monorepo`
+flagship. It introduces a **Qwik City** public-facing web surface, authored as an
+**additive** sibling alongside the frozen flat 1.0.0 template tree and the existing
+`web-backoffice` Flutter-Web surface. It removes nothing. Standard:
+`.forge/standards/web-frontend.yaml`.
+
+> **Status**: `candidate` — **`scaffoldable: false` until B.8.14**. The
+> `full-stack-monorepo / 2.0.0` schema is a `candidate`; this subtree is an additive
+> on-disk asset spliced into the 2.0.0 stack at B.8.10/B.8.14. `forge init` still
+> emits the flat 1.0.0 tree (no web-public surface) by default.
+
+## Delivery model
+
+A minimal, chart-less Qwik City skeleton (10 template files) demonstrating SSR,
+routing, a Connect-ES client (one unary call), and the Node toolchain pin. It is
+the policy-sourced realisation of `web-frontend.yaml` v1.0.0 (`default: qwik-city`,
+ratifying ADR-005 — `docs/ARCHITECTURE-TARGET.md:365-374`). B.8.9 change context:
+KEEP Flutter mobile+desktop+backoffice, REPLACE the Flutter Web *public* surface →
+Qwik City (SEO / resumability / LCP / TTI).
+
+The skeleton is deliberately trimmed (no eslint/prettier config, no PWA machinery,
+no `public/` assets, no `global.css`) — those are adopter concerns or later bricks
+(see Scope out). The official Qwik starter's eslint/prettier are omitted on purpose;
+the adopter adds their lint tooling.
+
+## Resources / pins
+
+| Resource | Pin | Provenance |
+|----------|-----|------------|
+| `@builder.io/qwik` | `^1.20.0` | stable 1.x line; `web-frontend.yaml` `versions.qwik` (P-01/P-16) |
+| `@builder.io/qwik-city` | `^1.20.0` | co-released router; `versions.qwik_city` (P-02/P-16) |
+| `vite` | `=7.3.5` (EXACT) | max stable 7.x; vite 8 EXCLUDED by Qwik peer `>=5 <8` (P-06/P-09/P-18) |
+| `@connectrpc/connect` | `^2.0.0` | `transport.yaml` v1.3.0 `codegen.versions_2_0_0` (cross-ref, single source of truth) |
+| `@connectrpc/connect-web` | `^2.0.0` | `transport.yaml` v1.3.0 `codegen.versions_2_0_0` (cross-ref) |
+| Node.js (`.nvmrc`) | `24` | active LTS at 2026-06-03; satisfies Qwik engines `>=18.11` (P-10/P-19) |
+| Codegen (es plugin) | `buf.build/bufbuild/es:v2.2.0` | 2.0.0 `shared/protos/buf.gen.yaml.tmpl`, out-path re-pointed here (ADR-B89-004) |
+
+Pins are **verify-then-pin LIVE** (re-confirmed 2026-06-03 with NO drift from the
+design-phase values; the v2 `@qwik.dev/*` line stays beta-only — `2.0.0-beta.35`,
+NOT GA — on the `qwik_v2_watch` future-option list). Evidence:
+`.forge/changes/b8-9-qwik-web-public/evidence.md` P-16..P-22.
+
+## Governance — Janus arbitration (until Iris-Web / K.4)
+
+Janus arbitrates the `web-public` and `web-backoffice` surfaces for cross-layer
+changes that span them, until the **Iris-Web** agent ships (K.4, T7 — the
+web-frontend specialist). Until then, `web-frontend.yaml` machine enforcement
+(`ci_blocking`, `linter_rule`) stays **OFF** — it is documentation-only at birth.
+See `plan:2321` and `docs/ARCHITECTURE-TARGET.md:743` for the surface-split and
+agent-handoff references.
+
+## Envoy Connect/HTTP path
+
+The Qwik client makes Connect-protocol HTTP calls; **Envoy Gateway (B.8.4)** is the
+ingress (`AT C4: Rel(qwik, envoy)`). See `2.0.0/infra/k8s/envoy-gateway/` for the
+Envoy template. The flow is: Qwik SSR/CSR → `createConnectTransport({ baseUrl })` →
+Envoy Gateway → Rust Connect-RPC backend (B.8.6). JWT validation at the gateway and
+the OIDC/PKCE client are later bricks (see Scope out).
+
+## web-backoffice posture (unchanged)
+
+The `web-backoffice` **Flutter Web** surface is **unchanged** by this brick. The
+1.0.0 Flutter app already covers it; the 2.0.0 schema simply re-homes it under
+`frontend/web-backoffice/` (ADR-B8-3-004). Any backoffice migration is B.8.10 /
+B.8.14 territory. Article VI (Flutter mandate) is preserved — Qwik is an *additive
+public-web* surface, not a Flutter replacement for mobile/desktop/backoffice.
+
+## Node toolchain setup
+
+This subtree ships `.nvmrc` (value: `24`, active LTS at 2026-06-03, re-verified at
+implement). Use `nvm use` / `fnm use` or `actions/setup-node` with
+`node-version-file: .nvmrc` in CI (mirrors the Flutter `flutter-version-file`
+pattern). Node 24 satisfies Qwik 1.20.0 `engines.node` (`>=18.11`). Re-verify the
+active LTS at each `pin_review_cadence` boundary (`node: P12M`; `web-frontend.yaml`).
+The package manager is **npm** (matches the official Qwik starter posture; no
+`.npmrc` shipped here — adopter concern).
+
+## PITFALL — Vite 8 is excluded
+
+`vite` 8.x is the npm `latest` but is **EXCLUDED** by `@builder.io/qwik`
+peerDependencies `>=5 <8`. Pin to `=7.3.5` **exactly** (the max stable 7.x).
+Installing the default vite 8 yields an incompatible peer / broken build. See the
+`web-frontend.yaml` `versions` block for the current pin and ADR-B89-001 for the
+rationale.
+
+## Connect-ES usage
+
+`src/lib/connect-client.ts` wires a Connect-ES v2 **browser** client:
+`createConnectTransport` from `@connectrpc/connect-web` + `createClient` from
+`@connectrpc/connect`. The generated `GreeterService` descriptor is buf-generated by
+the **es plugin** (`buf.build/bufbuild/es:v2.2.0`, `target=ts`) into
+`src/lib/generated/connect/` — the ADR-B89-004 re-pointed `buf.gen` output path. Run
+`task proto` (or `cd shared/protos && buf generate`) to materialise it.
+
+> **Note**: the stale `protoc-gen-connect-es` naming is **retired by Connect v2**.
+> The correct codegen tool is `buf.build/bufbuild/es:v2.2.0` (a single `*_pb` file
+> carries the service descriptor — Connect v2 removed the separate `*_connect` file).
+
+## Zod deferral
+
+Connect-ES client + **Zod** schemas are **deferred per ADR-B89-003** — protobuf-es
+v2 generates TypeScript types directly, which suffice for this skeleton. Revisit Zod
+at B.9.2 (PWA) or the next brick requiring client-side validation (forms, env-var
+validation). `AT:612` reference recorded.
+
+## Scope out (this brick)
+
+- **PWA machinery** (Service Worker, Web Push/VAPID, offline shell) → **B.9.2**
+- **OIDC/PKCE Qwik client** (token storage, refresh) → **B.9.3**
+- **OTel wiring from Qwik** (`Rel(qwik, otel)` OTLP export) → **B.8.12 / B.7**
+- **Streaming patterns** (SSE / WebTransport / cancel-on-unmount) → **B.7.10**
+- **Hosting tier rows** (Cloudflare Pages / Vercel / OVH) → **B.9.7**
+- **Iris-Web agent** (web-frontend specialist) → **K.4 (T7)**
+- **Adopter CI workflow for the web surface** (`forge-web.yml`) → **B.8.10** (lean defer)
+
+## Template variables
+
+This skeleton uses angle-bracket template variables (FR-B89-004):
+
+- `<project-name>` — package name, page title/heading
+- `<namespace>` — deployment namespace (adopter-supplied)
+- `<api-url>` — backend Connect/HTTP base URL (`src/lib/connect-client.ts`)
+
+> **NEVER PUT SECRETS HERE.** The backend URL and any environment values are
+> supplied at deploy time (e.g. `PUBLIC_API_URL` via the Vite env), never committed.

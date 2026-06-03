@@ -769,3 +769,38 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   subtree (4 files: values-forge.yaml.tmpl + README.md.tmpl +
   docker-compose.fragment.yml.tmpl + bootstrap.md.tmpl — chart-referenced hybrid,
   no kustomization). Evidence: `.forge/changes/b8-7-zitadel/evidence.md`.
+
+---
+
+## 2026-06-03 — Initial ratification (b8-9-qwik-web-public)
+
+- **Reviewer**: @bfontaine
+- **Reviewed standards**:
+
+  | Standard          | Version | Decision | Next review due | Notes |
+  |-------------------|---------|----------|-----------------|-------|
+  | web-frontend.yaml | 1.0.0   | Created  | 2027-06-03      | Birth: first web-frontend pin source — Qwik City default (ADR-005 ratification), `@builder.io/qwik ^1.20.0` + `@builder.io/qwik-city ^1.20.0` + `vite 7.3.5` EXACT (vite 8 EXCLUDED by Qwik peer `>=5 <8`), `qwik_v2_watch` future-option (`@qwik.dev/core` 2.0.0-beta.35 — NOT GA), `pin_review_cadence` P30D, `expires_at 2027-06-03` (`exception_constitutional: false`), enforcement OFF (Iris-Web/K.4 territory). |
+
+- **Decision**: Created
+- **Next review due**: 2027-06-03
+- **Notes**: New standard `.forge/standards/web-frontend.yaml` (ROOT-level —
+  required by the non-recursive J.7 gate; gateway.yaml precedent). Role-named
+  (NOT framework-named) so it survives a Qwik→SvelteKit pivot without rename
+  (ADR-B89-005; gateway.yaml / identity.yaml convention). `default: qwik-city`,
+  `alternatives: [sveltekit]`, `forbidden: []` ratifying ADR-005
+  (`docs/ARCHITECTURE-TARGET.md:365-374` — KEEP Flutter mobile+desktop+backoffice,
+  REPLACE Flutter Web public → Qwik City; SEO/resumability/LCP/TTI). `index.yml`
+  gains a `standards/web-frontend` trigger entry (qwik / qwik-city / web-public /
+  connect-es / vite / ssr / seo / sveltekit). Pins verify-then-pin LIVE
+  2026-06-03 (evidence.md P-16..P-22) — re-confirmed the design-phase pins
+  P-01..P-09 with NO drift; the v2 `@qwik.dev/*` line stays beta-only
+  (2.0.0-beta.35, no GA) on the `qwik_v2_watch` future-option list (B.8.O DBOS
+  watch-list precedent). The Connect-ES `^2.0.0` runtime pins are cross-referenced
+  only (transport.yaml v1.3.0 `codegen.versions_2_0_0` is the single source of
+  truth — NOT re-pinned here). No constitutional amendment (Article VI Flutter
+  mandate PRESERVED — Qwik is an additive public-web surface; Article VIII.1 Kong
+  SHALL untouched — candidate stays `scaffoldable: false` until B.8.14). Realised
+  alongside the `2.0.0/frontend/web-public/` Qwik City skeleton (10 .tmpl files),
+  the 2.0.0 buf.gen es out-path re-point (ADR-B89-004), and the 2.0.0.yaml
+  comment-only delivered annotation (ADR-B89-007). Evidence:
+  `.forge/changes/b8-9-qwik-web-public/evidence.md`.

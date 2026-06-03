@@ -12,6 +12,66 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added — B.8.9 Qwik web-public 2.0.0 frontend brick (`b8-9-qwik-web-public`)
+
+- **2.0.0 web-public surface introduced — Qwik City public-facing web (additive).**
+  New versioned subtree under
+  `.forge/templates/archetypes/full-stack-monorepo/2.0.0/frontend/web-public/` with
+  **ten** `.tmpl` files — a minimal, chart-less Qwik City skeleton (ADR-B89-002):
+  `package.json` (Qwik + Connect-ES deps, verified scripts), `.nvmrc` (Node 24),
+  `vite.config.ts` (`qwikCity()` + `qwikVite()` + `tsconfigPaths`), `tsconfig.json`
+  (Qwik JSX, `~/*` alias), `qwik.env.d.ts` (triple-slash refs), `src/entry.ssr.tsx`
+  (`renderToStream`), `src/root.tsx` (`QwikCityProvider` + `RouterOutlet`),
+  `src/routes/index.tsx` (minimal `component$` landing route), `src/lib/connect-client.ts`
+  (Connect-ES v2 browser client — `createConnectTransport` from `@connectrpc/connect-web`
+  + `createClient` from `@connectrpc/connect`, one unary Greeter.SayHello example),
+  and `README.md` (Status `scaffoldable: false` until B.8.14, Janus arbitration,
+  Envoy Connect/HTTP path, web-backoffice-unchanged posture, Node setup, Vite-8
+  pitfall, Connect-ES usage with the `protoc-gen-connect-es`-retired note, Zod
+  deferral, scope-outs). KEEP Flutter mobile+desktop+backoffice; REPLACE the Flutter
+  Web *public* surface → Qwik City (ADR-005, `ARCHITECTURE-TARGET.md:365-374`).
+- **Verify-then-pin LIVE 2026-06-03.** Pins re-confirmed with NO drift from the
+  design phase: `@builder.io/qwik ^1.20.0` + `@builder.io/qwik-city ^1.20.0`;
+  `vite =7.3.5` EXACT (vite 8.0.16 is the npm `latest` but is EXCLUDED by Qwik
+  peerDependencies `>=5 <8` — the Vite-8 trap, recorded in the standard + README);
+  `@connectrpc/connect ^2.0.0` + `@connectrpc/connect-web ^2.0.0` (cross-referenced
+  to `transport.yaml` v1.3.0 — single source of truth, not re-pinned); Node `24`
+  (active LTS, satisfies Qwik engines `>=18.11`). The v2 `@qwik.dev/*` line stays
+  beta-only (`2.0.0-beta.35`, NO GA) on the `qwik_v2_watch` future-option list.
+  Evidence: `.forge/changes/b8-9-qwik-web-public/evidence.md` P-16..P-22.
+- **`web-frontend.yaml` v1.0.0 — NEW standard (first web-frontend pin source).**
+  Role-named (survives a Qwik→SvelteKit pivot without rename; gateway.yaml/identity.yaml
+  precedent). `default: qwik-city`, `alternatives: [sveltekit]`, `forbidden: []`,
+  `versions:` map (qwik/qwik_city/vite), `qwik_v2_watch` future-option block,
+  `pin_review_cadence` (P30D framework / P12M node), `expires_at: 2027-06-03`
+  (`exception_constitutional: false`), enforcement OFF (Iris-Web/K.4 territory).
+  `index.yml` gains a `standards/web-frontend` trigger entry; REVIEW.md gains a
+  `| web-frontend.yaml | 1.0.0 |` Created ledger row; `validate-standards-yaml.sh`
+  (dir mode) PASSes.
+- **2.0.0 `buf.gen.yaml.tmpl` es out-path re-pointed** from
+  `../../frontend/lib/generated/connect/ts` to
+  `../../frontend/web-public/src/lib/generated/connect` (ADR-B89-004) + a
+  `B.8.9 delta` header bump-note. b8-6 T-003 greps plugin NAME sentinels only (NOT
+  the out-path), so the re-point is coupling-safe; b8-6 stays 12/12 GREEN. The
+  frozen 1.0.0 `shared/protos/buf.gen.yaml.tmpl` is byte-UNCHANGED.
+- **`2.0.0.yaml` web-public surface** gains a `# B.8.9 — delivered; standard:
+  web-frontend.yaml v1.0.0` comment-only annotation (and a `# B.8.9 — delivered`
+  comment on the `no-web-public-layer → qwik-web-public` migration_delta, which
+  keeps `strategy: additive-first`). Comment-only — the loaded dict is
+  byte-identical to a YAML parser; b8-3 (17/17) + b8-3b (12/12) stay GREEN.
+- **Frozen 1.0.0 surfaces byte-untouched** (additive-first; NFR-B89-002):
+  `schema.yaml`, the flat 1.0.0 template tree, `1.0.0.tar.gz`, and the 1.0.0 buf.gen
+  manifest are unchanged. Article VI (Flutter mandate) and Article VIII.1 (Kong
+  SHALL) preserved — candidate stays `scaffoldable: false` until B.8.14.
+- **Scope-outs DEFERRED (explicit, not silently omitted):** PWA → B.9.2; OIDC/PKCE
+  → B.9.3; OTel wiring → B.8.12/B.7; streaming → B.7.10; hosting tiers → B.9.7;
+  Iris-Web agent → K.4; web-surface CI workflow → B.8.10; Zod → B.9.2 (ADR-B89-003).
+  Janus arbitrates the web-public + web-backoffice surfaces until Iris-Web/K.4.
+- New harness `.forge/scripts/tests/b8-9.test.sh` (12 L1, ≤2 s, zero
+  net/Docker/npm; registered in `forge-ci.yml` after `b8-7`), with a
+  `protoc-gen-connect-es`-active-reference guard, a frozen-1.0.0-buf.gen guard, and
+  an exit-code coupling guard re-running b8-3 + b8-3b + b8-6.
+
 ## [0.4.0-rc.10] — 2026-06-02
 
 ### Added — B.8.7 Zitadel 2.0.0 identity brick (`b8-7-zitadel`)

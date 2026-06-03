@@ -1,0 +1,18 @@
+name: b8-9-qwik-web-public
+status: archived
+created: 2026-06-02
+schema: default
+constitution_version: "1.1.0"
+parent_audit_items:
+  - B.8.9  # docs/new-archetypes-plan.md §4.2 B.8.9 (lines 2319-2321) — "Templates Qwik public web sous templates/full-stack-monorepo/2.0.0/web-public/ avec Connect-ES client + Connect codegen. Flutter Web reste en web-backoffice/. Janus arbitre les deux." Ratified by ADR-005 (ARCHITECTURE-TARGET.md:365-374 — KEEP Flutter mobile+desktop, REPLACE Flutter Web public → Qwik City; SEO/LCP/TTI rationale). GROUND-TRUTH NOTES (Article III.4): (1) the 1.0.0 flagship has NO web split anywhere — frontend/ is a single flat Flutter app; the 2.0.0 web-public surface is net-new (2.0.0.yaml migration_delta `no-web-public-layer → qwik-web-public`); (2) the plan path "2.0.0/web-public/" conflicts with the ratified schema modeling (ADR-B8-3-004: surfaces are SUB-PATHS under frontend/) — the schema governs, disk path is decided at design (Q-002); (3) NO Qwik version/package is named anywhere in plan or ARCHITECTURE-TARGET — the entire Qwik toolchain is verify-then-pin LIVE; (4) plan/AT still name `protoc-gen-connect-es`, retired by Connect v2 — descriptors come from `@bufbuild/protoc-gen-es ≥2.2.0` (B.8.6 manifest reality).
+depends_on:
+  - B.8.3  # 2.0.0 candidate schema — frontend layer `surfaces:` sub-map (web-public stack qwik / web-backoffice stack flutter-web, ADR-B8-3-004, FR-B8-3-021 — FR-GL-001 triple preserved) + migration_delta { from: no-web-public-layer, to: qwik-web-public, brick: B.8.9, strategy: additive-first }
+  - B.8.6  # Connect-RPC 2.0.0 brick — the TS codegen the Qwik client consumes (buf.gen 2.0.0: bufbuild/es v2.2.0 → frontend/lib/generated/connect/ts, runtime @connectrpc/connect ^2.0.0) + transport.yaml v1.3.0 versions_2_0_0 JS pins the Qwik client MUST respect
+  - B.8.4  # versioned 2.0.0 subtree convention + standard frontmatter model (gateway.yaml versions: map + pin_review_cadence) + Envoy Gateway the Qwik client talks Connect/HTTP to (AT C4: Rel(qwik, envoy))
+timeline:
+  proposed: 2026-06-02
+  specified: 2026-06-02
+  designed: 2026-06-02
+  planned: 2026-06-02
+  implemented: 2026-06-03
+  archived: 2026-06-03

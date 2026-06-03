@@ -1,0 +1,76 @@
+# Forge Standard — Web Frontend (public-facing web surface)
+# Audit: B.8.9 (b8-9-qwik-web-public) — first web-frontend pin source (born here)
+# Ratifies: ADR-005 from docs/ARCHITECTURE-TARGET.md:365-374
+#
+# Role-named (NOT framework-named) so the standard survives a Qwik→SvelteKit
+# pivot without rename — mirrors gateway.yaml / identity.yaml / persistence.yaml
+# (ADR-B89-005). Governs the 2.0.0 `frontend/web-public/` Qwik City surface.
+#
+# VERIFY-THEN-PIN (resolved LIVE at /forge:implement 2026-06-03T04:54Z; see
+# .forge/changes/b8-9-qwik-web-public/evidence.md P-16..P-22; re-confirmed the
+# design-phase pins P-01..P-09 with NO drift). Never fabricated upstream of
+# implement (Article III.4; b8-coroot / b8-signoz verify-then-pin lesson).
+#
+# Governance: Janus arbitrates the web-public + web-backoffice surfaces until the
+# Iris-Web agent ships (K.4, T7). Machine enforcement (ci_blocking / linter_rule)
+# stays OFF at birth — that is Iris-Web/K.4 territory.
+
+version: "1.0.0"
+last_reviewed: 2026-06-03
+expires_at: 2027-06-03             # 12-month cycle (NOT structural — web framework pins drift fast)
+exception_constitutional: false    # dated expiry ⇒ exc:false (FR-J7-020 coupling)
+linter_rule: null                  # advisory standard; no constitution-linter.sh anchor
+enforcement:
+  ci_blocking: false               # documentation-only at birth (Iris-Web/K.4 territory)
+  pre_commit_hook: false
+forbidden: []                      # no web-framework bans ratified (React et al. simply unlisted)
+rationale: |
+  ADR-005 (docs/ARCHITECTURE-TARGET.md:365-374): KEEP Flutter
+  mobile+desktop+backoffice; REPLACE the Flutter Web public surface → Qwik City.
+  Rationale recorded in ARCHITECTURE-TARGET.md:365-374 — SEO + resumability +
+  LCP/TTI for the public-facing web surface (builder.io Qwik resumability
+  benchmarks, reference-only; no fabricated figures reproduced here). SvelteKit
+  is the named alternative per ADR-005. React et al. are neither listed as
+  alternatives nor forbidden. The role-named standard survives a framework pivot
+  without rename (gateway.yaml precedent).
+
+default: qwik-city                 # ratifying ADR-005 ARCHITECTURE-TARGET.md:365-374
+alternatives:
+  - sveltekit                      # per ADR-005 rationale
+compliance_tier_aware: false       # no T1/T2/T3 framework gradient at birth
+
+# ── Pins (verify-then-pin — resolved LIVE at /forge:implement 2026-06-03;
+#    re-confirmed design-phase P-01..P-09 with NO drift; evidence.md P-16..P-22) ──
+versions:
+  qwik: "^1.20.0"                  # @builder.io/qwik — stable 1.x line (P-01/P-16, latest 1.20.0)
+  qwik_city: "^1.20.0"             # @builder.io/qwik-city — same co-released stable line (P-02/P-16)
+  vite: "7.3.5"                    # EXACT pin — vite 8.x EXCLUDED by Qwik 1.20.0 peer ">=5 <8" (P-06/P-18)
+  # PITFALL (Vite-8 trap): vite 8.0.x is the live npm `latest` (8.0.16, P-08/P-18)
+  # but is EXCLUDED by @builder.io/qwik 1.20.0 peerDependencies ">=5 <8". Pin to
+  # 7.3.5 exactly (max stable 7.x, P-09/P-18) — installing the default vite 8
+  # yields an incompatible peer / broken build. See evidence.md Finding 2.
+  # Cross-references (transport.yaml v1.3.0 owns these — NOT re-pinned here;
+  # single source of truth per ADR-B8-3-002 reference-only annotation):
+  # @connectrpc/connect: "^2.0.0"      → transport.yaml v1.3.0 codegen.versions_2_0_0
+  # @connectrpc/connect-web: "^2.0.0"  → transport.yaml v1.3.0 codegen.versions_2_0_0
+  #   (live latest 2.1.1 at 2026-06-03, P-20 — within the ^2.0.0 range)
+
+qwik_v2_watch:                     # B.8.O DBOS watch-list precedent (ADR-B8O-001)
+  status: future-option
+  requires: v2-ga                  # @qwik.dev/core 2.0.0-beta.35 at 2026-06-03 — STILL beta, NOT GA
+  packages:
+    - "@qwik.dev/core"
+    - "@qwik.dev/router"
+  observed: "2.0.0-beta.35 (2026-06-03, P-03/P-04/P-17, evidence.md)"
+  note: >
+    @qwik.dev/city does NOT exist on npm (P-05). The v2 router package is
+    @qwik.dev/router. Re-evaluate when v2 GA ships; until then use the stable
+    @builder.io/qwik 1.x line. Never pin a beta when a stable line exists
+    (Constitution §VIII.2 anti-pre-1.0 rationale; the T5.3 Dartastic beta
+    exception does NOT apply — a stable Qwik line exists).
+
+pin_review_cadence:                # ISO 8601 durations (gateway.yaml / identity.yaml precedent)
+  qwik: "P30D"                     # active upstream velocity; fast-moving web framework
+  qwik_city: "P30D"               # co-released with core — same cadence
+  vite: "P30D"                     # web toolchain moves fast; re-check Vite-8 peer compat
+  node: "P12M"                     # .nvmrc active-LTS re-verify on the annual LTS cycle

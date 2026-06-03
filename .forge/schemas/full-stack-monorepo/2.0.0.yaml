@@ -147,6 +147,7 @@ migration_deltas:
     to: qwik-web-public
     brick: B.8.9
     strategy: additive-first  # new web-public/ surface added alongside web-backoffice/
+    # B.8.9 — delivered 2026-06-03
 
 bump_at: B.8.14  # actual 1.0.0 → 2.0.0 version bump + breaking-component removal
 
@@ -180,6 +181,7 @@ layers:
         path: web-public/
         stack: qwik
         note: Qwik PWA — public-facing web; new in 2.0.0 (B.8.9)
+        # B.8.9 — delivered; standard: web-frontend.yaml v1.0.0
 
   - id: infra
     path: infra/

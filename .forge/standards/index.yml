@@ -374,6 +374,14 @@ standards:
     scope: infra
     priority: high
 
+  # ─── B.8.9 — web-frontend pin source (b8-9-qwik-web-public) ──────
+
+  - id: standards/web-frontend
+    path: standards/web-frontend.yaml
+    triggers: [qwik, qwik-city, web-public, web frontend, web-frontend, connect-es, sveltekit, vite, ssr, seo]
+    scope: frontend
+    priority: high
+
   - id: global/standards-lifecycle
     path: standards/global/standards-lifecycle.md
     triggers: [standards lifecycle, expires_at, last_reviewed, exception_constitutional, REVIEW.md, themis, 12-month review, structural exception]

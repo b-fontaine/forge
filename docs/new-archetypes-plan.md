@@ -523,13 +523,14 @@ v1.0.0 sont désormais résolus.
 | `b8-orchestration-temporal-realign` | archived        | B.8.5 follow-on (B8O — orchestration default réconcilié avec Constitution §VIII.2 : `orchestration.yaml` v1.1.0 → v1.2.0 `default_by_language: { rust: temporal }` ; DBOS rétrogradé watch-list `future-option` (`requires: rust-sdk-ga`) ; `2.0.0.yaml` delta temporal→dbos `cancelled: true` ; `infra/temporal.md` réaligné `temporalio-sdk` 0.4.0 (verify-then-pin LIVE) ; ADR-B8O-001 annule ADR-002 pour Rust ; `b8o.test.sh` 10 L1 ; archived 2026-06-01) |
 | `b8-6-connect-rpc` | archived | B.8.6 (Connect-RPC 2.0.0 transport brick — subtree `2.0.0/shared/protos/` + `grpc-api` adapter 0.6.x surface ; pins `connectrpc =0.6.1`/`buffa =0.6.0` verify-then-pin LIVE ; connect-go v1.20.0 BSR-confirmed ; `transport.yaml` v1.3.0 `codegen.versions_2_0_0` ; S2S re-defer B.8.12 ; `b8-6.test.sh` 12 L1 ; independent review APPROVE ; archived 2026-06-02) |
 | `b8-7-zitadel` | archived | B.8.7 (Zitadel identity brick — INTRODUCES identity, 1.0.0 = implicit-auth ; chart-referenced hybrid zitadel 10.0.2/v4.14.0 ghcr verify-then-pin LIVE + helm-template ; subtree 4 fichiers `2.0.0/infra/zitadel/` ; `identity.yaml` v1.1.0 première versions: map ; secrets masterkeySecretName 32-byte zéro valeur committée ; Envoy-OIDC doc-only → B.8.10/B.8.12 ; `b8-7.test.sh` 12 L1 ; independent review APPROVE ; archived 2026-06-02) |
+| `b8-9-qwik-web-public` | archived | B.8.9 (Qwik web-public brick — INTRODUCES public-web surface, 1.0.0 = single Flutter app ; 10-file Qwik City skeleton `2.0.0/frontend/web-public/` schema-aligned + Connect-ES v2 client ; pins qwik/qwik-city ^1.20.0, vite =7.3.5 (peer excludes 8.x), connect ^2.0.0 ; @qwik.dev/* v2 watch-list beta-only ; NEW standard web-frontend.yaml v1.0.0 ; .nvmrc 24 ; es out-path re-pointed ; Zod/OIDC/OTel/PWA/streaming deferred ; Janus until K.4 ; b8-9.test.sh 12 L1 ; review APPROVE ; archived 2026-06-03) |
 
-**48 archivés** au 2026-06-02 (zéro change en cours, B.8.7 Zitadel archivé 2026-06-02). Trio B.8.8 observability rearch
+**49 archivés** au 2026-06-03 (zéro change en cours, B.8.9 Qwik web-public archivé 2026-06-03). Trio B.8.8 observability rearch
 **fully closed** (Coroot leg 1 rc.3 + SigNoz leg 2 rc.4 + OBI leg 3 rc.5) ;
 **B.8.1 baseline + B.8.2 legacy-snapshot freeze archived 2026-05-30**,
 puis **B.8.3 + B.8.3.b + B.8.4 + B.8.5 (re-scoped) + B8O + B.8.6 + B.8.7 archivés
-2026-05-30 → 2026-06-02** (additive, see §0.10). Next B.8 step:
-**B.8.9** (Qwik web-public templates). T5.3.1 livré sans `task validate` GREEN
+2026-05-30 → 2026-06-02**, **B.8.9 archivé 2026-06-03** (additive, see §0.10). Next B.8 step:
+**B.8.10** (flagship migration script) — last 2.0.0 template brick done; cutover/migration bricks remain (B.8.10–B.8.15). T5.3.1 livré sans `task validate` GREEN
 end-to-end : le L2 et `task validate` exposent **Q-005**
 (SigNoz image pins rotted upstream + architecture migration
 3-services → unified ; pin refresh impossible). Tentative
@@ -2318,7 +2319,7 @@ Migration **additive d'abord, breaking ensuite** :
   10% prod. Audit Aegis sur le DaemonSet privilégié OBI requis. Effort : `M`.
 - **B.8.9.** Templates Qwik public web sous
   `templates/full-stack-monorepo/2.0.0/web-public/` avec Connect-ES client + Connect codegen.
-  Flutter Web reste en `web-backoffice/`. Janus arbitre les deux. Effort : `L`.
+  Flutter Web reste en `web-backoffice/`. Janus arbitre les deux. Effort : `L`. ✅ **Done 2026-06-03 via `b8-9-qwik-web-public`** (schema-aligned `2.0.0/frontend/web-public/` per ADR-B8-3-004 — plan top-level path superseded ; Qwik v1 ^1.20.0 + vite =7.3.5 + Connect-ES v2 ; NEW web-frontend.yaml ; review APPROVE).
 - **B.8.10.** Migration scripts `bin/forge-migrate-flagship.sh` orchestrant les 4 phases
   ARCHITECTURE-TARGET §11 (Phase 0 audit, Phase 1 obs+contrats, Phase 2 bascule
   Envoy/Bloc — **DBOS leg dropped per B8O** (Temporal retained, nothing to bascule),

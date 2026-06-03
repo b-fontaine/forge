@@ -1,0 +1,42 @@
+// Audit: B.8.9 (b8-9-qwik-web-public, FR-B89-002/003/004/008/022)
+// Standard: .forge/standards/web-frontend.yaml
+// Qwik City 1.20.0 canonical landing route (verify-then-pin LIVE 2026-06-03,
+// evidence.md P-21). Minimal component$ + DocumentHead. Demonstrates wiring the
+// Connect-ES client (one unary Greeter.SayHello call) behind a click handler.
+import { component$, useSignal } from "@builder.io/qwik";
+import type { DocumentHead } from "@builder.io/qwik-city";
+import { sayHello } from "../lib/connect-client";
+
+export default component$(() => {
+  const greeting = useSignal<string>("");
+
+  return (
+    <main>
+      <h1><project-name> — web-public</h1>
+      <p>
+        Qwik City public-facing surface. This skeleton demonstrates one unary
+        Connect-ES call to the <project-name> backend via Envoy Gateway.
+      </p>
+      <button
+        type="button"
+        onClick$={async () => {
+          // Client-side resumable handler — fires a unary Connect call.
+          greeting.value = await sayHello("<project-name>");
+        }}
+      >
+        Call Greeter.SayHello
+      </button>
+      {greeting.value !== "" && <p>{greeting.value}</p>}
+    </main>
+  );
+});
+
+export const head: DocumentHead = {
+  title: "<project-name> — web-public",
+  meta: [
+    {
+      name: "description",
+      content: "Public-facing web surface for <project-name> (Qwik City).",
+    },
+  ],
+};

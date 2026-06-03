@@ -1,0 +1,21 @@
+// Audit: B.8.9 (b8-9-qwik-web-public, FR-B89-002/003/008)
+// Standard: .forge/standards/web-frontend.yaml
+// Qwik City 1.20.0 canonical root component (verify-then-pin LIVE 2026-06-03,
+// evidence.md P-21). Minimal skeleton: QwikCityProvider + RouterOutlet. Adopters
+// add a RouterHead, ServiceWorkerRegister (PWA → B.9.2), and global.css here.
+import { component$ } from "@builder.io/qwik";
+import { QwikCityProvider, RouterOutlet } from "@builder.io/qwik-city";
+
+export default component$(() => {
+  return (
+    <QwikCityProvider>
+      <head>
+        <meta charSet="utf-8" />
+        <title><project-name> — web-public</title>
+      </head>
+      <body lang="en-us">
+        <RouterOutlet />
+      </body>
+    </QwikCityProvider>
+  );
+});

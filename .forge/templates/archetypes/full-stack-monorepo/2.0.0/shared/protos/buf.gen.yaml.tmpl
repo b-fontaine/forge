@@ -11,6 +11,13 @@
 #   - Dart message + gRPC client stubs consumed by frontend/lib/generated/protos/
 #   - Connect codegen (Go forward-compat, TS / Connect v2, Dart / Connect)
 #
+# B.8.9 delta: es plugin out-path re-pointed to web-public surface (ADR-B89-004).
+#   The TS Connect descriptors now land in the Qwik web-public surface
+#   (2.0.0/frontend/web-public/src/lib/generated/connect) instead of the 1.0.0
+#   single-app path. b8-6 T-003 greps plugin NAME sentinels only (NOT the out:
+#   path), so the re-point is coupling-safe (evidence.md P-14/P-22). The frozen
+#   1.0.0 shared/protos/buf.gen.yaml.tmpl is byte-UNCHANGED (FR-B89-031).
+#
 # 2.0.0 delta vs the frozen 1.0.0 manifest (additive-first, ADR-B86-003) :
 #   - connect-go remote plugin refreshed v1.19.2 → v1.20.0 (BSR availability of
 #     buf.build/connectrpc/go:v1.20.0 confirmed LIVE 2026-06-02 — evidence.md
@@ -55,7 +62,11 @@ plugins:
   # Connect v2 retired protoc-gen-connect-es ; service descriptors come
   # from @bufbuild/protoc-gen-es ≥ 2.2.0. Runtime: @connectrpc/connect@^2.
   - remote: buf.build/bufbuild/es:v2.2.0
-    out: ../../frontend/lib/generated/connect/ts
+    # B.8.9 delta: re-pointed from ../../frontend/lib/generated/connect/ts to the
+    # Qwik web-public surface (ADR-B89-004). target=ts emits .ts directly into
+    # this dir — no trailing /ts subdir needed. Consumed by
+    # 2.0.0/frontend/web-public/src/lib/connect-client.ts.tmpl.
+    out: ../../frontend/web-public/src/lib/generated/connect
     opt:
       - target=ts
       - import_extension=js

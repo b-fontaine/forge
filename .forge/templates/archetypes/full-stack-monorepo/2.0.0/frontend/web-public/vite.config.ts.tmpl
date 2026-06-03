@@ -1,0 +1,20 @@
+// Audit: B.8.9 (b8-9-qwik-web-public, FR-B89-002/003/008)
+// Standard: .forge/standards/web-frontend.yaml
+// Qwik City 1.20.0 canonical vite.config shape (verify-then-pin LIVE 2026-06-03,
+// evidence.md P-21). vite is pinned EXACTLY to 7.3.5 in package.json — vite 8.x is
+// EXCLUDED by @builder.io/qwik peerDependencies ">=5 <8" (see README PITFALL).
+import { defineConfig } from "vite";
+import { qwikVite } from "@builder.io/qwik/optimizer";
+import { qwikCity } from "@builder.io/qwik-city/vite";
+import tsconfigPaths from "vite-tsconfig-paths";
+
+export default defineConfig(() => {
+  return {
+    plugins: [qwikCity(), qwikVite(), tsconfigPaths({ root: "." })],
+    preview: {
+      headers: {
+        "Cache-Control": "public, max-age=600",
+      },
+    },
+  };
+});

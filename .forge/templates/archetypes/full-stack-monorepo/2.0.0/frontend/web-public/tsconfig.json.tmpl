@@ -1,0 +1,32 @@
+// Audit: B.8.9 (b8-9-qwik-web-public, FR-B89-002/003)
+// Standard: .forge/standards/web-frontend.yaml
+// Qwik City 1.20.0 canonical tsconfig shape (verify-then-pin LIVE 2026-06-03,
+// evidence.md P-21). tsconfig is JSONC — // comments are valid (TypeScript parser).
+// The `~/*` path alias maps to ./src/* (Qwik starter convention). Generated Connect
+// descriptors land in src/lib/generated/connect/ (ADR-B89-004 re-pointed buf.gen
+// output) and resolve via the `~/lib/generated/connect/*` alias.
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "target": "ES2020",
+    "module": "ES2022",
+    "lib": ["es2022", "DOM", "WebWorker", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "jsxImportSource": "@builder.io/qwik",
+    "strict": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "outDir": "tmp",
+    "noEmit": true,
+    "types": ["node", "vite/client"],
+    "moduleResolution": "Bundler",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "incremental": true,
+    "resolveJsonModule": true,
+    "paths": {
+      "~/*": ["./src/*"]
+    }
+  },
+  "include": ["src", "./*.d.ts", "./*.config.ts"]
+}
