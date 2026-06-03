@@ -1,0 +1,22 @@
+name: b8-10-migrate-flagship
+status: archived
+created: 2026-06-03
+schema: default
+constitution_version: "1.1.0"
+parent_audit_items:
+  - B.8.10  # docs/new-archetypes-plan.md §4.2 B.8.10 (lines 2323-2327) — "Migration scripts bin/forge-migrate-flagship.sh orchestrant les 4 phases ARCHITECTURE-TARGET §11 (Phase 0 audit, Phase 1 obs+contrats, Phase 2 bascule Envoy/Bloc — DBOS leg dropped per B8O (Temporal retained, nothing to bascule), Phase 3 nouveaux archétypes, Phase 4 deprecation). Hooks dans forge upgrade." GROUND-TRUTH NOTES (Article III.4): (1) forge-upgrade.sh ALREADY implements the exit-7 [NEEDS MIGRATION: from 1.0.0 to 2.0.0] abort (_a7_check_version_compat) — B.8.10 supplies the OTHER side: the orchestration script the abort points adopters to + the docs/MIGRATIONS.md 1.0.0→2.0.0 section (A.7 deferred stub). (2) Phase 2 has NO DBOS leg — B8O cancelled the Temporal→DBOS swap for Rust (ADR-B8O-001); Temporal RETAINED; the script applies ONLY the additive-first deltas Kong→Envoy/REST→Connect/implicit→Zitadel/no-web→Qwik/pg16→17. (3) The script applies ADDITIVE overlays only — it MUST NOT remove Kong/Temporal/REST-bridge (that breaking removal + the VIII.1/VIII.2 amendment is B.8.14); 2.0.0 stays scaffoldable:false until then, so the script is constitution-compliant pre-amendment (opt-in candidate, never flips the scaffolded default). (4) Pure tooling — NO standard bump (T5.1 precedent); constitution_version unchanged.
+depends_on:
+  - A.7    # forge-upgrade.sh 3-way merge + framework-owned-paths.yml + snapshot BASE recovery + the exit-7 [NEEDS MIGRATION:] abort path (forge-upgrade.sh _a7_check_version_compat) this brick fills + upgrade_history ledger + cli/src/commands/upgrade.ts thin wrapper dispatch pattern
+  - B.8.2  # frozen 1.0.0 snapshot (.forge/scaffold-snapshots/full-stack-monorepo/1.0.0.tar.gz + 1.0.0.sha256, b8-2.test.sh guard) — the byte-frozen reverse/rollback target the migration restores from (never rebuilds/overwrites)
+  - B.8.4  # Envoy Gateway 2.0.0 templates (additive ∥ Kong — Phase 2 overlay) + gateway.yaml standard
+  - B.8.6  # Connect-RPC 2.0.0 templates (additive ∥ REST-bridge — Phase 2 overlay) + transport.yaml v1.3.0
+  - B.8.7  # Zitadel 2.0.0 templates (introduces identity — Phase 2 overlay) + identity.yaml v1.1.0 ; Envoy-OIDC wiring deferred here was B.8.10/B.8.12
+  - B.8.9  # Qwik web-public 2.0.0 templates (additive web surface — Phase 2 overlay) + web-frontend.yaml v1.0.0
+  - B8O    # b8-orchestration-temporal-realign — the migration MUST NOT scaffold/run DBOS, swap out Temporal, dual-run, or add a dbos crate (ADR-B8O-001; orchestration.yaml v1.2.0 default_by_language.rust: temporal)
+timeline:
+  proposed: 2026-06-03
+  specified: 2026-06-03
+  designed: 2026-06-03
+  planned: 2026-06-03
+  implemented: 2026-06-03
+  archived: 2026-06-03

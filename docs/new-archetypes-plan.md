@@ -524,13 +524,15 @@ v1.0.0 sont désormais résolus.
 | `b8-6-connect-rpc` | archived | B.8.6 (Connect-RPC 2.0.0 transport brick — subtree `2.0.0/shared/protos/` + `grpc-api` adapter 0.6.x surface ; pins `connectrpc =0.6.1`/`buffa =0.6.0` verify-then-pin LIVE ; connect-go v1.20.0 BSR-confirmed ; `transport.yaml` v1.3.0 `codegen.versions_2_0_0` ; S2S re-defer B.8.12 ; `b8-6.test.sh` 12 L1 ; independent review APPROVE ; archived 2026-06-02) |
 | `b8-7-zitadel` | archived | B.8.7 (Zitadel identity brick — INTRODUCES identity, 1.0.0 = implicit-auth ; chart-referenced hybrid zitadel 10.0.2/v4.14.0 ghcr verify-then-pin LIVE + helm-template ; subtree 4 fichiers `2.0.0/infra/zitadel/` ; `identity.yaml` v1.1.0 première versions: map ; secrets masterkeySecretName 32-byte zéro valeur committée ; Envoy-OIDC doc-only → B.8.10/B.8.12 ; `b8-7.test.sh` 12 L1 ; independent review APPROVE ; archived 2026-06-02) |
 | `b8-9-qwik-web-public` | archived | B.8.9 (Qwik web-public brick — INTRODUCES public-web surface, 1.0.0 = single Flutter app ; 10-file Qwik City skeleton `2.0.0/frontend/web-public/` schema-aligned + Connect-ES v2 client ; pins qwik/qwik-city ^1.20.0, vite =7.3.5 (peer excludes 8.x), connect ^2.0.0 ; @qwik.dev/* v2 watch-list beta-only ; NEW standard web-frontend.yaml v1.0.0 ; .nvmrc 24 ; es out-path re-pointed ; Zod/OIDC/OTel/PWA/streaming deferred ; Janus until K.4 ; b8-9.test.sh 12 L1 ; review APPROVE ; archived 2026-06-03) |
+| `b8-10-migrate-flagship` | archived | B.8.10 (flagship migration orchestrator — `bin/forge-migrate-flagship.sh` sources forge-upgrade.sh + reuses _a7_* over 4 phases ; P2 additive overlay of the 2.0.0 deltas, NO DBOS leg per B8O, additive-only no removal ; never calls _a7_check_version_compat ; exit 0/2/5/7/8 ; --dry-run/--phase/--force/--rollback ; rollback from frozen 1.0.0 snapshot ; ledger kind:flagship-migration wrapper ; docs/MIGRATIONS.md 1.0.0→2.0.0 fills A.7 stub ; pure tooling no standard bump ; b8-10.test.sh 12 L1 + L2 ; review APPROVE ; archived 2026-06-03) |
 
-**49 archivés** au 2026-06-03 (zéro change en cours, B.8.9 Qwik web-public archivé 2026-06-03). Trio B.8.8 observability rearch
+**50 archivés** au 2026-06-03 (zéro change en cours, B.8.10 flagship migration archivé 2026-06-03). Trio B.8.8 observability rearch
 **fully closed** (Coroot leg 1 rc.3 + SigNoz leg 2 rc.4 + OBI leg 3 rc.5) ;
 **B.8.1 baseline + B.8.2 legacy-snapshot freeze archived 2026-05-30**,
 puis **B.8.3 + B.8.3.b + B.8.4 + B.8.5 (re-scoped) + B8O + B.8.6 + B.8.7 archivés
-2026-05-30 → 2026-06-02**, **B.8.9 archivé 2026-06-03** (additive, see §0.10). Next B.8 step:
-**B.8.10** (flagship migration script) — last 2.0.0 template brick done; cutover/migration bricks remain (B.8.10–B.8.15). T5.3.1 livré sans `task validate` GREEN
+2026-05-30 → 2026-06-02**, **B.8.9 archivé 2026-06-03** (additive, see §0.10),
+**B.8.10 archivé 2026-06-03** (flagship migration orchestrator, see §4.2). Next B.8 step:
+**B.8.11** (linter no-state-management-alternatives) — migration orchestrator done; remaining: B.8.11 (NSMA linter), B.8.12 (E2E migration), B.8.13 (rollback runbook), B.8.14 (schema 2.0.0 bump + VIII.1/VIII.2 amendment), B.8.15 (forge upgrade matrix test). T5.3.1 livré sans `task validate` GREEN
 end-to-end : le L2 et `task validate` exposent **Q-005**
 (SigNoz image pins rotted upstream + architecture migration
 3-services → unified ; pin refresh impossible). Tentative
@@ -2324,7 +2326,7 @@ Migration **additive d'abord, breaking ensuite** :
   ARCHITECTURE-TARGET §11 (Phase 0 audit, Phase 1 obs+contrats, Phase 2 bascule
   Envoy/Bloc — **DBOS leg dropped per B8O** (Temporal retained, nothing to bascule),
   Phase 3 nouveaux archétypes, Phase 4 deprecation). Hooks dans
-  `forge upgrade`. Effort : `L`.
+  `forge upgrade`. Effort : `L`. ✅ **Done 2026-06-03 via `b8-10-migrate-flagship`** (sources forge-upgrade.sh + reuses _a7_* ; 4-phase additive overlay, NO DBOS leg per B8O, removal deferred B.8.14 ; exit 0/2/5/7/8 ; docs/MIGRATIONS.md runbook ; independent review APPROVE).
 - **B.8.11.** Linter `no-state-management-alternatives` (Hera) — refuse tout import
   Flutter de `flutter_riverpod`, `riverpod`, `provider`, `get`, `getx`, `mobx`,
   `flutter_mobx`, `states_rebuilder`. Échec CI bloquant. Pre-commit hook. Effort : `S`.

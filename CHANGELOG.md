@@ -12,6 +12,45 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added — B.8.10 flagship 1.0.0→2.0.0 migration orchestrator (`b8-10-migrate-flagship`)
+
+- **`bin/forge-migrate-flagship.sh` introduced — phased, additive 1.0.0→2.0.0
+  migration orchestrator.** Bash-thin + Python-3-inline (mirrors
+  `bin/forge-sbom.sh` / `.forge/scripts/compliance/bundle.sh`), `set -uo
+  pipefail`. **SOURCEs `bin/forge-upgrade.sh`** and reuses its `_a7_*` 3-way merge
+  library (`_a7_check_force_clean_git`, `_a7_classify`, `_a7_three_way_merge`,
+  `_a7_append_upgrade_history`) — **one merge engine, no duplication**
+  (ADR-B810-001). The `_a7_main` sourcing guard keeps sourcing side-effect-free;
+  `_a7_check_version_compat` is deliberately never re-triggered.
+- **Four phases.** Phase 0 preflight (manifest `archetype_version: 1.0.0` assert +
+  Git-clean gate + frozen-snapshot sha256 verify); Phase 1 obs/contracts
+  (assert-or-noop, idempotent); Phase 2 structural overlay (additive 3-way merge of
+  the 27-file 2.0.0 template-set: Kong→Envoy, REST→Connect, Zitadel, Qwik web-public,
+  pg17+pgvector); Phase 3/4 are forward-reference stubs (print plan, exit 0).
+- **Exit envelope aligned to A.7: `0/2/5/7/8`** (ADR-B810-002). Flags:
+  `--target --phase --dry-run --force --rollback --help`. `--rollback`/`--phase`
+  mutually exclusive; `--dry-run` is default-safe across every phase and rollback
+  (no mutation).
+- **Additive-only — Kong / Temporal / REST preserved** (VIII.1/VIII.2 SHALL
+  clauses binding until B.8.14; FR-B810-031). **No orchestration-swap leg** — the
+  2.0.0 set has zero such files and the `temporal→embedded` delta is
+  `cancelled: true` per B8O / ADR-B8O-001; Temporal is retained (FR-B810-032).
+- **Rollback from the byte-frozen 1.0.0 snapshot** (`tar -xzf` of
+  `.forge/scaffold-snapshots/full-stack-monorepo/1.0.0.tar.gz`); the snapshot and
+  its `.sha256` are never rebuilt or overwritten (FR-B810-041).
+- **Ledger:** appends one `upgrade_history` record with
+  `kind: flagship-migration` via a thin `_b810_tag_last_history_kind` wrapper
+  (identity fields frozen, append-only, `SOURCE_DATE_EPOCH`-deterministic date);
+  `bin/forge-upgrade.sh` stays byte-unchanged (ADR-B810-004).
+- **`docs/MIGRATIONS.md` 1.0.0→2.0.0 section filled** (the A.7 deferred stub):
+  4-phase walkthrough, additive-first posture, B8O no-orchestration-swap note,
+  B.8.13 rollback-criteria xref, stay-on-1.0.0 option, `scaffoldable: false`-until-
+  B.8.14 caveat, doc-only invocation, manual Kong→Envoy canary-by-route runbook.
+- **Harness `b8-10.test.sh`** (12 L1 hermetic ≤ 2 s + L2 opt-in `FORGE_B8_10_LIVE`),
+  registered in `.github/workflows/forge-ci.yml`.
+- **Pure tooling — no standard bump.** No `.forge/standards/*.yaml` edit;
+  `constitution_version: 1.1.0` unchanged (T5.1 precedent).
+
 ## [0.4.0-rc.11] — 2026-06-03
 
 ### Added — B.8.9 Qwik web-public 2.0.0 frontend brick (`b8-9-qwik-web-public`)
