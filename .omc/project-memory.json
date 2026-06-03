@@ -9,7 +9,7 @@
     "runtime": null
   },
   "build": {
-    "buildCommand": null,
+    "buildCommand": "rtk git add .forge/product/roadmap.md .forge/schemas/full-stack-monorepo/2.0.0.yaml .forge/standards/web-frontend.yaml .forge/standards/index.yml .forge/standards/REVIEW.md .github/workflows/forge-ci.yml CHANGELOG.md docs/new-archetypes-plan.md .forge/changes/b8-9-qwik-web-public/ .forge/scripts/tests/b8-9.test.sh .forge/specs/b8-qwik-web-public.md .forge/templates/archetypes/full-stack-monorepo/2.0.0/frontend/ .forge/templates/archetypes/full-stack-monorepo/2.0.0/shared/protos/buf.gen.yaml.tmpl && rtk git status --short | grep '^[MA]' | wc -l && rtk git commit -m \"$(cat <<'EOF'\nfeat(b8-9): Qwik web-public brick (B.8.9)\n\nINTRODUCES the public-web surface on the 2.0.0 line (1.0.0 baseline =\nsingle flat Flutter app, no web split). 10-file Qwik City skeleton at\n2.0.0/frontend/web-public/ (schema-aligned per ADR-B8-3-004 — plan's\ntop-level 2.0.0/web-public/ path superseded by the surfaces sub-path\nmodel) with a Connect-ES v2 client example (createClient from\n@connectrpc/connect + createConnectTransport from @connectrpc/connect-web).\nPins verify-then-pin LIVE 2026-06-03 + tsc-sanity: @builder.io/qwik\n^1.20.0 + @builder.io/qwik-city ^1.20.0, vite =7.3.5 (qwik peer\n\">=5 <8\" EXCLUDES live-latest 8.0.16 — trap recorded), @connectrpc/connect\n+ -web ^2.0.0; @qwik.dev/* v2 rename demoted to watch-list future-option\n(beta-only, no GA). NEW standard web-frontend.yaml v1.0.0 (default\nqwik-city, alternatives [sveltekit], versions map + qwik_v2_watch +\npin_review_cadence; Connect pins cross-referenced to transport.yaml,\nnot re-pinned) + index.yml entry + REVIEW.md birth row. .nvmrc=24\n(active Node LTS) + npm. 2.0.0 buf.gen es out-path re-pointed to\nfrontend/web-public/src/lib/generated/connect (1.0.0 manifest frozen).\n2.0.0.yaml web-public surface + delta annotated B.8.9 (comment-only).\nZod (AT:612) / OIDC PKCE / OTel / PWA / streaming / hosting all\ndeferred; Janus arbitrates the two surfaces until Iris-Web (K.4).\n\nHarness b8-9.test.sh 12 L1 (RED 2/12 -> 12/12 GREEN; @qwik.dev beta-line\nban guard); full suite 48/48; verify.sh 370/0; linter OVERALL PASS;\nfrozen 1.0.0 byte-untouched (b8-2 guard). Independent review: design\nAPPROVE round 1 + final T042 APPROVE round 1 (every npm pin, Connect-ES\nv2 + Qwik API shape re-verified live against upstream). Last 2.0.0\ntemplate brick. Archived 2026-06-03; consolidated spec\n.forge/specs/b8-qwik-web-public.md. Next B.8 step: B.8.10 (flagship\nmigration script) — cutover bricks B.8.10-B.8.15 remain.\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nEOF\n)\" && rtk git log --oneline -1",
     "testCommand": "rtk grep -c 'DBOS' .forge/product/roadmap.md; rtk grep -n -o '.\\{0,60\\}DBOS.\\{0,60\\}' .forge/product/roadmap.md | head -20; echo '--plan--'; rtk grep -c '^| `' docs/new-archetypes-plan.md | head -1; rtk grep -n '46 archivés\\|39 archivés\\|B.8.6.*Connect-RPC templates' docs/new-archetypes-plan.md | head -5; rtk grep -n 't5-3-3-vitest-bundle-preflight` | archived' docs/new-archetypes-plan.md | cut -c1-80",
     "lintCommand": null,
     "devCommand": null,
@@ -127,20 +127,20 @@
   "hotPaths": [
     {
       "path": "docs/new-archetypes-plan.md",
-      "accessCount": 164,
-      "lastAccessed": 1780429266952,
+      "accessCount": 180,
+      "lastAccessed": 1780464988702,
       "type": "file"
     },
     {
       "path": ".forge/product/roadmap.md",
-      "accessCount": 85,
-      "lastAccessed": 1780429221903,
+      "accessCount": 88,
+      "lastAccessed": 1780464961512,
       "type": "file"
     },
     {
       "path": "CHANGELOG.md",
-      "accessCount": 59,
-      "lastAccessed": 1780429437176,
+      "accessCount": 63,
+      "lastAccessed": 1780465143643,
       "type": "file"
     },
     {
