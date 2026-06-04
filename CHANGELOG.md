@@ -12,6 +12,31 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added — B.8.15 forge-upgrade matrix test (`b8-15-upgrade-matrix`)
+
+- **T5.1 Layer D — the v0.4.0-stable publish gate.** New
+  `.forge/scripts/tests/b8-15.test.sh` realises the N-1→N upgrade "matrix" as
+  harness cells (forge-ci has no GA matrix). Direct e2e cells against the binaries:
+  cross-major `forge-upgrade.sh` 1.x→2.0.0 ⇒ exit 7 + literal
+  `[NEEDS MIGRATION: from … to …]`; `--force` on a dirty same-major tree ⇒ refused
+  (clean-git gate, not version-compat); migrate-flagship `--dry-run` on a copy of
+  the c1 example (`examples/forge-fsm-example/`) ⇒ 1.0.0→2.0.0 plan + no mutation;
+  a static additive guard (migrate-flagship never `rm`s Kong/REST/Temporal).
+- **Driver decision (ADR-B815-001):** the positive 1.0.0→2.0.0 flagship cell drives
+  `bin/forge-migrate-flagship.sh` (runnable now); the `forge upgrade` front-door
+  auto-resolve to 2.0.0 is **flip-gated** (skip-pass guard until
+  `b8-14-promotion-flip` promotes 2.0.0) — it asserts 2.0.0 is still
+  `scaffoldable:false`, so a leaked flip flips this guard RED.
+- **L2 (`FORGE_B8_15_LIVE`):** the real migrate-flagship overlay on a c1 copy →
+  asserts the `upgrade_history` flagship entry (from=1.0.0/to=2.0.0 +
+  `kind: flagship-migration`), the Kong-present additive invariant, and the T5.1.B
+  fixture matrix (`required_paths`/`forbidden_paths`) on the overlaid tree.
+- The same-major / ledger-shape / `.merge-conflicts` machinery is gated via the
+  **a7 coupling** (a7 is its authoritative harness; no fixture duplication);
+  coupling also re-runs b8-10 + b8-14. No 2.0.0 snapshot tarball is required
+  (BASE = `1.0.0.tar.gz`; RIGHT = the live 2.0.0 template-set). No standard/schema/
+  constitution/scaffolder/template mutation; `constitution_version` stays 1.1.0.
+
 ### Added — B.8.14 promotion prepare-only bundle (`b8-14-promotion-prep`)
 
 - **Governance prep for the point-of-no-return — applies NOTHING breaking.** The
