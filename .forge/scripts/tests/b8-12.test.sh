@@ -28,6 +28,14 @@
 
 set -uo pipefail
 
+# Hermetic git identity — the dry-run fixtures below `git init`+`git commit` a
+# tmpdir copy of the c1 example, which needs an author/committer. CI runners may
+# have no global git config (and no usable implicit identity → "empty ident
+# name"), so force one here. These env vars override config and the implicit
+# user@host identity, keeping the harness independent of the runner.
+export GIT_AUTHOR_NAME="Forge Harness" GIT_AUTHOR_EMAIL="harness@forge.invalid"
+export GIT_COMMITTER_NAME="Forge Harness" GIT_COMMITTER_EMAIL="harness@forge.invalid"
+
 LEVEL="1"
 prev=""
 for arg in "$@"; do
