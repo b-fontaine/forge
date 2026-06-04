@@ -150,6 +150,47 @@ mutually exclusive with `--phase` (full-snapshot restore only); `--rollback
 (The cancelled orchestration-swap leg per B8O contributes **no** CPU-based
 rollback criterion.)
 
+### Latency measurement methodology (p50/p95/p99)
+
+<!-- Audit: B.8.12 (b8-12-e2e-migration) — latency measurement methodology;
+     ADR-B812-001. NO committed number (III.4 + ADR-B8-1-002). -->
+
+**B.8.12** ratifies the honest before/after gate for this migration as a
+**span-inventory superset**, not a committed latency figure. The committed
+artifacts are the span inventories
+(`.forge/baselines/full-stack-monorepo-1.0.0.span-inventory.yaml` →
+`.forge/changes/b8-12-e2e-migration/captures/full-stack-monorepo-2.0.0.span-inventory.yaml`):
+the 1.0.0 three-span set is a strict subset of the 2.0.0 set, and the phantom
+Flutter `user.interaction` root is absent from both.
+
+Real p50/p95/p99 latency **cannot** be captured from the committed reference
+example, because `fsm-backend` ships as `image: scratch` (B8-BASELINE §3,
+FR-B8-1-012). No p50/p95/p99 number is committed anywhere in this brick
+(ADR-B8-1-002 + Constitution Article III.4) — only the procedure and the
+**relative** rollback thresholds below.
+
+**When a real backend image exists** (B.8.13+), measure latency with the
+deterministic procedure in `docs/B8-BASELINE.md §6` (Re-measurement methodology):
+
+1. Stand up the migrated stack against a real backend image (not `scratch`).
+2. Drive a representative load through the Connect/gRPC happy-path
+   (`demo-005-connect-greeting` round-trip), capturing spans via the hermetic
+   fake-OTLP collector (`examples/forge-fsm-example/test/live-run/`).
+3. Read p50/p95/p99 from the exporter/collector for the before (Kong route) and
+   after (Envoy route) cutover — these are measured at run-time, never committed
+   to the repo.
+4. Compare against the **B.8.13** rollback thresholds (relative deltas only):
+   - **p99 latency** regression **> 20 %** after the Envoy cutover → roll back
+     the Kong → Envoy route weights;
+   - **traceparent propagation errors > 1 %** → roll back the OTel SDK overlay
+     only.
+
+**Opt-in leg.** The `b8-12.test.sh` harness exercises this methodology flow
+under `FORGE_B8_12_LIVE=1` (the L2 leg drives the fake-OTLP collector and reads
+the methodology doc). Without the env var — and on CI, which ships no
+cargo/flutter/docker toolchain — the leg **skip-passes** (it contributes zero
+failures). This keeps the gate honest without ever fabricating a latency number.
+
 ---
 
 ## Phase 3 — T7 new archetypes (forward reference — not yet delivered)

@@ -526,15 +526,17 @@ v1.0.0 sont désormais résolus.
 | `b8-9-qwik-web-public` | archived | B.8.9 (Qwik web-public brick — INTRODUCES public-web surface, 1.0.0 = single Flutter app ; 10-file Qwik City skeleton `2.0.0/frontend/web-public/` schema-aligned + Connect-ES v2 client ; pins qwik/qwik-city ^1.20.0, vite =7.3.5 (peer excludes 8.x), connect ^2.0.0 ; @qwik.dev/* v2 watch-list beta-only ; NEW standard web-frontend.yaml v1.0.0 ; .nvmrc 24 ; es out-path re-pointed ; Zod/OIDC/OTel/PWA/streaming deferred ; Janus until K.4 ; b8-9.test.sh 12 L1 ; review APPROVE ; archived 2026-06-03) |
 | `b8-10-migrate-flagship` | archived | B.8.10 (flagship migration orchestrator — `bin/forge-migrate-flagship.sh` sources forge-upgrade.sh + reuses _a7_* over 4 phases ; P2 additive overlay of the 2.0.0 deltas, NO DBOS leg per B8O, additive-only no removal ; never calls _a7_check_version_compat ; exit 0/2/5/7/8 ; --dry-run/--phase/--force/--rollback ; rollback from frozen 1.0.0 snapshot ; ledger kind:flagship-migration wrapper ; docs/MIGRATIONS.md 1.0.0→2.0.0 fills A.7 stub ; pure tooling no standard bump ; b8-10.test.sh 12 L1 + L2 ; review APPROVE ; archived 2026-06-03) |
 | `b8-11-nsma-linter` | archived | B.8.11 (NSMA linter activation — DATA flip state-management.yaml ci_blocking false→true, rule pre-exists at constitution-linter.sh:665-731, NO new bash ; enforces VI.3 SHALL + ADR-006, reviewer ruled NO fresh Article XII amendment ; v1.0.0→1.1.0, activation_planned→activated_by ; pre_commit stays false no runner ; linting-rules.md NSMA section + FORGE_LINTER_SKIP_NSMA ; backward-compat 0 scannable forbidden dep, live tree OVERALL PASS, forbidden dep now FAILs CI ; b8-11.test.sh 16 L1 + 2 L2 ; review APPROVE ; archived 2026-06-03) |
+| `b8-12-e2e-migration` | archived | B.8.12 (E2E migration convergence gate — golden span-inventory superset (2.0.0 ⊇ 1.0.0 3 spans, NO committed p95/p99 per III.4) + hermetic migrate-flagship driver on tmpdir c1 copy ; lands S2S Connect client (transport_connect_client.rs.tmpl, connectrpc::client, ClientConfig::new(Uri)) + Envoy-OIDC (SecurityPolicy spec.jwt.providers+Backend, jwks <issuer>/oauth/v2/keys, jwt-authorizer 0.15.x middleware) ; 0-regression demo-001..004 (3 .feature, demo-004 frozen) ; b8-12.test.sh 23 L1 + 4 L2 ; pure additive no standard bump ; review APPROVE ; archived 2026-06-04) |
 
-**51 archivés** au 2026-06-03 (zéro change en cours, B.8.11 NSMA linter activation archivé 2026-06-03). Trio B.8.8 observability rearch
+**52 archivés** au 2026-06-04 (zéro change en cours, B.8.12 E2E migration convergence gate archivé 2026-06-04). Trio B.8.8 observability rearch
 **fully closed** (Coroot leg 1 rc.3 + SigNoz leg 2 rc.4 + OBI leg 3 rc.5) ;
 **B.8.1 baseline + B.8.2 legacy-snapshot freeze archived 2026-05-30**,
 puis **B.8.3 + B.8.3.b + B.8.4 + B.8.5 (re-scoped) + B8O + B.8.6 + B.8.7 archivés
 2026-05-30 → 2026-06-02**, **B.8.9 archivé 2026-06-03** (additive, see §0.10),
 **B.8.10 archivé 2026-06-03** (flagship migration orchestrator, see §4.2),
-**B.8.11 archivé 2026-06-03** (NSMA linter activation, DATA flip ci_blocking false→true, see §4.2). Next B.8 step:
-**B.8.12** (E2E migration c1→2.0.0) — remaining: B.8.12 (E2E migration), B.8.13 (rollback runbook), B.8.14 (schema 2.0.0 bump + VIII.1/VIII.2 amendment), B.8.15 (forge upgrade matrix test). T5.3.1 livré sans `task validate` GREEN
+**B.8.11 archivé 2026-06-03** (NSMA linter activation, DATA flip ci_blocking false→true, see §4.2),
+**B.8.12 archivé 2026-06-04** (E2E migration convergence gate, golden span superset + hermetic migrate-flagship driver + S2S Connect client + Envoy-OIDC wiring, see §4.2). Next B.8 step:
+**B.8.13** (rollback runbook) — remaining: B.8.13 (rollback runbook), B.8.14 (schema 2.0.0 bump + VIII.1/VIII.2 amendment), B.8.15 (forge upgrade matrix test). T5.3.1 livré sans `task validate` GREEN
 end-to-end : le L2 et `task validate` exposent **Q-005**
 (SigNoz image pins rotted upstream + architecture migration
 3-services → unified ; pin refresh impossible). Tentative
@@ -2333,7 +2335,7 @@ Migration **additive d'abord, breaking ensuite** :
   Flutter de `flutter_riverpod`, `riverpod`, `provider`, `get`, `getx`, `mobx`,
   `flutter_mobx`, `states_rebuilder`. Échec CI bloquant. Pre-commit hook. Effort : `S`. ✅ **Done 2026-06-03 via `b8-11-nsma-linter`** (DATA flip ci_blocking false→true, rule pre-exists no new bash ; enforces VI.3+ADR-006, reviewer ruled no fresh amendment ; v1.1.0 + activated_by ; linting-rules.md NSMA section ; backward-compat 0 scannable ; independent review APPROVE).
 - **B.8.12.** Tests E2E migration : `c1-reference-project` migré vers 2.0.0, captures
-  p95/p99 avant/après, 0 régression sur les 4 demos. Effort : `M`.
+  p95/p99 avant/après, 0 régression sur les 4 demos. Effort : `M`. ✅ **Done 2026-06-04 via `b8-12-e2e-migration`** (golden span superset gate, no committed latency per III.4 ; lands S2S Connect client + Envoy-OIDC wiring ; migrate against tmpdir c1 copy ; 0-regression 4 demos ; independent review APPROVE).
 - **B.8.13.** Critères de rollback documentés (ARCHITECTURE-TARGET §11.3) :
     - p99 augmente > 20 % après Envoy → rollback Kong.
     - Erreurs traceparent > 1 % → rollback OTel SDK seul.

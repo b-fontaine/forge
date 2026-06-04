@@ -1,0 +1,139 @@
+// <!-- Audit: B.8.12 (b8-12-e2e-migration) — S2S Connect client template -->
+//! Connect-RPC **service-to-service (S2S) client** adapter (2.0.0 line).
+//!
+//! Audit: B.8.12 (b8-12-e2e-migration) ; ADR-B812-003. Deferred from B.8.6
+//! (ADR-B86-004) to B.8.12 as the named landing point, citing the non-trivial
+//! auth / TLS / deadline / retry decisions resolved below.
+//!
+//! # What this is
+//!
+//! The sibling of the server-only `transport_connect.rs.tmpl` (this crate). That
+//! adapter exposes a *server* (`ConnectRouter::into_axum_service()`); THIS file
+//! builds a *client* for calling another Connect service from inside the backend
+//! (e.g. a downstream microservice in the same mesh). The 1.0.0 flat-tree server
+//! adapter and the 2.0.0 server adapter stay byte-frozen (FR-B812-033) — this is
+//! an ADDITIVE new file, not an edit.
+//!
+//! # connectrpc 0.6.x client surface (verified LIVE, evidence.md P-01 / P-37)
+//!
+//! The connectrpc Rust crate exposes the client primitives under
+//! `connectrpc::client`:
+//!
+//!   - [`HttpClient`] — the transport. `HttpClient::plaintext()` for cleartext
+//!     (in-cluster S2S over HTTP/2 cleartext), or a TLS-configured variant for
+//!     external/https endpoints (see the TLS knob below).
+//!   - [`ClientConfig`] — per-client defaults: base URL, default timeout,
+//!     default headers (the auth knob lives here).
+//!   - [`CallOptions`] — per-CALL overrides (deadline / headers for a single RPC).
+//!   - The buf-generated `<Svc>Client::new(http, config)` constructor + the
+//!     per-method `client.<method>(req)` / `client.<method>_with_options(req, opts)`.
+//!
+//! The client surface is gated behind connectrpc's `client` Cargo feature
+//! (and `client-tls` for the TLS transport) — see this crate's `Cargo.toml.tmpl`
+//! (CARRY-1, evidence.md P-37). Pinned at `connectrpc = "=0.6.1"`
+//! (transport.yaml `versions_2_0_0`, evidence.md P-23 / P-41).
+//!
+//! # Hexagonal preservation (Article VII)
+//!
+//! This is a transport adapter — no business logic. It constructs a client and
+//! exposes a thin `build_client` factory; the application layer owns the calls.
+
+use std::time::Duration;
+
+// 0.6.x client surface (evidence.md P-01). Behind the `client` feature
+// (Cargo.toml.tmpl, CARRY-1). `<Svc>Client` is the buf-generated client type
+// (e.g. `GreeterClient`) produced by the path-α codegen into OUT_DIR.
+#[allow(unused_imports)]
+use connectrpc::client::{CallOptions, ClientConfig, HttpClient};
+
+// The generated client type. The codegen emits `<Svc>Client` (e.g.
+// `GreeterClient`) into OUT_DIR via the same `include!` mechanism the server
+// adapter uses. Uncomment the include + the concrete type once your proto's
+// service codegen is wired (mirror transport_connect.rs.tmpl's `include!`).
+//
+//     include!(concat!(env!("OUT_DIR"), "/_connectrpc.rs"));
+//     use self::greeting::v1::<Svc>Client;
+
+/// Build an S2S Connect client for the downstream service at `base_url`.
+///
+/// `base_url` is the in-cluster (or external) origin of the target Connect
+/// service, e.g. `"http://greeter.svc.cluster.local:8080"` (cleartext) or
+/// `"https://greeter.example.invalid"` (TLS). `bearer_token` is the Zitadel
+/// machine-user access token presented on every call (the **auth** knob).
+///
+/// The returned value is the generated `<Svc>Client`; call it with
+/// `client.<method>(req).await?` or, for a per-call deadline override,
+/// `client.<method>_with_options(req, CallOptions::default().with_timeout(..)).await?`.
+///
+/// # Posture knobs (FR-B812-032)
+///
+/// 1. **auth** — `ClientConfig::with_default_header("authorization", "Bearer …")`
+///    attaches the Zitadel machine-user token to every outbound call. This is the
+///    S2S counterpart of the Envoy `SecurityPolicy` JWT provider validated at the
+///    gateway + the backend `jwt-authorizer` middleware (ADR-B812-002,
+///    `infra/k8s/envoy-gateway/security-policy.yaml.tmpl`).
+/// 2. **TLS** — `HttpClient::plaintext()` is correct for cleartext in-cluster
+///    S2S. For an external/https endpoint, swap to the TLS-enabled transport
+///    (requires connectrpc's `client-tls` feature, CARRY-1 / evidence.md P-37):
+///    `// VERIFY-AT-DEPLOY: HttpClient TLS builder name on connectrpc 0.6.1`.
+/// 3. **deadline** — `ClientConfig::with_default_timeout(Duration)` sets the
+///    client-wide default; `CallOptions::default().with_timeout(Duration)`
+///    overrides it per call (deadline propagation to the downstream).
+/// 4. **retry** — connectrpc client retry posture is documented below. The exact
+///    retry-policy knob on 0.6.1 is `// VERIFY-AT-DEPLOY: retry knob shape on
+///    connectrpc 0.6.1` — do NOT fabricate; default posture is "no automatic
+///    retry; the caller wraps idempotent calls in a tower retry layer or an
+///    application-level backoff".
+///
+/// Returns the constructed config + transport; wire the generated `<Svc>Client`
+/// at the marked TODO once your proto service codegen lands.
+///
+/// `base_url` is parsed into an `http::Uri` — `ClientConfig::new` takes a `Uri`,
+/// not a `&str` (connectrpc 0.6.1: `pub fn new(base_uri: Uri) -> Self`, verified
+/// LIVE by the L2 `cargo check` leg). An invalid URL surfaces as the error.
+pub fn build_client_config(
+    base_url: &str,
+    bearer_token: &str,
+) -> Result<ClientConfig, http::uri::InvalidUri> {
+    // ── transport (TLS knob) ──
+    // Cleartext in-cluster S2S (HTTP/2 cleartext). For https, swap to the
+    // TLS-enabled transport (connectrpc `client-tls` feature).
+    let _http: HttpClient = HttpClient::plaintext();
+    // VERIFY-AT-DEPLOY: for external https endpoints, replace the line above with
+    // the connectrpc 0.6.1 TLS transport builder (requires the `client-tls`
+    // feature). The exact builder symbol is confirmed at deploy from docs.rs.
+
+    // ── config: base URL (Uri) + deadline default + auth header ──
+    let base_uri: http::Uri = base_url.parse()?;
+    let config = ClientConfig::new(base_uri)
+        // deadline knob — client-wide default; per-call override via CallOptions.
+        .with_default_timeout(Duration::from_secs(30))
+        // auth knob — Zitadel machine-user Bearer token on every call.
+        .with_default_header("authorization", format!("Bearer {bearer_token}"));
+
+    Ok(config)
+}
+
+/// Example call shape (documented, not compiled into the seed) — kept in a doc
+/// comment so the template renders to compilable Rust without the generated
+/// `<Svc>Client` type present:
+///
+/// ```ignore
+/// let http = HttpClient::plaintext();
+/// let config = build_client_config("http://greeter.svc:8080", &token);
+/// let client = <Svc>Client::new(http, config);
+///
+/// // unary call (uses the client-wide default deadline + auth header):
+/// let resp = client.greet(req).await?;
+///
+/// // per-call deadline override (deadline knob):
+/// let resp = client
+///     .greet_with_options(req, CallOptions::default().with_timeout(Duration::from_secs(5)))
+///     .await?;
+///
+/// // retry posture (retry knob): no automatic retry on 0.6.1 by default; wrap
+/// // idempotent calls in a tower retry layer or an app-level backoff.
+/// // VERIFY-AT-DEPLOY: retry knob shape on connectrpc 0.6.1.
+/// ```
+#[cfg(doc)]
+pub fn _doc_example_call_shape() {}

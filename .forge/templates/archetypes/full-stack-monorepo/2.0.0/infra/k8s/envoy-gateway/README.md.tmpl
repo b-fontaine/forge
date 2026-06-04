@@ -62,6 +62,35 @@ kustomize build infra/k8s/envoy-gateway | kubeconform --summary --strict
 | `gateway.yaml` | `Gateway` | HTTP listener (`:80`); HTTPS/TLS listener is overlay-patchable. |
 | `httproute.yaml` | `HTTPRoute` | Routes `/` → `<project-name>-backend:8080` (the same Service Kong targets — additive parity). |
 | `backendtlspolicy.yaml` | `BackendTLSPolicy` | Upstream TLS validation for `<project-name>-backend` (GA `v1`). |
+| `security-policy.yaml` | `SecurityPolicy` + `Backend` | **B.8.12** — Zitadel OIDC/JWT validation at the edge (`gateway.envoyproxy.io/v1alpha1`). |
+
+## OIDC / JWT (B.8.12 — b8-12-e2e-migration)
+
+<!-- Audit: B.8.12 (b8-12-e2e-migration) -->
+
+`security-policy.yaml` lands the deferred Envoy-OIDC wiring (ADR-B87-006 →
+ADR-B812-002). In Envoy Gateway **v1.8** the JWT provider config is folded into
+the `SecurityPolicy` resource (`spec.jwt.providers[]`) — there is **no separate
+JWTAuthn resource** (CARRY-4, verified LIVE; evidence.md P-40). The policy:
+
+- targets the `<project-name>-backend-route` `HTTPRoute` (`spec.targetRef`);
+- declares one JWT provider `zitadel` with `issuer: https://<zitadel-issuer>`
+  (the Zitadel `ExternalDomain` from `infra/zitadel/values-forge.yaml.tmpl`,
+  cross-ref **identity.yaml@1.1.0**: chart `10.0.2`, appVersion `v4.14.0`);
+- fetches signing keys via `remoteJWKS.backendRefs` → a companion `Backend`
+  resource pointing at the Zitadel host. The jwks path is
+  `<issuer>/oauth/v2/keys` (CARRY-2, live-confirmed from the discovery doc;
+  evidence.md P-38).
+
+Defense-in-depth: the backend ALSO re-validates the JWT in-process via the
+`jwt-authorizer` tower layer (`backend/crates/grpc-api/src/jwt_middleware.rs.tmpl`,
+CARRY-3 / evidence.md P-39), so in-cluster S2S calls that bypass the gateway are
+still checked. The S2S Connect client (`transport_connect_client.rs.tmpl`)
+presents the Zitadel machine-user Bearer token validated by both layers.
+
+> Audiences (`<zitadel-client-id>`) and any EG-patch-specific `remoteJWKS`
+> field shape carry `VERIFY-AT-DEPLOY` markers — confirm against your Zitadel
+> project + your EG v1.8.x build at deploy. No API string is fabricated.
 
 ## Coexistence with Kong (additive-first)
 

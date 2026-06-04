@@ -12,6 +12,10 @@ resources:
   - gateway.yaml
   - httproute.yaml
   - backendtlspolicy.yaml
+  # B.8.12 (b8-12-e2e-migration): Envoy-OIDC JWT validation at the gateway edge.
+  # SecurityPolicy folds the JWT provider config in v1.8 (no separate JWTAuthn
+  # resource) + a Backend for the Zitadel jwks upstream. ADR-B812-002.
+  - security-policy.yaml
 
 commonLabels:
   app.kubernetes.io/name: <project-name>

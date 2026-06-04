@@ -1,0 +1,81 @@
+# Span inventory — flagship AFTER-STATE golden (B.8.12, b8-12-e2e-migration)
+# <!-- Audit: B.8.12 (b8-12-e2e-migration) — 2.0.0 after-state golden span
+#      inventory. ADR-B812-001. -->
+#
+# The committed before/after gate for the 1.0.0 → 2.0.0 flagship migration is a
+# SPAN-INVENTORY SUPERSET, NOT live latency. The c1 `fsm-backend` is
+# `image: scratch` (B8-BASELINE §3, FR-B8-1-012); ADR-B8-1-002 ratified that no
+# live p50/p95/p99 number is ever committed (Article III.4). This file is the
+# 2.0.0 after-state half of that gate.
+#
+# SUPERSET CONTRACT (FR-B812-002, asserted by b8-12.test.sh
+# _test_b812_002_three_span_superset): the three CODE-VERIFIED spans from
+# `.forge/baselines/full-stack-monorepo-1.0.0.span-inventory.yaml` are PRESERVED
+# byte-for-byte in their verified markers below — they are a strict SUBSET of
+# this 2.0.0 set:
+#   (1) client     — SpanKind.client   (Flutter dio TracingInterceptor)
+#   (2) http.request — otel.kind="server" (Rust tower-http make_span_with)
+#   (3) greeter.greet — name="greeter.greet" (#[tracing::instrument] use case)
+#
+# ADDITIVE SPANS (Article III.4 — anti-fabrication): the 2.0.0 template-set
+# (the additive Envoy Gateway data-plane + the Connect-RPC transport adapter)
+# introduces NO NEW code-verified app-instrument site beyond the three above:
+#   - The 2.0.0 `transport_connect.rs.tmpl` server adapter is a SEED template
+#     whose handlers are TODO(adopter) stubs; its outer tower `TraceLayer` emits
+#     the SAME server-side `http.request` span already recorded as span (2)
+#     (the Connect route is mounted on the same axum router that tower-http
+#     instruments — no second emitter is added by the template).
+#   - The Envoy Gateway (B.8.4 data-plane) is an INFRASTRUCTURE hop, not an
+#     application instrument site; it does not `startSpan` in adopter code and
+#     so contributes no committed code-verified span here.
+# Per the B.8.12 brief ("derive additive spans ONLY from real instrument sites /
+# the 2.0.0 templates, do NOT fabricate; if no new code-verified span exists,
+# the golden = the 3 baseline spans (superset-or-equal)"), this golden is the
+# superset-OR-EQUAL case: it equals the 3 baseline spans. When a real 2.0.0
+# backend image + Envoy/Connect instrumentation lands (B.8.13+), additive spans
+# are appended here from their verified instrument sites — never before.
+#
+# PHANTOM (FR-B812-003): the Flutter `user.interaction greet` ROOT span the
+# demo-005 doc waterfall draws is a PHANTOM — there is no `startSpan` for it in
+# `frontend/lib`. It MUST NOT appear as a span entry in either golden.
+
+archetype: full-stack-monorepo
+version: "2.0.0"
+captured: "2026-06-04"
+demo: demo-005-connect-greeting
+derived_from: ".forge/baselines/full-stack-monorepo-1.0.0.span-inventory.yaml"
+
+spans:
+  - name: "<http-method> <path>"   # dynamic, e.g. "POST /connect/greeting.v1.GreeterService/Greet"
+    name_source: "'${options.method} ${_sanitizePath(options.path)}'"
+    otel_kind: client
+    layer: frontend
+    source: examples/forge-fsm-example/frontend/lib/core/telemetry/interceptors/tracing_interceptor.dart
+    verified_marker: "SpanKind.client"
+    role: "dio interceptor — emits client span + injects W3C traceparent on outbound call"
+
+  - name: "http.request"
+    otel_kind: server
+    layer: backend
+    source: examples/forge-fsm-example/backend/crates/infrastructure/src/telemetry/middleware.rs
+    verified_marker: 'otel.kind = "server"'
+    role: "tower-http make_span_with — extracts inbound traceparent, links to parent context; also wraps the 2.0.0 Connect /connect route (same axum router, no second emitter)"
+
+  - name: "greeter.greet"
+    otel_kind: internal
+    layer: backend
+    source: examples/forge-fsm-example/backend/crates/application/src/greet.rs
+    verified_marker: 'name = "greeter.greet"'
+    role: "GreetUseCase — #[tracing::instrument], child of the server span"
+
+notes:
+  - "2.0.0 after-state golden = the 3 code-verified 1.0.0 spans (superset-OR-EQUAL,
+     ADR-B812-001). The additive 2.0.0 template-set (Envoy data-plane, Connect
+     transport adapter) adds NO new code-verified app-instrument site — the
+     Connect route is wrapped by the SAME tower-http server span (span 2), and
+     Envoy is an infra hop, not an instrument site. No span is fabricated."
+  - "Phantom Flutter `user.interaction greet` root is ABSENT from this golden
+     (FR-B812-003) — no instrument site exists in frontend/lib."
+  - "No committed p50/p95/p99 latency number (FR-B812-006/051, ADR-B8-1-002,
+     III.4). Real latency is a methodology DOC (docs/MIGRATIONS.md) + the opt-in
+     FORGE_B8_12_LIVE leg, never a committed figure."

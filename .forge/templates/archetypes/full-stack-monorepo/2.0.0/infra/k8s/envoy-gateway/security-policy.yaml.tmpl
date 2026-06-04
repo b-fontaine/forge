@@ -1,0 +1,81 @@
+# <!-- Audit: B.8.12 (b8-12-e2e-migration) -->
+# Envoy Gateway SecurityPolicy — OIDC/JWT validation at the gateway edge.
+# ADR-B812-002. Deferred from B.8.7 (ADR-B87-006) to B.8.12 as the named
+# landing point. The Envoy-OIDC wiring JOINS this envoy-gateway dir additively
+# (Kong is preserved — Article VIII.1; removal is B.8.14).
+#
+# Cross-references (verify-then-pin LIVE, evidence.md):
+#   - identity.yaml@1.1.0  — Zitadel pins: chart 10.0.2, appVersion v4.14.0,
+#     ghcr.io registry, v-prefix convention (P-29 / P-41).
+#   - gateway.yaml v1.8.0  — Envoy Gateway control-plane chart pin; the
+#     SecurityPolicy CRD is served by this SAME control plane (P-28 / P-41).
+#
+# API SHAPE (CARRY-4, verified LIVE 2026-06-04 — evidence.md P-40): Envoy Gateway
+# v1.8 folds JWT validation INTO the SecurityPolicy resource via
+# `spec.jwt.providers[]` — there is NO separate JWTAuthn resource in v1.8. The
+# SecurityPolicy uses the Envoy-SPECIFIC API group `gateway.envoyproxy.io/v1alpha1`
+# (distinct from the `gateway.networking.k8s.io/v1` group used by the Gateway /
+# HTTPRoute resources in this dir — P-27).
+#
+# Zitadel discovery (CARRY-2, verified LIVE 2026-06-04 — evidence.md P-38):
+#   issuer   = https://<zitadel-issuer>   (the zitadel.configmapConfig.ExternalDomain
+#                                          from infra/zitadel/values-forge.yaml.tmpl)
+#   jwks_uri = <issuer>/oauth/v2/keys      (live-confirmed from the discovery doc
+#                                          https://<issuer>/.well-known/openid-configuration
+#                                          and the zitadel source op.NewEndpoint("/oauth/v2/keys"))
+# The <zitadel-issuer> token is templated from the values-forge overlay; it is
+# NOT a fabricated host. The jwks path /oauth/v2/keys is the live discovery result.
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: <project-name>-jwt-oidc
+  labels:
+    app.kubernetes.io/name: <project-name>
+    app.kubernetes.io/component: api-gateway
+    app.kubernetes.io/part-of: <project-name>
+spec:
+  # Attach to the same HTTPRoute the gateway already routes to <project-name>-backend.
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: <project-name>-backend-route        # → httproute.yaml
+  jwt:
+    providers:
+      - name: zitadel
+        # issuer = Zitadel ExternalDomain (identity.yaml@1.1.0; values-forge overlay).
+        issuer: "https://<zitadel-issuer>"
+        # audiences = the Zitadel project/client id(s) this API accepts.
+        audiences:
+          - "<zitadel-client-id>"             # VERIFY-AT-DEPLOY: the project/API audience from Zitadel
+        # remoteJWKS fetches the signing keys from the Zitadel jwks endpoint via
+        # a Backend resource (v1.8 form — backendRefs, NOT a bare uri field, P-40).
+        remoteJWKS:
+          backendRefs:
+            - group: gateway.envoyproxy.io
+              kind: Backend
+              name: <project-name>-zitadel-jwks
+              port: 443
+          # jwks path on the Zitadel host (CARRY-2 / P-38): <issuer>/oauth/v2/keys.
+          # Some EG v1.8 builds accept a `uri` alongside backendRefs for the path;
+          # the path component is the live-verified discovery result.
+          # VERIFY-AT-DEPLOY: confirm whether your EG v1.8.x patch expects the
+          # jwks path on the Backend host alone or via a remoteJWKS.uri field.
+          uri: "https://<zitadel-issuer>/oauth/v2/keys"
+---
+# Backend resource — the Zitadel jwks upstream the remoteJWKS provider dials.
+# Envoy-specific API group (gateway.envoyproxy.io/v1alpha1), v1.8 form.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: Backend
+metadata:
+  name: <project-name>-zitadel-jwks
+  labels:
+    app.kubernetes.io/name: <project-name>
+    app.kubernetes.io/component: api-gateway
+    app.kubernetes.io/part-of: <project-name>
+spec:
+  endpoints:
+    - fqdn:
+        # The Zitadel host (issuer ExternalDomain). identity.yaml@1.1.0.
+        hostname: "<zitadel-issuer>"
+        port: 443

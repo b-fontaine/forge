@@ -1,0 +1,21 @@
+name: b8-12-e2e-migration
+status: archived
+created: 2026-06-04
+schema: default
+constitution_version: "1.1.0"
+parent_audit_items:
+  - B.8.12  # docs/new-archetypes-plan.md §4.2 B.8.12 (lines 2335-2336) — "Tests E2E migration : c1-reference-project migré vers 2.0.0, captures p95/p99 avant/après, 0 régression sur les 4 demos." GROUND-TRUTH NOTES (Article III.4): (1) p50/p95/p99 latency CANNOT be captured from the c1 example unmodified — fsm-backend is `image: scratch` (placeholder, B8-BASELINE §3 / FR-B8-1-012); ADR-B8-1-002 ratified "methodology + optional sample, NEVER committed live numbers"; faking latency violates III.4. So the real, hermetic before/after gate is a SPAN-INVENTORY / golden-span-tree REGRESSION (the before-state already exists: .forge/baselines/full-stack-monorepo-1.0.0.span-inventory.yaml, 3 code-verified spans on demo-005); real p95/p99 = a methodology doc + an opt-in leg (FORGE_B8_12_LIVE) that skip-passes by default. (2) 2.0.0 is scaffoldable:false — "migrate c1 to 2.0.0" = invoke bin/forge-migrate-flagship.sh (B.8.10) against a COPY of the c1 example (dry-run hermetic + opt-in real Phase-2 overlay), assert the additive overlay (Envoy ∥ Kong, Connect, Zitadel, Qwik, pg17) + span superset — NOT scaffold a new committed 2.0.0 example. (3) B.8.12 is the named landing point for two deferrals: the Rust S2S Connect client (ADR-B86-004, "target landing" — connectrpc 0.6.x client primitives) and the Envoy-OIDC wiring (ADR-B87-006, split B.8.10/B.8.12; B.8.10 shipped doc-only, so B.8.12 owns SecurityPolicy/JWTAuthn + backend JWT validation middleware — verify-then-pin Envoy Gateway API LIVE, ADR-B87-006 barred fabrication). (4) CI has Python+Node+shellcheck only — NO cargo/flutter/docker; all harnesses run --level 1 → B.8.12 must be hermetic L1 + L2 opt-in (reuse the t5-otel-live-run fake-OTLP-collector + sanitized golden-capture pattern). (5) the "4 demos" = demo-001..004 (demo-005 is the T.5 Connect demo, separate); demo-004 stays specified (Article III.4 demo).
+depends_on:
+  - B.8.1   # docs/B8-BASELINE.md + .forge/baselines/full-stack-monorepo-1.0.0.span-inventory.yaml — the before-state (3 code-verified spans) + the re-measurement methodology B.8.12 captures the after against (FR-B8-1-030 "tool-version-anchored so B.8.12 can re-run it deterministically")
+  - B.8.10  # bin/forge-migrate-flagship.sh — the 4-phase orchestrator B.8.12 invokes (dry-run + opt-in real Phase-2 overlay) to migrate a copy of the c1 example tree to 2.0.0
+  - B.8.6   # ADR-B86-004 — the Rust S2S Connect client re-deferred to B.8.12 ("target landing"); connectrpc 0.6.x ClientConfig/CallOptions; transport.yaml v1.3.0 versions_2_0_0 pins; the 2.0.0 transport_connect.rs.tmpl is server-only today
+  - B.8.7   # ADR-B87-006 — the Envoy-OIDC wiring (SecurityPolicy + JWTAuthn filter + backend JWT validation middleware) deferred B.8.10/B.8.12; identity.yaml v1.1.0 (Zitadel issuer); B.8.10 took doc-only, B.8.12 takes the wiring
+  - C.1     # examples/forge-fsm-example/ — the c1 reference project (4 demos demo-001..004 archived/specified) + scaffold-manifest.yaml archetype_version 1.0.0 that the migration targets; the "0 regression" subject
+  - T.5     # t5-otel-live-run — the hermetic fake-OTLP-collector (Python stdlib) + sanitized golden-capture (diff-q vs committed golden) pattern B.8.12's before/after capture reuses
+timeline:
+  proposed: 2026-06-04
+  specified: 2026-06-04
+  designed: 2026-06-04
+  planned: 2026-06-04
+  implemented: 2026-06-04
+  archived: 2026-06-04

@@ -12,6 +12,39 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added — B.8.12 E2E migration convergence gate (`b8-12-e2e-migration`)
+
+- **2.0.0 after-state golden span inventory** committed at
+  `.forge/changes/b8-12-e2e-migration/captures/full-stack-monorepo-2.0.0.span-inventory.yaml`
+  — a strict **superset** of the 1.0.0 baseline 3-span set (client `SpanKind.client`,
+  `http.request` server, `greeter.greet` internal); the phantom Flutter
+  `user.interaction` root is absent from both goldens. NO committed p50/p95/p99
+  number anywhere (Article III.4 + ADR-B8-1-002 + ADR-B812-001).
+- **Migration E2E driver gate** — `b8-12.test.sh` drives
+  `bin/forge-migrate-flagship.sh --target <tmpdir-copy> --dry-run` (L1 hermetic:
+  exit 0 + additive-delta plan + no mutation + exit-7 wrong-version negative);
+  the real Phase-2 overlay is an opt-in `FORGE_B8_12_LIVE` L2 leg. The committed
+  `examples/forge-fsm-example/` stays 1.0.0 (git-clean; ADR-B812-004).
+- **Rust S2S Connect client template** `transport_connect_client.rs.tmpl`
+  (connectrpc `=0.6.1` client API — `HttpClient`/`ClientConfig`/`CallOptions`;
+  auth/TLS/deadline/retry posture). The companion `Cargo.toml.tmpl` adds the
+  connectrpc `client` feature (CARRY-1, verified LIVE). 1.0.0 + 2.0.0 server
+  adapters stay byte-frozen (ADR-B812-003).
+- **Envoy-OIDC wiring** — `security-policy.yaml.tmpl` (Envoy Gateway v1.8
+  `gateway.envoyproxy.io/v1alpha1` `SecurityPolicy` with JWT folded into
+  `spec.jwt.providers[]` + a `Backend` for the Zitadel jwks upstream;
+  `<issuer>/oauth/v2/keys`, CARRY-2/4 verified LIVE) + a backend JWT validation
+  middleware template (`jwt_middleware.rs.tmpl`, `jwt-authorizer` 0.15.x, CARRY-3).
+  Cross-references `identity.yaml@1.1.0`; kustomization + envoy-gateway README
+  updated. Kong preserved (Article VIII.1; ADR-B812-002).
+- **Latency methodology** section added to `docs/MIGRATIONS.md` (p50/p95/p99
+  measurement procedure anchored to `docs/B8-BASELINE.md §6` + the B.8.13
+  rollback thresholds — relative percentages only, no committed ms figure).
+- **Harness** `b8-12.test.sh` (~23 L1 hermetic + 4 L2 opt-in
+  `FORGE_B8_12_LIVE`/`FORGE_E2E_TOOLCHAINS`) + `forge-ci.yml` registration.
+  No standard bumped (transport.yaml/gateway.yaml/identity.yaml consumed only).
+  Release target v0.4.0-rc.14.
+
 ## [0.4.0-rc.13] — 2026-06-03
 
 ### Changed — B.8.11 NSMA linter activation (`b8-11-nsma-linter`)

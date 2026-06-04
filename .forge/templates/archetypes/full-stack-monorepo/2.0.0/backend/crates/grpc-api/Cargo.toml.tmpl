@@ -33,6 +33,15 @@ prost       = { workspace = true }
 #   - `features = ["axum"]` is required to expose
 #     `ConnectRouter::into_axum_service()` (the axum feature is opt-in /
 #     non-default per connectrpc 0.6.x — evidence.md P-14).
+#   - `features = [..., "client"]` is required to expose the S2S CLIENT surface
+#     (`connectrpc::client::{HttpClient, ClientConfig, CallOptions}`) used by
+#     `transport_connect_client.rs.tmpl` (B.8.12 / ADR-B812-003). connectrpc 0.6.1
+#     declares `client = ['hyper/client','hyper/http1','hyper/http2',
+#     'hyper-util/client', ..., 'tokio/net']` (CARRY-1, verified LIVE
+#     2026-06-04, evidence.md P-37) — the `client` flag name is confirmed, not
+#     fabricated. For an EXTERNAL https downstream, ALSO add `"client-tls"`
+#     (connectrpc 0.6.1: `client-tls = [..., 'client']`); cleartext in-cluster
+#     S2S needs only `"client"`.
 #   - buffa-types is carried as a NORMAL dep: the upstream canonical example
 #     (anthropics/connect-rust examples/eliza/Cargo.toml) carries BOTH buffa
 #     and buffa-types as normal [dependencies] ("Serialization (for generated
@@ -40,7 +49,7 @@ prost       = { workspace = true }
 #     (evidence.md P-15). Mirrors the 1.0.0 template's normal-dep posture.
 #   - The connectrpc family is still pre-1.0 (0.6.x) — re-review at the 1.0
 #     milestone (WAIVER note in transport.yaml::codegen.versions_2_0_0).
-connectrpc  = { version = "=0.6.1", features = ["axum"] }
+connectrpc  = { version = "=0.6.1", features = ["axum", "client"] }
 buffa        = "=0.6.0"
 buffa-types  = "=0.6.0"
 

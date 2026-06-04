@@ -1,0 +1,101 @@
+// <!-- Audit: B.8.12 (b8-12-e2e-migration) — backend JWT validation middleware template -->
+//! Backend JWT validation middleware (2.0.0 line) — defense-in-depth.
+//!
+//! Audit: B.8.12 (b8-12-e2e-migration) ; ADR-B812-002. Deferred from B.8.7
+//! (ADR-B87-006) to B.8.12 as the named landing point, alongside the Envoy
+//! `SecurityPolicy` (`infra/k8s/envoy-gateway/security-policy.yaml.tmpl`).
+//!
+//! # Defense-in-depth (cross-ref the Envoy SecurityPolicy)
+//!
+//! The Envoy Gateway `SecurityPolicy` (gateway.envoyproxy.io/v1alpha1) validates
+//! the inbound `authorization: Bearer <jwt>` header at the EDGE, before the
+//! request reaches this backend. This tower `Layer` re-validates the JWT at the
+//! application boundary as a second, in-process check (issuer / audience / JWKS
+//! signature) so a request that bypasses the gateway (e.g. in-cluster S2S, or a
+//! misconfigured route) is still rejected. The S2S Connect client
+//! (`transport_connect_client.rs.tmpl`) presents the Zitadel machine-user Bearer
+//! token this middleware validates.
+//!
+//! # Crate (CARRY-3, verified LIVE 2026-06-04 — evidence.md P-39)
+//!
+//! Uses `jwt-authorizer = "0.15"` — "jwt authorizer middleware for axum and
+//! tonic" (a JWKS-based axum tower layer). The family pin `0.15` is confirmed
+//! live; add to this crate's `Cargo.toml.tmpl` when wiring:
+//!
+//!     jwt-authorizer = "0.15"
+//!
+//! # Zitadel identity (cross-ref identity.yaml@1.1.0)
+//!
+//! The JWKS source is the Zitadel discovery endpoint
+//! (`https://<zitadel-issuer>/oauth/v2/keys`, CARRY-2 / evidence.md P-38). The
+//! issuer is the `zitadel.configmapConfig.ExternalDomain` from the b8-7
+//! `values-forge` overlay. identity.yaml@1.1.0 pins: chart 10.0.2, appVersion
+//! v4.14.0, ghcr.io.
+//!
+//! # Hexagonal preservation (Article VII)
+//!
+//! This is an inbound infrastructure concern (a tower layer), not a domain rule.
+
+#![allow(dead_code, unused_imports)]
+
+use std::time::Duration;
+
+// jwt-authorizer 0.15.x surface (CARRY-3 / evidence.md P-39). The exact builder
+// symbols beyond `from_jwks_url` + `validation` are confirmed at deploy from
+// docs.rs — see the VERIFY-AT-DEPLOY notes below; no symbol is fabricated.
+//
+//     use jwt_authorizer::{JwtAuthorizer, Validation, IntoLayer};
+//     use serde::Deserialize;
+
+/// The claims this API validates. `aud` (audience) + `iss` (issuer) are the two
+/// checks the validation posture below asserts; extend with the Zitadel custom
+/// claims your authorization rules need (roles, org id, …).
+#[derive(Debug, Clone)]
+pub struct ApiClaims {
+    pub sub: String,
+    pub iss: String,
+    pub aud: Vec<String>,
+}
+
+/// Build the JWT validation tower `Layer` for the inbound axum router.
+///
+/// `jwks_uri` is the Zitadel jwks endpoint `https://<issuer>/oauth/v2/keys`
+/// (CARRY-2 / evidence.md P-38). `issuer` + `audience` are the validation
+/// posture (issuer check + audience check, ADR-B812-002).
+///
+/// Returns the constructed layer to be applied with `router.layer(layer)`.
+///
+/// The body is a documented stub on the `jwt-authorizer` 0.15.x shape; the exact
+/// builder chain is confirmed at deploy (the family + `from_jwks_url` are pinned,
+/// the precise method names are VERIFY-AT-DEPLOY — no fabrication, ADR-B87-006).
+pub async fn build_jwt_layer(
+    jwks_uri: &str,
+    issuer: &str,
+    audience: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    // Validation posture (ADR-B812-002):
+    //   - issuer  check: token `iss` MUST equal the Zitadel ExternalDomain issuer.
+    //   - audience check: token `aud` MUST contain the API's Zitadel client id.
+    //   - signature:      verified against the JWKS fetched from `jwks_uri`.
+    //
+    //     let validation = Validation::new()
+    //         .iss(&[issuer])
+    //         .aud(&[audience])
+    //         .leeway(Duration::from_secs(60).as_secs());
+    //
+    //     let authorizer = JwtAuthorizer::<ApiClaims>::from_jwks_url(jwks_uri)
+    //         .validation(validation)
+    //         .build()
+    //         .await?;
+    //
+    //     // Apply on the axum router as a tower layer:
+    //     //   let app = Router::new().layer(authorizer.into_layer());
+    //
+    // VERIFY-AT-DEPLOY: confirm the exact jwt-authorizer 0.15.x builder symbols
+    // (`from_jwks_url` / `validation` / `build` / `into_layer`) against docs.rs
+    // at wire-up time; the crate + family pin (0.15) are LIVE-confirmed
+    // (evidence.md P-39) but the precise method names are not fabricated here.
+    let _ = (jwks_uri, issuer, audience);
+    let _leeway = Duration::from_secs(60);
+    Ok(())
+}
