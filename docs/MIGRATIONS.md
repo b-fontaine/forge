@@ -141,7 +141,7 @@ snapshot and its `.sha256` are **never** rebuilt or overwritten. `--rollback` is
 mutually exclusive with `--phase` (full-snapshot restore only); `--rollback
 --dry-run` prints the restore plan and exits 0 without touching the target.
 
-**Rollback criteria — see B.8.13 for the full runbook.** Trigger thresholds:
+**Rollback criteria — see the full runbook in [`docs/ROLLBACK.md`](ROLLBACK.md) (B.8.13).** Trigger thresholds:
 
 - p99 latency increases by more than 20% after the Envoy cutover → roll back the
   Kong → Envoy route weights;

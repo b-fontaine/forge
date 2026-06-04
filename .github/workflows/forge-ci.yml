@@ -115,6 +115,7 @@ jobs:
             "b8-10.test.sh --level 1"
             "b8-11.test.sh --level 1"
             "b8-12.test.sh --level 1"
+            "b8-13.test.sh --level 1"
             "b8o.test.sh --level 1"
           )
           fail=0

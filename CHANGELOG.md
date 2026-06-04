@@ -12,6 +12,28 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added — B.8.13 rollback runbook (`b8-13-rollback-runbook`)
+
+- **`docs/ROLLBACK.md`** — operational rollback runbook for the
+  full-stack-monorepo 1.0.0 → 2.0.0 migration: two scenarios (p99 regression
+  `> 20 %` after the Envoy cutover → reverse the Kong → Envoy route weights;
+  `traceparent` errors `> 1 %` → roll back the OTel SDK overlay only), each with
+  Detect/Decide/Execute/Verify/Re-attempt steps, plus a last-resort full-tree
+  `forge-migrate-flagship.sh --rollback`. Relative thresholds only — NO committed
+  p50/p95/p99 number (ADR-B8-1-002 + CLAUDE.md ANTI-HALLUCINATION PROTOCOL).
+  Resolves the `docs/MIGRATIONS.md` "see B.8.13 for the full runbook" forward
+  reference. Runbook criteria are byte-consistent with the text embedded in
+  `bin/forge-migrate-flagship.sh`.
+- **Record-only supersession of `docs/ARCHITECTURE-TARGET.md` §11/§12.1** — the
+  arch doc is sha256-pinned by `t4.test.sh::_test_t4_023`, so it is left
+  byte-frozen (t4 stays green). `docs/ROLLBACK.md` carries a Supersession note
+  enumerating its seven B8O-stale DBOS references (§11.1/§11.2 ×3/§11.3/§11.4 +
+  §12.1) as obsolete per B8O, pointing at `orchestration.yaml` v1.2.0 — the same
+  record-only pattern B8O itself used. No DBOS/CPU-based rollback criterion.
+- **`b8-13.test.sh`** — 18 L1 hermetic tests (grep/diff/shasum, no toolchain),
+  registered in `forge-ci.yml`; coupling guards re-run b8-12 + b8-10 + t4; a
+  positive guard asserts ARCHITECTURE-TARGET.md's sha256 is unchanged.
+
 ## [0.4.0-rc.14] — 2026-06-04
 
 ### Added — B.8.12 E2E migration convergence gate (`b8-12-e2e-migration`)
