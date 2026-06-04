@@ -12,6 +12,8 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+## [0.4.0-rc.14] — 2026-06-04
+
 ### Added — B.8.12 E2E migration convergence gate (`b8-12-e2e-migration`)
 
 - **2.0.0 after-state golden span inventory** committed at
