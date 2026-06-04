@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1780393590567,
+  "lastScanned": 1780579743789,
   "projectRoot": "/Users/bfontaine/git/github/forge",
   "techStack": {
     "languages": [],
@@ -9,8 +9,8 @@
     "runtime": null
   },
   "build": {
-    "buildCommand": "rtk git add .forge/product/roadmap.md .forge/schemas/full-stack-monorepo/2.0.0.yaml .forge/standards/web-frontend.yaml .forge/standards/index.yml .forge/standards/REVIEW.md .github/workflows/forge-ci.yml CHANGELOG.md docs/new-archetypes-plan.md .forge/changes/b8-9-qwik-web-public/ .forge/scripts/tests/b8-9.test.sh .forge/specs/b8-qwik-web-public.md .forge/templates/archetypes/full-stack-monorepo/2.0.0/frontend/ .forge/templates/archetypes/full-stack-monorepo/2.0.0/shared/protos/buf.gen.yaml.tmpl && rtk git status --short | grep '^[MA]' | wc -l && rtk git commit -m \"$(cat <<'EOF'\nfeat(b8-9): Qwik web-public brick (B.8.9)\n\nINTRODUCES the public-web surface on the 2.0.0 line (1.0.0 baseline =\nsingle flat Flutter app, no web split). 10-file Qwik City skeleton at\n2.0.0/frontend/web-public/ (schema-aligned per ADR-B8-3-004 — plan's\ntop-level 2.0.0/web-public/ path superseded by the surfaces sub-path\nmodel) with a Connect-ES v2 client example (createClient from\n@connectrpc/connect + createConnectTransport from @connectrpc/connect-web).\nPins verify-then-pin LIVE 2026-06-03 + tsc-sanity: @builder.io/qwik\n^1.20.0 + @builder.io/qwik-city ^1.20.0, vite =7.3.5 (qwik peer\n\">=5 <8\" EXCLUDES live-latest 8.0.16 — trap recorded), @connectrpc/connect\n+ -web ^2.0.0; @qwik.dev/* v2 rename demoted to watch-list future-option\n(beta-only, no GA). NEW standard web-frontend.yaml v1.0.0 (default\nqwik-city, alternatives [sveltekit], versions map + qwik_v2_watch +\npin_review_cadence; Connect pins cross-referenced to transport.yaml,\nnot re-pinned) + index.yml entry + REVIEW.md birth row. .nvmrc=24\n(active Node LTS) + npm. 2.0.0 buf.gen es out-path re-pointed to\nfrontend/web-public/src/lib/generated/connect (1.0.0 manifest frozen).\n2.0.0.yaml web-public surface + delta annotated B.8.9 (comment-only).\nZod (AT:612) / OIDC PKCE / OTel / PWA / streaming / hosting all\ndeferred; Janus arbitrates the two surfaces until Iris-Web (K.4).\n\nHarness b8-9.test.sh 12 L1 (RED 2/12 -> 12/12 GREEN; @qwik.dev beta-line\nban guard); full suite 48/48; verify.sh 370/0; linter OVERALL PASS;\nfrozen 1.0.0 byte-untouched (b8-2 guard). Independent review: design\nAPPROVE round 1 + final T042 APPROVE round 1 (every npm pin, Connect-ES\nv2 + Qwik API shape re-verified live against upstream). Last 2.0.0\ntemplate brick. Archived 2026-06-03; consolidated spec\n.forge/specs/b8-qwik-web-public.md. Next B.8 step: B.8.10 (flagship\nmigration script) — cutover bricks B.8.10-B.8.15 remain.\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nEOF\n)\" && rtk git log --oneline -1",
-    "testCommand": "rtk grep -c 'DBOS' .forge/product/roadmap.md; rtk grep -n -o '.\\{0,60\\}DBOS.\\{0,60\\}' .forge/product/roadmap.md | head -20; echo '--plan--'; rtk grep -c '^| `' docs/new-archetypes-plan.md | head -1; rtk grep -n '46 archivés\\|39 archivés\\|B.8.6.*Connect-RPC templates' docs/new-archetypes-plan.md | head -5; rtk grep -n 't5-3-3-vitest-bundle-preflight` | archived' docs/new-archetypes-plan.md | cut -c1-80",
+    "buildCommand": null,
+    "testCommand": null,
     "lintCommand": null,
     "devCommand": null,
     "scripts": {}
@@ -40,8 +40,8 @@
     "bin": {
       "path": "bin",
       "purpose": "Executable scripts",
-      "fileCount": 12,
-      "lastAccessed": 1780393590524,
+      "fileCount": 13,
+      "lastAccessed": 1780579743765,
       "keyFiles": [
         "_forge-init-helpers.sh",
         "forge-demeter-scan.sh",
@@ -54,7 +54,7 @@
       "path": "cli",
       "purpose": null,
       "fileCount": 9,
-      "lastAccessed": 1780393590525,
+      "lastAccessed": 1780579743765,
       "keyFiles": [
         "README.md",
         "VERSION",
@@ -66,8 +66,8 @@
     "docs": {
       "path": "docs",
       "purpose": "Documentation",
-      "fileCount": 16,
-      "lastAccessed": 1780393590525,
+      "fileCount": 17,
+      "lastAccessed": 1780579743766,
       "keyFiles": [
         "ARCHETYPES.md",
         "ARCHITECTURE-TARGET.md",
@@ -80,7 +80,7 @@
       "path": "examples",
       "purpose": "Example code",
       "fileCount": 1,
-      "lastAccessed": 1780393590526,
+      "lastAccessed": 1780579743766,
       "keyFiles": [
         "README.md"
       ]
@@ -89,7 +89,7 @@
       "path": "scripts",
       "purpose": "Build/utility scripts",
       "fileCount": 1,
-      "lastAccessed": 1780393590527,
+      "lastAccessed": 1780579743767,
       "keyFiles": [
         "release.sh"
       ]
@@ -98,7 +98,7 @@
       "path": "cli/assets",
       "purpose": "Static assets",
       "fileCount": 17,
-      "lastAccessed": 1780393590529,
+      "lastAccessed": 1780579743768,
       "keyFiles": [
         "CHANGELOG.md",
         "CLAUDE.md",
@@ -109,7 +109,7 @@
       "path": "cli/dist",
       "purpose": "Distribution/build output",
       "fileCount": 6,
-      "lastAccessed": 1780393590530,
+      "lastAccessed": 1780579743768,
       "keyFiles": [
         "cli.d.ts",
         "cli.js",
@@ -120,309 +120,27 @@
       "path": "cli/node_modules",
       "purpose": "Dependencies",
       "fileCount": 1,
-      "lastAccessed": 1780393590531,
+      "lastAccessed": 1780579743768,
       "keyFiles": []
     }
   },
   "hotPaths": [
     {
-      "path": "docs/new-archetypes-plan.md",
-      "accessCount": 218,
-      "lastAccessed": 1780578472291,
-      "type": "file"
-    },
-    {
-      "path": ".forge/product/roadmap.md",
-      "accessCount": 97,
-      "lastAccessed": 1780578436271,
-      "type": "file"
-    },
-    {
-      "path": "CHANGELOG.md",
-      "accessCount": 77,
-      "lastAccessed": 1780578620453,
-      "type": "file"
-    },
-    {
-      "path": ".forge/scripts/tests/b4.test.sh",
-      "accessCount": 7,
-      "lastAccessed": 1779175147134,
-      "type": "file"
-    },
-    {
-      "path": ".forge/changes/j8-janus-rules/.forge.yaml",
-      "accessCount": 6,
-      "lastAccessed": 1778424505881,
-      "type": "file"
-    },
-    {
-      "path": ".forge/specs/otel-stack.md",
-      "accessCount": 6,
-      "lastAccessed": 1779956004061,
-      "type": "file"
-    },
-    {
-      "path": ".forge/templates/archetypes/full-stack-monorepo/scaffold-plan.yaml",
-      "accessCount": 6,
-      "lastAccessed": 1780078869146,
-      "type": "file"
-    },
-    {
-      "path": "bin/forge-init-fsm.sh",
-      "accessCount": 6,
-      "lastAccessed": 1780419457640,
-      "type": "file"
-    },
-    {
-      "path": ".forge/changes/j8-janus-rules/open-questions.md",
-      "accessCount": 5,
-      "lastAccessed": 1778412697659,
-      "type": "file"
-    },
-    {
-      "path": "cli/src/commands/init.ts",
-      "accessCount": 5,
-      "lastAccessed": 1778772794787,
-      "type": "file"
-    },
-    {
-      "path": "cli/src/commands/init-archetype.ts",
-      "accessCount": 5,
-      "lastAccessed": 1778772800700,
-      "type": "file"
-    },
-    {
-      "path": "bin/forge-sbom.sh",
-      "accessCount": 5,
-      "lastAccessed": 1780476823268,
-      "type": "file"
-    },
-    {
-      "path": ".forge/scripts/tests/j8.test.sh",
-      "accessCount": 4,
-      "lastAccessed": 1778423902412,
-      "type": "file"
-    },
-    {
-      "path": ".forge/changes/j8-janus-rules/tasks.md",
+      "path": ".forge/scripts/tests/b8-12.test.sh",
       "accessCount": 3,
-      "lastAccessed": 1778424511501,
+      "lastAccessed": 1780580438894,
       "type": "file"
     },
     {
-      "path": "bin/forge-init-mobile-only.sh",
-      "accessCount": 3,
-      "lastAccessed": 1778425371388,
-      "type": "file"
-    },
-    {
-      "path": ".worktrees/k3-demeter/docs/new-archetypes-plan.md",
-      "accessCount": 3,
-      "lastAccessed": 1778432771185,
-      "type": "file"
-    },
-    {
-      "path": ".worktrees/k3-demeter/docs/ARCHITECTURE-TARGET.md",
-      "accessCount": 3,
-      "lastAccessed": 1778432812166,
-      "type": "file"
-    },
-    {
-      "path": ".forge/standards/global/janus-orchestration-rules.md",
-      "accessCount": 3,
-      "lastAccessed": 1780420318488,
-      "type": "file"
-    },
-    {
-      "path": ".forge/changes/t5-otel-stack/.forge.yaml",
+      "path": "cli/assets/.forge/scripts/tests/b8-12.test.sh",
       "accessCount": 2,
-      "lastAccessed": 1778407642884,
+      "lastAccessed": 1780580453618,
       "type": "file"
     },
     {
-      "path": ".forge/changes/t5-otel-stack/tasks.md",
-      "accessCount": 2,
-      "lastAccessed": 1778407649850,
-      "type": "file"
-    },
-    {
-      "path": ".claude/agents/cross-layer-orchestrator.md",
-      "accessCount": 2,
-      "lastAccessed": 1778423328657,
-      "type": "file"
-    },
-    {
-      "path": "bin/_forge-init-helpers.sh",
-      "accessCount": 2,
-      "lastAccessed": 1778423411738,
-      "type": "file"
-    },
-    {
-      "path": ".forge/changes/j8-janus-rules/proposal.md",
-      "accessCount": 2,
-      "lastAccessed": 1778424078809,
-      "type": "file"
-    },
-    {
-      "path": ".worktrees/t5-otel-app/docs/new-archetypes-plan.md",
-      "accessCount": 2,
-      "lastAccessed": 1778432799592,
-      "type": "file"
-    },
-    {
-      "path": ".forge/changes/t5-otel-stack/proposal.md",
+      "path": ".forge/templates/archetypes/full-stack-monorepo/docker-compose.dev.yml.tmpl",
       "accessCount": 1,
-      "lastAccessed": 1778407340621,
-      "type": "file"
-    },
-    {
-      "path": ".forge/changes/t5-otel-stack/specs.md",
-      "accessCount": 1,
-      "lastAccessed": 1778407357334,
-      "type": "file"
-    },
-    {
-      "path": ".forge/changes/j8-janus-rules/specs.md",
-      "accessCount": 1,
-      "lastAccessed": 1778411103354,
-      "type": "file"
-    },
-    {
-      "path": ".forge/changes/j8-janus-rules/design.md",
-      "accessCount": 1,
-      "lastAccessed": 1778412648842,
-      "type": "file"
-    },
-    {
-      "path": ".forge/standards/global/sbom-policy.md",
-      "accessCount": 1,
-      "lastAccessed": 1778423759698,
-      "type": "file"
-    },
-    {
-      "path": "docs/ARCHETYPES.md",
-      "accessCount": 1,
-      "lastAccessed": 1778423981972,
-      "type": "file"
-    },
-    {
-      "path": ".forge/specs/janus-rules.md",
-      "accessCount": 1,
-      "lastAccessed": 1778424495763,
-      "type": "file"
-    },
-    {
-      "path": ".worktrees/k3-demeter/CLAUDE.md",
-      "accessCount": 1,
-      "lastAccessed": 1778432764724,
-      "type": "file"
-    },
-    {
-      "path": ".worktrees/k3-demeter/.forge/constitution.md",
-      "accessCount": 1,
-      "lastAccessed": 1778432764920,
-      "type": "file"
-    },
-    {
-      "path": ".worktrees/k3-demeter/.forge/standards/index.yml",
-      "accessCount": 1,
-      "lastAccessed": 1778432777575,
-      "type": "file"
-    },
-    {
-      "path": ".worktrees/k3-demeter/.forge/changes/j8-janus-rules/.forge.yaml",
-      "accessCount": 1,
-      "lastAccessed": 1778432780868,
-      "type": "file"
-    },
-    {
-      "path": ".worktrees/k3-demeter/.forge/changes/j8-janus-rules/proposal.md",
-      "accessCount": 1,
-      "lastAccessed": 1778432787865,
-      "type": "file"
-    },
-    {
-      "path": ".worktrees/k3-demeter/.forge/changes/j8-janus-rules/specs.md",
-      "accessCount": 1,
-      "lastAccessed": 1778432788185,
-      "type": "file"
-    },
-    {
-      "path": ".worktrees/k3-demeter/.forge/changes/j8-janus-rules/design.md",
-      "accessCount": 1,
-      "lastAccessed": 1778432788722,
-      "type": "file"
-    },
-    {
-      "path": ".worktrees/t5-otel-app/CLAUDE.md",
-      "accessCount": 1,
-      "lastAccessed": 1778432793438,
-      "type": "file"
-    },
-    {
-      "path": ".worktrees/k3-demeter/.forge/changes/j8-janus-rules/tasks.md",
-      "accessCount": 1,
-      "lastAccessed": 1778432794649,
-      "type": "file"
-    },
-    {
-      "path": ".worktrees/k3-demeter/.forge/changes/j8-janus-rules/open-questions.md",
-      "accessCount": 1,
-      "lastAccessed": 1778432795522,
-      "type": "file"
-    },
-    {
-      "path": ".worktrees/k3-demeter/.forge/schemas/change.schema.json",
-      "accessCount": 1,
-      "lastAccessed": 1778432795825,
-      "type": "file"
-    },
-    {
-      "path": ".worktrees/k3-demeter/.forge/schemas/compliance-tier.schema.json",
-      "accessCount": 1,
-      "lastAccessed": 1778432796358,
-      "type": "file"
-    },
-    {
-      "path": ".worktrees/t5-otel-app/.forge/constitution.md",
-      "accessCount": 1,
-      "lastAccessed": 1778432797638,
-      "type": "file"
-    },
-    {
-      "path": ".worktrees/k3-demeter/.claude/agents/security-auditor.md",
-      "accessCount": 1,
-      "lastAccessed": 1778432802590,
-      "type": "file"
-    },
-    {
-      "path": ".worktrees/k3-demeter/.claude/agents/cross-layer-orchestrator.md",
-      "accessCount": 1,
-      "lastAccessed": 1778432804004,
-      "type": "file"
-    },
-    {
-      "path": ".worktrees/t5-otel-app/.forge/changes/t5-otel-stack/.forge.yaml",
-      "accessCount": 1,
-      "lastAccessed": 1778432806865,
-      "type": "file"
-    },
-    {
-      "path": ".worktrees/t5-otel-app/.forge/changes/t5-otel-stack/proposal.md",
-      "accessCount": 1,
-      "lastAccessed": 1778432807635,
-      "type": "file"
-    },
-    {
-      "path": ".worktrees/t5-otel-app/.forge/standards/observability.yaml",
-      "accessCount": 1,
-      "lastAccessed": 1778432808110,
-      "type": "file"
-    },
-    {
-      "path": ".worktrees/k3-demeter/.forge/changes/t4-adr-ratification/.forge.yaml",
-      "accessCount": 1,
-      "lastAccessed": 1778432812590,
+      "lastAccessed": 1780587582596,
       "type": "file"
     }
   ],
