@@ -527,6 +527,7 @@ v1.0.0 sont désormais résolus.
 | `b8-10-migrate-flagship` | archived | B.8.10 (flagship migration orchestrator — `bin/forge-migrate-flagship.sh` sources forge-upgrade.sh + reuses _a7_* over 4 phases ; P2 additive overlay of the 2.0.0 deltas, NO DBOS leg per B8O, additive-only no removal ; never calls _a7_check_version_compat ; exit 0/2/5/7/8 ; --dry-run/--phase/--force/--rollback ; rollback from frozen 1.0.0 snapshot ; ledger kind:flagship-migration wrapper ; docs/MIGRATIONS.md 1.0.0→2.0.0 fills A.7 stub ; pure tooling no standard bump ; b8-10.test.sh 12 L1 + L2 ; review APPROVE ; archived 2026-06-03) |
 | `b8-11-nsma-linter` | archived | B.8.11 (NSMA linter activation — DATA flip state-management.yaml ci_blocking false→true, rule pre-exists at constitution-linter.sh:665-731, NO new bash ; enforces VI.3 SHALL + ADR-006, reviewer ruled NO fresh Article XII amendment ; v1.0.0→1.1.0, activation_planned→activated_by ; pre_commit stays false no runner ; linting-rules.md NSMA section + FORGE_LINTER_SKIP_NSMA ; backward-compat 0 scannable forbidden dep, live tree OVERALL PASS, forbidden dep now FAILs CI ; b8-11.test.sh 16 L1 + 2 L2 ; review APPROVE ; archived 2026-06-03) |
 | `b8-12-e2e-migration` | archived | B.8.12 (E2E migration convergence gate — golden span-inventory superset (2.0.0 ⊇ 1.0.0 3 spans, NO committed p95/p99 per III.4) + hermetic migrate-flagship driver on tmpdir c1 copy ; lands S2S Connect client (transport_connect_client.rs.tmpl, connectrpc::client, ClientConfig::new(Uri)) + Envoy-OIDC (SecurityPolicy spec.jwt.providers+Backend, jwks <issuer>/oauth/v2/keys, jwt-authorizer 0.15.x middleware) ; 0-regression demo-001..004 (3 .feature, demo-004 frozen) ; b8-12.test.sh 23 L1 + 4 L2 ; pure additive no standard bump ; review APPROVE ; archived 2026-06-04) |
+| `b8-14-promotion-prep` | archived | B.8.14 **(PREPARE-ONLY — flip pending)** (point-of-no-return prep ; applies NOTHING breaking. The §VIII.1 Kong→Envoy amendment is process-gated by a ≥7-day public window (Article XII + GOVERNANCE.md), so B.8.14 split: this brick = Amendment-Process step 1 (Forge change targeting the constitution, opens the window) + staged bundle ; follow-up `b8-14-promotion-flip` ratifies+applies+flips+removes post-window. Maintainer decisions 2026-06-04: prepare-only + stage-removal-don't-execute. Staged: `amendment-viii-1.md` (Envoy-SHALL §VIII.1, v1.1.0→v2.0.0 MAJOR per VERSIONING:15-17, Amendments row #2, d5 precedent), `removal-manifest.yaml` (verified-real Kong/REST targets + live `kong.md` standard → gateway.yaml), `flip-runbook.md` (ordered ratify→apply→promote→remove→deprecate, framework pinned pre-GA VERSIONING:70-73, t4 material-path, 1.0.0 T+6mo deprecation draft). VIII.2/Temporal NOT amended (B8O). `b8-14.test.sh` 15 L1 — load-bearing NEGATIVE held-guards (constitution still v1.1.0+Kong SHALL, 2.0.0 still scaffoldable:false, fsm-kong/kong.md intact, snapshot byte-identical) so a premature flip can't merge green ; zero constitution/schema/standard/scaffolder mutation. Design review round 1 APPROVE+2 MEDIUM citation fixes ; impl review APPROVE+1 LOW (GOVERNANCE line anchor) fixed ; archived 2026-06-04) |
 | `b8-13-rollback-runbook` | archived | B.8.13 (rollback runbook — NEW `docs/ROLLBACK.md` : 2 scenarios (p99 +>20% post-Envoy → reverse Kong→Envoy route weights ; traceparent >1% → roll back OTel SDK overlay only) × Detect/Decide/Execute/Verify/Re-attempt + last-resort `--rollback` ; relative thresholds only, NO committed p99 (III.4) ; byte-consistent with forge-migrate-flagship.sh:394-396 ; **record-only supersession** — ARCHITECTURE-TARGET.md sha256-pinned by t4 ⇒ left byte-frozen, Supersession note enumerates 7 stale DBOS refs (§11.1/§11.2×3/§11.3/§11.4 + §12.1) → orchestration.yaml v1.2.0 ; b8-13.test.sh 18 L1 (incl. positive arch-doc-sha-frozen + t4 coupling guard) ; pure doc+test, no standard/schema/constitution mutation ; design review round 1 CHANGES REQUIRED (t4-pin BLOCKER + 2 missed DBOS refs + III.4 mis-citation) → round 2 APPROVE ; impl review APPROVE ; archived 2026-06-04) |
 
 **52 archivés** au 2026-06-04 (zéro change en cours, B.8.12 E2E migration convergence gate archivé 2026-06-04). Trio B.8.8 observability rearch
@@ -536,8 +537,8 @@ puis **B.8.3 + B.8.3.b + B.8.4 + B.8.5 (re-scoped) + B8O + B.8.6 + B.8.7 archiv�
 2026-05-30 → 2026-06-02**, **B.8.9 archivé 2026-06-03** (additive, see §0.10),
 **B.8.10 archivé 2026-06-03** (flagship migration orchestrator, see §4.2),
 **B.8.11 archivé 2026-06-03** (NSMA linter activation, DATA flip ci_blocking false→true, see §4.2),
-**B.8.12 archivé 2026-06-04** (E2E migration convergence gate, golden span superset + hermetic migrate-flagship driver + S2S Connect client + Envoy-OIDC wiring, see §4.2), **B.8.13 archivé 2026-06-04** (rollback runbook docs/ROLLBACK.md, record-only supersession of t4-pinned ARCHITECTURE-TARGET §11/§12.1, see §4.2). Next B.8 step:
-**B.8.14** (schema 2.0.0 stable bump + Constitution VIII.1/VIII.2 amendment + 1.0.0 deprecation — **point de non-retour**) — remaining: B.8.14, B.8.15 (forge upgrade matrix test). T5.3.1 livré sans `task validate` GREEN
+**B.8.12 archivé 2026-06-04** (E2E migration convergence gate, golden span superset + hermetic migrate-flagship driver + S2S Connect client + Envoy-OIDC wiring, see §4.2), **B.8.13 archivé 2026-06-04** (rollback runbook docs/ROLLBACK.md, record-only supersession of t4-pinned ARCHITECTURE-TARGET §11/§12.1, see §4.2), **B.8.14 PREPARE archivé 2026-06-04** (`b8-14-promotion-prep` — point-of-no-return prep, applies nothing breaking ; staged §VIII.1 Envoy amendment + Kong/REST removal manifest + flip runbook ; the §VIII.1 amendment is process-gated by a ≥7-day public discussion window so the ratify+apply+flip+remove is the follow-up `b8-14-promotion-flip`, see §4.2). Next B.8 step:
+**B.8.15** (forge upgrade matrix test — no constitution gate, can proceed now) — remaining: B.8.15, then the **B.8.14 flip follow-up** after the 7-day window closes (ratify §VIII.1 → promote 2.0.0 scaffoldable → execute removal manifest → activate 1.0.0 deprecation), then the v0.4.0 **stable** cut. T5.3.1 livré sans `task validate` GREEN
 end-to-end : le L2 et `task validate` exposent **Q-005**
 (SigNoz image pins rotted upstream + architecture migration
 3-services → unified ; pin refresh impossible). Tentative
@@ -2354,7 +2355,27 @@ Migration **additive d'abord, breaking ensuite** :
       DBOS refs + III.4 mis-citation) → round 2 APPROVE ; impl review APPROVE.
 - **B.8.14.** Bump schema `1.0.0` → `2.0.0` + amendement Constitution si nécessaire
   (Article XII). Annoncer la deprecation 1.0.0 à T+6 mois (CHANGELOG + `GOVERNANCE.md`
-  release process). Effort : `S`.
+  release process). Effort : `S`. 🔶 **PREPARE done 2026-06-04 via `b8-14-promotion-prep`
+  — FLIP pending (post-7-day-window follow-up `b8-14-promotion-flip`).** The §VIII.1
+  (Kong→Envoy) amendment is process-gated by a ≥7-day public discussion window
+  (Article XII + GOVERNANCE.md §"Amendment Process"; removing Kong before ratification =
+  a constitutional violation per `2.0.0.yaml:17-31`), so B.8.14 split. Maintainer decisions
+  2026-06-04: *prepare-only, hold the flip* + *stage removal, don't execute*. **This brick
+  applies NOTHING breaking** — Amendment-Process step 1 (opens the window) + a staged bundle:
+  `amendment-viii-1.md` (proposed Envoy-SHALL §VIII.1, Constitution v1.1.0→v2.0.0 MAJOR per
+  `VERSIONING.md:15-17`, Amendments row #2, d5-governance precedent; **§VIII.2/Temporal NOT
+  amended** — B8O), `removal-manifest.yaml` (verified-real Kong/REST targets: `infra/kong/`,
+  `fsm-kong`, `FSM_KONG_ADMIN_PORT`, scaffold-plan entry, REST routes, + the live
+  `.forge/standards/infra/kong.md` standard → superseded by `gateway.yaml`), `flip-runbook.md`
+  (ordered ratify→apply→promote `2.0.0.yaml` scaffoldable:true→execute removal in 2.0.0
+  composition→land B.8.3.b scaffolder guard→activate deprecation; framework pinned pre-GA
+  `VERSIONING.md:70-73`; t4 material-path noted). `b8-14.test.sh` 15 L1 — load-bearing
+  **NEGATIVE held-guards** (constitution still v1.1.0+Kong SHALL, no Envoy amendment, 2.0.0
+  still stage:candidate/scaffoldable:false, fsm-kong/infra/kong/kong.md intact, snapshot
+  byte-identical) ⇒ a premature flip can't merge green. Zero constitution/schema/standard/
+  scaffolder mutation. Design review APPROVE (+2 MEDIUM citation fixes) ; impl review APPROVE
+  (+1 LOW line-anchor fix) ; archived 2026-06-04. **The flip follow-up performs the actual
+  breaking change after the window.**
 - **B.8.15.** **T5.1 couche D — `forge upgrade` matrix test.** Test e2e matriciel
   couvrant chaque paire N-1 → N de la flagship (et symétriquement pour les autres
   archétypes shippés). Prérequis : T5.1.0 / .A / .B / .C livrés (cf. §0.1). Une

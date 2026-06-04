@@ -1,0 +1,47 @@
+# Forge — B.8.14 Kong/REST removal manifest (STAGED — NOT executed)
+# <!-- Audit: B.8.14 (b8-14-promotion-prep) -->
+#
+# Declarative list of the Kong + REST-bridge targets the FOLLOW-UP brick
+# (b8-14-promotion-flip) removes when it promotes 2.0.0 to stable, AFTER the
+# §VIII.1 amendment ratifies. Nothing here is deleted by this prepare brick.
+#
+# Every target below is verified to currently exist (b8-14.test.sh
+# _test_b814_009_manifest_targets_real). Two categories:
+#   - scaffold_composition : excluded from a fresh 2.0.0 scaffold (the 2.0.0
+#       composition = 1.0.0 base MINUS these + the additive 2.0.0 overlay). The
+#       frozen 1.0.0 base (b8-2) is NEVER edited; the exclusion is applied by the
+#       scaffold/migrate composition layer at flip.
+#   - framework_standard   : a live framework standard removed/superseded at flip.
+
+meta:
+  applies_when: "AFTER §VIII.1 amendment ratified (Constitution v2.0.0)"
+  guard: "removing any target before ratification = constitutional violation (2.0.0.yaml:17-31)"
+  replacement_gateway: ".forge/standards/gateway.yaml (Envoy, B.8.4)"
+  replacement_transport: ".forge/standards/transport.yaml (Connect-RPC, B.8.6)"
+
+scaffold_composition:
+  # Kong gateway service in the dev compose (REST↔gRPC bridge host).
+  - path: "infra/kong/"
+    template: ".forge/templates/archetypes/full-stack-monorepo/infra/kong/"
+    note: "whole dir — kong.yml.example.tmpl (declarative config + REST routes)"
+  - anchor: "fsm-kong"
+    file: ".forge/templates/archetypes/full-stack-monorepo/docker-compose.dev.yml.tmpl"
+    note: "the fsm-kong service block + its depends_on edges + ports 8000/8001 + volume mount + healthcheck"
+  - anchor: "FSM_KONG_ADMIN_PORT"
+    file: ".forge/templates/archetypes/full-stack-monorepo/.env.example.tmpl"
+    note: "the '# ── Kong (fsm-kong) ──' block + FSM_KONG_ADMIN_PORT var"
+  - anchor: "infra/kong/kong.yml.example"
+    file: ".forge/templates/archetypes/full-stack-monorepo/scaffold-plan.yaml"
+    note: "the kong.yml.example source→target scaffold-plan entry (scaffold-plan.yaml:156-157)"
+  - anchor: "REST-bridge routes"
+    file: ".forge/templates/archetypes/full-stack-monorepo/infra/kong/kong.yml.example.tmpl"
+    note: "the REST↔gRPC transcoding route definitions — replaced by Connect-RPC (B.8.6)"
+  - anchor: "kong wording"
+    file: ".forge/templates/archetypes/full-stack-monorepo/Taskfile.yml.tmpl"
+    note: "validate task desc mentions 'compose/kong/k8s' — reword to drop kong (Taskfile.yml:65)"
+
+framework_standard:
+  - path: ".forge/standards/infra/kong.md"
+    note: "live framework standard governing Kong — removed/superseded by .forge/standards/gateway.yaml (Envoy, B.8.4) at flip"
+
+# NOTE: Temporal is NOT a removal target (B8O retained it; §VIII.2 unchanged).

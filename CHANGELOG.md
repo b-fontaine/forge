@@ -12,6 +12,32 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added — B.8.14 promotion prepare-only bundle (`b8-14-promotion-prep`)
+
+- **Governance prep for the point-of-no-return — applies NOTHING breaking.** The
+  §VIII.1 (Kong→Envoy) Constitution amendment is process-gated by a ≥7-day public
+  discussion window (Article XII + `GOVERNANCE.md §"Amendment Process"`), so
+  B.8.14 is split: this brick is step 1 (a Forge change targeting the
+  constitution, opening the window) + a staged bundle; a follow-up brick
+  (`b8-14-promotion-flip`) ratifies + applies after the window.
+- **Staged artifacts** (in the change dir, all inert): `amendment-viii-1.md` (the
+  drafted §VIII.1 Envoy-SHALL replacement + Amendments-table row + target
+  Constitution v1.1.0→v2.0.0, citing `VERSIONING.md:15-17` + the Amendment
+  Process + the `d5-governance` precedent); `removal-manifest.yaml` (the exact,
+  verified-real Kong/REST removal targets — `infra/kong/`, `fsm-kong`,
+  `FSM_KONG_ADMIN_PORT`, scaffold-plan entry, REST routes, + the live
+  `.forge/standards/infra/kong.md` standard → superseded by `gateway.yaml`);
+  `flip-runbook.md` (ordered post-window ratify→apply→promote→remove→deprecate
+  steps, framework version pinned to the pre-GA carve-out `VERSIONING.md:70-73`,
+  t4 material-path note, 1.0.0 T+6-month deprecation draft).
+- **`b8-14.test.sh`** — 15 L1 hermetic tests whose load-bearing assertions are
+  NEGATIVE held-state guards (constitution still v1.1.0 + §VIII.1 still "Kong
+  SHALL"; no Envoy amendment applied; 2.0.0 still `stage: candidate` /
+  `scaffoldable: false`; `fsm-kong` + `infra/kong/` + `kong.md` intact; frozen
+  snapshot byte-identical) so a premature flip cannot merge green. VIII.2
+  (Temporal) NOT amended (B8O). No constitution/schema/standard/scaffolder
+  mutation; `constitution_version` stays 1.1.0.
+
 ### Added — B.8.13 rollback runbook (`b8-13-rollback-runbook`)
 
 - **`docs/ROLLBACK.md`** — operational rollback runbook for the
