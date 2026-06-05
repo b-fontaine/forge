@@ -12,6 +12,33 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### BREAKING — Constitution v2.0.0 · §VIII.1 Kong → Envoy (`b8-14-promotion-flip`, B.8.14)
+
+- **Point of no return.** Constitution **Amendment #2** amends §VIII.1: the
+  mandated API gateway is now **Envoy Gateway** (Kubernetes Gateway API), with
+  end-to-end **Connect-RPC** replacing gateway-layer REST↔gRPC transcoding.
+  Constitution **v1.1.0 → v2.0.0** (breaking; VERSIONING §MAJOR). §VIII.2
+  (Temporal) unchanged (B8O). The **framework stays on the 0.4.0 line** (pre-1.0
+  carve-out VERSIONING.md:70-73); the framework MAJOR follows at GA.
+- The `full-stack-monorepo` **2.0.0** archetype is now `stage: stable` /
+  `scaffoldable: true`: `forge init` produces an **Envoy/Connect** tree (no Kong).
+  `cli` gains versioned-schema selection + a runtime guard refusing
+  `scaffoldable:false` schemas (the deferred B.8.3.b guard).
+- **Governance**: the §VIII.1 ≥7-day public discussion window (Article XII) opened
+  2026-06-04 and was **compressed to ~1 day** by BDFL decision (ratified
+  2026-06-05) — recorded honestly as a Correction Entry in
+  `.forge/standards/REVIEW.md`. `docs/ARCHITECTURE-TARGET.md` §11/§12.1 realigned
+  (Kong→Envoy, DBOS→Temporal) via the t4 material-path (rehash + REHASH-LOG).
+
+### Deprecated — `full-stack-monorepo` 1.0.0 (Kong)
+
+- **`full-stack-monorepo` 1.0.0 is deprecated**, EOL **2026-12-05** (T+6 months).
+  During the window it remains buildable + migratable via `docs/MIGRATIONS.md`
+  (the migrate path stays **additive** — existing 1.0.0 projects keep Kong);
+  `docs/ROLLBACK.md` covers reversal. New scaffolds default to 2.0.0 (Envoy).
+  `.forge/standards/infra/kong.md` is a deprecation tombstone → `gateway.yaml` +
+  `transport.yaml`. After EOL, 1.0.0 is unsupported (VERSIONING support policy).
+
 ### Added — B.8.15 forge-upgrade matrix test (`b8-15-upgrade-matrix`)
 
 - **T5.1 Layer D — the v0.4.0-stable publish gate.** New

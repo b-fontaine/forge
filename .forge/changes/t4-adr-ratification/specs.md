@@ -10,7 +10,7 @@ This change ratifies decisions from a single source document.
 |------------------------|--------------------------------------------------------------------|
 | **Path**               | `docs/ARCHITECTURE-TARGET.md`                                      |
 | **Line count**         | 1132                                                               |
-| **sha256**             | `502bd8a27015029204624ff3b4f1b8de6b8aa7e0b957e4a093c93a0e2fbd895d` |
+| **sha256**             | `417ad5c265a625a77d98758fd5513a10bb37c9bdce757d7585b2e216624a9f3a` |
 | **Last verified**      | 2026-05-12                                                         |
 | **Drift gate**         | `t4.test.sh::test_architecture_doc_hash_unchanged`                 |
 | **Rehash escape hatch**| `bin/forge-rehash-architecture-doc.sh` (creates a new t4 hash entry, not a Forge re-archival) |

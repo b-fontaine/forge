@@ -187,11 +187,11 @@ standards:
     scope: infra
     priority: high
 
-  - id: infra/kong
-    path: standards/infra/kong.md
-    triggers: [kong, api gateway, grpc transcoding, rate limiting, plugin, upstream, route, kong.yml]
-    scope: infra
-    priority: high
+  # infra/kong removed at the §VIII.1 Kong→Envoy amendment (b8-14-promotion-flip,
+  # Constitution v2.0.0, 2026-06-05). The Envoy gateway standard is gateway.yaml;
+  # Connect transport is transport.yaml. .forge/standards/infra/kong.md is kept as
+  # a deprecation tombstone for 1.0.0 adopters in the T+6mo window (EOL 2026-12-05),
+  # intentionally NOT indexed (no longer a triggerable active standard).
 
   - id: infra/temporal
     path: standards/infra/temporal.md

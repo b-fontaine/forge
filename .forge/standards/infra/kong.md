@@ -1,4 +1,14 @@
-# Kong API Gateway Standard
+# Kong API Gateway Standard — ⚠️ DEPRECATED (tombstone)
+
+> **DEPRECATED at Constitution v2.0.0 (Amendment #2, 2026-06-05, `b8-14-promotion-flip`).**
+> §VIII.1 now mandates **Envoy Gateway** (see `.forge/standards/gateway.yaml`) with
+> end-to-end **Connect-RPC** (`.forge/standards/transport.yaml`) replacing the
+> gateway REST↔gRPC transcoding this standard described. This file is a **tombstone**
+> kept for `full-stack-monorepo` **1.0.0** adopters during the deprecation window
+> (**EOL 2026-12-05**, T+6 months); it is no longer indexed in
+> `.forge/standards/index.yml` and is removed after EOL. New 2.0.0 projects use
+> Envoy + Connect. Migration: `docs/MIGRATIONS.md`; reversal: `docs/ROLLBACK.md`.
+> The content below is **historical** (1.0.0 Kong gateway) — superseded.
 
 ## Use Cases
 

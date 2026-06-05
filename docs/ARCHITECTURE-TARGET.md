@@ -802,7 +802,7 @@ sequenceDiagram
 ```mermaid
 flowchart LR
     P0[Phase 0\nFreeze + audit\n2 sem] --> P1[Phase 1\nObservabilité +\nContrats Connect\n4 sem]
-    P1 --> P2[Phase 2\n!POINT DE NON-RETOUR!\nKong→Envoy\nflutter_bloc renforcé\nDBOS embedded\n6 sem]
+    P1 --> P2[Phase 2\n!POINT DE NON-RETOUR!\nKong→Envoy\nflutter_bloc renforcé\nTemporal retained\n6 sem]
 P2 --> P3[Phase 3\nNouveaux archétypes\nevent-driven-eu\nai-native-rag\n8 sem]
 P3 --> P4[Phase 4\nDeprecation\nflutter-firebase removed\nQwik web\nT3 EU readiness\n4 sem]
 ```
@@ -828,13 +828,13 @@ P3 --> P4[Phase 4\nDeprecation\nflutter-firebase removed\nQwik web\nT3 EU readin
 
 #### Phase 2 — Bascule structurelle (6 semaines) — **POINT DE NON-RETOUR**
 
-- Remplacer Kong par Envoy Gateway (canary par route).
-- Migrer Temporal → DBOS pour workflows monorepo simples (ceux dont la cardinalité est < 10k/jour).
+- Remplacer Kong par Envoy Gateway (canary par route) — ratifié §VIII.1 (Constitution v2.0.0, Amendment #2, 2026-06-05).
+- **Temporal retenu comme orchestrateur** (B8O / `b8-orchestration-temporal-realign`) — la bascule Temporal → DBOS est **annulée** (pas de SDK Rust DBOS ; `orchestration.yaml` v1.2.0 `default_by_language.rust: temporal`). §VIII.2 inchangé.
 - Renforcer scaffolding flutter_bloc + bloc_test via mise à jour Hera (templates v2). Codegen Connect-Dart remplace
   retrofit.
 - Activer linter `no-state-management-alternatives` en CI bloquant.
 - Déploiement Zitadel.
-- **Risques élevés** : Envoy CRD complexity, DBOS Go SDK encore récent, Zitadel migration auth.
+- **Risques élevés** : Envoy CRD complexity, Zitadel migration auth.
 - **Point de non-retour** : oui, après bascule production de la flagship sur Envoy.
 - **Mitigations** : feature flag par route, blue-green Envoy/Kong, training équipe SRE.
 
@@ -844,7 +844,7 @@ P3 --> P4[Phase 4\nDeprecation\nflutter-firebase removed\nQwik web\nT3 EU readin
 - Implémenter `ai-native-rag` (pgvector + LLM gateway + MCP).
 - Mettre à jour Forge CLI `@sdd-forge/cli init --archetype event-driven-eu`.
 - Créer agents Pythia, Hermes-Async, Demeter, Iris-Web, Themis.
-- **Risques** : maturité DBOS pour AI agents, MCP encore en évolution.
+- **Risques** : MCP encore en évolution. (DBOS reste sur la watch-list — pas adopté ; pas de SDK Rust, B8O.)
 
 #### Phase 4 — Deprecation (4 semaines)
 
@@ -857,14 +857,15 @@ P3 --> P4[Phase 4\nDeprecation\nflutter-firebase removed\nQwik web\nT3 EU readin
 
 - p99 augmente > 20 % après Envoy → rollback à Kong.
 - Erreurs traceparent > 1 % → rollback à OTel SDK seul (sans OBI).
-- DBOS Postgres saturé > 70 % CPU → fallback à Temporal pour workflows lourds.
+- (Aucun critère DBOS/CPU — Temporal est l'orchestrateur, pas de leg DBOS ; B8O.)
+
+> Runbook de rollback complet : `docs/ROLLBACK.md` (B.8.13).
 
 ### 11.4 Risques transverses
 
 | Risque                                                              | Probabilité | Impact | Mitigation                                                                                                                                                       |
 |---------------------------------------------------------------------|-------------|--------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Connect-Dart encore community-only                                  | Moyenne     | Moyen  | Forker, contribuer upstream, sinon Kotlin FFI                                                                                                                    |
-| DBOS Go SDK breaking changes                                        | Moyenne     | Élevé  | Wrapper interne Forge, épingler version                                                                                                                          |
 | Envoy Gateway CRD courbe                                            | Élevée      | Moyen  | Documentation Atlas + templates Helm                                                                                                                             |
 | Maintenir 9 sub-agents Hera                                         | Élevée      | Élevé  | Refactor en 5 sub-agents                                                                                                                                         |
 | OBI nécessite kernel ≥ 5.8                                          | Moyenne     | Faible | Documenter prérequis nodes                                                                                                                                       |
@@ -926,10 +927,11 @@ backend: signoz
 sampler: parentbased_traceidratio
 prod_ratio: 0.1
 
-# .forge/standards/orchestration.yaml
-default: dbos
-fallback: temporal
-fallback_trigger: workflow_volume_per_day_gt_10000 OR cross_service_count_gt_10
+# .forge/standards/orchestration.yaml (v1.2.0 — B8O realignment)
+default_by_language:
+  rust: temporal        # Temporal SHALL (Constitution §VIII.2) — no Rust DBOS SDK
+dbos:
+  available: false      # watch-list future-option ; requires a Rust SDK GA (B8O)
 
 # .forge/standards/identity.yaml
 default: zitadel

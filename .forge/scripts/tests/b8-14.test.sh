@@ -73,18 +73,17 @@ FAIL_NAMES=()
 # FR-B814-003/030 — constitution byte-held: v1.1.0 + §VIII.1 still Kong SHALL
 _test_b814_001_constitution_held() {
   [ -f "$CONSTITUTION" ] || { echo "    constitution.md missing" >&2; return 1; }
-  grep -qE '^\*\*Version\*\*: *v1\.1\.0' "$CONSTITUTION" || { echo "    constitution Version is not v1.1.0 (flip leaked?)" >&2; return 1; }
-  grep -qF "Kong SHALL be used as the API gateway" "$CONSTITUTION" || { echo "    §VIII.1 'Kong SHALL' missing (amendment applied prematurely?)" >&2; return 1; }
+  # Post-flip (b8-14-promotion-flip): constitution ratified to v2.0.0 + §VIII.1 Envoy.
+  grep -qE '^\*\*Version\*\*: *v2\.0\.0' "$CONSTITUTION" || { echo "    constitution Version is not v2.0.0 (amendment not ratified?)" >&2; return 1; }
+  grep -qiF "Envoy Gateway SHALL be used as the API gateway" "$CONSTITUTION" || { echo "    §VIII.1 'Envoy Gateway SHALL' missing (amendment not applied?)" >&2; return 1; }
 }
 
 # FR-B814-003 — no gateway/Envoy amendment ratified (Amendments table clean)
 _test_b814_002_no_amendment_applied() {
-  # The live constitution must contain NO Envoy mention anywhere (the VIII.1
-  # amendment is held; an applied amendment would introduce 'Envoy').
-  if grep -qiF "envoy" "$CONSTITUTION"; then
-    echo "    constitution mentions Envoy — VIII.1 amendment appears applied (must be held)" >&2
-    return 1
-  fi
+  # Post-flip: the §VIII.1 amendment IS applied — the constitution now names Envoy
+  # and the Amendments table carries row #2.
+  grep -qiF "envoy" "$CONSTITUTION" || { echo "    constitution does not mention Envoy (amendment not applied)" >&2; return 1; }
+  grep -qE '^\| 2 \| 20[0-9]{2}-[0-9]{2}-[0-9]{2} \|' "$CONSTITUTION" || { echo "    Amendments row #2 (§VIII.1) missing" >&2; return 1; }
 }
 
 # FR-B814-030 — 2.0.0 schema NOT promoted
@@ -109,19 +108,12 @@ _test_b814_004_kong_targets_intact() {
 
 # FR-B814-031/032 — no forbidden file mutated vs HEAD (constitution/schema/standards/templates)
 _test_b814_005_no_forbidden_mutation() {
-  if ! git -C "$FORGE_ROOT_REAL" rev-parse --git-dir >/dev/null 2>&1; then
-    return 0  # not a git checkout — skip-pass
-  fi
-  local p
-  for p in .forge/constitution.md \
-           .forge/schemas/full-stack-monorepo/2.0.0.yaml \
-           .forge/standards \
-           .forge/templates/archetypes/full-stack-monorepo; do
-    if ! git -C "$FORGE_ROOT_REAL" diff --quiet HEAD -- "$p" 2>/dev/null; then
-      echo "    forbidden mutation under '$p' (prepare-only brick must not touch it)" >&2
-      return 1
-    fi
-  done
+  # RETIRED post-flip (b8-14-promotion-flip): this guard existed only to prove the
+  # PREPARE brick applied nothing breaking. The flip legitimately amends the
+  # constitution + promotes 2.0.0, so the prepare-only no-mutation invariant no
+  # longer holds. The flipped state is asserted by b8-14-flip.test.sh + the
+  # inverted _001/_002 above. Kept as a passing no-op for manifest stability.
+  return 0
 }
 
 # ── Positive staged-artifact checks ──

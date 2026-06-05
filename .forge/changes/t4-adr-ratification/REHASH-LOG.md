@@ -19,3 +19,9 @@ Forge change that supersedes parts of `t4-adr-ratification`.
 - **Old hash**: `cd8fef37ed01de981c8779a79d40234a70a4411387235dd990a86b705f3de925`
 - **New hash**: `502bd8a27015029204624ff3b4f1b8de6b8aa7e0b957e4a093c93a0e2fbd895d`
 - **Reviewer attestation required**: confirm no ADR Decision was materially changed.
+
+## 2026-06-05 — rehash by @bfontaine
+
+- **Old hash**: `502bd8a27015029204624ff3b4f1b8de6b8aa7e0b957e4a093c93a0e2fbd895d`
+- **New hash**: `417ad5c265a625a77d98758fd5513a10bb37c9bdce757d7585b2e216624a9f3a`
+- **Reviewer attestation required**: confirm no ADR Decision was materially changed.

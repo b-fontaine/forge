@@ -834,3 +834,44 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   is G.2 territory — ADR-B811-002). Backward-compat by construction: zero scannable
   pubspec.yaml in the live tree after `/.forge/` + `/examples/` + `/.dart_tool/`
   exclusions — live linter stays OVERALL PASS post-flip.
+
+---
+
+## 2026-06-05 — Correction Entry: §VIII.1 amendment (Kong→Envoy) + BDFL window waiver + kong.md deprecation (b8-14-promotion-flip)
+
+- **Reviewer**: @bfontaine (BDFL, Phase actuelle)
+- **Reviewed standards**:
+
+  | Standard | Version | Decision | Next review due | Notes |
+  |----------|---------|----------|-----------------|-------|
+  | infra/kong.md | 1.0.0 | DEPRECATE | EOL 2026-12-05 | Superseded by gateway.yaml (Envoy) + transport.yaml (Connect) at the §VIII.1 amendment. Tombstone-redirect kept for the T+6-month 1.0.0 deprecation window; index.yml trigger removed. |
+  | gateway.yaml | (B.8.4) | KEEP | per its own review | Now the §VIII.1 API-gateway standard of record (Envoy Gateway API). |
+  | transport.yaml | 1.3.0 | KEEP | per its own review | Now the §VIII.1 client/S2S transport of record (Connect-RPC; replaces gateway REST↔gRPC transcoding). |
+
+- **Decision**: KEEP-WITH-CHANGES / DEPRECATE — ratifies **Constitution Amendment
+  #2** (§VIII.1 Kong → Envoy Gateway + Connect-RPC; Constitution v1.1.0 → **v2.0.0**,
+  breaking per VERSIONING §MAJOR). §VIII.2 (Temporal) unchanged (B8O retained
+  Temporal). The framework stays on the **0.4.0** MINOR line with a `### BREAKING`
+  CHANGELOG note (pre-1.0 carve-out VERSIONING.md:70-73); framework MAJOR deferred
+  to GA.
+- **⚠️ GOVERNANCE WAIVER (honest record — NOT a completed window)**: the
+  GOVERNANCE.md §"Amendment Process" ≥7-day public discussion window for the §VIII.1
+  amendment **opened 2026-06-04** (when `b8-14-promotion-prep` landed the proposal +
+  staged amendment-viii-1.md publicly on `main`) and was **compressed to ~1 day**,
+  **ratified 2026-06-05** by BDFL decision. This is a deliberate deviation from the
+  full 7-day window, recorded here for audit. **Authority**: GOVERNANCE.md grants
+  the BDFL (Phase actuelle) sole ratification authority. **Rationale**: solo-maintainer
+  project; the Kong→Envoy migration has been publicly tracked since project inception
+  (docs/new-archetypes-plan.md + docs/ARCHITECTURE-TARGET.md §11) and additively
+  delivered + zero-regression-proven across B.8.4–B.8.12. No fabricated claim of a
+  completed 7-day window is made anywhere.
+- **t4 supersession**: this change supersedes the Kong/DBOS narrative parts of
+  `t4-adr-ratification`'s ADRs in `docs/ARCHITECTURE-TARGET.md` §11/§12.1 (realigned
+  DBOS→Temporal, Kong→Envoy) via the **material-path**:
+  `bin/forge-rehash-architecture-doc.sh` re-pins the sha256 in
+  `.forge/changes/t4-adr-ratification/specs.md` + appends `REHASH-LOG.md`.
+- **Next review due**: never (structural — constitutional amendment).
+- **Notes**: 1.0.0 (Kong) deprecated, EOL 2026-12-05. Existing 1.0.0 projects keep
+  Kong via the **additive** migrate path (`forge-migrate-flagship.sh` stays additive
+  forever); Kong removal applies ONLY to fresh 2.0.0 scaffolds (new
+  scaffold-plan-2.0.0). The frozen 1.0.0 base/snapshot are never edited (b8-2 guard).

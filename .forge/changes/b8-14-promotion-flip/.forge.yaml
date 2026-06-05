@@ -1,0 +1,22 @@
+name: b8-14-promotion-flip
+status: planned
+created: 2026-06-05
+schema: default
+constitution_version: "1.1.0"   # opened under v1.1.0 (d5 ADR-006 opened-under-old-version); this change RATIFIES the bump to v2.0.0
+parent_audit_items:
+  - B.8.14  # docs/new-archetypes-plan.md §4.2 B.8.14 — the FLIP follow-up to b8-14-promotion-prep. THE POINT OF NO RETURN. Executes what the prepare brick staged: ratify §VIII.1 (Kong→Envoy) + bump Constitution v1.1.0→v2.0.0 + promote 2.0.0.yaml (stage candidate→stable, scaffoldable false→true) + remove Kong/REST from FRESH 2.0.0 scaffolds + activate 1.0.0 deprecation. GROUND-TRUTH (6-mapper+critic workflow wf_a02b388e ; CLAUDE.md ANTI-HALLUCINATION PROTOCOL ; constitution-is-law): (1) BDFL WAIVER of the ≥7-day §VIII.1 public window (opened 2026-06-04 via b8-14-promotion-prep, ratified 2026-06-05 = ~1 day). Recorded HONESTLY as a REVIEW.md Correction Entry (NOT a fabricated "7-day completed") ; BDFL has the authority (GOVERNANCE.md Phase actuelle) ; d5-governance REVIEW precedent. (2) TWO ORDERED COMMITS: C1 = ratification (constitution amend + v2.0.0 + version strings + d5/b8-14 test inversions + arch-doc material-path rehash + Kong tombstone + deprecation announce) ; C2 = enablement (promote scaffoldable:true + Kong-less 2.0.0 composition + B.8.3.b versioned-selection guard + new harness + b8-3/b8-15 inversions). Ratify MUST precede removal (2.0.0.yaml:17-31). (3) REMOVAL = fresh-scaffold COMPOSITION ONLY (new scaffold-plan-2.0.0 omitting Kong) — NEVER edits the byte-frozen 1.0.0 base (b8-2 sha guard exit 7) ; migrate-flagship stays ADDITIVE forever (existing 1.0.0 adopters keep Kong ; b8-12 Kong-preservation invariants + b8-15 line-225 STAY green — do NOT touch). (4) BREAK-CASCADE (silent-CI-break risk, all in the forge-ci array): d5.test.sh _test_d5_012/013 (hard-code v1.1.0 + change.yaml/archetype "1.1.0" — invert in lockstep) ; b8-14.test.sh held-guards (retire→flip positive) ; b8-3.test.sh _test_b83_l1_006 (scaffoldable false→true) ; b8-15.test.sh _test_b815_005 (activate front-door) ; standards/index.yml:190-192 dangling kong entry (remove atomically with kong.md tombstone) ; t4.test.sh _test_t4_023 (sha re-pin after the §11/§12.1 material-path rewrite). (5) 46 historical change .forge.yaml STAY at 1.1.0 (d5 ADR-006 opened-under-old-version ; validators enforce semver PATTERN not equality) — ONLY templates bump (change.yaml 2x, full-stack-monorepo + mobile-only .forge.yaml.tmpl). (6) Framework stays 0.4.0 MINOR line + ### BREAKING note (pre-GA carve-out VERSIONING.md:70-73 ; NOT post-GA lockstep). (7) DECISIONS (BDFL 2026-06-05): full atomic flip now ; §11/§12.1 in-place rewrite via t4 material-path (fresh rehash + REHASH-LOG) ; kong.md = tombstone-redirect during the T+6-month deprecation. (8) NEW HARNESS must be added to the forge-ci.yml HARDCODED array (not a glob).
+depends_on:
+  - B.8.14  # b8-14-promotion-prep — the staged amendment-viii-1.md + removal-manifest.yaml + flip-runbook.md this brick executes
+  - D.5     # d5-governance — Amendment Process + REVIEW.md ledger + ADR-006 (opened-under-old-version) precedent
+  - T.4     # t4-adr-ratification — the §11/§12.1 material-path supersession + forge-rehash-architecture-doc.sh re-pin
+  - B.8.3   # 2.0.0.yaml candidate schema promoted to stable/scaffoldable:true
+  - B.8.3b  # the deferred scaffolder versioned-selection + scaffoldable:false runtime guard landed here
+  - B.8.4   # gateway.yaml (Envoy) — the §VIII.1 replacement + the kong.md tombstone redirect target
+  - B.8.6   # transport.yaml (Connect-RPC) — the REST-bridge replacement
+  - B.8.2   # frozen 1.0.0 snapshot — NEVER edited (removal is composition-layer) ; b8-2 sha guard
+  - B8O     # Temporal retained — §VIII.2 NOT amended ; §11/§12.1 DBOS→Temporal realignment
+timeline:
+  proposed: 2026-06-05
+  specified: 2026-06-05
+  designed: 2026-06-05
+  planned: 2026-06-05

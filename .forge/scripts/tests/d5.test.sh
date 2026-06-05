@@ -181,23 +181,27 @@ _test_d5_011() {
 
 _test_d5_012() {
   [ -f "$CONSTITUTION" ] || { echo "    constitution.md missing" >&2; return 1; }
-  grep -qE '^\*\*Version\*\*: v1\.1\.0' "$CONSTITUTION" \
-    || { echo "    '**Version**: v1.1.0' line not found under H1" >&2; return 1; }
-  # Amendments table : at least one numbered amendment row (| 1 |)
+  # Constitution v2.0.0 after the §VIII.1 amendment (b8-14-promotion-flip, Amendment #2)
+  grep -qE '^\*\*Version\*\*: v2\.0\.0' "$CONSTITUTION" \
+    || { echo "    '**Version**: v2.0.0' line not found under H1" >&2; return 1; }
+  # Amendments table : both numbered rows (#1 Article XII, #2 §VIII.1 Kong→Envoy)
   grep -qE '^\| 1 \| 20[0-9]{2}-[0-9]{2}-[0-9]{2} \|' "$CONSTITUTION" \
     || { echo "    no amendment row '| 1 | <date> |' found" >&2; return 1; }
+  grep -qE '^\| 2 \| 20[0-9]{2}-[0-9]{2}-[0-9]{2} \|' "$CONSTITUTION" \
+    || { echo "    no amendment row '| 2 | <date> |' (§VIII.1 amendment) found" >&2; return 1; }
 }
 
 _test_d5_013() {
   [ -f "$CHANGE_TMPL" ] || { echo "    change.yaml template missing" >&2; return 1; }
   local n
-  n=$(grep -c 'constitution_version: "1.1.0"' "$CHANGE_TMPL" || true)
+  # Templates bumped to 2.0.0 at the §VIII.1 amendment (b8-14-promotion-flip)
+  n=$(grep -c 'constitution_version: "2.0.0"' "$CHANGE_TMPL" || true)
   if [ "$n" -ne 2 ]; then
-    echo "    change.yaml : expected 2 occurrences of '1.1.0', found $n" >&2; return 1
+    echo "    change.yaml : expected 2 occurrences of '2.0.0', found $n" >&2; return 1
   fi
   [ -f "$ARCHETYPE_TMPL" ] || { echo "    archetype tmpl missing" >&2; return 1; }
-  grep -qF 'constitution_version: "1.1.0"' "$ARCHETYPE_TMPL" \
-    || { echo "    archetype .forge.yaml.tmpl not bumped to 1.1.0" >&2; return 1; }
+  grep -qF 'constitution_version: "2.0.0"' "$ARCHETYPE_TMPL" \
+    || { echo "    archetype .forge.yaml.tmpl not bumped to 2.0.0" >&2; return 1; }
   # d5 itself MUST stay at 1.0.0 (ADR-006)
   [ -f "$D5_FORGE_YAML" ] || { echo "    d5 .forge.yaml missing" >&2; return 1; }
   grep -qF 'constitution_version: "1.0.0"' "$D5_FORGE_YAML" \

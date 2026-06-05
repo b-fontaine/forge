@@ -1,8 +1,8 @@
 # Forge Constitution
 
-**Version**: v1.1.0  
+**Version**: v2.0.0  
 **Status**: Ratified  
-**Effective**: 2026-04-08 (v1.0.0), 2026-04-30 (v1.1.0)
+**Effective**: 2026-04-08 (v1.0.0), 2026-04-30 (v1.1.0), 2026-06-05 (v2.0.0)
 
 ---
 
@@ -305,7 +305,10 @@ All Rust code MUST compile with zero warnings. Clippy MUST pass with `-D warning
 
 ### VIII.1 — API Gateway
 
-Kong SHALL be used as the API gateway for routing REST requests to gRPC backends. REST↔gRPC transcoding is handled at the gateway layer, not in application code. Application services speak gRPC natively.
+Envoy Gateway SHALL be used as the API gateway, configured via the Kubernetes Gateway API (`GatewayClass`/`Gateway`/`HTTPRoute`). Service-to-service and client traffic use Connect-RPC (Connect/gRPC/gRPC-Web) end-to-end; there is no gateway-layer REST↔gRPC transcoding. Application services speak gRPC/Connect natively. The owning standard is `.forge/standards/gateway.yaml` (Envoy, B.8.4); `.forge/standards/transport.yaml` governs Connect-RPC.
+
+<!-- Amended in b8-14-promotion-flip (B.8.14), Amendment #2, 2026-06-05. Previously (v1.1.0): "Kong SHALL be used as the API gateway for routing REST requests to gRPC backends. REST↔gRPC transcoding is handled at the gateway layer, not in application code. Application services speak gRPC natively." Existing 1.0.0 (Kong) projects keep Kong via the additive migrate path (docs/MIGRATIONS.md) and are deprecated, EOL 2026-12-05 (T+6mo). The ≥7-day public window (Article XII) opened 2026-06-04 and was compressed to ~1 day by BDFL decision 2026-06-05 — see .forge/standards/REVIEW.md Correction Entry. -->
+
 
 ### VIII.2 — Workflow Orchestration
 
@@ -471,6 +474,7 @@ maintainer cannot dilute Constitutional guarantees by routing them through
 | Amendment | Date | Description | Ratified By |
 |-----------|------|-------------|-------------|
 | 1 | 2026-04-30 | Add Article XII — Governance. Establish GOVERNANCE.md and CODE_OF_CONDUCT.md (Contributor Covenant v2.1). | Benoit Fontaine (BDFL) |
+| 2 | 2026-06-05 | Amend §VIII.1 — replace Kong with **Envoy Gateway** (Kubernetes Gateway API) as the mandated API gateway; replace gateway-layer REST↔gRPC transcoding with end-to-end **Connect-RPC**. Constitution v1.1.0 → **v2.0.0** (breaking; VERSIONING §MAJOR). §VIII.2 (Temporal) unchanged. ⚠️ The ≥7-day public discussion window (Article XII / GOVERNANCE.md) opened 2026-06-04 (b8-14-promotion-prep) and was **compressed to ~1 day** by BDFL decision — recorded as a Correction Entry in `.forge/standards/REVIEW.md` (2026-06-05). 1.0.0 (Kong) deprecated, EOL 2026-12-05. | Benoit Fontaine (BDFL) |
 
 ---
 
