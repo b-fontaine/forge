@@ -16,7 +16,13 @@
 # Usage:
 #   overlay.sh --target <dir> --project-name <name> --reverse-domain <fqdn> \
 #              [--root-module <mod>] [--force] [--dry-run] \
-#              [--phase pre_cargo_new|post_cargo_new]
+#              [--phase pre_cargo_new|post_cargo_new] [--plan <file>]
+#
+# `--plan` (default `scaffold-plan.yaml`) selects which scaffold plan inside the
+# archetype directory drives the render. A bare filename is resolved against the
+# archetype dir; an absolute path is used as-is. Introduced by b8-14-promotion-flip
+# (C2) so a Kong-less 2.0.0 plan (scaffold-plan-2.0.0.yaml) can be rendered without
+# editing the byte-frozen 1.0.0 base. Omitting it preserves the legacy 1.0.0 path.
 #
 # `--phase` (default `pre_cargo_new`) filters the templates[] list :
 #    - pre_cargo_new  : runs ONLY entries with no `phase` field or
@@ -48,6 +54,7 @@ ROOT_MODULE=""
 FORCE="false"
 DRY_RUN="false"
 PHASE="pre_cargo_new"
+PLAN=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -63,6 +70,8 @@ while [ $# -gt 0 ]; do
     --dry-run)        DRY_RUN="true"; shift ;;
     --phase)          PHASE="${2:-}"; shift 2 ;;
     --phase=*)        PHASE="${1#*=}"; shift ;;
+    --plan)           PLAN="${2:-}"; shift 2 ;;
+    --plan=*)         PLAN="${1#*=}"; shift ;;
     --help|-h)
       sed -n '2,30p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
       exit 0
@@ -117,9 +126,20 @@ fi
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FORGE_ROOT_SRC="$(cd "$HERE/../../.." && pwd)"
 ARCHETYPE_DIR="$FORGE_ROOT_SRC/.forge/templates/archetypes/full-stack-monorepo"
-SCAFFOLD_PLAN="$ARCHETYPE_DIR/scaffold-plan.yaml"
 
-[ -f "$SCAFFOLD_PLAN" ] || { echo "overlay.sh: scaffold-plan.yaml not found at $SCAFFOLD_PLAN" >&2; exit 1; }
+# Plan selection (b8-14-promotion-flip C2). Default = the frozen 1.0.0 plan, so
+# omitting --plan is byte-identical to the legacy behaviour. A bare filename is
+# resolved against the archetype dir; an absolute path is honoured as-is.
+if [ -n "$PLAN" ]; then
+  case "$PLAN" in
+    /*) SCAFFOLD_PLAN="$PLAN" ;;
+    *)  SCAFFOLD_PLAN="$ARCHETYPE_DIR/$PLAN" ;;
+  esac
+else
+  SCAFFOLD_PLAN="$ARCHETYPE_DIR/scaffold-plan.yaml"
+fi
+
+[ -f "$SCAFFOLD_PLAN" ] || { echo "overlay.sh: scaffold plan not found at $SCAFFOLD_PLAN" >&2; exit 1; }
 
 # Pin manifest timestamp for reproducible-build testing if caller sets
 # SOURCE_DATE_EPOCH (POSIX-compliant reproducible-builds convention).

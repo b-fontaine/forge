@@ -214,18 +214,22 @@ _test_b83_l1_004_version() {
 }
 
 _test_b83_l1_005_stage() {
+  # B.8.14 (b8-14-promotion-flip C2) — schema PROMOTED candidate→stable.
   _ensure_py_cache || return 1
   local v; v=$(_get stage)
-  if [ "$v" != "candidate" ]; then
-    echo "    FAIL T-005: stage='$v' != 'candidate' (FR-B8-3-002)" >&2; return 1
+  if [ "$v" != "stable" ]; then
+    echo "    FAIL T-005: stage='$v' != 'stable' (B.8.14 promoted candidate→stable)" >&2; return 1
   fi
 }
 
 _test_b83_l1_006_scaffoldable_false() {
+  # B.8.14 (b8-14-promotion-flip C2) — scaffoldable flipped false→true. Func name
+  # retained for manifest/registration stability (cf. b8-14 _001/_002 post-C1);
+  # the body now asserts the PROMOTED state (FR-B8-3-041 superseded by the flip).
   _ensure_py_cache || return 1
   local v; v=$(_get scaffoldable)
-  if [ "$v" != "False" ]; then
-    echo "    FAIL T-006: scaffoldable=$v != False (FR-B8-3-041, ADR-B8-3-003/005)" >&2; return 1
+  if [ "$v" != "True" ]; then
+    echo "    FAIL T-006: scaffoldable=$v != True (B.8.14 promoted — 2.0.0 now scaffoldable)" >&2; return 1
   fi
 }
 

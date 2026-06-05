@@ -31,7 +31,12 @@
 #
 # Usage :
 #   init.sh <project-name> --org <reverse-domain> [--target-dir <path>] \
-#           [--force] [--dry-run]
+#           [--force] [--dry-run] [--plan <file>]
+#
+# `--plan` (default `scaffold-plan.yaml`) is forwarded verbatim to overlay.sh in
+# both render passes, selecting which scaffold plan drives the overlay. Used by
+# the Kong-less 2.0.0 wrapper (forge-init-fsm-2.0.0.sh) to pass
+# scaffold-plan-2.0.0.yaml. Omitting it preserves the legacy 1.0.0 scaffold.
 
 set -euo pipefail
 
@@ -48,6 +53,7 @@ REVERSE_DOMAIN=""
 TARGET_DIR=""
 FORCE="false"
 DRY_RUN="false"
+PLAN=""
 
 POSITIONAL=()
 while [ $# -gt 0 ]; do
@@ -58,6 +64,8 @@ while [ $# -gt 0 ]; do
     --target-dir=*)   TARGET_DIR="${1#*=}"; shift ;;
     --force)       FORCE="true"; shift ;;
     --dry-run)     DRY_RUN="true"; shift ;;
+    --plan)        PLAN="${2:-}"; shift 2 ;;
+    --plan=*)      PLAN="${1#*=}"; shift ;;
     --help|-h)
       sed -n '2,30p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
       exit 0
@@ -88,6 +96,11 @@ fi
 # Derive snake_case project name for Flutter's --project-name (Dart
 # identifiers forbid hyphens).
 PROJECT_NAME_SNAKE="${PROJECT_NAME//-/_}"
+
+# Effective scaffold plan forwarded to overlay.sh. Default is the frozen 1.0.0
+# plan, so passing it explicitly is byte-identical to the legacy behaviour and
+# keeps the array-free call below bash-3.2 safe under `set -u`.
+PLAN_EFF="${PLAN:-scaffold-plan.yaml}"
 
 # ─── Tool version helpers ──────────────────────────────────────
 
@@ -231,6 +244,7 @@ main() {
     --target "$target_abs" \
     --project-name "$PROJECT_NAME" \
     --reverse-domain "$REVERSE_DOMAIN" \
+    --plan "$PLAN_EFF" \
     --force  # flutter create produced some files that overlap overlay paths (e.g. none currently, but defensive)
   echo "  ✓ overlay applied"
 
@@ -254,6 +268,7 @@ main() {
     --target "$target_abs" \
     --project-name "$PROJECT_NAME" \
     --reverse-domain "$REVERSE_DOMAIN" \
+    --plan "$PLAN_EFF" \
     --phase post_cargo_new
   echo "  ✓ post_cargo_new overlay applied"
 

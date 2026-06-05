@@ -1,0 +1,96 @@
+<!-- Audit: B.8.14 (b8-14-promotion-flip, C2) — 2.0.0 root CLAUDE.md; Envoy Gateway per Constitution v2.0.0 §VIII.1 -->
+
+# CLAUDE.md — <project-name>
+
+# Forge Framework — Full-Stack Monorepo
+
+This project uses the `full-stack-monorepo` archetype. The archetype schema is
+shipped by `forge init` and located at `.forge/schemas/full-stack-monorepo/schema.yaml`.
+
+Canonical three-layer layout:
+
+| Directory        | Stack                          |
+|------------------|-------------------------------|
+| `frontend/`      | Flutter application            |
+| `backend/`       | Rust Cargo workspace           |
+| `infra/`         | K8s / Envoy Gateway / Temporal / Docker |
+| `shared/protos/` | Protobuf contracts (all layers)|
+
+## Routing Policy
+
+Claude Code MUST load the nearest `CLAUDE.md` whenever it navigates into a
+subtree. This root file is routing-only; stack-specific standards are
+intentionally absent (FR-GL-002).
+
+| Working path       | Load                   | Route to                                    |
+|--------------------|------------------------|---------------------------------------------|
+| `frontend/**`      | `frontend/CLAUDE.md`   | **Hera** — Flutter Team Orchestrator        |
+| `backend/**`       | `backend/CLAUDE.md`    | **Vulcan** — Rust Team Orchestrator         |
+| `infra/**`         | `infra/CLAUDE.md`      | **Atlas** — Infra Architect                 |
+| `shared/protos/**` | standard `global/proto-contracts.md` | **Hermes-API** — Contract changes |
+
+**Cross-layer changes** (touching 2 or more layers) MUST be routed to
+**Janus** — the cross-layer orchestrator. Janus is delivered by `b1-workflow`.
+A change is cross-layer when it introduces or modifies a `FR-GL-XXX`
+requirement that delegates child requirements to two or more layer prefixes
+(`FR-BE-`, `FR-FE-`, `FR-IN-`).
+
+## Non-Negotiable Rules
+
+1. **TDD is mandatory** (Article I). The RED → GREEN → REFACTOR cycle is
+   immutable and has no exceptions. NEVER write production code without a
+   failing test first.
+
+2. **BDD is required for every user-facing feature** (Article II).
+   Scenarios MUST be written in Given/When/Then form before implementation
+   begins.
+
+3. **No cross-imports between `frontend/` and `backend/`** outside the
+   generated stubs under `shared/protos/`. The gRPC contract is the only
+   sanctioned communication channel between the two stacks
+   (monorepo-layout standard, FR-GL-002).
+
+4. **Commit messages MUST use scoped Conventional Commits** with a scope
+   drawn from the following closed list (git-workflow standard, FR-GL-005):
+
+   ```
+   backend | frontend | infra | protos | forge | docs | ci
+   ```
+
+   Any scope outside this list SHALL be rejected by the pre-commit hook.
+
+5. **Protos are the single source of truth** (proto-contracts standard,
+   FR-GL-003). Generated stubs under `frontend/lib/generated/protos/` and
+   `backend/crates/grpc-api/src/generated/` MUST NOT be edited by hand.
+   Regenerate with `task proto`.
+
+## Commands
+
+All operations go through the Taskfile at the repo root. Do not call build
+tools directly.
+
+| Command        | Action                                  |
+|----------------|-----------------------------------------|
+| `task dev`     | Start local stack via Docker Compose    |
+| `task test`    | Run all tests across all layers         |
+| `task lint`    | Run all linters across all layers       |
+| `task proto`   | Regenerate proto stubs (Dart + Rust)    |
+| `task release` | Execute the release train               |
+
+## Standards
+
+All Forge standards live under `.forge/standards/`. The standards index is at
+`.forge/standards/index.yml`.
+
+**WARNING — this root file does NOT import stack-specific standards.** Flutter
+standards, Rust standards, and infra standards are loaded exclusively by the
+nested `CLAUDE.md` files when Claude Code works within `frontend/`,
+`backend/`, or `infra/` respectively. Loading them here would saturate the
+context window with irrelevant rules (FR-GL-002).
+
+Cross-cutting standards always in effect:
+
+- `.forge/standards/global/monorepo-layout.md` — canonical directory tree and interdictions
+- `.forge/standards/global/proto-contracts.md` — proto versioning and CI gates
+- `.forge/standards/global/git-workflow.md` — scoped Conventional Commits
+- `.forge/constitution.md` — binding authority; violations block progress

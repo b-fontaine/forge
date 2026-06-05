@@ -13,8 +13,10 @@ import {
   type ArchetypeRunner,
   type DispatchTableReader,
   autoDetectArchetype,
+  resolveScaffolder,
   runArchetypeInit,
 } from "./init-archetype.js";
+import type { SchemaMeta } from "../domain/schema-version.js";
 import { runDefaultInit } from "./init-default.js";
 import { runWizard } from "./init-wizard.js";
 import { validateReverseDomain } from "../domain/reverse-domain.js";
@@ -64,6 +66,11 @@ export interface InitDispatcherDeps {
   stdin: NodeJS.ReadableStream;
   stdout: NodeJS.WritableStream;
   stderr: NodeJS.WritableStream;
+  // B.8.14 (b8-14-promotion-flip C2) — versioned-schema selection + the deferred
+  // B.8.3.b scaffoldable:false guard. Both optional: when absent, init keeps the
+  // legacy archetype-NAME-only routing (no version resolution, no guard).
+  readArchetypeSchemas?: (archetype: string) => Promise<SchemaMeta[]>;
+  versionedScaffolderExists?: (relPath: string) => Promise<boolean>;
 }
 
 function writeError(stream: NodeJS.WritableStream, text: string): void {
@@ -209,6 +216,30 @@ export async function initCommand(
     return { errors: ["unknown archetype"], exitCode: 2 };
   }
 
+  // ── B.8.14 (b8-14-promotion-flip C2) — versioned-schema selection + guard ──
+  // Pick the highest stage:stable + scaffoldable:true schema for this archetype
+  // and route to its versioned wrapper; refuse (exit 3) when none is scaffoldable
+  // (deferred B.8.3.b guard). Return-based exit code (not throw) so the refusal
+  // surfaces as exit 3 reliably. Skipped when the deps are not wired (legacy).
+  let scaffolderOverride: string | undefined;
+  if (deps.readArchetypeSchemas && deps.versionedScaffolderExists) {
+    const metas = await deps.readArchetypeSchemas(archetype);
+    const resolution = await resolveScaffolder(
+      dispatchTable.archetypes[archetype].scaffolder,
+      metas,
+      deps.versionedScaffolderExists,
+    );
+    if (resolution.kind === "refuse") {
+      writeError(
+        deps.stderr,
+        `forge init: archetype '${archetype}' ${resolution.reason}. ` +
+          `[B.8.3.b scaffoldable guard]`,
+      );
+      return { errors: ["no scaffoldable schema version"], exitCode: 3 };
+    }
+    scaffolderOverride = resolution.scaffolder;
+  }
+
   const arch = await runArchetypeInit({
     archetype,
     targetDir: options.targetDir,
@@ -218,6 +249,7 @@ export async function initCommand(
     forgeRootDir: deps.forgeRootDir,
     dispatchTable,
     runner: deps.archetypeRunner,
+    scaffolderOverride,
   });
   return { errors: [], exitCode: arch.exitCode };
 }

@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { existsSync, statSync } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Command } from "commander";
@@ -9,6 +9,7 @@ import { upgradeCommand } from "./commands/upgrade.js";
 import { verifyCommand } from "./commands/verify.js";
 import { versionCommand } from "./commands/version.js";
 import { parseDispatchTable } from "./domain/dispatch-table.js";
+import { type SchemaMeta, parseSchemaMeta } from "./domain/schema-version.js";
 
 export interface CliIo {
   argv: string[];
@@ -129,6 +130,32 @@ export async function runCli(io: CliIo): Promise<number> {
             ".forge/scaffolding/dispatch-table.yml",
           ),
           forgeRootDir: assets,
+          // B.8.14 (b8-14-promotion-flip C2) — versioned-schema selection + the
+          // deferred B.8.3.b scaffoldable:false guard.
+          readArchetypeSchemas: async (archetype) => {
+            const dir = resolve(assets, ".forge/schemas", archetype);
+            const metas: SchemaMeta[] = [];
+            let names: string[];
+            try {
+              names = await readdir(dir);
+            } catch {
+              return metas; // no schema dir → legacy name-only routing
+            }
+            for (const name of names) {
+              if (!name.endsWith(".yaml")) continue;
+              try {
+                const meta = parseSchemaMeta(
+                  await readFile(resolve(dir, name), "utf8"),
+                );
+                if (meta) metas.push(meta);
+              } catch {
+                /* skip unreadable/unparsable schema files */
+              }
+            }
+            return metas;
+          },
+          versionedScaffolderExists: async (relPath) =>
+            existsSync(resolve(assets, relPath)),
           stdin: io.stdin as NodeJS.ReadableStream,
           stdout: io.stdout,
           stderr: io.stderr,

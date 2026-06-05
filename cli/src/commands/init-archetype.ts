@@ -13,6 +13,10 @@ import {
   type DetectionResult,
   detectArchetype,
 } from "../domain/archetype-detect.js";
+import {
+  type SchemaMeta,
+  selectScaffoldableVersion,
+} from "../domain/schema-version.js";
 
 export interface DispatchTableEntry {
   name: string;
@@ -104,6 +108,49 @@ export interface ArchetypeInitOptions {
   forgeRootDir: string; // resolves bin/forge-init-<archetype>.sh
   dispatchTable: DispatchTable;
   runner: ArchetypeRunner;
+  // B.8.14 (b8-14-promotion-flip C2) — when set, overrides entry.scaffolder with
+  // the versioned wrapper chosen by resolveScaffolder (e.g. forge-init-fsm-2.0.0.sh).
+  scaffolderOverride?: string;
+}
+
+/**
+ * B.8.14 (b8-14-promotion-flip C2) — versioned scaffolder selection + the deferred
+ * B.8.3.b scaffoldable:false guard. Given the archetype's parsed schema metas (all
+ * `<schemaRoot>/<archetype>/*.yaml`) and a probe for versioned wrappers, return
+ * either the scaffolder to run — the highest stage:stable + scaffoldable:true
+ * version's `bin/forge-init-<base>-<version>.sh` wrapper, falling back to the
+ * dispatch-table default — or a refusal when NO schema version is scaffoldable.
+ */
+export type ScaffolderResolution =
+  | { kind: "ok"; scaffolder: string; version: string }
+  | { kind: "refuse"; reason: string };
+
+export async function resolveScaffolder(
+  defaultScaffolder: string,
+  metas: readonly SchemaMeta[],
+  versionedScaffolderExists: (relPath: string) => Promise<boolean>,
+): Promise<ScaffolderResolution> {
+  // No parseable versioned schemas (e.g. mobile-only's schema uses a different
+  // field shape, or an archetype ships no schema dir) — preserve the legacy
+  // name-only routing; the B.8.3.b guard only governs archetypes whose versioned
+  // schemas ARE parseable here (today: full-stack-monorepo).
+  if (metas.length === 0) {
+    return { kind: "ok", scaffolder: defaultScaffolder, version: "" };
+  }
+  const chosen = selectScaffoldableVersion(metas);
+  if (!chosen) {
+    return {
+      kind: "refuse",
+      reason:
+        "has no stable, scaffoldable schema version (every version is a non-scaffoldable candidate/draft)",
+    };
+  }
+  let scaffolder = defaultScaffolder;
+  const versioned = defaultScaffolder.replace(/\.sh$/, `-${chosen.version}.sh`);
+  if (versioned !== defaultScaffolder && (await versionedScaffolderExists(versioned))) {
+    scaffolder = versioned;
+  }
+  return { kind: "ok", scaffolder, version: chosen.version };
 }
 
 export async function runArchetypeInit(
@@ -136,7 +183,7 @@ export async function runArchetypeInit(
         `— call runDefaultInit instead`,
     );
   }
-  const scaffolderPath = join(opts.forgeRootDir, entry.scaffolder);
+  const scaffolderPath = join(opts.forgeRootDir, opts.scaffolderOverride ?? entry.scaffolder);
   const args: string[] = [
     "--target",
     opts.targetDir,

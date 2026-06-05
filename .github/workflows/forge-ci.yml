@@ -118,6 +118,7 @@ jobs:
             "b8-13.test.sh --level 1"
             "b8-14.test.sh --level 1"
             "b8-15.test.sh --level 1"
+            "b8-14-flip.test.sh --level 1"
             "b8o.test.sh --level 1"
           )
           fail=0

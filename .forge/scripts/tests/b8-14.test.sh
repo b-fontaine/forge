@@ -86,11 +86,12 @@ _test_b814_002_no_amendment_applied() {
   grep -qE '^\| 2 \| 20[0-9]{2}-[0-9]{2}-[0-9]{2} \|' "$CONSTITUTION" || { echo "    Amendments row #2 (§VIII.1) missing" >&2; return 1; }
 }
 
-# FR-B814-030 — 2.0.0 schema NOT promoted
+# FR-B814-030 — 2.0.0 schema promoted (post-C2). Func name retained for manifest
+# stability (cf. _001/_002 post-C1); the body now asserts the FLIPPED state.
 _test_b814_003_schema_not_promoted() {
   [ -f "$SCHEMA_20" ] || { echo "    2.0.0.yaml missing" >&2; return 1; }
-  grep -qE '^stage: *candidate' "$SCHEMA_20" || { echo "    2.0.0.yaml stage != candidate (promoted?)" >&2; return 1; }
-  grep -qE '^scaffoldable: *false' "$SCHEMA_20" || { echo "    2.0.0.yaml scaffoldable != false (flipped?)" >&2; return 1; }
+  grep -qE '^stage: *stable' "$SCHEMA_20" || { echo "    2.0.0.yaml stage != stable (promotion not applied?)" >&2; return 1; }
+  grep -qE '^scaffoldable: *true' "$SCHEMA_20" || { echo "    2.0.0.yaml scaffoldable != true (flip not applied?)" >&2; return 1; }
 }
 
 # FR-B814-011/032 — Kong/REST removal NOT executed (targets + snapshot intact)

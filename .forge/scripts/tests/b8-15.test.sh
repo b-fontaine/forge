@@ -136,17 +136,21 @@ _test_b815_004_flagship_dryrun_c1() {
   fi
 }
 
-# FR-B815-050 — flip-gated cells documented + skip-passed (front-door 2.0.0 + Kong removal)
+# FR-B815-050 — front-door 2.0.0 LIVE + Kong-removal-in-fresh-scaffold (post-B.8.14 flip)
 _test_b815_005_flip_gated_guard() {
-  # The front-door positive 2.0.0 upgrade + Kong-removal assertions are gated on the
-  # B.8.14 flip. While 2.0.0 is still candidate/scaffoldable:false, those cells are
-  # pending — assert the gate is still closed (consistent with the held state).
+  # B.8.14 (b8-14-promotion-flip C2) FLIPPED: the 2.0.0 front-door is now live.
+  # Was a skip-guard while 2.0.0 stayed candidate/scaffoldable:false; now asserts
+  # the positive state. Kong removal is FRESH-SCAFFOLD ONLY — the migrate-additive
+  # invariant (1.0.0 adopters keep Kong) stays in _test_b815_l2_flagship_overlay.
   [ -f "$SCHEMA_20" ] || { echo "    2.0.0.yaml missing" >&2; return 1; }
-  if ! grep -qE '^scaffoldable: *false' "$SCHEMA_20"; then
-    echo "    2.0.0 is no longer scaffoldable:false — the flip happened; ACTIVATE the front-door + Kong-removal cells (remove this skip-guard)" >&2
-    return 1
+  grep -qE '^stage: *stable' "$SCHEMA_20" || { echo "    2.0.0 stage != stable — B.8.14 flip not applied" >&2; return 1; }
+  grep -qE '^scaffoldable: *true' "$SCHEMA_20" || { echo "    2.0.0 not scaffoldable:true — B.8.14 flip not applied" >&2; return 1; }
+  local plan20="$FORGE_ROOT_REAL/.forge/templates/archetypes/full-stack-monorepo/scaffold-plan-2.0.0.yaml"
+  [ -f "$plan20" ] || { echo "    scaffold-plan-2.0.0.yaml missing (front-door plan absent)" >&2; return 1; }
+  if grep -qE 'infra/kong/kong\.yml\.example\.tmpl' "$plan20"; then
+    echo "    2.0.0 front-door plan still copies Kong (fresh scaffold must be Kong-less)" >&2; return 1
   fi
-  echo "    [skip] front-door auto-resolve-to-2.0.0 + Kong-removal cells pending b8-14-promotion-flip" >&2
+  grep -qE '2\.0\.0/infra/k8s/envoy-gateway' "$plan20" || { echo "    2.0.0 front-door plan does not add Envoy Gateway" >&2; return 1; }
 }
 
 # FR-B815-020/021/030/031/062 — engine machinery via the authoritative siblings

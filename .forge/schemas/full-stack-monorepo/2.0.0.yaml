@@ -8,26 +8,27 @@
 # at B.8.14.
 #
 # Stage semantics (this file):
-#   - candidate : ratified 2.0.0 target. NOT scaffoldable by default
-#                 (see `scaffoldable: false`). Coexists with frozen
-#                 1.0.0 schema.yaml (B.8.2 maintenance-freeze).
-#                 Promoted to stable at B.8.14 after B.8.12 proves
-#                 zero regression on the 4 demos.
+#   - stable : promoted at B.8.14 (b8-14-promotion-flip C2) after B.8.12 proved
+#              zero regression on the 4 demos. Now scaffoldable (see
+#              `scaffoldable: true`): `forge init --archetype full-stack-monorepo`
+#              resolves to this 2.0.0 schema and scaffolds the Kong-less / Envoy
+#              Gateway tree via scaffold-plan-2.0.0.yaml. Coexists with the frozen
+#              1.0.0 schema.yaml (B.8.2 maintenance-freeze) for existing adopters.
 #
-# CONSTITUTIONAL PROHIBITION (Articles VIII.1 + VIII.2 — IN FORCE):
-#   Constitution v1.1.0 §VIII.1 mandates Kong as API gateway.
-#   Constitution v1.1.0 §VIII.2 mandates Temporal for workflow orchestration.
-#   Both SHALL clauses remain binding until B.8.14 completes the
-#   GOVERNANCE.md § "Amendment Process" (7-day window, ## Amendments table).
-#   Scaffolding or deploying this candidate before that amendment would
-#   constitute a constitutional violation. This candidate declares the
-#   TARGET only; it does not authorise removing Kong or Temporal from
-#   any live stack before B.8.14.
+# CONSTITUTIONAL STATUS (post-B.8.14 — RATIFIED):
+#   Constitution v2.0.0 §VIII.1 mandates Envoy Gateway (Kubernetes Gateway API)
+#   as the API gateway, replacing Kong (Amendment #2, 2026-06-05). Fresh 2.0.0
+#   scaffolds ship Envoy Gateway, not Kong.
+#   Constitution §VIII.2 (Temporal for Rust orchestration) is UNCHANGED — DBOS
+#   has no Rust SDK (B8O / ADR-B8O-001); dbos-embedded stays a future-option.
+#   Kong removal applies to FRESH scaffolds only; forge-migrate-flagship stays
+#   additive forever (1.0.0 adopters keep Kong — §VIII.1 is not retroactive).
 #
 # Migration strategy (plan §4.1): additive-first, breaking-second.
-#   New components (Envoy/DBOS/Connect/Zitadel/Qwik) added in parallel
-#   with 1.0.0 components; removal of Kong/Temporal/REST-bridge happens
-#   at B.8.14. This candidate declares the TARGET state only.
+#   New components (Envoy/Connect/Zitadel/Qwik/pgvector) shipped additively in
+#   parallel with 1.0.0 components across B.8.4–B.8.9. At B.8.14 the constitutional
+#   gateway flips Kong→Envoy for FRESH 2.0.0 scaffolds; Temporal is retained
+#   (§VIII.2 unchanged — DBOS has no Rust SDK, B8O). migrate-flagship stays additive.
 #
 # On-disk coexistence (ADR-B8-3-001):
 #   schema.yaml          → frozen 1.0.0 stable (B.8.2, byte-untouched)
@@ -42,8 +43,8 @@
 
 name: full-stack-monorepo
 version: "2.0.0"
-stage: candidate
-scaffoldable: false   # ADR-B8-3-003/005 — opt-in only; B.8.14 promotes to stable
+stage: stable
+scaffoldable: true    # B.8.14 (b8-14-promotion-flip C2) — promoted to stable + scaffoldable; §VIII.1 Kong→Envoy ratified (Constitution v2.0.0, Amendment #2)
 
 description: >
   Full-stack monorepo archetype 2.0.0 (candidate): Flutter backoffice +

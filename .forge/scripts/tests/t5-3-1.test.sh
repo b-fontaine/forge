@@ -8,7 +8,8 @@
 #   - top-level `version: "3.8"` key removed (ADR-B1-DUM-002 Option B).
 #   - T5.3.1 audit comment present in canonical template.
 #   - 4 mirror copies byte-identical (FR-B1-DUM-040..043).
-#   - Exactly 4 docker-compose.dev.yml.tmpl files under repo root.
+#   - Exactly 4 docker-compose.dev.yml.tmpl files under repo root (1.0.0 set;
+#     the additive 2.0.0/ Kong-less variant is excluded — B.8.14, see b8-14-flip).
 #   - Adopter swap-in comment preserved.
 #   - CHANGELOG entry references the change.
 #
@@ -122,14 +123,18 @@ _test_b1dum_l1_006_mirror_cli_assets_example_byte_identity() {
 }
 
 _test_b1dum_l1_007_four_copies_only() {
+  # Counts the 1.0.0 canonical docker-compose template set (source + cli/assets
+  # mirror + the two forge-fsm-example copies). The additive 2.0.0/ Kong-less
+  # variant (B.8.14 b8-14-promotion-flip) is a distinct artifact — excluded here
+  # and covered by b8-14-flip.test.sh; this guard still catches 1.0.0 proliferation.
   local count
   count=$(find "$FORGE_ROOT_REAL" -name "docker-compose.dev.yml.tmpl" \
-            -not -path "*/node_modules/*" -not -path "*/.git/*" 2>/dev/null \
+            -not -path "*/node_modules/*" -not -path "*/.git/*" -not -path "*/2.0.0/*" 2>/dev/null \
           | wc -l | tr -d ' ')
   if [ "$count" != "4" ]; then
-    echo "    expected exactly 4 docker-compose.dev.yml.tmpl copies, found $count (FR-B1-DUM-043)" >&2
+    echo "    expected exactly 4 docker-compose.dev.yml.tmpl copies (1.0.0 set, excl. 2.0.0/), found $count (FR-B1-DUM-043)" >&2
     find "$FORGE_ROOT_REAL" -name "docker-compose.dev.yml.tmpl" \
-        -not -path "*/node_modules/*" -not -path "*/.git/*" >&2
+        -not -path "*/node_modules/*" -not -path "*/.git/*" -not -path "*/2.0.0/*" >&2
     return 1
   fi
 }

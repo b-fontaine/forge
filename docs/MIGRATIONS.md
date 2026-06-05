@@ -41,12 +41,19 @@ bash bin/forge-migrate-flagship.sh --target . --rollback
 Exit-codes: `0` success / `2` usage error / `5` missing tool / `7` precondition
 not met / `8` overlay conflicts without `--force`.
 
-### Stay-on-1.0.0 is fully supported
+### Fresh init scaffolds 2.0.0; existing 1.0.0 projects stay additive
 
-Adopters **may remain on 1.0.0 until T8 / B.8.14**. No forced migration occurs.
-The 2.0.0 candidate is `scaffoldable: false` until B.8.14, so `forge init`
-continues to scaffold the 1.0.0 template; only an explicit
-`forge-migrate-flagship` invocation opts a project into 2.0.0.
+Since **B.8.14** (`b8-14-promotion-flip`) the 2.0.0 schema is `stage: stable` +
+`scaffoldable: true` — it was `scaffoldable: false` (candidate) until that flip,
+so before B.8.14 `forge init` scaffolded 1.0.0 — so a fresh
+`forge init --archetype full-stack-monorepo` now scaffolds the **2.0.0 Kong-less /
+Envoy Gateway** tree (Constitution v2.0.0 §VIII.1, Amendment #2). EXISTING 1.0.0
+projects are never force-migrated:
+`forge upgrade` still aborts the major jump (above), and
+`forge-migrate-flagship` stays **additive forever** — it applies the 2.0.0
+overlays in parallel and never removes Kong / Temporal / the REST-bridge from a
+1.0.0 adopter's tree. Kong removal happens ONLY in fresh 2.0.0 scaffolds, never
+on migration (§VIII.1 is not retroactive).
 
 ### The 4-phase walkthrough
 

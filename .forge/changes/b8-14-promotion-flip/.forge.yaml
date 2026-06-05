@@ -1,5 +1,5 @@
 name: b8-14-promotion-flip
-status: planned
+status: archived
 created: 2026-06-05
 schema: default
 constitution_version: "1.1.0"   # opened under v1.1.0 (d5 ADR-006 opened-under-old-version); this change RATIFIES the bump to v2.0.0
@@ -20,3 +20,5 @@ timeline:
   specified: 2026-06-05
   designed: 2026-06-05
   planned: 2026-06-05
+  implemented: 2026-06-05   # C2 enablement landed; C1 ratification committed 818ba6b
+  archived: 2026-06-05      # independent review wf_63f4ec3f-0ca — APPROVE, 0 must-fix, lanes re-executed live

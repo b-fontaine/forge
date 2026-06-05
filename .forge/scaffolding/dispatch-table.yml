@@ -30,11 +30,21 @@ archetypes:
   full-stack-monorepo:
     name: full-stack-monorepo
     scaffolder: "bin/forge-init-fsm.sh"
-    description: "Flutter frontend + Rust backend + Infra (Kustomize / Kong / OTel) with protos as single source of truth."
+    description: "Flutter frontend + Rust backend + Infra (Kustomize / Envoy Gateway / OTel) with protos as single source of truth."
     signals:
       - pubspec.yaml
       - Cargo.toml
     since: "1.0.0"
+    # B.8.14 (b8-14-promotion-flip, C2) — VERSIONED SCAFFOLDER ROUTING.
+    # `scaffolder` above is the 1.0.0 default. At `forge init` the CLI resolves the
+    # highest `stage: stable` + `scaffoldable: true` schema under
+    # `.forge/schemas/full-stack-monorepo/` (cli/src/domain/schema-version.ts) and,
+    # when a `bin/forge-init-fsm-<version>.sh` wrapper exists, routes to it. Today
+    # the 2.0.0 schema is promoted, so a fresh init runs `bin/forge-init-fsm-2.0.0.sh`
+    # → the Kong-less / Envoy Gateway tree (Constitution v2.0.0 §VIII.1). A schema
+    # whose only versions are non-scaffoldable (candidate/draft) is REFUSED (exit 3,
+    # the deferred B.8.3.b guard). The convention avoids per-version fields in this
+    # hand-rolled YAML subset (cli/src/domain/dispatch-table.ts); see b8-14-flip.test.sh.
 
   mobile-only:
     name: mobile-only
