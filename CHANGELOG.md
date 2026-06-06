@@ -12,6 +12,16 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-06-06
+
+First **stable** cut of the 0.4.0 line. Headline: the **B.8 flagship migration is
+complete (16/16)** — the `full-stack-monorepo` archetype graduates to 2.0.0 (Envoy
+Gateway + Connect-RPC, Constitution v2.0.0 §VIII.1) and a fresh
+`forge init --archetype full-stack-monorepo` now scaffolds the Kong-less Envoy tree.
+Existing 1.0.0 projects are never force-migrated (deprecated, EOL 2026-12-05; the
+migrate path stays additive). See the `rc.1 → rc.14` sections below for the full
+incremental history that rolls up into this stable release.
+
 ### BREAKING — Constitution v2.0.0 · §VIII.1 Kong → Envoy (`b8-14-promotion-flip`, B.8.14)
 
 - **Point of no return.** Constitution **Amendment #2** amends §VIII.1: the
@@ -24,6 +34,13 @@ minor bump and will be called out under a `### BREAKING` subsection.
   `scaffoldable: true`: `forge init` produces an **Envoy/Connect** tree (no Kong).
   `cli` gains versioned-schema selection + a runtime guard refusing
   `scaffoldable:false` schemas (the deferred B.8.3.b guard).
+- The flip landed as **two ordered commits** (auditable ratify→enable): C1 `818ba6b`
+  ratifies §VIII.1 + bumps the Constitution to v2.0.0; C2 `e6e0134` enables the
+  Kong-less front-door — a backward-compatible `--plan` flag on the overlay engine,
+  `scaffold-plan-2.0.0.yaml` (1.0.0 set − Kong + Envoy-gateway manifests),
+  `bin/forge-init-fsm-2.0.0.sh`, and the `b8-14-flip.test.sh` harness (incl. a live
+  Kong-less-scaffold L2). `migrate-flagship` stays **additive forever** — existing
+  1.0.0 projects keep Kong; removal is fresh-scaffold composition only.
 - **Governance**: the §VIII.1 ≥7-day public discussion window (Article XII) opened
   2026-06-04 and was **compressed to ~1 day** by BDFL decision (ratified
   2026-06-05) — recorded honestly as a Correction Entry in
