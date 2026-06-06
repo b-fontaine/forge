@@ -9,8 +9,8 @@
     "runtime": null
   },
   "build": {
-    "buildCommand": null,
-    "testCommand": null,
+    "buildCommand": "cd /Users/bfontaine/git/github/forge/cli && rtk ls node_modules/.bin/tsc 2>/dev/null && echo \"TSC_PRESENT\" || echo \"TSC_ABSENT\"; rtk ls node_modules/typescript >/dev/null 2>&1 && echo \"TS_PKG_PRESENT\" || echo \"TS_PKG_ABSENT\"; node --version",
+    "testCommand": "cd /Users/bfontaine/git/github/forge\ngit commit -F - <<'EOF'\nchore(version): v0.4.0 — first stable cut (B.8 flagship migration complete)\n\nGraduate the 0.4.0 line to stable. Bumps VERSION + cli/VERSION + cli/package.json\n(+ lock) 0.4.0-rc.14 → 0.4.0, and seals CHANGELOG `## [Unreleased]` →\n`## [0.4.0] — 2026-06-06` (BREAKING constitution v2.0.0 §VIII.1 Kong→Envoy +\nDeprecated full-stack-monorepo 1.0.0 + B.8.13/14/15).\n\nRelease-readiness only — `scripts/release.sh --version 0.4.0` (tag + npm publish +\nGitHub release) is run separately by the maintainer. Pre-flight contract satisfied:\nVERSION == cli/package.json == 0.4.0, sealed `## [0.4.0]` header, clean tree.\n\nGates green: 54-harness suite + verify.sh (414/0) + constitution-linter (61/0) +\ncli vitest (87/87).\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\nEOF\necho \"=== log ===\"; git log --oneline -3\necho \"=== push ===\"; git push origin main 2>&1 | tail -4; echo \"PUSH=${PIPESTATUS[0]}\"",
     "lintCommand": null,
     "devCommand": null,
     "scripts": {}
@@ -126,9 +126,195 @@
   },
   "hotPaths": [
     {
+      "path": "docs/new-archetypes-plan.md",
+      "accessCount": 25,
+      "lastAccessed": 1780666644833,
+      "type": "file"
+    },
+    {
+      "path": ".forge/changes/b8-13-rollback-runbook/.forge.yaml",
+      "accessCount": 16,
+      "lastAccessed": 1780591328064,
+      "type": "file"
+    },
+    {
+      "path": ".forge/scripts/tests/b8-14.test.sh",
+      "accessCount": 13,
+      "lastAccessed": 1780663931399,
+      "type": "file"
+    },
+    {
+      "path": "docs/ARCHITECTURE-TARGET.md",
+      "accessCount": 12,
+      "lastAccessed": 1780642705271,
+      "type": "file"
+    },
+    {
+      "path": ".forge/schemas/full-stack-monorepo/2.0.0.yaml",
+      "accessCount": 12,
+      "lastAccessed": 1780663851061,
+      "type": "file"
+    },
+    {
+      "path": "cli/src/cli.ts",
+      "accessCount": 12,
+      "lastAccessed": 1780664278565,
+      "type": "file"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "accessCount": 11,
+      "lastAccessed": 1780757305571,
+      "type": "file"
+    },
+    {
+      "path": ".forge/constitution.md",
+      "accessCount": 9,
+      "lastAccessed": 1780642232117,
+      "type": "file"
+    },
+    {
+      "path": "bin/forge-migrate-flagship.sh",
+      "accessCount": 9,
+      "lastAccessed": 1780661981424,
+      "type": "file"
+    },
+    {
+      "path": "bin/forge-upgrade.sh",
+      "accessCount": 8,
+      "lastAccessed": 1780598147941,
+      "type": "file"
+    },
+    {
+      "path": ".forge/changes/b8-14-promotion-prep/flip-runbook.md",
+      "accessCount": 8,
+      "lastAccessed": 1780640894458,
+      "type": "file"
+    },
+    {
+      "path": "docs/MIGRATIONS.md",
+      "accessCount": 7,
+      "lastAccessed": 1780664811063,
+      "type": "file"
+    },
+    {
+      "path": ".forge/changes/b8-14-promotion-prep/specs.md",
+      "accessCount": 6,
+      "lastAccessed": 1780640896506,
+      "type": "file"
+    },
+    {
+      "path": ".forge/scaffolding/dispatch-table.yml",
+      "accessCount": 6,
+      "lastAccessed": 1780665249939,
+      "type": "file"
+    },
+    {
+      "path": ".forge/changes/b8-13-rollback-runbook/specs.md",
+      "accessCount": 5,
+      "lastAccessed": 1780591134713,
+      "type": "file"
+    },
+    {
+      "path": "docs/VERSIONING.md",
+      "accessCount": 5,
+      "lastAccessed": 1780640876428,
+      "type": "file"
+    },
+    {
+      "path": ".forge/changes/b8-13-rollback-runbook/proposal.md",
+      "accessCount": 4,
+      "lastAccessed": 1780590258069,
+      "type": "file"
+    },
+    {
+      "path": ".forge/changes/b8-13-rollback-runbook/design.md",
+      "accessCount": 4,
+      "lastAccessed": 1780590258693,
+      "type": "file"
+    },
+    {
+      "path": ".forge/scripts/tests/b8-13.test.sh",
+      "accessCount": 4,
+      "lastAccessed": 1780591225604,
+      "type": "file"
+    },
+    {
+      "path": ".forge/product/roadmap.md",
+      "accessCount": 4,
+      "lastAccessed": 1780598507754,
+      "type": "file"
+    },
+    {
+      "path": ".forge/changes/b8-14-promotion-prep/removal-manifest.yaml",
+      "accessCount": 4,
+      "lastAccessed": 1780640838989,
+      "type": "file"
+    },
+    {
+      "path": "cli/src/commands/upgrade.ts",
+      "accessCount": 4,
+      "lastAccessed": 1780640840557,
+      "type": "file"
+    },
+    {
+      "path": ".forge/changes/b8-14-promotion-prep/design.md",
+      "accessCount": 4,
+      "lastAccessed": 1780640859984,
+      "type": "file"
+    },
+    {
+      "path": ".forge/changes/b8-14-promotion-prep/proposal.md",
+      "accessCount": 4,
+      "lastAccessed": 1780640896435,
+      "type": "file"
+    },
+    {
       "path": ".forge/scripts/tests/b8-12.test.sh",
+      "accessCount": 4,
+      "lastAccessed": 1780661940790,
+      "type": "file"
+    },
+    {
+      "path": ".forge/templates/archetypes/full-stack-monorepo/docker-compose.dev.yml.tmpl",
+      "accessCount": 4,
+      "lastAccessed": 1780663179728,
+      "type": "file"
+    },
+    {
+      "path": "docs/ROLLBACK.md",
       "accessCount": 3,
-      "lastAccessed": 1780580438894,
+      "lastAccessed": 1780591067891,
+      "type": "file"
+    },
+    {
+      "path": ".forge/changes/b8-14-promotion-prep/.forge.yaml",
+      "accessCount": 3,
+      "lastAccessed": 1780596253478,
+      "type": "file"
+    },
+    {
+      "path": ".forge/changes/b8-14-promotion-prep/amendment-viii-1.md",
+      "accessCount": 3,
+      "lastAccessed": 1780640839240,
+      "type": "file"
+    },
+    {
+      "path": "bin/forge-rehash-architecture-doc.sh",
+      "accessCount": 3,
+      "lastAccessed": 1780640841615,
+      "type": "file"
+    },
+    {
+      "path": ".forge/schemas/full-stack-monorepo/schema.yaml",
+      "accessCount": 3,
+      "lastAccessed": 1780661975888,
+      "type": "file"
+    },
+    {
+      "path": "cli/test/e2e/archetypes-smoke.test.ts",
+      "accessCount": 3,
+      "lastAccessed": 1780662327665,
       "type": "file"
     },
     {
@@ -138,9 +324,105 @@
       "type": "file"
     },
     {
-      "path": ".forge/templates/archetypes/full-stack-monorepo/docker-compose.dev.yml.tmpl",
+      "path": ".forge/scripts/tests/b8-10.test.sh",
+      "accessCount": 2,
+      "lastAccessed": 1780596890754,
+      "type": "file"
+    },
+    {
+      "path": "GOVERNANCE.md",
+      "accessCount": 2,
+      "lastAccessed": 1780640838332,
+      "type": "file"
+    },
+    {
+      "path": ".forge/scripts/tests/t4.test.sh",
+      "accessCount": 2,
+      "lastAccessed": 1780640844323,
+      "type": "file"
+    },
+    {
+      "path": ".forge/specs/promotion-prep.md",
+      "accessCount": 2,
+      "lastAccessed": 1780666531861,
+      "type": "file"
+    },
+    {
+      "path": ".forge/changes/b8-13-rollback-runbook/tasks.md",
       "accessCount": 1,
-      "lastAccessed": 1780587582596,
+      "lastAccessed": 1780590447346,
+      "type": "file"
+    },
+    {
+      "path": ".forge/specs/rollback-runbook.md",
+      "accessCount": 1,
+      "lastAccessed": 1780591319528,
+      "type": "file"
+    },
+    {
+      "path": ".forge/changes/b8-14-promotion-prep/tasks.md",
+      "accessCount": 1,
+      "lastAccessed": 1780593345400,
+      "type": "file"
+    },
+    {
+      "path": ".forge/scripts/tests/t5-1.test.sh",
+      "accessCount": 1,
+      "lastAccessed": 1780596242798,
+      "type": "file"
+    },
+    {
+      "path": ".forge/scaffold-snapshots/full-stack-monorepo/1.0.0.sha256",
+      "accessCount": 1,
+      "lastAccessed": 1780596243778,
+      "type": "file"
+    },
+    {
+      "path": "cli/test/e2e/archetype-fixtures/full-stack-monorepo.yml",
+      "accessCount": 1,
+      "lastAccessed": 1780596245951,
+      "type": "file"
+    },
+    {
+      "path": "cli/test/e2e/archetype-fixtures/mobile-only.yml",
+      "accessCount": 1,
+      "lastAccessed": 1780596246133,
+      "type": "file"
+    },
+    {
+      "path": "cli/package.json",
+      "accessCount": 1,
+      "lastAccessed": 1780596250021,
+      "type": "file"
+    },
+    {
+      "path": "cli/vitest.config.ts",
+      "accessCount": 1,
+      "lastAccessed": 1780596250179,
+      "type": "file"
+    },
+    {
+      "path": ".forge/specs/b8-legacy-snapshot.md",
+      "accessCount": 1,
+      "lastAccessed": 1780596253142,
+      "type": "file"
+    },
+    {
+      "path": ".forge/framework-owned-paths.yml",
+      "accessCount": 1,
+      "lastAccessed": 1780596255130,
+      "type": "file"
+    },
+    {
+      "path": "cli/.nvmrc",
+      "accessCount": 1,
+      "lastAccessed": 1780596260611,
+      "type": "file"
+    },
+    {
+      "path": "cli/test/e2e/helpers/load-fixture.ts",
+      "accessCount": 1,
+      "lastAccessed": 1780596266258,
       "type": "file"
     }
   ],
