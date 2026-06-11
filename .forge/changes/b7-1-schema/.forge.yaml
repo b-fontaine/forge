@@ -1,0 +1,16 @@
+name: b7-1-schema
+status: implemented
+created: 2026-06-11
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.7.1  # docs/new-archetypes-plan.md §6.2 — ai-native-rag/1.0.0.yaml (extends ai-first + embeddings-pipeline/prompt-audit phases)
+depends_on:
+  - B.8.3.b  # check_versioned_schema_siblings (validate-foundations.sh:385+) — the generic versioned-schema validator this file must satisfy ON LANDING
+  - B.8.14   # cli/src/domain/schema-version.ts selectScaffoldableVersion — candidate/scaffoldable:false ⇒ `forge init --archetype ai-native-rag` refuses (exit 3) until B.7 scaffolder lands
+timeline:
+  proposed: 2026-06-11
+  specified: 2026-06-11
+  designed: 2026-06-11
+  planned: 2026-06-11
+  implemented: 2026-06-11
