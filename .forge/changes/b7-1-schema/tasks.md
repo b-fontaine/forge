@@ -57,9 +57,12 @@ Constitution gate run per task (results inline; none blocks).
 - [x] **T3.1** Run `bash .forge/scripts/validate-foundations.sh` → confirm
   `FR-GL-001-versioned:ai-native-rag/1.0.0.yaml` **PASS** (the b8-3b generic
   validator now sees the new sibling). [Story: NFR-B7-1-003]
-- [x] **T3.2** Confirm `forge init --archetype ai-native-rag` → **exit 3**
-  (refused, not scaffoldable via `selectScaffoldableVersion` null). Optional L2
-  fixture in `b7-1.test.sh` (`--level 2`, skip-pass if CLI not built). [Story:
+- [x] **T3.2** Confirm `forge init <name> --archetype ai-native-rag --org <rd>`
+  → **exit 2** (clean refusal — "unknown archetype"; `init.ts:210` dispatch-table
+  gate fires before the schema layer, ai-native-rag not yet registered). Verified
+  live (rc=2). The exit-3 `selectScaffoldableVersion`-null path is downstream,
+  active once B.7.2 registers the archetype (Q-005). L2 fixture in `b7-1.test.sh`
+  (`--level 2`, opt-in `FORGE_B7_1_LIVE`, skip-pass if CLI not built). [Story:
   NFR-B7-1-002]
 - [x] **T3.3** Register `b7-1.test.sh` in `.github/workflows/forge-ci.yml` test
   matrix (after the prior B.7 entry / per array order). [Story: NFR-B7-1-004]

@@ -25,7 +25,7 @@ fallback, XI.6 PII), IX.6 (AI feature observability), X.1 (80% coverage).
 | **`extends` resolution (observed gap)** | No scaffold-schema loader resolves `extends`: `grep -rn extends cli/src .forge/scripts` → only Dart-widget hits; `parseSchemaMeta` (schema-version.ts:30) reads version/stage/scaffoldable only; `check_versioned_schema_siblings` reads layers/phases from the file itself. ⇒ phases MUST be inlined. |
 | **Versioned validator (observed)** | `validate-foundations.sh:397 check_versioned_schema_siblings` (B.8.3.b) — generic over all archetype dirs; enforces name==dir, version==filename+SemVer, layers ⊇ {backend,frontend,infra} (each id/path/fr_id_prefix/primary_agent), stage∈{draft,candidate,stable}, candidate⇒scaffoldable:false, phases non-empty. **Gates this file on landing.** |
 | **schema.yaml requirement (observed)** | `validate-foundations.sh:92` hard-codes `full-stack-monorepo/schema.yaml` only. A non-flagship archetype dir may ship just `1.0.0.yaml`. |
-| **CLI selection (observed)** | `selectScaffoldableVersion` (schema-version.ts:68) picks highest stable+scaffoldable; candidate/scaffoldable:false ⇒ null ⇒ `forge init` refuses (exit 3, the B.8.3.b refusal). |
+| **CLI selection (observed)** | `selectScaffoldableVersion` (schema-version.ts:68) picks highest stable+scaffoldable; candidate/scaffoldable:false ⇒ null. In isolation this yields the B.8.3.b exit-3 refusal — but `init.ts:210` checks the dispatch-table FIRST, so an unregistered archetype refuses earlier with **exit 2** (verified live). exit-3 is reachable only post-registration (Q-005). |
 | **Component standards (observed)** | EXIST: `persistence.yaml` (postgres-17 + pgvector-0.8), `orchestration.yaml` v1.2.0 (default_by_language.rust: temporal), `identity.yaml` (zitadel), `transport.yaml` (connect-rpc), `web-frontend.yaml` (qwik, B.8.9), `observability.yaml` v2.1.0. ABSENT: `llm-gateway` / `mcp-servers` / `rag-patterns` → B.7.3 (gap, ADR-B7-1-003). |
 | **ai-first phases (observed)** | `ai-first/schema.yaml`: `ai_brainstorm`(gate fallback_strategy_defined)→proposal→specs→features→design→tasks→implementation→review→archive; `ai_specifics`{fallback_mandatory, pii_handling, token_budget_documented, non_determinism_testing}. |
 | **Constitution AI articles (observed)** | XI.1 agent-native, XI.3 GenUI schema-driven, XI.4 event-driven frontend, XI.5 mandatory fallback, XI.6 PII protection; IX.6 AI feature observability (token counts, fallback invocations). |
@@ -55,8 +55,12 @@ filename↔version invariant (`X.Y.Z.yaml` ⇒ `version: "X.Y.Z"`) holds.
 
 ##### FR-B7-1-003 — non-scaffoldable candidate
 MUST declare `scaffoldable: false` (b8-3b enforces candidate⇒scaffoldable:false).
-Consequence (must hold, NFR-B7-1-002): `selectScaffoldableVersion` returns null ⇒
-`forge init --archetype ai-native-rag` refuses (exit 3), never a broken scaffold.
+Consequence (must hold, NFR-B7-1-002): `forge init --archetype ai-native-rag`
+refuses cleanly, never a broken scaffold. **Verified gate today = exit 2**
+("unknown archetype": `init.ts:210` dispatch-table check, ai-native-rag not yet
+registered). The `selectScaffoldableVersion`-null → **exit 3** path
+(`init.ts:232`) is the gate once B.7.2 registers the archetype while the schema
+stays candidate/scaffoldable:false (Q-005).
 
 ##### FR-B7-1-004 — TDD/BDD/coverage flags
 MUST carry `tdd_enforced: true`, `bdd_required_for_user_facing: true`,
@@ -144,9 +148,12 @@ CLI, or any template. `git diff --name-only` MUST show only new files under
 `.forge/changes/b7-1-schema/` (+ the schema file + its harness at impl phase).
 
 ##### NFR-B7-1-002 — clean non-scaffoldable behaviour (no broken init)
-After the schema lands, `forge init --archetype ai-native-rag` MUST refuse via the
-existing `selectScaffoldableVersion` null path (exit 3), never emit a partial
-scaffold. No other archetype's init behaviour changes.
+After the schema lands, `forge init --archetype ai-native-rag` MUST refuse
+cleanly and emit no partial scaffold. **Today the refusal is exit 2** (unknown
+archetype — the `init.ts:210` dispatch-table gate fires first, ai-native-rag not
+registered). It shifts to exit 3 (`selectScaffoldableVersion` null,
+`init.ts:232`) once B.7.2 registers the archetype while keeping the schema
+candidate/scaffoldable:false (Q-005). No other archetype's init behaviour changes.
 
 ##### NFR-B7-1-003 — validators stay GREEN on landing
 After the schema file lands (impl phase), `validate-foundations.sh`
@@ -182,7 +189,8 @@ gap. Registered in `forge-ci.yml`. (Authored at impl; specified here.)
 1. `.forge/schemas/ai-native-rag/1.0.0.yaml` exists; `name`/`version`/`stage`/
    `scaffoldable` = ai-native-rag/1.0.0/candidate/false.
 2. `validate-foundations.sh` → `FR-GL-001-versioned:ai-native-rag/1.0.0.yaml` PASS.
-3. `forge init --archetype ai-native-rag` → exit 3 (refused, not scaffoldable).
+3. `forge init <name> --archetype ai-native-rag --org <rd>` → exit 2 (refused —
+   unknown archetype, dispatch-table-gated; exit 3 once B.7.2 registers it, Q-005).
 4. `layers` ⊇ {backend,frontend,infra}; Qwik surface under `frontend.surfaces`.
 5. Inlined phases include `ai_brainstorm` + `embeddings-pipeline` + `prompt-audit`;
    `ai_specifics` present.

@@ -57,9 +57,12 @@ streaming UI. Per the ratified exploration (`.forge/_memory/b7-ai-native-rag-exp
 
 - **CLI selection** (`selectScaffoldableVersion`, schema-version.ts:68): picks the
   highest `stage: stable` + `scaffoldable: true`. A dir whose only version is
-  `candidate`/`scaffoldable:false` returns `null` ⇒ `forge init` refuses (the
-  B.8.3.b refusal, exit 3). Correct for B.7.1: there are no templates yet, so the
-  archetype must NOT be scaffoldable.
+  `candidate`/`scaffoldable:false` returns `null` (the B.8.3.b exit-3 refusal in
+  isolation). **NB (verified live, corrected post-review):** `init.ts:210` checks
+  the dispatch-table FIRST, so an archetype not registered there refuses earlier
+  with **exit 2** (unknown archetype); the exit-3 path is reachable only once B.7.2
+  registers `ai-native-rag` (Q-005). Correct for B.7.1 either way: there are no
+  templates yet, so the archetype must NOT be scaffoldable and init refuses cleanly.
 
 - **Component standards — partial gap.** pgvector→`persistence.yaml`,
   Temporal→`orchestration.yaml`, Zitadel→`identity.yaml`, Connect→`transport.yaml`,
@@ -117,7 +120,8 @@ undecided points in `open-questions.md`:
   `extends: ai-first` key (or a header comment) as documentary provenance only;
   the validator-load path reads the inlined phases. Resolves the §6.2 conflation.
 - **ADR-B7-1-002 — stage/scaffoldable for the first cut.** Lean: `candidate` +
-  `scaffoldable: false` (validator-enforced; init refuses cleanly via exit 3).
+  `scaffoldable: false` (validator-enforced; init refuses cleanly — exit 2 today
+  via the dispatch-table gate, exit 3 once registered by B.7.2, Q-005).
   Promotion to `stable` deferred to the B.7 scaffolder-flip brick after the B.7
   harness proves a green scaffold (mirrors B.8.14). The exact promotion brick id
   is set when the B.7 chain is sequenced.
@@ -160,8 +164,8 @@ Release vehicle: maintainer-set (additive spec artifact; no runtime change).
 - **Users affected**: B.7 archetype authors (the schema is the shared contract
   gating the rest of the B.7 chain). **Zero** effect on existing adopters: no
   current archetype is touched; `ai-native-rag` is not scaffoldable yet, so
-  `forge init --archetype ai-native-rag` refuses cleanly (exit 3) rather than
-  emitting a broken scaffold.
+  `forge init --archetype ai-native-rag` refuses cleanly (exit 2 today — unknown
+  archetype, dispatch-table-gated) rather than emitting a broken scaffold.
 - **Technical impact**: spec artifacts only in this change. The schema file is a
   new sibling validated on landing by `check_versioned_schema_siblings`.
 - **Dependencies**: B.8.3.b (the generic versioned-schema validator this file

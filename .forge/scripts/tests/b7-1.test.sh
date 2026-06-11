@@ -22,9 +22,10 @@
 #   T-016  deferred components {llm-gateway,mcp-servers,rag-pipeline} carry delivered_by:B.7.3, no standard ref (FR-B7-1-032, ADR-B7-1-003)
 #   T-017  ai_fallback_required True + cross_layer.agent Janus + fr_id_prefix_cross_layer FR-GL- (FR-B7-1-013/024)
 #
-#   T-L2-001 (opt-in) forge init --archetype ai-native-rag ⇒ exit 3 refusal (FORGE_B7_1_LIVE=1 + built CLI; skip-pass otherwise)
+#   T-018  header block documents candidate semantics (candidate/scaffoldable/additive) (FR-B7-1-005)
+#   T-L2-001 (opt-in) forge init --archetype ai-native-rag ⇒ exit 2 unknown-archetype refusal (dispatch-table gate; FORGE_B7_1_LIVE=1 + built CLI; skip-pass otherwise)
 #
-# 17 L1 + 1 L2 tests. Performance budget: L1 ≤ 5 s, zero net/Docker. Structural
+# 18 L1 + 1 L2 tests. Performance budget: L1 ≤ 5 s, zero net/Docker. Structural
 # invariants (name==dir, version==file, layer triple, candidate=>scaffoldable:false,
 # phases non-empty) are ALSO enforced generically by validate-foundations.sh
 # check_versioned_schema_siblings (B.8.3.b); this harness adds the AI-specific
@@ -254,7 +255,7 @@ _test_b71_l1_009_qwik_web_public_surface() {
 
 _test_b71_l1_010_components_have_name() {
   _ensure_py_cache || return 1
-  [ "$(_get comp_missing_name)" != "True" ] || { echo "    FAIL T-010: a component lacks 'name' (FR-B7-1-030)" >&2; return 1; }
+  [ "$(_get comp_missing_name)" = "False" ] || { echo "    FAIL T-010: a component lacks 'name' (or comp_missing_name key absent) (FR-B7-1-030)" >&2; return 1; }
   local n; n=$(_get comp_count)
   { [ -n "$n" ] && [ "$n" != "0" ]; } || { echo "    FAIL T-010: components[] empty/absent (count='$n') (FR-B7-1-030)" >&2; return 1; }
 }
@@ -311,14 +312,33 @@ _test_b71_l1_017_ai_flags_and_cross_layer() {
   [ "$ok" = "1" ]
 }
 
+_test_b71_l1_018_header_block() {
+  # FR-B7-1-005: the documentary header comment block (lines before `name:`) MUST
+  # state candidate semantics, the promotion trigger, and additivity. Grep the
+  # header region only (not the YAML body, where `stage: candidate` would give a
+  # false pass). Fails loud if the file is missing (awk yields empty).
+  local header; header=$(awk '/^[^#]/{exit} {print}' "$SCHEMA" 2>/dev/null)
+  local ok=1
+  printf '%s' "$header" | grep -qiE 'candidate'  || { echo "    FAIL T-018: header block missing 'candidate' semantics (FR-B7-1-005)" >&2; ok=0; }
+  printf '%s' "$header" | grep -qiE 'promotion'  || { echo "    FAIL T-018: header block missing promotion trigger (FR-B7-1-005)" >&2; ok=0; }
+  printf '%s' "$header" | grep -qiE 'additive'   || { echo "    FAIL T-018: header block missing additivity note (FR-B7-1-005)" >&2; ok=0; }
+  [ "$ok" = "1" ]
+}
+
 # ─── L2 tests (opt-in live) ───────────────────────────────────────────────────
 
 _test_b71_l2_001_init_refuses() {
-  # The refusal contract: ai-native-rag has only a candidate/scaffoldable:false
-  # schema, so selectScaffoldableVersion (cli/src/domain/schema-version.ts) returns
-  # null ⇒ `forge init --archetype ai-native-rag` refuses with exit 3. That logic
-  # is unit-covered by schema-version.test.ts; this fixture exercises it end-to-end
-  # against the built CLI. Opt-in (FORGE_B7_1_LIVE=1) + requires cli/dist/index.js;
+  # The refusal contract (verified live against the built CLI, 2026-06-11):
+  # `forge init <name> --archetype ai-native-rag --org <rd>` exits **2**
+  # ("unknown archetype"). init.ts:210-216 checks the dispatch-table FIRST, and
+  # ai-native-rag is not registered in .forge/scaffolding/dispatch-table.yml, so
+  # the dispatch gate fires before the schema-version layer. The exit-3
+  # selectScaffoldableVersion-null guard (init.ts:232-238) is DOWNSTREAM and not
+  # reachable for this archetype yet; it becomes the active gate only once B.7.2
+  # registers ai-native-rag in the dispatch-table while the schema stays
+  # candidate/scaffoldable:false (update this assertion to exit 3 then — see
+  # open-questions.md Q-005). Either way init refuses cleanly with NO scaffold
+  # (NFR-B7-1-002). Opt-in (FORGE_B7_1_LIVE=1) + requires cli/dist/index.js;
   # skip-pass otherwise (mirrors b8-15 FORGE_B8_15_LIVE).
   local cli="$FORGE_ROOT/cli/dist/index.js"
   if [ "${FORGE_B7_1_LIVE:-0}" != "1" ] || [ ! -f "$cli" ]; then
@@ -327,10 +347,10 @@ _test_b71_l2_001_init_refuses() {
   fi
   local tmp; tmp=$(mk_tmpdir_with_trap b7-1-init)
   trap "rm -rf '$tmp'" RETURN
-  ( cd "$tmp" && node "$cli" init --archetype ai-native-rag >/dev/null 2>&1 )
+  ( cd "$tmp" && node "$cli" init testproj --archetype ai-native-rag --org com.example.test >/dev/null 2>&1 )
   local rc=$?
-  if [ "$rc" != "3" ]; then
-    echo "    FAIL T-L2-001: forge init --archetype ai-native-rag exit=$rc != 3 (expected refusal — not scaffoldable)" >&2
+  if [ "$rc" != "2" ]; then
+    echo "    FAIL T-L2-001: forge init --archetype ai-native-rag exit=$rc != 2 (expected clean refusal — unknown archetype; dispatch-table gate, init.ts:210)" >&2
     return 1
   fi
 }
@@ -356,6 +376,7 @@ main() {
   run_test _test_b71_l1_015_ai_specifics_present
   run_test _test_b71_l1_016_deferred_components
   run_test _test_b71_l1_017_ai_flags_and_cross_layer
+  run_test _test_b71_l1_018_header_block
   case "$LEVEL" in
     *2*) run_test _test_b71_l2_001_init_refuses ;;
   esac

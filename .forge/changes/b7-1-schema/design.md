@@ -36,7 +36,11 @@ phase duplication vs `ai-first/schema.yaml` (drift risk) → mitigated by
 ### ADR-B7-1-002 — `candidate` + `scaffoldable: false`; promotion deferred to the B.7 scaffolder-flip
 **Context**: B.7.1 ships no templates; the archetype must not be scaffoldable yet.
 b8-3b enforces `candidate ⇒ scaffoldable: false`. `selectScaffoldableVersion`
-returns null when no version is stable+scaffoldable → `forge init` refuses (exit 3).
+returns null when no version is stable+scaffoldable. Today `forge init` refuses
+this archetype with **exit 2** (unknown archetype — the `init.ts:210`
+dispatch-table gate fires before the schema layer); the null → **exit 3** path is
+reachable only once B.7.2 registers the archetype (Q-005). Either way: clean
+refusal, no scaffold.
 **Decision**: `stage: candidate`, `scaffoldable: false`. Promotion to `stable` +
 `scaffoldable: true` happens in the **B.7 scaffolder-completion brick**, gated on a
 green `b7-6` harness proving a real scaffold (the B.8.14-C2 pattern). Tentative
@@ -89,7 +93,7 @@ graph TD
   HARNESS["b7-1.test.sh (impl)"]
 
   SCHEMA -->|name==dir, version==file, layers⊇{be,fe,infra},<br/>candidate⇒scaffoldable:false, phases| VAL
-  SCHEMA -->|candidate/false ⇒ null ⇒ exit 3| CLI
+  SCHEMA -->|not dispatch-registered ⇒ exit 2 today;<br/>candidate/false ⇒ null ⇒ exit 3 once registered| CLI
   SCHEMA -->|reference-only, no inline pin| STD_EXIST
   SCHEMA -.->|delivered_by: B.7.3, gap recorded| STD_DEFER
   SCHEMA -->|AI-First phase set asserted| HARNESS
@@ -178,17 +182,28 @@ ai_specifics:                # carried from ai-first (XI.5/XI.6, IX.6)
 
 ## Data Flow
 
-`forge init --archetype ai-native-rag` while only a candidate schema exists:
+`forge init <name> --archetype ai-native-rag --org <rd>` while only a candidate
+schema exists. **Verified live (2026-06-11): the actual refusal is exit 2**
+("unknown archetype"), NOT exit 3 — because `init.ts:210-216` checks the
+dispatch-table FIRST and `ai-native-rag` is not registered in
+`.forge/scaffolding/dispatch-table.yml`. The `selectScaffoldableVersion`-null →
+exit-3 guard (`init.ts:232-238`) is DOWNSTREAM and only reached for a *registered*
+archetype. Both are clean refusals with no scaffold (NFR-B7-1-002). The exit-3
+path becomes the active gate only once B.7.2 registers `ai-native-rag` in the
+dispatch-table while the schema stays candidate/scaffoldable:false (open-questions
+Q-005).
 
 ```mermaid
 sequenceDiagram
   participant U as user
-  participant CLI as forge init
+  participant CLI as forge init (init.ts)
+  participant DT as dispatch-table.yml
   participant SV as selectScaffoldableVersion
-  U->>CLI: forge init --archetype ai-native-rag
-  CLI->>SV: metas = [{1.0.0, candidate, scaffoldable:false}]
-  SV-->>CLI: null (no stable+scaffoldable)
-  CLI-->>U: REFUSE — exit 3 (not scaffoldable until B.7.2)
+  U->>CLI: forge init testproj --archetype ai-native-rag --org com.example.test
+  CLI->>DT: archetypes['ai-native-rag'] ? (init.ts:210)
+  DT-->>CLI: undefined (not registered — B.7.2 will add it)
+  CLI-->>U: REFUSE — exit 2 "unknown archetype" (current gate)
+  Note over CLI,SV: downstream / FUTURE (once registered by B.7.2):<br/>metas=[{1.0.0,candidate,scaffoldable:false}] ⇒ SV null ⇒ exit 3
 ```
 
 ## Testing Strategy
@@ -202,11 +217,11 @@ TDD order (Article I — RED before GREEN), at the implementation phase:
    Run `b7-1.test.sh` → PASS; run `validate-foundations.sh` →
    `FR-GL-001-versioned:ai-native-rag/1.0.0.yaml` PASS. Verify GREEN.
 3. **REFACTOR**: tidy comments/anchors; re-run; confirm `verify.sh` +
-   `constitution-linter.sh` no regression; `forge init --archetype ai-native-rag`
-   → exit 3.
+   `constitution-linter.sh` no regression; `forge init <name> --archetype
+   ai-native-rag --org <rd>` → exit 2 (clean refusal, dispatch-table-gated).
 - **Unit-level**: grep/structural assertions in `b7-1.test.sh` (L1, hermetic).
 - **Integration**: `validate-foundations.sh` versioned-sibling PASS (L1);
-  optional L2 `forge init` refusal exit-3 fixture.
+  L2 `forge init` clean-refusal fixture (exit 2 today; opt-in `FORGE_B7_1_LIVE`).
 - **BDD**: not applicable — this change ships a config schema, not a user-facing
   feature. (BDD for AI features arrives with B.7.2+ via the schema's own
   `features` phase.)

@@ -11,7 +11,8 @@ INDEPENDENT reviewer + the maintainer, not self-approved here.
 - **Q-002** resolved at /forge:design 2026-06-11 → option (a) candidate+scaffoldable:false, promotion deferred to B.7 scaffolder-flip brick. ADR-B7-1-002 finalized.
 - **Q-003** resolved at /forge:design 2026-06-11 → option (a) reference-only + delivered_by:B.7.3. ADR-B7-1-003 finalized.
 - **Q-004** resolved at /forge:design 2026-06-11 → option (a) Qwik under frontend.surfaces; primary_agent be:Vulcan/fe:Hera/infra:Atlas. ADR-B7-1-004 finalized.
-- NOTE: resolutions authored at design; **maintainer ratification + independent code-reviewer APPROVE pending** at /forge:review (not self-approved — Article V).
+- **Q-005** raised by the independent reviewer at /forge:review 2026-06-11 (HIGH finding) → option (a): exit 2 accepted as the B.7.1 clean refusal, dispatch-table registration + exit-3 flip deferred to B.7.2. Test + docs corrected; re-verified live 19/19.
+- NOTE: Q-001..Q-004 resolutions authored at design; Q-005 raised + resolved at the independent review pass (Article V — reviewer was a separate context, not self-approval). Maintainer ratification of all five pending final sign-off.
 -->
 
 ## Q-001: AI-First phases — inline-materialised vs `extends: ai-first`
@@ -114,3 +115,45 @@ design?]`
   fields + frontend primary_agent finalised at design.
 - (b) New top-level `web-public` layer — rejected: breaks the required-triple
   invariant shape and diverges from the flagship precedent.
+
+## Q-005: dispatch-table registration gap — `forge init` exit code (2 vs 3)
+
+- **Status**: answered → recorded as a known gap, resolved by B.7.2
+- **Raised in**: independent review of commit 537b658 (HIGH finding), 2026-06-11
+- **Raised by**: independent code-reviewer (caught an integration claim the
+  author stated as verified but had not traced through `init.ts`)
+
+### Question
+
+The change originally asserted (NFR-B7-1-002, design Data Flow, L2 test) that
+`forge init --archetype ai-native-rag` refuses with **exit 3** via
+`selectScaffoldableVersion` null. **That is false today.** Verified live against a
+built CLI: it returns **exit 2** ("unknown archetype"). Root cause:
+`cli/src/commands/init.ts:210-216` checks the dispatch-table FIRST; `ai-native-rag`
+is not in `.forge/scaffolding/dispatch-table.yml`, so the unknown-archetype gate
+fires before the schema-version layer. The exit-3 guard (`init.ts:232-238`) is
+downstream and unreachable for an unregistered archetype.
+
+`[NEEDS CLARIFICATION: is exit 2 (unknown archetype) the acceptable clean-refusal
+for B.7.1 — leaving dispatch-table registration to B.7.2 — or should B.7.1 also
+register ai-native-rag in dispatch-table.yml now?]`
+
+- (a) **Accept exit 2 now; register in B.7.2** *(resolved — reviewer option 1)* —
+  exit 2 is a clean refusal (no scaffold), consistent with the additive,
+  effort-S scope (NFR-B7-1-001: no edits to existing files beyond CI). The L2
+  test, design Data Flow, NFR-B7-1-002, proposal, tasks, and `.forge.yaml` were
+  all corrected to assert exit 2 and to flag that the exit-3 gate activates once
+  **B.7.2** registers `ai-native-rag` in the dispatch-table while keeping the
+  schema candidate/scaffoldable:false. Re-verified live: `FORGE_B7_1_LIVE=1
+  b7-1.test.sh --level 1,2` → 19/19 GREEN.
+- (b) Register in dispatch-table.yml in B.7.1 — rejected: edits an existing file
+  beyond the CI registration (NFR-B7-1-001), and registering an archetype with no
+  scaffolder/templates is B.7.2's job; it would also make exit 3 fire while the
+  scaffolder is still absent, a less honest state than "unknown archetype".
+
+### Lesson (Article III.4)
+
+The schema-version layer was verified in isolation but the full `init.ts` control
+flow was not traced — an integration claim was stated as verified fact. Fixed by
+tracing `init.ts` end-to-end and re-running the live CLI. Recorded so B.7.2 picks
+up the dispatch-table registration + the L2 exit-code flip.
