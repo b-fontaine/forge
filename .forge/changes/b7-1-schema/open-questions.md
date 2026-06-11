@@ -12,7 +12,8 @@ INDEPENDENT reviewer + the maintainer, not self-approved here.
 - **Q-003** resolved at /forge:design 2026-06-11 → option (a) reference-only + delivered_by:B.7.3. ADR-B7-1-003 finalized.
 - **Q-004** resolved at /forge:design 2026-06-11 → option (a) Qwik under frontend.surfaces; primary_agent be:Vulcan/fe:Hera/infra:Atlas. ADR-B7-1-004 finalized.
 - **Q-005** raised by the independent reviewer at /forge:review 2026-06-11 (HIGH finding) → option (a): exit 2 accepted as the B.7.1 clean refusal, dispatch-table registration + exit-3 flip deferred to B.7.2. Test + docs corrected; re-verified live 19/19.
-- NOTE: Q-001..Q-004 resolutions authored at design; Q-005 raised + resolved at the independent review pass (Article V — reviewer was a separate context, not self-approval). Maintainer ratification of all five pending final sign-off.
+- NOTE: Q-001..Q-004 resolutions authored at design; Q-005 raised + resolved at the independent review pass (Article V — reviewer was a separate context, not self-approval). Independent code-reviewer verdict: **APPROVE** (2026-06-11, after one fix iteration on the HIGH exit-code finding).
+- **MAINTAINER RATIFICATION 2026-06-11**: BDFL ratified ADR-B7-1-001..004 + the Q-005 resolution (exit-2 dispatch-gate now, dispatch-table registration + exit-3 flip deferred to B.7.2). All five decisions are final. Change cleared for archive.
 -->
 
 ## Q-001: AI-First phases — inline-materialised vs `extends: ai-first`

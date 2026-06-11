@@ -1,6 +1,6 @@
 # Tasks: b7-1-schema
 
-<!-- Status: implemented -->
+<!-- Status: archived -->
 <!-- Schema: default -->
 <!-- Audit: B.7.1 (docs/new-archetypes-plan.md §6.2 — ai-native-rag/1.0.0 archetype scaffold schema) -->
 
@@ -77,9 +77,10 @@ Constitution gate run per task (results inline; none blocks).
 - [x] **T4.3** REFACTOR: tidy header comments / section anchors; re-run the full
   `b7-1.test.sh` + `validate-foundations.sh` → still GREEN. [Gate: behavior
   unchanged]
-- [ ] **T4.4** `/forge:review b7-1-schema` — **independent code-reviewer APPROVE +
-  maintainer ratification** of ADR-B7-1-001..004 (Article V — not self-approved;
-  the design-phase resolutions are pending ratification per open-questions.md).
+- [x] **T4.4** `/forge:review b7-1-schema` — **independent code-reviewer APPROVE**
+  (2026-06-11, after one fix iteration on the HIGH exit-code finding) + **maintainer
+  ratification** of ADR-B7-1-001..004 + Q-005 (2026-06-11). Article V satisfied
+  (reviewer was a separate context). Archived.
 
 ## Constitution Gate (per task) — summary
 - TDD order enforced: harness RED (T1.2) precedes schema GREEN (T2.6). ✓
