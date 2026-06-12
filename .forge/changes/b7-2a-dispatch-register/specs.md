@@ -64,13 +64,35 @@ invoked directly with zero writes; (L2, opt-in `FORGE_B7_2A_LIVE` + built CLI,
 skip-pass otherwise) the CLI refuses ai-native-rag with exit 3. Registered in
 `.github/workflows/forge-ci.yml`.
 
+##### FR-B7-2A-007 — CLI e2e couplings kept green (Q-003)
+Registering an active archetype couples to the T5.1 CLI e2e suite. This change
+MUST keep `cd cli && npm test` green:
+- `cli/src/cli.ts` `--archetype` help text MUST name `ai-native-rag`, and the
+  `init.snap.txt` help snapshot MUST be regenerated (`help-snapshots.test.ts`
+  enumerates active archetypes).
+- `cli/test/e2e/archetypes-smoke.test.ts` MUST partition `status === "candidate"`
+  out of the fixture/scaffold matrix and assert candidates refuse with **exit 3 +
+  no scaffold** (no fixture required). Scaffoldable archetypes keep the exit-0 +
+  file-matrix contract.
+
 ### Non-Functional
 
 ##### NFR-B7-2A-001 — additive / minimal blast radius
-No templates/standards/pins/scaffold-plan. Existing-file edits limited to: the
-dispatch table (append), the b7-1 L2 assertion (verified new behaviour), the CI
-matrix (harness registration). No schema/constitution/standard touched. The
-schema stays `candidate` / `scaffoldable: false` (no promotion).
+No templates/standards/pins/scaffold-plan. No schema/constitution/standard
+touched; the schema stays `candidate` / `scaffoldable: false` (no promotion).
+Existing-file edits are confined to the dispatch registration and its **tested
+couplings** (corrected post-review — the first author pass under-scoped this):
+- `.forge/scaffolding/dispatch-table.yml` (append the entry),
+- the b7-1 L2 assertion (verified exit-2→3 flip) + the CI matrix (harness reg),
+- **`cli/src/cli.ts`** `--archetype` help text + the `init.snap.txt` help snapshot
+  — `help-snapshots.test.ts` asserts every non-`removed_from_roadmap` archetype is
+  named in `forge init --help`,
+- **`cli/test/e2e/archetypes-smoke.test.ts`** — partitions `candidate` (refusing,
+  exit 3, no fixture) from scaffoldable archetypes (fixture + scaffold matrix), so
+  registering a non-scaffoldable archetype does not break the smoke contract.
+Registering an **active** archetype has a hard coupling to these CLI e2e tests
+(they enumerate active dispatch-table archetypes); the ground-truth pass must
+include them (Article III.4 lesson, Q-003).
 
 ##### NFR-B7-2A-002 — runtime flip requires the schema bundled
 The exit-3 flip depends on `<assets>/.forge/schemas/ai-native-rag/1.0.0.yaml`

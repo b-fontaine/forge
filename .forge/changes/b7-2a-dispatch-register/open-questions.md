@@ -8,6 +8,7 @@ Q-NNN sequential, never reused. Author-phase leanings recorded; resolutions at
 - **Q-001** resolved at /forge:design 2026-06-12 → (a) `since: "0.5.0"` (VERSIONING.md:31 — new archetypes ⇒ MINOR). ADR-B7-2A-004.
 - **Q-002** resolved at /forge:design 2026-06-12 → (a) documentary `status: candidate`, no b5.test.sh change. ADR-B7-2A-005.
 - Resolutions authored at design; independent reviewer + maintainer ratification pending at /forge:review (Article V).
+- **Q-003** raised + resolved at /forge:review 2026-06-12 → (a) candidate stays discoverable in --help + refusal-asserted in smoke; CLI help text/snapshot + archetypes-smoke partition fixed. `cd cli && npm test` 87 passed / 1 skipped.
 -->
 
 ## Q-001: `since:` value for the ai-native-rag dispatch entry
@@ -58,3 +59,44 @@ themselves?]`
   asserts the marker.
 - (b) Keep plain — the schema stage + the wrapper already encode the state.
   Avoids inventing a status enum value not used elsewhere.
+
+## Q-003: CLI e2e coupling of an active dispatch-table archetype
+
+- **Status**: answered → resolved (independent review HIGH/CRITICAL, fixed)
+- **Raised in**: independent review of commit 5525f05, 2026-06-12
+- **Raised by**: independent code-reviewer
+
+### Question
+
+Registering an **active** (`status !== removed_from_roadmap`) archetype couples to
+two pre-existing T5.1 CLI e2e tests that the first author pass missed:
+- `help-snapshots.test.ts` asserts every active archetype appears in `forge init
+  --help` (hardcoded text at `cli/src/cli.ts:77` + the `init.snap.txt` snapshot);
+- `archetypes-smoke.test.ts` treats every active archetype as scaffoldable —
+  requires a fixture (`ENOENT` crash otherwise) and asserts scaffold exit 0,
+  incompatible with the `candidate` archetype's exit-3 refusal.
+So `cd cli && npm test` would FAIL in CI even though `verify.sh`, the linter, and
+the shell harnesses are all green.
+
+`[NEEDS CLARIFICATION: keep candidates discoverable in --help but excluded from the
+scaffold matrix (and assert their refusal instead), or exclude candidates from
+"active" everywhere?]`
+
+- (a) **Discoverable + refusal-asserted** *(chosen)* — a candidate stays in
+  `--help` (it IS a known archetype) and is exercised by a NEW smoke test that
+  asserts exit 3 + no scaffold; it is partitioned OUT of the fixture/scaffold
+  matrix until promotion. Fixes: `cli/src/cli.ts:77` help text + regen
+  `init.snap.txt`; `archetypes-smoke.test.ts` partitions `status === "candidate"`.
+  `cd cli && npm test` → 87 passed / 1 skipped. Keeps coverage on the new
+  behaviour; the candidate rejoins the scaffold matrix at promotion (B.7.2).
+- (b) Exclude candidates from "active" everywhere — rejected: it would hide the
+  archetype from `--help` despite it being a real, registered choice, and lose the
+  refusal assertion.
+
+### Lesson (Article III.4)
+
+The proposal's ground-truth pass traced `init.ts`/`resolveScaffolder`/`b5.test.sh`
+but did NOT enumerate the e2e tests that cross-reference the dispatch table. The
+author's gate run also omitted `cd cli && npm test`. Both fixed; NFR-B7-2A-001
+blast-radius corrected. Recorded so B.7.2-full (promotion) re-checks the same
+e2e couplings when it flips the candidate to scaffoldable.

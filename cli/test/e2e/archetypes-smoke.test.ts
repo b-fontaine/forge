@@ -2,9 +2,9 @@
 //
 // Layer T5.1.B — smoke test per archetype (FR-T51-040..055).
 //
-// For each active archetype in dispatch-table.yml (skipping `default`,
-// `removed_from_roadmap`, and `legacy_alias` entries whose target is
-// also present), this suite :
+// For each active SCAFFOLDABLE archetype in dispatch-table.yml (skipping
+// `default`, `removed_from_roadmap`, and — B.7.2a — `candidate` entries that are
+// registered but not yet scaffoldable), this suite :
 //
 //   1. Creates a tmpdir path that does NOT yet exist on disk (exercises
 //      the v0.3.2 `mkdir -p` fix in init-archetype.ts:148).
@@ -95,6 +95,14 @@ function missingToolsFor(archetypeName: string): string[] {
 
 describe("T5.1.B — smoke per archetype", () => {
   const archetypes = activeArchetypes();
+  // B.7.2a — a `candidate` archetype is registered in the dispatch table +
+  // discoverable in `--help`, but is NOT yet scaffoldable (its schema is
+  // stage:candidate / scaffoldable:false), so `forge init` refuses it with exit 3
+  // (resolves b7-1-schema Q-005). Candidates are excluded from the scaffold/
+  // fixture matrix and exercised instead by the dedicated refusal test below;
+  // they rejoin the scaffold matrix when promoted to stable/scaffoldable (B.7.2).
+  const scaffoldable = archetypes.filter((a) => a.status !== "candidate");
+  const candidates = archetypes.filter((a) => a.status === "candidate");
   // Partition at module-load so vitest can render the skipped archetypes
   // as `↓ skipped` instead of relying on a runtime `ctx.skip()` call —
   // `it.each` in vitest 2.1.x does NOT pass a TestContext to the
@@ -102,11 +110,11 @@ describe("T5.1.B — smoke per archetype", () => {
   // (verified 2026-05-18 on PR #21 CI : `Cannot read properties of
   // undefined (reading 'skip')`). Static partitioning is the canonical
   // skip pattern that keeps the CI output audit-friendly.
-  const runnable = archetypes.filter((a) => missingToolsFor(a.name).length === 0);
-  const skippedDueToToolchain = archetypes.filter((a) => missingToolsFor(a.name).length > 0);
+  const runnable = scaffoldable.filter((a) => missingToolsFor(a.name).length === 0);
+  const skippedDueToToolchain = scaffoldable.filter((a) => missingToolsFor(a.name).length > 0);
 
-  it("dispatch-table cross-reference: every active archetype has a fixture (FR-T51-055)", () => {
-    for (const a of archetypes) {
+  it("dispatch-table cross-reference: every scaffoldable archetype has a fixture (FR-T51-055)", () => {
+    for (const a of scaffoldable) {
       const path = join(FIXTURES_DIR, `${a.name}.yml`);
       expect(
         existsSync(path),
@@ -114,6 +122,44 @@ describe("T5.1.B — smoke per archetype", () => {
       ).toBe(true);
     }
   });
+
+  // B.7.2a (FR-B7-2A-003) — registered-but-non-scaffoldable (candidate)
+  // archetypes MUST refuse cleanly with exit 3 and produce NO scaffold (the
+  // target dir is never created — the resolveScaffolder refusal fires before
+  // runArchetypeInit's mkdir). No fixture is required for these.
+  if (candidates.length > 0) {
+    it.each(candidates.map((a) => [a.name]))(
+      "refuses %s (candidate / not-yet-scaffoldable) with exit 3 + no scaffold",
+      async (archetypeName) => {
+        const tmp = await mkdtemp(join(tmpdir(), `forge-refuse-${archetypeName}-`));
+        await rm(tmp, { recursive: true, force: true });
+        createdTmpdirs.push(tmp);
+        const r = spawnSync(
+          process.execPath,
+          [
+            CLI_ENTRY,
+            "init",
+            slugFor(archetypeName),
+            "--archetype",
+            archetypeName,
+            "--org",
+            "dev.forge.test",
+            "--target",
+            tmp,
+          ],
+          { encoding: "utf8", env: { ...process.env, NO_COLOR: "1" } },
+        );
+        expect(
+          r.status,
+          `forge init must refuse candidate archetype '${archetypeName}' with exit 3:\n${r.stderr}`,
+        ).toBe(3);
+        expect(
+          existsSync(tmp),
+          `candidate archetype '${archetypeName}' must not scaffold (target dir must not be created)`,
+        ).toBe(false);
+      },
+    );
+  }
 
   // Statically-skipped declarations — visible in the test report as
   // intentionally skipped (not silent pass), so reviewers can see at a

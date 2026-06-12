@@ -44,6 +44,13 @@ test updates. Harness authored FIRST and must fail before the entry/wrapper exis
   exit 3 live. If no build: rely on L2 skip-pass + document. [Story: FR-B7-2A-003]
 - [x] **T3.4** Register `b7-2a.test.sh` in `.github/workflows/forge-ci.yml`
   (after `b7-1.test.sh`). [Story: FR-B7-2A-006]
+- [x] **T3.5** (post-review Q-003) `cli/src/cli.ts` `--archetype` help text +=
+  `ai-native-rag`; regen `cli/test/e2e/__snapshots__/help/init.snap.txt` via
+  `npx vitest run -u`. [Story: FR-B7-2A-007]
+- [x] **T3.6** (post-review Q-003) `cli/test/e2e/archetypes-smoke.test.ts`:
+  partition `status === "candidate"` out of the fixture/scaffold matrix; add a
+  refusal test asserting candidates exit 3 + no scaffold. `cd cli && npm test` →
+  87 passed / 1 skipped. [Story: FR-B7-2A-007]
 
 ## Phase 4: Quality
 

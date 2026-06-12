@@ -36,11 +36,14 @@ layer fires.
 `bin/forge-init-ai-native-rag.sh` invocation both exit 3.
 
 ### ADR-B7-2A-003 — wrapper: structured stderr, exit 3, zero writes
-**Decision**: the wrapper prints `[REFUSAL: ai-native-rag: not-yet-scaffoldable :
-candidate schema, templates ship in B.7.2 ; see .forge/specs/ai-native-rag.md]`
-to stderr and exits 3, performing **no** filesystem writes (never a partial
-scaffold). It accepts/ignores the standard wrapper args (project name, --org,
---force) for ABI shape but acts on none.
+**Decision**: the wrapper prints a `[REFUSAL: ai-native-rag: not-yet-scaffoldable:
+...]` line to stderr and exits 3, performing **no** filesystem writes (never a
+partial scaffold). The shipped message (`bin/forge-init-ai-native-rag.sh`) is:
+`[REFUSAL: ai-native-rag: not-yet-scaffoldable: the ai-native-rag schema is a
+candidate (scaffoldable:false) — templates ship in B.7.2 ; alternative: use
+--archetype full-stack-monorepo, or 'default' then add RAG components manually]`.
+The wrapper ignores all args (no parse loop, so `set -e` has no shift hazard);
+the harness greps `\[REFUSAL` only.
 **Constitution**: XI fallback semantics N/A (no AI here); III.4 honest "not yet".
 
 ### ADR-B7-2A-004 — `since: "0.5.0"` (Q-001 resolved)
