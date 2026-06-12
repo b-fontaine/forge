@@ -23,7 +23,7 @@
 #   T-017  ai_fallback_required True + cross_layer.agent Janus + fr_id_prefix_cross_layer FR-GL- (FR-B7-1-013/024)
 #
 #   T-018  header block documents candidate semantics (candidate/scaffoldable/additive) (FR-B7-1-005)
-#   T-L2-001 (opt-in) forge init --archetype ai-native-rag ⇒ exit 2 unknown-archetype refusal (dispatch-table gate; FORGE_B7_1_LIVE=1 + built CLI; skip-pass otherwise)
+#   T-L2-001 (opt-in) forge init --archetype ai-native-rag ⇒ exit 3 (registered by B.7.2a, no scaffoldable schema version; FORGE_B7_1_LIVE=1 + built CLI; skip-pass otherwise)
 #
 # 18 L1 + 1 L2 tests. Performance budget: L1 ≤ 5 s, zero net/Docker. Structural
 # invariants (name==dir, version==file, layer triple, candidate=>scaffoldable:false,
@@ -328,29 +328,27 @@ _test_b71_l1_018_header_block() {
 # ─── L2 tests (opt-in live) ───────────────────────────────────────────────────
 
 _test_b71_l2_001_init_refuses() {
-  # The refusal contract (verified live against the built CLI, 2026-06-11):
-  # `forge init <name> --archetype ai-native-rag --org <rd>` exits **2**
-  # ("unknown archetype"). init.ts:210-216 checks the dispatch-table FIRST, and
-  # ai-native-rag is not registered in .forge/scaffolding/dispatch-table.yml, so
-  # the dispatch gate fires before the schema-version layer. The exit-3
-  # selectScaffoldableVersion-null guard (init.ts:232-238) is DOWNSTREAM and not
-  # reachable for this archetype yet; it becomes the active gate only once B.7.2
-  # registers ai-native-rag in the dispatch-table while the schema stays
-  # candidate/scaffoldable:false (update this assertion to exit 3 then — see
-  # open-questions.md Q-005). Either way init refuses cleanly with NO scaffold
-  # (NFR-B7-1-002). Opt-in (FORGE_B7_1_LIVE=1) + requires cli/dist/index.js;
-  # skip-pass otherwise (mirrors b8-15 FORGE_B8_15_LIVE).
+  # The refusal contract (Q-005 flip — B.7.2a registered ai-native-rag in the
+  # dispatch-table 2026-06-12): `forge init <name> --archetype ai-native-rag
+  # --org <rd>` now exits **3**. The archetype passes the init.ts:210
+  # dispatch-table gate (registered) and reaches the versioned-schema layer;
+  # selectScaffoldableVersion returns null for the candidate/scaffoldable:false
+  # 1.0.0 schema (init-archetype.ts:128) ⇒ resolveScaffolder refuse ⇒ exit 3
+  # (init.ts:232-238). Clean refusal, NO scaffold (NFR-B7-1-002). Requires the
+  # built CLI to have the B.7.2a dispatch entry + schema bundled into cli/assets
+  # (npm run bundle). Opt-in (FORGE_B7_1_LIVE=1) + cli/dist/index.js; skip-pass
+  # otherwise (mirrors b8-15 FORGE_B8_15_LIVE).
   local cli="$FORGE_ROOT/cli/dist/index.js"
   if [ "${FORGE_B7_1_LIVE:-0}" != "1" ] || [ ! -f "$cli" ]; then
-    echo "    SKIP T-L2-001: set FORGE_B7_1_LIVE=1 with a built CLI (cli/dist/index.js) to run the live init-refusal check" >&2
+    echo "    SKIP T-L2-001: set FORGE_B7_1_LIVE=1 with a built+bundled CLI (cli/dist/index.js) to run the live init-refusal check" >&2
     return 0
   fi
   local tmp; tmp=$(mk_tmpdir_with_trap b7-1-init)
   trap "rm -rf '$tmp'" RETURN
   ( cd "$tmp" && node "$cli" init testproj --archetype ai-native-rag --org com.example.test >/dev/null 2>&1 )
   local rc=$?
-  if [ "$rc" != "2" ]; then
-    echo "    FAIL T-L2-001: forge init --archetype ai-native-rag exit=$rc != 2 (expected clean refusal — unknown archetype; dispatch-table gate, init.ts:210)" >&2
+  if [ "$rc" != "3" ]; then
+    echo "    FAIL T-L2-001: forge init --archetype ai-native-rag exit=$rc != 3 (expected clean refusal — registered but no scaffoldable schema version; B.7.2a/Q-005)" >&2
     return 1
   fi
 }

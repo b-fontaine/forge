@@ -1,0 +1,16 @@
+name: b7-2a-dispatch-register
+status: implemented
+created: 2026-06-12
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.7.2  # docs/new-archetypes-plan.md §6.2 B.7.2 — first slice: dispatch-table registration + exit-2→exit-3 refusal flip (resolves Q-005)
+depends_on:
+  - B.7.1  # ships .forge/schemas/ai-native-rag/1.0.0.yaml (candidate/scaffoldable:false) — the schema this makes refusable via the schema-version layer
+  - B.8.14 # cli versioned-schema selection + B.8.3.b scaffoldable:false guard (resolveScaffolder → exit 3); generic readArchetypeSchemas (cli.ts:135)
+timeline:
+  proposed: 2026-06-12
+  specified: 2026-06-12
+  designed: 2026-06-12
+  planned: 2026-06-12
+  implemented: 2026-06-12
