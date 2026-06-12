@@ -12,6 +12,22 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added
+
+- **`ai-native-rag` archetype scaffold schema (B.7.1, `b7-1-schema`)** — first
+  brick of the T7 AI-native RAG archetype chain (plan §6.2). Ships
+  `.forge/schemas/ai-native-rag/1.0.0.yaml` as `stage: candidate` /
+  `scaffoldable: false`: the archetype is declared but **not yet scaffoldable**, so
+  `forge init --archetype ai-native-rag` refuses cleanly (exit 2 — unknown
+  archetype, dispatch-table-gated until B.7.2). AI-First phases are materialised
+  inline (no scaffold-schema loader resolves `extends`) plus two B.7.1 phases —
+  `embeddings-pipeline` and `prompt-audit` (wiring Article XI.5/XI.6 + IX.6).
+  Components are reference-only (no inline pins); the LLM gateway / MCP servers /
+  RAG-patterns standards are deferred to B.7.3. Harness `b7-1.test.sh` (18 L1 + 1
+  L2) in `forge-ci.yml`; validated on landing by the b8-3b versioned-schema gate.
+  Additive — no existing schema/standard/constitution/CLI/template touched.
+  Independent reviewer APPROVE; ADRs ratified.
+
 ## [0.4.0] — 2026-06-06
 
 First **stable** cut of the 0.4.0 line. Headline: the **B.8 flagship migration is
