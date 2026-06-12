@@ -9,6 +9,8 @@ Q-NNN sequential, never reused. Author-phase leanings recorded; resolutions at
 - **Q-002** resolved at /forge:design 2026-06-12 → (a) documentary `status: candidate`, no b5.test.sh change. ADR-B7-2A-005.
 - Resolutions authored at design; independent reviewer + maintainer ratification pending at /forge:review (Article V).
 - **Q-003** raised + resolved at /forge:review 2026-06-12 → (a) candidate stays discoverable in --help + refusal-asserted in smoke; CLI help text/snapshot + archetypes-smoke partition fixed. `cd cli && npm test` 87 passed / 1 skipped.
+- Independent code-reviewer verdict: **APPROVE** (2026-06-12, after one fix iteration on the CRITICAL/HIGH CLI-e2e regression).
+- **MAINTAINER RATIFICATION 2026-06-12**: BDFL ratified ADR-B7-2A-001..005 + Q-001/Q-002/Q-003. All decisions final. Cleared for archive.
 -->
 
 ## Q-001: `since:` value for the ai-native-rag dispatch entry

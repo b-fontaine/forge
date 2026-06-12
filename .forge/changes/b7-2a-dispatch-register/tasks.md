@@ -1,6 +1,6 @@
 # Tasks: b7-2a-dispatch-register
 
-<!-- Status: implemented -->
+<!-- Status: archived -->
 <!-- Schema: default -->
 <!-- Audit: B.7.2 (docs/new-archetypes-plan.md §6.2 — ai-native-rag dispatch registration slice) -->
 
@@ -59,8 +59,10 @@ test updates. Harness authored FIRST and must fail before the entry/wrapper exis
   artifacts; edits limited to dispatch-table (append), b7-1 L2, CI matrix. Schema
   unchanged (still candidate/scaffoldable:false). [NFR-B7-2A-001]
 - [x] **T4.3** REFACTOR; re-run full b7-2a + b7-1 harness → GREEN.
-- [ ] **T4.4** `/forge:review b7-2a-dispatch-register` — independent reviewer
-  APPROVE + maintainer ratification (Article V).
+- [x] **T4.4** `/forge:review b7-2a-dispatch-register` — independent reviewer
+  **APPROVE** (2026-06-12, after one fix iteration on the CRITICAL/HIGH CLI-e2e
+  regression) + **maintainer ratification** of ADR-B7-2A-001..005 + Q-003
+  (2026-06-12). Article V satisfied (reviewer was a separate context). Archived.
 
 ## Constitution Gate (per task)
 - TDD: harness RED (T1.2) before entry/wrapper GREEN (T2.3). ✓

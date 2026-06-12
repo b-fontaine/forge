@@ -14,6 +14,17 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ### Added
 
+- **`ai-native-rag` dispatch registration (B.7.2a, `b7-2a-dispatch-register`)** —
+  registers the archetype in `.forge/scaffolding/dispatch-table.yml` (since 0.5.0,
+  `status: candidate`) + a refusing wrapper `bin/forge-init-ai-native-rag.sh`. This
+  flips `forge init --archetype ai-native-rag` from the exit-2 "unknown archetype"
+  refusal to the canonical **exit-3** "no scaffoldable schema version" refusal
+  (the B.8.3.b guard) — the archetype is now *known but not yet scaffoldable*,
+  with **zero** scaffold produced. Resolves the b7-1-schema Q-005 follow-up.
+  `--help` lists the archetype; the e2e smoke suite asserts its refusal.
+  Harness `b7-2a.test.sh` (3 L1 + 1 L2) in `forge-ci.yml`. Additive — the schema
+  stays candidate/scaffoldable:false. Independent reviewer APPROVE; ADRs ratified.
+
 - **`ai-native-rag` archetype scaffold schema (B.7.1, `b7-1-schema`)** — first
   brick of the T7 AI-native RAG archetype chain (plan §6.2). Ships
   `.forge/schemas/ai-native-rag/1.0.0.yaml` as `stage: candidate` /
