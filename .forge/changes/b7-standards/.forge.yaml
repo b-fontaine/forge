@@ -1,0 +1,15 @@
+name: b7-standards
+status: implemented
+created: 2026-06-13
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.7.3  # docs/new-archetypes-plan.md §6.2 B.7.3 — rag-patterns.md + llm-gateway.md + mcp-servers.md
+depends_on:
+  - B.7.1  # ai-native-rag/1.0.0.yaml components reference these standards as delivered_by: B.7.3
+timeline:
+  proposed: 2026-06-13
+  specified: 2026-06-13
+  designed: 2026-06-13
+  planned: 2026-06-13
+  implemented: 2026-06-13
