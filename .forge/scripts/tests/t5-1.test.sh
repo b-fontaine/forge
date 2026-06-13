@@ -331,8 +331,12 @@ _test_t51_l1_016_dispatch_xref() {
   fi
   # Parse archetype names from dispatch-table top-level entries (2-space
   # indent under `archetypes:`). Filter out `default` (covered by
-  # cli.test.ts) and entries flagged removed_from_roadmap (detected via
-  # the `<removed>` scaffolder sentinel or an explicit `status:` field).
+  # cli.test.ts), entries flagged removed_from_roadmap (detected via the
+  # `<removed>` scaffolder sentinel or an explicit `status:` field), and
+  # `status: candidate` entries — B.7.2a registered-but-not-yet-scaffoldable
+  # archetypes (e.g. ai-native-rag) have no scaffold fixture; their refusal
+  # is covered by b7-2a.test.sh + archetypes-smoke.test.ts. They rejoin this
+  # fixture cross-reference when promoted to stable/scaffoldable (B.7.2-full).
   local in_archetypes=0
   local current=""
   local current_status=""
@@ -351,6 +355,7 @@ _test_t51_l1_016_dispatch_xref() {
         # Flush the previous archetype if any.
         if [ -n "$current" ] && [ "$current" != "default" ] \
            && [ "$current_status" != "removed_from_roadmap" ] \
+           && [ "$current_status" != "candidate" ] \
            && [ "$current_scaffolder" != "<removed>" ]; then
           if [ ! -f "$FIXTURES_DIR/$current.yml" ]; then
             missing+="$current "
@@ -373,6 +378,7 @@ _test_t51_l1_016_dispatch_xref() {
   # Flush the last entry.
   if [ -n "$current" ] && [ "$current" != "default" ] \
      && [ "$current_status" != "removed_from_roadmap" ] \
+     && [ "$current_status" != "candidate" ] \
      && [ "$current_scaffolder" != "<removed>" ]; then
     if [ ! -f "$FIXTURES_DIR/$current.yml" ]; then
       missing+="$current "

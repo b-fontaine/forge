@@ -91,6 +91,24 @@ scaffold matrix (and assert their refusal instead), or exclude candidates from
   `init.snap.txt`; `archetypes-smoke.test.ts` partitions `status === "candidate"`.
   `cd cli && npm test` → 87 passed / 1 skipped. Keeps coverage on the new
   behaviour; the candidate rejoins the scaffold matrix at promotion (B.7.2).
+
+### Q-003 addendum — a THIRD coupled test surfaced in CI (2026-06-13)
+
+The fix above covered the two TS e2e tests, but CI then failed on a third,
+SHELL-side enumerator the local gate run had not exercised:
+`.forge/scripts/tests/t5-1.test.sh::_test_t51_l1_016_dispatch_xref` (FR-T51-055)
+— the bash mirror of the smoke fixture cross-reference. It required a fixture for
+every active archetype, excluding only `default`/`removed_from_roadmap`/`<removed>`,
+not `candidate`. Fixed identically: exclude `status: candidate` from the fixture
+requirement (both flush branches + the comment). Re-ran the **full** dispatch-coupled
+set live — `t5-1` 17/0, `b5` 17/0, `j8` 18/0, `b8-15` 9/0, `b7-2a` 3/0, `b7-1` 18/0,
+`cd cli && npm test` 87/1-skip — plus a repo-wide sweep for any other
+active-archetype enumerator (`init.test.ts` uses its own table + `"made-up"`;
+`b8-15` hardcodes the fsm fixture; `j8` is the forbidden list — all safe).
+**Reinforced lesson (III.4):** the coupling was THREE tests, not two; the
+ground-truth pass must grep every `FIXTURES_DIR` / active-archetype enumerator
+(shell AND TS), and the gate run must execute the full harness array, not a
+subset. B.7.2-full re-checks all three at promotion.
 - (b) Exclude candidates from "active" everywhere — rejected: it would hide the
   archetype from `--help` despite it being a real, registered choice, and lose the
   refusal assertion.

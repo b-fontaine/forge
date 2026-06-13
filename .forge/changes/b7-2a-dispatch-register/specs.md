@@ -74,6 +74,10 @@ MUST keep `cd cli && npm test` green:
   out of the fixture/scaffold matrix and assert candidates refuse with **exit 3 +
   no scaffold** (no fixture required). Scaffoldable archetypes keep the exit-0 +
   file-matrix contract.
+- `.forge/scripts/tests/t5-1.test.sh::_test_t51_l1_016_dispatch_xref` (the SHELL
+  mirror of the smoke fixture cross-reference, FR-T51-055) MUST exclude
+  `status: candidate` from the fixture requirement — found in CI after the first
+  two fixes (it is a third test enumerating active archetypes).
 
 ### Non-Functional
 
