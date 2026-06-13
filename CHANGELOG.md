@@ -14,6 +14,20 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ### Added
 
+- **`ai-native-rag` pattern standards (B.7.3, `b7-standards`)** — three new
+  `global/*.md` pattern standards the archetype schema references as
+  `delivered_by: B.7.3`: `rag-patterns.md` (chunking/embeddings, hybrid retrieval
+  + RRF, pgvector HNSW tuning, re-ranking, EU sovereignty), `llm-gateway.md`
+  (in-repo Rust axum proxy, OpenAI-compatible upstream Mistral-Scaleway/vLLM,
+  tier-aware refusal referencing the existing EU machinery, prompt audit, PII +
+  fallback), `mcp-servers.md` (rmcp server pattern, least-privilege security,
+  OAuth 2.1 + PKCE → Zitadel/Envoy-OIDC, rmcp Tier-3 verify-then-pin caveat).
+  **Pattern docs only — no version pins**: rmcp / pgvector-crate / async-openai
+  pins ride with the later scaffolder brick (verify-then-pin LIVE; baseline
+  recorded in research). `index.yml` + `REVIEW.md` registered; harness
+  `b7-3.test.sh` (7 L1, incl. a no-inline-pin guard) in `forge-ci.yml`. Additive.
+  Independent reviewer APPROVE (first pass); ADRs ratified.
+
 - **`ai-native-rag` dispatch registration (B.7.2a, `b7-2a-dispatch-register`)** —
   registers the archetype in `.forge/scaffolding/dispatch-table.yml` (since 0.5.0,
   `status: candidate`) + a refusing wrapper `bin/forge-init-ai-native-rag.sh`. This

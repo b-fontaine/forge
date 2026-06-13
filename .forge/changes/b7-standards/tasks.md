@@ -1,6 +1,6 @@
 # Tasks: b7-standards
 
-<!-- Status: implemented -->
+<!-- Status: archived -->
 <!-- Schema: default -->
 <!-- Audit: B.7.3 (docs/new-archetypes-plan.md §6.2 — ai-native-rag standards) -->
 
@@ -52,8 +52,9 @@ pins) + index/REVIEW registration + harness. Harness authored FIRST.
   artifacts + research; edits limited to index.yml (append), REVIEW.md (append),
   CI matrix. No schema/constitution/existing-standard touched. [NFR-B7-3-001]
 - [x] **T4.3** REFACTOR; re-run b7-3 harness → GREEN.
-- [ ] **T4.4** `/forge:review b7-standards` — independent reviewer APPROVE +
-  maintainer ratification (Article V).
+- [x] **T4.4** `/forge:review b7-standards` — independent reviewer **APPROVE**
+  (2026-06-13, first pass — 0 CRITICAL/HIGH/MEDIUM) + **maintainer ratification**
+  of ADR-B7-3-001..004 + Q-001/Q-002 (2026-06-13). Article V satisfied. Archived.
 
 ## Constitution Gate (per task)
 - TDD: harness RED (T1.2) before docs GREEN (T2.6). ✓

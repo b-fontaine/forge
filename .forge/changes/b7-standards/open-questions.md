@@ -8,6 +8,8 @@ Q-NNN sequential, never reused. Author-phase leanings; resolutions at
 - **Q-001** resolved at /forge:design 2026-06-13 → (a) pure guidance; T3 enforcement already in forbidden-components (I.3) + Demeter; runtime Janus AI rules → b7-9. ADR-B7-3-002.
 - **Q-002** resolved at /forge:design 2026-06-13 → (a) keep `rag-patterns.md` + document the component↔standard mapping in headers; no schema edit. ADR-B7-3-004.
 - Resolutions authored at design; independent reviewer + maintainer ratification pending at /forge:review (Article V).
+- Independent code-reviewer verdict: **APPROVE** (2026-06-13, first pass — 0 CRITICAL/HIGH/MEDIUM; 2 LOW by-design nits, no fix). Gates re-run + harness mutation-tested + claims Context7-verified by the reviewer.
+- **MAINTAINER RATIFICATION 2026-06-13**: BDFL ratified ADR-B7-3-001..004 + Q-001/Q-002. All decisions final. Cleared for archive.
 -->
 
 ## Q-001: enforcement hook vs pure guidance for the three .md standards
