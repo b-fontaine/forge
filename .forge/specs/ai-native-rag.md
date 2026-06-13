@@ -113,3 +113,63 @@ B.7.2 (`b7-2-scaffolder` — registers ai-native-rag in dispatch-table.yml, ship
 templates + scaffold-plan, flips exit-2→exit-3 then stable+scaffoldable), B.7.3
 (`b7-standards` — llm-gateway/mcp-servers/rag-patterns), `b7-pythia` (K.2),
 `b7-9-janus-ai` (J.8.c), `b7-5-ai-act`, `b7-7-example`, `b7-6-harness`.
+
+---
+
+## ADDED Requirements (b7-2a-dispatch-register, archived 2026-06-12)
+
+**Namespace** : `FR-B7-2A-*` / `NFR-B7-2A-*` / `ADR-B7-2A-*`. First additive slice
+of B.7.2 — registers the archetype in the CLI dispatch table so `forge init
+--archetype ai-native-rag` refuses with **exit 3** (registered, no scaffoldable
+schema version) instead of exit 2 (unknown archetype). Resolves Q-005. Ships no
+templates/scaffold-plan/standards/pins; the schema stays candidate/scaffoldable:false.
+
+Deliverables: `.forge/scaffolding/dispatch-table.yml` (ai-native-rag entry),
+`bin/forge-init-ai-native-rag.sh` (refusing wrapper, exit 3, zero writes),
+`.forge/scripts/tests/b7-2a.test.sh` (3 L1 + 1 L2, in forge-ci.yml).
+
+### Functional
+
+- **FR-B7-2A-001** — dispatch entry present & well-formed (name/scaffolder/
+  description/signals/since/status).
+- **FR-B7-2A-002** — refusing wrapper exists, executable, bash, ABI-shaped; refuses
+  exit 3 with `[REFUSAL ...]` stderr and zero filesystem writes.
+- **FR-B7-2A-003** — CLI refusal flips exit 2 → exit 3 (verified live).
+- **FR-B7-2A-004** — `b5.test.sh::test_dispatch_scaffolders_exist` stays GREEN (the
+  wrapper is a real file; no b5 edit).
+- **FR-B7-2A-005** — `b7-1.test.sh` L2 assertion flipped to exit 3.
+- **FR-B7-2A-006** — dedicated harness `b7-2a.test.sh`, registered in forge-ci.yml.
+- **FR-B7-2A-007** — CLI e2e couplings kept green (Q-003): `cli/src/cli.ts`
+  `--archetype` help text names ai-native-rag + regen `init.snap.txt`;
+  `archetypes-smoke.test.ts` partitions `candidate` out of the scaffold matrix and
+  asserts exit-3 refusal + no scaffold. `cd cli && npm test` 87 passed / 1 skipped.
+
+### Non-Functional
+
+- **NFR-B7-2A-001** — additive: no templates/standards/pins; schema untouched.
+  Existing-file edits confined to dispatch-table (append), b7-1 L2 flip, CI matrix,
+  and the tested CLI couplings (cli.ts help + snapshot, archetypes-smoke partition).
+- **NFR-B7-2A-002** — runtime flip requires the schema + entry bundled into
+  `cli/assets` (`npm run bundle`).
+- **NFR-B7-2A-003** — verify.sh / constitution-linter.sh / b5 / full harness suite
+  no regression.
+
+### ADRs (ratified — maintainer 2026-06-12; independent reviewer APPROVE)
+
+- **ADR-B7-2A-001** — refusing wrapper, not a `<pending>` sentinel + b5 edit.
+- **ADR-B7-2A-002** — refusal exit code 3 (CLI guard + wrapper, consistent).
+- **ADR-B7-2A-003** — wrapper: structured `[REFUSAL ...]` stderr, exit 3, zero writes.
+- **ADR-B7-2A-004** — `since: "0.5.0"` (VERSIONING.md — new archetype ⇒ MINOR).
+- **ADR-B7-2A-005** — documentary `status: candidate`; no b5.test.sh change.
+
+### Open questions (resolved)
+
+- **Q-001** (`since:` value) → 0.5.0 (ADR-B7-2A-004). **Q-002** (`status:` marker)
+  → `candidate` (ADR-B7-2A-005). Both at design.
+- **Q-003** (independent review, CRITICAL/HIGH): registering an active archetype
+  couples to the T5.1 CLI e2e tests (`help-snapshots`, `archetypes-smoke`) that
+  enumerate active dispatch-table archetypes — `cd cli && npm test` would fail in
+  CI. Resolved: candidate stays discoverable in `--help` + refusal-asserted in
+  smoke (partitioned out of the scaffold matrix). Lesson (Article III.4): the
+  ground-truth pass must include e2e dispatch-table cross-reference tests, and the
+  gate run must include `npm test`. B.7.2-full re-checks these couplings at promotion.

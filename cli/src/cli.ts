@@ -74,7 +74,7 @@ export async function runCli(io: CliIo): Promise<number> {
       "--source <dir>",
       "local Forge source checkout (default: the files bundled with this CLI)",
     )
-    .option("--archetype <name>", "explicit archetype (e.g. default | full-stack-monorepo | mobile-only)")
+    .option("--archetype <name>", "explicit archetype (e.g. default | full-stack-monorepo | mobile-only | ai-native-rag)")
     .option("--auto", "auto-detect archetype from target dir signals", false)
     .option("--wizard", "force interactive wizard mode", false)
     .option("--org <reverse-domain>", "reverse domain (required for non-default archetypes)")

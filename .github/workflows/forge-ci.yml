@@ -121,6 +121,7 @@ jobs:
             "b8-14-flip.test.sh --level 1"
             "b8o.test.sh --level 1"
             "b7-1.test.sh --level 1,2"
+            "b7-2a.test.sh --level 1,2"
           )
           fail=0
           for entry in "${harnesses[@]}"; do
