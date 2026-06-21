@@ -875,3 +875,27 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   Kong via the **additive** migrate path (`forge-migrate-flagship.sh` stays additive
   forever); Kong removal applies ONLY to fresh 2.0.0 scaffolds (new
   scaffold-plan-2.0.0). The frozen 1.0.0 base/snapshot are never edited (b8-2 guard).
+
+## 2026-06-13 — Initial ratification (b7-standards, B.7.3)
+
+  | Standard                      | Version | Decision | Next review due | Notes                                                                                                          |
+  |-------------------------------|---------|----------|-----------------|----------------------------------------------------------------------------------------------------------------|
+  | global/rag-patterns.md        | 1.0.0   | KEEP     | 2027-06-13      | Birth: RAG patterns for ai-native-rag — chunking/embeddings, hybrid retrieval + RRF, re-ranking, pgvector HNSW tuning, EU sovereignty. |
+  | global/llm-gateway.md         | 1.0.0   | KEEP     | 2027-06-13      | Birth: in-repo Rust axum LLM gateway proxy — OpenAI-compatible upstream, tier-aware refusal (refs I.3 + compliance-tiers), prompt audit, PII/fallback. |
+  | global/mcp-servers.md         | 1.0.0   | KEEP     | 2027-06-13      | Birth: rmcp MCP server patterns — security, OAuth 2.1+PKCE → Zitadel/Envoy-OIDC, rmcp Tier-3 verify-then-pin caveat. |
+
+- **Decision**: KEEP (three new Markdown pattern standards).
+- **Next review due**: 2027-06-13 (12-month cycle; `.md` standards carry no
+  `version:` frontmatter — section/content review, not semver).
+- **Notes**: Three new `global/*.md` pattern standards for the `ai-native-rag`
+  archetype (T7, B.7.3), resolving the `delivered_by: B.7.3` forward-references in
+  `.forge/schemas/ai-native-rag/1.0.0.yaml`. **No version pins** are shipped here —
+  rmcp / pgvector-crate / async-openai pins ride with B.7.2-full's `Cargo.toml.tmpl`
+  (verify-then-pin LIVE; transport.yaml/b8-6 precedent). Baseline recorded in
+  `.forge/research/b7-standards-verify-then-pin.md` (crates.io LIVE 2026-06-13:
+  rmcp 1.7.0 / pgvector 0.4.2 / async-openai 0.41.0 — rmcp version differed across
+  README 0.16.0 / Context7 index 0.5.0 / LIVE 1.7.0, the verify-then-pin trap).
+  Tier-aware refusal references the existing EU machinery (`forbidden-components-rules.md`
+  I.3, `compliance-tiers.md`, `data-stewardship-rules.md` K.3); runtime Janus AI
+  rules (J.8.c) deferred to `b7-9-janus-ai`. MCP auth couples to `identity.yaml`
+  (Zitadel) + Envoy SecurityPolicy JWT (B.8.12).

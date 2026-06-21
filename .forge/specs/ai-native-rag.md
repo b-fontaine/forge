@@ -173,3 +173,56 @@ Deliverables: `.forge/scaffolding/dispatch-table.yml` (ai-native-rag entry),
   smoke (partitioned out of the scaffold matrix). Lesson (Article III.4): the
   ground-truth pass must include e2e dispatch-table cross-reference tests, and the
   gate run must include `npm test`. B.7.2-full re-checks these couplings at promotion.
+
+---
+
+## ADDED Requirements (b7-standards, archived 2026-06-13)
+
+**Namespace** : `FR-B7-3-*` / `NFR-B7-3-*` / `ADR-B7-3-*`. Ships the three
+`global/*.md` pattern standards the schema references as `delivered_by: B.7.3` —
+**pattern docs only, NO version pins** (pins ride with B.7.2-full's
+`Cargo.toml.tmpl`, verify-then-pin LIVE; `transport.yaml`/b8-6 precedent).
+
+Deliverables: `global/rag-patterns.md`, `global/llm-gateway.md`,
+`global/mcp-servers.md` + `index.yml` (3 entries) + `REVIEW.md` (3 births) +
+`.forge/scripts/tests/b7-3.test.sh` (7 L1, in forge-ci.yml) +
+`.forge/research/b7-standards-verify-then-pin.md` (LIVE baseline).
+
+### Functional
+- **FR-B7-3-001..004** — `rag-patterns.md`: chunking/embeddings, hybrid retrieval
+  (vector + BM25 + RRF), coarse→exact re-ranking (binary_quantize), pgvector HNSW
+  tuning (`ef_search`/`iterative_scan`), context-window, evaluation, EU sovereignty
+  (refs compliance-tiers); no pin.
+- **FR-B7-3-010..014** — `llm-gateway.md`: in-repo Rust axum proxy,
+  OpenAI-compatible upstream (Mistral-Scaleway/vLLM/OpenAI-fallback-T1), tier-aware
+  refusal (refs I.3 + compliance-tiers + Demeter; J.8.c → b7-9), prompt audit
+  (IX.6), budgets/kill switch, PII+fallback (XI.6/XI.5); no pin.
+- **FR-B7-3-020..024** — `mcp-servers.md`: rmcp server pattern (stdio +
+  streamable-HTTP/axum), security (least-priv/input-validation/no-exec), OAuth
+  2.1+PKCE+RFC8707 → Zitadel/Envoy-OIDC, rmcp Tier-3/verify-then-pin caveat, schema
+  mapping; no pin.
+- **FR-B7-3-030..032** — index.yml entries + REVIEW.md births + harness
+  (incl. negative-grep no-inline-pin guard T-007).
+
+### Non-Functional
+- **NFR-B7-3-001** — additive: only index.yml/REVIEW.md/CI appended; no
+  schema/constitution/existing-standard edited.
+- **NFR-B7-3-002** — no version pin in any standard (grep-guarded).
+- **NFR-B7-3-003** — verify.sh / constitution-linter.sh / validate-standards-yaml
+  / j7 no regression.
+
+### ADRs (ratified — maintainer 2026-06-13; independent reviewer APPROVE first pass)
+- **ADR-B7-3-001** — `.md` pattern docs, zero pins (transport.yaml/b8-6 precedent;
+  pins ride with B.7.2-full).
+- **ADR-B7-3-002** — reference existing EU machinery (compliance-tiers /
+  forbidden-components I.3 / Demeter), don't duplicate; runtime Janus AI rules
+  (J.8.c) → `b7-9-janus-ai`. Resolves Q-001 (pure guidance).
+- **ADR-B7-3-003** — record the rmcp Tier-3 / three-conflicting-sources finding
+  (README 0.16.0 / Context7 0.5.0 / LIVE 1.7.0) verbatim as the verify-then-pin
+  motivating example (III.4).
+- **ADR-B7-3-004** — keep `rag-patterns.md` filename + document the schema
+  component↔standard mapping in headers (Q-002); no schema edit.
+
+### Verify-then-pin baseline (research, NOT pinned here)
+crates.io LIVE 2026-06-13: `rmcp 1.7.0` / `pgvector 0.4.2` / `async-openai 0.41.0`.
+B.7.2-full re-verifies LIVE + pins WITH the consuming `Cargo.toml.tmpl`.
