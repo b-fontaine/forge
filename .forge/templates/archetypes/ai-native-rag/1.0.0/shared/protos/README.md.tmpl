@@ -1,0 +1,27 @@
+<!-- Audit: B.7.2 (b7-2-scaffolder, Phase 1) — ai-native-rag shared/protos README -->
+
+# Proto contracts for `<project-name>`
+
+`shared/protos/` is the **single source of truth** for every cross-layer
+contract in `<project-name>`. Buf manages the module; codegen drives Rust
+(tonic + prost) and TS (Connect v2 / Protobuf-ES) stubs. There is no Dart/Flutter
+codegen — this archetype has no Flutter surface (`ADR-B7-2-006`).
+
+## Connect-RPC is the default transport
+
+A single Connect handler exposes the Connect+proto, Connect+JSON, gRPC, and
+gRPC-Web wire formats on the same routes (`transport.yaml::protocol: connect-rpc`).
+Native gRPC (tonic) remains the inter-service transport (Article VII.2).
+
+## Files
+
+| File | Role |
+|------|------|
+| `buf.yaml` | Buf module config — lint (STANDARD, version-first layout) + breaking checks. |
+| `buf.gen.yaml` | Codegen manifest — Rust tonic/prost + Go forward-compat + TS Connect (→ Qwik web-public). |
+| `v1/rag/rag.proto` | Seed `rag.v1.RagService` — the one RPC the web-public surface calls. Replace with real services. |
+
+## Layout
+
+Version-first directory layout `v1/<service>/` with package `<service>.v1`
+(per `proto-contracts.md`). Regenerate stubs after any change with `task proto`.

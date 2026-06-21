@@ -1,0 +1,21 @@
+[package]
+name = "llm_gateway"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+rag = { path = "../rag" }
+
+tokio = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+axum = { workspace = true }
+http = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+async-openai = { workspace = true }
+
+[dev-dependencies]
+tokio-test = { workspace = true }

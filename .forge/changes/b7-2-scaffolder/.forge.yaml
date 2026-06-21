@@ -1,0 +1,18 @@
+name: b7-2-scaffolder
+status: archived
+created: 2026-06-21
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.7.2  # docs/new-archetypes-plan.md §6.2 — ai-native-rag scaffolder (full): templates + backbone + verify-then-pin
+depends_on:
+  - B.7.1   # .forge/schemas/ai-native-rag/1.0.0.yaml (candidate scaffold schema this brick realises as templates)
+  - B.7.2a  # dispatch-table entry + refusing wrapper (exit 3) this brick replaces with a real scaffolder body
+  - B.7.3   # global/{rag-patterns,llm-gateway,mcp-servers}.md pattern standards the templates must conform to
+timeline:
+  proposed: 2026-06-21
+  specified: 2026-06-21
+  designed: 2026-06-21
+  planned: 2026-06-21
+  implemented: 2026-06-21
+  archived: 2026-06-21

@@ -1,0 +1,31 @@
+# <!-- Audit: B.7.2 (b7-2-scaffolder, Phase 1) — ai-native-rag buf module config -->
+#
+# Buf module configuration for <project-name>'s proto contracts.
+# Conforms to .forge/standards/global/proto-contracts.md.
+# Validated on every PR by `buf lint` and `buf breaking`
+# (see Taskfile.yml `task proto:check`).
+
+version: v2
+
+modules:
+  - path: .
+
+lint:
+  use:
+    - STANDARD
+  except:
+    # PACKAGE_DIRECTORY_MATCH — disabled because the Forge monorepo standard
+    # (proto-contracts.md) prescribes version-first directory layout
+    # `v1/<service>/` with package `<service>.v1`, which buf STANDARD does not
+    # match. Keep this exception in place (or switch to buf-STANDARD layout and
+    # move protos accordingly).
+    - PACKAGE_DIRECTORY_MATCH
+  enum_zero_value_suffix: _UNSPECIFIED
+  rpc_allow_same_request_response: false
+  rpc_allow_google_protobuf_empty_requests: false
+  rpc_allow_google_protobuf_empty_responses: false
+  service_suffix: Service
+
+breaking:
+  use:
+    - FILE

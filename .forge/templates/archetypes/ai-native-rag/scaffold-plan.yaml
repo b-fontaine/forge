@@ -1,0 +1,222 @@
+# Forge Archetype — ai-native-rag scaffold plan (1.0.0, CANDIDATE)
+# <!-- Audit: B.7.2 (b7-2-scaffolder, Phase 1) — ai-native-rag/1.0.0 scaffold plan -->
+#
+# Drives `overlay.sh --plan` (the same renderer the flagship uses). Schema-shaped
+# like full-stack-monorepo/scaffold-plan-2.0.0.yaml: archetype | version |
+# official_scaffolders | templates | post_steps. Placeholders substituted by
+# overlay.sh: <project-name>, <reverse-domain>, <root-module>.
+#
+# NOTE (candidate / scaffoldable:false): the schema stays `candidate`, so the CLI
+# refuses `forge init --archetype ai-native-rag` (exit 3). This plan is rendered
+# directly via overlay.sh by the b7-2 harness (L2 render-clean) — NOT through the
+# CLI scaffoldable gate. Promotion to stable rides b7-6-harness (ADR-B7-2-001).
+#
+# Phase 1 (template tree foundation) ships the STRUCTURAL scaffolding only:
+# root files, per-layer CLAUDE.md + READMEs, the backend workspace manifest with
+# the verify-then-pin ledger, infra pgvector init, and the shared/protos seed.
+# The Rust module source + per-crate manifests + the Qwik shell land in
+# Phases 2-3 and are appended to this plan then.
+#
+# `source:` paths are relative to the archetype dir
+# (.forge/templates/archetypes/ai-native-rag/), mirroring the flagship plan's
+# `2.0.0/...` convention.
+
+archetype: ai-native-rag
+version: 1.0.0
+
+# Official scaffolders run by init.sh BEFORE the overlay. None in Phase 1: the
+# backend Cargo workspace + Qwik app are scaffolded by Phase 2/3 entries (and
+# wired into the real wrapper in Phase 4). overlay.sh ignores this list.
+official_scaffolders: []
+
+templates:
+# ── Root ──────────────────────────────────────────────────────────────────────
+- source: 1.0.0/README.md.tmpl
+  target: README.md
+  substitute: true
+- source: 1.0.0/CLAUDE.md.tmpl
+  target: CLAUDE.md
+  substitute: true
+- source: 1.0.0/.gitignore.tmpl
+  target: .gitignore
+  substitute: false
+- source: 1.0.0/.env.example.tmpl
+  target: .env.example
+  substitute: true
+- source: 1.0.0/Taskfile.yml.tmpl
+  target: Taskfile.yml
+  substitute: true
+- source: 1.0.0/docker-compose.dev.yml.tmpl
+  target: docker-compose.dev.yml
+  substitute: true
+
+# ── Backend (Rust — Vulcan) ─────────────────────────────────────────────────────
+# Layer docs + workspace scaffold (substitute: true — carry <project-name>).
+- source: 1.0.0/backend/CLAUDE.md.tmpl
+  target: backend/CLAUDE.md
+  substitute: true
+- source: 1.0.0/backend/Cargo.toml.tmpl
+  target: backend/Cargo.toml
+  substitute: true
+- source: 1.0.0/backend/rust-toolchain.toml.tmpl
+  target: backend/rust-toolchain.toml
+  substitute: false
+# Rust crate source + per-crate manifests are project-agnostic (no placeholders)
+# → substitute: false (byte-copied; keeps the rendered code identical to what was
+# cargo-tested in Phase 2).
+#
+# rag crate
+- source: 1.0.0/backend/rag/Cargo.toml.tmpl
+  target: backend/rag/Cargo.toml
+  substitute: false
+- source: 1.0.0/backend/rag/README.md.tmpl
+  target: backend/rag/README.md
+  substitute: true
+- source: 1.0.0/backend/rag/src/lib.rs.tmpl
+  target: backend/rag/src/lib.rs
+  substitute: false
+- source: 1.0.0/backend/rag/src/embeddings.rs.tmpl
+  target: backend/rag/src/embeddings.rs
+  substitute: false
+- source: 1.0.0/backend/rag/src/chunking.rs.tmpl
+  target: backend/rag/src/chunking.rs
+  substitute: false
+- source: 1.0.0/backend/rag/src/retrieval.rs.tmpl
+  target: backend/rag/src/retrieval.rs
+  substitute: false
+- source: 1.0.0/backend/rag/src/rerank.rs.tmpl
+  target: backend/rag/src/rerank.rs
+  substitute: false
+- source: 1.0.0/backend/rag/src/pgvector_store.rs.tmpl
+  target: backend/rag/src/pgvector_store.rs
+  substitute: false
+- source: 1.0.0/backend/rag/src/worker.rs.tmpl
+  target: backend/rag/src/worker.rs
+  substitute: false
+# llm_gateway crate
+- source: 1.0.0/backend/llm_gateway/Cargo.toml.tmpl
+  target: backend/llm_gateway/Cargo.toml
+  substitute: false
+- source: 1.0.0/backend/llm_gateway/README.md.tmpl
+  target: backend/llm_gateway/README.md
+  substitute: true
+- source: 1.0.0/backend/llm_gateway/src/lib.rs.tmpl
+  target: backend/llm_gateway/src/lib.rs
+  substitute: false
+- source: 1.0.0/backend/llm_gateway/src/audit.rs.tmpl
+  target: backend/llm_gateway/src/audit.rs
+  substitute: false
+- source: 1.0.0/backend/llm_gateway/src/fallback.rs.tmpl
+  target: backend/llm_gateway/src/fallback.rs
+  substitute: false
+- source: 1.0.0/backend/llm_gateway/src/handler.rs.tmpl
+  target: backend/llm_gateway/src/handler.rs
+  substitute: false
+# mcp crate
+- source: 1.0.0/backend/mcp/Cargo.toml.tmpl
+  target: backend/mcp/Cargo.toml
+  substitute: false
+- source: 1.0.0/backend/mcp/README.md.tmpl
+  target: backend/mcp/README.md
+  substitute: true
+- source: 1.0.0/backend/mcp/src/lib.rs.tmpl
+  target: backend/mcp/src/lib.rs
+  substitute: false
+- source: 1.0.0/backend/mcp/src/transport.rs.tmpl
+  target: backend/mcp/src/transport.rs
+  substitute: false
+- source: 1.0.0/backend/mcp/src/transport/stdio.rs.tmpl
+  target: backend/mcp/src/transport/stdio.rs
+  substitute: false
+- source: 1.0.0/backend/mcp/src/transport/http.rs.tmpl
+  target: backend/mcp/src/transport/http.rs
+  substitute: false
+# bin-server crate
+- source: 1.0.0/backend/bin-server/Cargo.toml.tmpl
+  target: backend/bin-server/Cargo.toml
+  substitute: false
+- source: 1.0.0/backend/bin-server/src/main.rs.tmpl
+  target: backend/bin-server/src/main.rs
+  substitute: false
+
+# ── Frontend (Qwik web-public — Hera) ───────────────────────────────────────────
+- source: 1.0.0/frontend/web-public/CLAUDE.md.tmpl
+  target: frontend/web-public/CLAUDE.md
+  substitute: true
+- source: 1.0.0/frontend/web-public/README.md.tmpl
+  target: frontend/web-public/README.md
+  substitute: true
+# Qwik shell config — package.json carries <project-name>; the rest is
+# project-agnostic (no placeholders) → substitute: false.
+- source: 1.0.0/frontend/web-public/package.json.tmpl
+  target: frontend/web-public/package.json
+  substitute: true
+- source: 1.0.0/frontend/web-public/tsconfig.json.tmpl
+  target: frontend/web-public/tsconfig.json
+  substitute: false
+- source: 1.0.0/frontend/web-public/vite.config.ts.tmpl
+  target: frontend/web-public/vite.config.ts
+  substitute: false
+- source: 1.0.0/frontend/web-public/.nvmrc.tmpl
+  target: frontend/web-public/.nvmrc
+  substitute: false
+- source: 1.0.0/frontend/web-public/qwik.env.d.ts.tmpl
+  target: frontend/web-public/qwik.env.d.ts
+  substitute: false
+# Qwik source — root.tsx + routes/index.tsx carry <project-name>; entry.ssr.tsx
+# and the Connect client are project-agnostic → substitute: false.
+- source: 1.0.0/frontend/web-public/src/entry.ssr.tsx.tmpl
+  target: frontend/web-public/src/entry.ssr.tsx
+  substitute: false
+- source: 1.0.0/frontend/web-public/src/root.tsx.tmpl
+  target: frontend/web-public/src/root.tsx
+  substitute: true
+- source: 1.0.0/frontend/web-public/src/routes/index.tsx.tmpl
+  target: frontend/web-public/src/routes/index.tsx
+  substitute: true
+- source: 1.0.0/frontend/web-public/src/lib/connect-client.ts.tmpl
+  target: frontend/web-public/src/lib/connect-client.ts
+  substitute: false
+
+# ── Infra (Atlas) ───────────────────────────────────────────────────────────────
+- source: 1.0.0/infra/CLAUDE.md.tmpl
+  target: infra/CLAUDE.md
+  substitute: true
+- source: 1.0.0/infra/README.md.tmpl
+  target: infra/README.md
+  substitute: true
+- source: 1.0.0/infra/postgres/init-pgvector.sql.tmpl
+  target: infra/postgres/init-pgvector.sql
+  substitute: true
+- source: 1.0.0/infra/postgres/README.md.tmpl
+  target: infra/postgres/README.md
+  substitute: true
+# RAG-specific delta: the in-repo llm-gateway as a k8s Deployment + Service
+# (no new infra component — substrate reused by reference).
+- source: 1.0.0/infra/k8s/llm-gateway/deployment.yaml.tmpl
+  target: infra/k8s/llm-gateway/deployment.yaml
+  substitute: true
+- source: 1.0.0/infra/k8s/llm-gateway/service.yaml.tmpl
+  target: infra/k8s/llm-gateway/service.yaml
+  substitute: true
+- source: 1.0.0/infra/k8s/llm-gateway/kustomization.yaml.tmpl
+  target: infra/k8s/llm-gateway/kustomization.yaml
+  substitute: true
+
+# ── Shared protos (Connect SSoT — Hermes-API) ───────────────────────────────────
+- source: 1.0.0/shared/protos/buf.yaml.tmpl
+  target: shared/protos/buf.yaml
+  substitute: false
+- source: 1.0.0/shared/protos/buf.gen.yaml.tmpl
+  target: shared/protos/buf.gen.yaml
+  substitute: false
+- source: 1.0.0/shared/protos/README.md.tmpl
+  target: shared/protos/README.md
+  substitute: true
+- source: 1.0.0/shared/protos/v1/rag/rag.proto.tmpl
+  target: shared/protos/v1/rag/rag.proto
+  substitute: true
+
+post_steps:
+- action: write_scaffold_manifest
+  target: .forge/scaffold-manifest.yaml

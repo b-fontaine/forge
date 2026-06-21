@@ -1,0 +1,23 @@
+<!-- Audit: B.7.2 (b7-2-scaffolder, Phase 1) — ai-native-rag infra/postgres README -->
+
+# Postgres + pgvector (HNSW) for `<project-name>`
+
+This directory holds the database init for `<project-name>`'s RAG store. It
+**reuses** the B.8.5 `pgvector/pgvector:0.8.2-pg17` image (no new infra
+component — `NFR-B7-2-001`) and adds only the RAG-specific schema + indexes.
+
+## Files
+
+| File | Role |
+|------|------|
+| `init-pgvector.sql` | Runs once on first DB init (`docker-entrypoint-initdb.d`). Enables the `vector` extension, creates the `rag_chunks` table, and builds the HNSW (`vector_cosine_ops`) + full-text (GIN) indexes that hybrid retrieval depends on. |
+
+## HNSW index
+
+The RAG pipeline's dense-vector retrieval leg queries the `rag_chunks_embedding_hnsw`
+index (`USING hnsw (embedding vector_cosine_ops)`). The sparse BM25 leg uses the
+`rag_chunks_content_fts` GIN index; the two are fused via Reciprocal Rank Fusion
+(RRF) in `backend/rag/`. See `.forge/standards/global/rag-patterns.md`.
+
+The `vector(384)` dimension matches the default `LocalEmbedder` model
+(AllMiniLML6V2). Change it to match your embeddings provider before loading data.

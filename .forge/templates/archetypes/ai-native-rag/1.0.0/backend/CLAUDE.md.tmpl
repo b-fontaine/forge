@@ -1,0 +1,110 @@
+# CLAUDE.md — <project-name>/backend
+
+<!-- Audit: B.7.2 (b7-2-scaffolder, Phase 1) — ai-native-rag backend nested CLAUDE.md -->
+<!-- Scope: backend/ subtree only — Rust standards -->
+
+---
+
+## Scope
+
+This file is loaded automatically by Claude Code when the working directory is
+**anywhere inside `backend/`**. It replaces the root `CLAUDE.md` for the
+purposes of standards injection and agent routing for all Rust work.
+
+Cross-cutting concerns (git workflow, commit conventions, root routing) remain
+governed by the root `CLAUDE.md`. This file takes precedence on Rust-specific
+implementation choices.
+
+---
+
+## Load These Standards
+
+Inject the following standards whenever working inside `backend/`:
+
+### Always (global)
+
+| Standard ID                 | Why                                                  |
+|-----------------------------|------------------------------------------------------|
+| `global/tdd-rules`          | RED → GREEN → REFACTOR is non-negotiable, always     |
+| `global/bdd-rules`          | Given/When/Then for every user-facing behavior       |
+| `global/clean-architecture` | Hexagonal layers map directly to clean-arch layers   |
+| `global/ddd-rules`          | Domain model is pure Rust — DDD applies              |
+
+### Rust-specific
+
+| Standard ID              | Why                                                       |
+|--------------------------|-----------------------------------------------------------|
+| `rust/architecture`      | Hexagonal workspace (Article VII.3)                       |
+| `rust/error-handling`    | `thiserror` in domain/application, `anyhow` in bin-server |
+| `rust/async-patterns`    | tokio runtime; axum services                             |
+| `rust/testing`           | cargo test, cucumber-rs BDD, proptest, mockall           |
+| `rust/grpc`              | Connect/tonic; stubs consumed from `shared/protos/`      |
+| `rust/opentelemetry`     | tracing + OTLP export                                     |
+
+### Archetype-specific (AI-native RAG)
+
+| Standard ID                  | Why                                                  |
+|------------------------------|------------------------------------------------------|
+| `global/rag-patterns`        | `rag/` — chunking, hybrid retrieval, RRF, re-ranking |
+| `global/llm-gateway`         | `llm_gateway/` — in-repo axum proxy, tier-aware      |
+| `global/mcp-servers`         | `mcp/` — rmcp servers, dual transport, OAuth 2.1     |
+
+---
+
+## Net-new modules (Phase 2 — scaffolded with test scaffolding, not bare stubs)
+
+```
+backend/
+├── llm_gateway/   ← thin axum proxy (decision A), OpenAI-compatible upstream.
+│                    Tier-aware refusal hooks (refs I.3 forbidden-components +
+│                    compliance-tiers), prompt-audit span (IX.6), token budget +
+│                    kill switch (XI.5), PII guard (XI.6), non-AI fallback (XI.5).
+├── mcp/           ← rmcp server(s) via #[tool_router]. Dual transport behind
+│                    Cargo features: transport/stdio.rs (default) +
+│                    transport/http.rs (StreamableHttpService, auth → Zitadel).
+│                    ≥1 stub tool among db | file | search.
+└── rag/           ← pipeline: chunking + embeddings (Embedder trait:
+                     MistralEmbedder default, LocalEmbedder fastembed fallback),
+                     hybrid retrieval (vector + BM25 + RRF), coarse→exact
+                     re-ranking, pgvector HNSW (vector_cosine_ops). Heavy work
+                     runs as Temporal activity-only workers.
+```
+
+> The Rust module source + Cargo manifests + dependency pins (`rmcp`,
+> `pgvector`, `async-openai`, `fastembed`) land in Phase 2. Pins live ONLY in
+> the rendered `Cargo.toml.tmpl` (`ADR-B7-2-003`), never in the standards.
+
+---
+
+## Primary Agent
+
+**Vulcan** is the Rust Team Orchestrator for this subtree. Vulcan dispatches to
+Ferris (architecture), Centurion (TDD/BDD), Sentinel (OpenTelemetry), and
+**Tribune** (quality gate — must pass before any PR is considered complete).
+
+Quality gate command (run before marking any task done):
+
+```
+cd backend && bash ../.forge/scripts/verify.sh --scope backend
+```
+
+---
+
+## Architecture Non-Negotiables (Article VII.3)
+
+- Hexagonal (ports & adapters) workspace. The domain is **pure Rust** — zero
+  dependency on axum, sqlx, reqwest, or any I/O crate.
+- `unwrap()` and `panic!()` are **forbidden** in production code paths (outside
+  `#[cfg(test)]`). Use `?` propagation and typed errors.
+- Every AI feature ships a non-AI fallback (Article XI.5) with a test that
+  exercises the fallback branch.
+
+---
+
+## Quick-Reference Commands
+
+```bash
+cd backend && cargo test --workspace
+cd backend && cargo clippy --workspace --all-targets -- -D warnings
+cd backend && cargo fmt --all
+```
