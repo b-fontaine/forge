@@ -26,7 +26,7 @@
 
 ## Phase 1 — Foundation : RED harness skeleton
 
-### T-PHA — `b7-9.test.sh` skeleton
+### T-PHA — `b7-9.test.sh` skeleton  — [x] done (2026-06-22)
 
 - Create `.forge/scripts/tests/b7-9.test.sh` mirroring `j8.test.sh` /
   `i3.test.sh` : `--level` parse, `source _helpers.sh`, file-path
@@ -44,7 +44,7 @@
 
 ## Phase 2 — J.8.c.1 : Janus agent new rules
 
-### T-JAN — new H3 sub-section + `J8-RULE-004..006`
+### T-JAN — new H3 sub-section + `J8-RULE-004..006`  — [x] done (2026-06-22)
 
 - Confirm RED on `_test_b7_9_001_agent_h3_section`,
   `_test_b7_9_002_rule_004`, `_test_b7_9_003_rule_005`,
@@ -63,7 +63,7 @@
   verbatim (ADR-B7-9-006). [Story: FR-B7-9-002..005 / ADR-B7-9-001/006]
 - Re-run L1 — those tests flip GREEN. [Story: FR-B7-9-001..006]
 
-### T-DT — `forbidden_combinations:` registry
+### T-DT — `forbidden_combinations:` registry  — [x] done (2026-06-22)
 
 - Confirm RED on `_test_b7_9_020_combinations_key`,
   `_test_b7_9_021_entry_shape`, `_test_b7_9_022_seed_entries`.
@@ -79,7 +79,7 @@
 
 ## Phase 3 — J.8.c.3 : combination-refusal helper + wrapper
 
-### T-HLP — `_refuse_if_forbidden_combination`
+### T-HLP — `_refuse_if_forbidden_combination`  — [x] done (2026-06-22)
 
 - Confirm RED on `_test_b7_9_040_helper_fn`,
   `_test_b7_9_043_refusal_format`. [Story: FR-B7-9-040/043]
@@ -96,7 +96,7 @@
   [Story: FR-B7-9-042..044 / ADR-J8-003]
 - Re-run L1 — flip GREEN. [Story: FR-B7-9-040..044]
 
-### T-WRP — wrapper sources + invokes helper
+### T-WRP — wrapper sources + invokes helper  — [x] done (2026-06-22)
 
 - Confirm RED on `_test_b7_9_045_wrapper_invokes`. [Story: FR-B7-9-045]
 - In `bin/forge-init-ai-native-rag.sh`, source `_forge-init-helpers.sh`
@@ -112,7 +112,7 @@
 
 ## Phase 4 — J.8.c.4 : standards updates
 
-### T-STD-JAN — `janus-orchestration-rules.md`
+### T-STD-JAN — `janus-orchestration-rules.md`  — [x] done (2026-06-22)
 
 - Confirm RED on `_test_b7_9_060_std_rows`. [Story: FR-B7-9-060]
 - Add three rows (`J8-RULE-004/005/006`) to the rule-catalogue table ;
@@ -122,7 +122,7 @@
   [Story: FR-B7-9-060/061]
 - Re-run L1 — flip GREEN. [Story: FR-B7-9-060]
 
-### T-STD-I3 — I.3 review-time coupling (Q-003-gated)
+### T-STD-I3 — I.3 review-time coupling (Q-003-gated)  — [x] done (2026-06-22, in-brick per Q-003)
 
 > Only if Q-003 resolves "in-brick" (the design default). If the
 > maintainer defers, this task moves to a follow-up change and the
@@ -143,7 +143,7 @@
 
 ## Phase 5 — L2 fixtures + CI registration
 
-### T-L2 — fixture tests
+### T-L2 — fixture tests  — [x] done (2026-06-22)
 
 - Implement `_test_b7_9_l2_refuse_t3` (T3 + us-managed-inference ⇒
   exit 3 + `J8-RULE-006`) and `_test_b7_9_l2_t1_no_refuse` (T1 +
@@ -151,7 +151,7 @@
   [Story: FR-B7-9-082 / NFR-B7-9-005]
 - Run `--level 1,2` — all GREEN, ≤ 15 s. [Story: FR-B7-9-080..082]
 
-### T-CI — register harness
+### T-CI — register harness  — [x] done (2026-06-22)
 
 - Append `"b7-9.test.sh --level 1,2"` to the `harnesses=( … )` array in
   `.github/workflows/forge-ci.yml` after the `b7-2.test.sh` entry.
@@ -161,7 +161,7 @@
 
 ## Phase 6 — Docs + regression + spec append
 
-### T-DOC — documentation
+### T-DOC — documentation  — [x] done (2026-06-22)
 
 - `docs/ARCHETYPES.md` : add the "LLM-provider refusals" note
   (`J8-RULE-004..006` + Mistral-EU / vLLM alternative).
@@ -169,7 +169,7 @@
 - `CHANGELOG.md` : `## [Unreleased]` entry for the J.8.c sub-module.
   [Story: FR-B7-9-101]
 
-### T-REG — regression gate
+### T-REG — regression gate  — [x] done (2026-06-22 ; Tribune/Janus review pass left to orchestrator)
 
 - Run `verify.sh`, `constitution-linter.sh`, `validate-standards-yaml.sh`,
   `j7`, `j8.test.sh`, `i3.test.sh`, `b5`, `b7-1`, `b7-2a`, `b7-2`, `b7-3`
@@ -179,7 +179,7 @@
 - Run the Rust quality gate (Tribune) + Janus review on the agent-file
   edit if dispatched. [Story: NFR-B7-9-001]
 
-### T-SPEC — consolidated-spec append (at archive)
+### T-SPEC — consolidated-spec append (at archive)  — [ ] deferred to ARCHIVE-time (not done in implement)
 
 - APPEND the J.8.c ADDED-requirements block to
   `.forge/specs/janus-rules.md` (do NOT overwrite the J.8.a/b/d blocks).

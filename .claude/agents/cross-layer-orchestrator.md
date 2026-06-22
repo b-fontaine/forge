@@ -85,6 +85,71 @@ in two places kept in sync :
   shipped by B.1.14 + extended by `t5-otel-stack` defaults to
   local self-host already).
 
+### LLM-provider rules (`ai-native-rag`)
+
+<!-- Audit: B.7.9 + J.8.c (b7-9-janus-ai) -->
+
+J.8.c extends the J.8 catalogue with provider × tier refusals for the
+`ai-native-rag` archetype's LLM gateway. The archetype itself is
+**permitted** ; what is refused is a non-sovereign LLM provider (or a
+US-managed inference endpoint at T3). These are **combination** refusals
+(provider within a permitted archetype), so they live in the sibling
+`dispatch-table.yml::forbidden_combinations:` list (not
+`forbidden_archetypes:`) and fire via `_refuse_if_forbidden_combination`
+(`bin/_forge-init-helpers.sh`). Same exit code 3, same `[REFUSAL:]`
+convention. IDs `J8-RULE-004..006` are the next free sequential block
+after `J8-RULE-003` (never reused — ADR-J8-004 / ADR-B7-9-001).
+
+#### J8-RULE-004 — Vertex AI refused as default LLM provider (ai-native-rag)
+
+- **Rationale** : Vertex AI is GCP-managed inference. Per the
+  `compliance-tiers.md` §10.2 `AWS / GCP / Azure` row — **CLOUD Act
+  force max T1** — and the `LLM Gateway (OpenAI/Anthropic)` row
+  (`⚠️ T1 max` / `❌` at T2 / `❌` at T3), GCP-managed inference is
+  incompatible with Forge's EU/premium positioning as a default
+  provider.
+- **Reference** : `compliance-tiers.md` §10.2 rows `AWS / GCP / Azure`
+  + `LLM Gateway (OpenAI/Anthropic)` ; `global/llm-gateway.md`
+  (B.7.3) ; ADR-B7-9-001 (rule-ID allocation).
+- **Alternative** : Mistral-EU (Mistral on Scaleway) or self-hosted
+  vLLM ; OpenAI/Anthropic via an EU-jurisdiction gateway is acceptable
+  at **T1 only** (`⚠️ T1 max`).
+- **Tier applicability** : default-provider refusal, fires regardless
+  of declared tier (`tier: any`).
+
+#### J8-RULE-005 — AWS Bedrock refused as default LLM provider (ai-native-rag)
+
+- **Rationale** : AWS Bedrock is AWS-managed inference. Same
+  `compliance-tiers.md` §10.2 `AWS / GCP / Azure` (`CLOUD Act force
+  max T1`) + `LLM Gateway (OpenAI/Anthropic)` reasoning as J8-RULE-004 :
+  AWS-managed inference is CLOUD Act exposure incompatible with the
+  EU/premium posture as a default provider.
+- **Reference** : `compliance-tiers.md` §10.2 rows `AWS / GCP / Azure`
+  + `LLM Gateway (OpenAI/Anthropic)` ; `global/llm-gateway.md`
+  (B.7.3) ; ADR-B7-9-001.
+- **Alternative** : Mistral-EU (Mistral on Scaleway) or self-hosted
+  vLLM ; OpenAI/Anthropic via an EU-jurisdiction gateway at **T1 only**.
+- **Tier applicability** : default-provider refusal, fires regardless
+  of declared tier (`tier: any`).
+
+#### J8-RULE-006 — `--eu-tier T3` ⇒ Mistral-EU / vLLM self-host (US-managed inference refused)
+
+- **Rationale** : T3 (SecNumCloud / EUCS High) requires **100% EU
+  jurisdiction** with zero CLOUD Act exposure. At T3, any US-managed
+  inference endpoint (Vertex / Bedrock / OpenAI-direct / Anthropic-direct
+  without an EU-jurisdiction gateway) is refused — the
+  `compliance-tiers.md` §10.2 `LLM Gateway (OpenAI/Anthropic)` row forces
+  `Pour T3 : Mistral on Scaleway ou vLLM self-host`. Mirrors the
+  `J8-RULE-002` / `J8-RULE-003` T3-enforcement shape.
+- **Reference** : `compliance-tiers.md` §10.2 `LLM Gateway
+  (OpenAI/Anthropic)` forcing note (`Pour T3 : Mistral on Scaleway ou
+  vLLM self-host`) ; ADR-B7-9-001 / ADR-B7-9-006.
+- **Alternative** : Mistral on Scaleway (SecNumCloud) or self-hosted
+  vLLM on EU infrastructure.
+- **Tier applicability** : T3 only (`tier: T3`) — does NOT fire at
+  T1/T2 or when no tier is declared (Article III.4 — no guessed
+  default).
+
 ### Refusal semantics
 
 A refusal exits the wrapper with **exit code 3** (policy

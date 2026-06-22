@@ -10,7 +10,7 @@ expires_at: 2027-05-11
 exception_constitutional: false
 linter_rule: t3-forbidden-components
 enforcement: ci         # flipped from 'review' by i3-t3-forbidden-linter, 2026-05-12
-forbidden: []           # this standard DOCUMENTS ; I.3 (i3-t3-forbidden-linter) ENFORCES
+forbidden: [vertex-ai, bedrock]   # LLM-provider tokens added by b7-9-janus-ai (J.8.c) ; I.3 (i3-t3-forbidden-linter) ENFORCES via T3-RULE-005
 rationale: >-
   Codifies the EU compliance gradient T1/T2/T3 from
   docs/ARCHITECTURE-TARGET.md §10 so adopters and Demeter share a
@@ -27,6 +27,28 @@ rationale: >-
 > components per the §10.2 matrix encoded in
 > `.forge/standards/global/forbidden-components-rules.md`
 > (T3-RULE-NNN catalogue).
+>
+> **Update (2026-06-22, `b7-9-janus-ai` / J.8.c)** — `forbidden:`
+> gains the LLM-provider tokens `vertex-ai` + `bedrock` (was `[]`),
+> tracing to the §10.2 `AWS / GCP / Azure` row (`CLOUD Act force max
+> T1`) + the `LLM Gateway (OpenAI/Anthropic)` row (`❌` at T2/T3 ;
+> `Pour T3 : Mistral on Scaleway ou vLLM self-host`). The generic I.3
+> linter (`T3-RULE-005`, review-time, tier-scaled WARN at T1/T2 / FAIL
+> at T3) now catches these tokens in working-tree manifests —
+> **complementary** to the scaffold-time Janus refusal
+> (`J8-RULE-004..006`, exit 3) shipped by the same change. Both
+> surfaces quote this §10.2 gradient, so they never contradict
+> (NFR-B7-9-005). The §10.2 matrix itself is unchanged (no new row,
+> no cell shift) — only the enforcement `forbidden:` token list grew,
+> so the byte-identical-to-ARCHITECTURE-TARGET §10.2 Interdiction 5 is
+> preserved. The `version:` / `last_reviewed:` / `expires_at:`
+> frontmatter is intentionally held at the v1.0.0 / 2026-05 values :
+> the `i2-compliance-tiers` harness (`i2.test.sh::_test_i2_005`) pins
+> them, and bumping here would break that sibling change's gate
+> (NFR-B7-9-002 no-regression). The token-list edit is recorded in
+> `REVIEW.md` (2026-06-22, `b7-9-janus-ai`) as the audit trail in lieu
+> of the SemVer bump ; a future `i2` follow-up may re-version once the
+> pin is relaxed.
 
 ---
 

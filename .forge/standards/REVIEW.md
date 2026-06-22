@@ -899,3 +899,28 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   I.3, `compliance-tiers.md`, `data-stewardship-rules.md` K.3); runtime Janus AI
   rules (J.8.c) deferred to `b7-9-janus-ai`. MCP auth couples to `identity.yaml`
   (Zitadel) + Envoy SecurityPolicy JWT (B.8.12).
+
+## 2026-06-22 — Janus LLM-provider rules (b7-9-janus-ai, J.8.c / B.7.9)
+
+- **Reviewer**: @bfontaine
+- **Reviewed standards**:
+
+  | Standard                            | Version       | Decision          | Next review due | Notes                                                                                                          |
+  |-------------------------------------|---------------|-------------------|-----------------|----------------------------------------------------------------------------------------------------------------|
+  | global/janus-orchestration-rules.md | (md, no semver) | KEEP-WITH-CHANGES | 2027-06-22      | +3 catalogue rows (J8-RULE-004/005/006) ; "Extending the catalogue" step 1 prose updated (sibling `forbidden_combinations:` list now exists) ; "Refusal vs warning semantics" notes the new refusals. Content review (no `version:` frontmatter — `.md` pattern standard). |
+  | global/compliance-tiers.md          | 1.0.0 (held)  | KEEP-WITH-CHANGES | 2027-05-11      | `forbidden:` `[]` → `[vertex-ai, bedrock]` (LLM-provider tokens) so the generic I.3 T3-RULE-005 review-time linter catches them ; §10.2 matrix UNCHANGED (no row/cell shift — byte-identical-to-ARCHITECTURE-TARGET Interdiction 5 preserved). **SemVer / lifecycle dates held at v1.0.0 / 2026-05** : `i2.test.sh::_test_i2_005` hard-pins them, so a bump would break the `i2-compliance-tiers` gate (NFR-B7-9-002 no-regression). This ledger row is the audit trail for the additive token edit in lieu of the SemVer bump ; an `i2` follow-up may re-version once the harness pin is relaxed. |
+  | global/forbidden-components-rules.md| 1.0.0 (unchanged) | KEEP-WITH-CHANGES | 2027-05-12      | New "LLM-provider `forbidden:` coupling" interim-gap subsection documenting the `compliance-tiers.md::forbidden:` token approach + the `J8-RULE-004..006` scaffold-time cross-reference. **Documentation-only** — no new T3-RULE-NNN rule, no `forbidden:` catalogue change (the standard still CATALOGUES `[]`), so no SemVer bump : the enforcement delta lives entirely in `compliance-tiers.md` v1.1.0. Version held at 1.0.0 to keep the `i3.test.sh::_test_i3_008` pin GREEN (NFR-B7-9-002 no-regression). |
+
+- **Decision**: KEEP-WITH-CHANGES — all three edits are additive (Article XII
+  "Extending the catalogue" protocol, NOT amendments ; no `[T1,T2,T3]` enum
+  change, no refusal-semantics change).
+- **Next review due**: 2027-06-22 (12-month cycle).
+- **Notes**: J.8.c lands the Janus refusal rules for the `ai-native-rag`
+  LLM gateway — `J8-RULE-004` (Vertex AI default refused), `J8-RULE-005`
+  (AWS Bedrock default refused), `J8-RULE-006` (`--eu-tier T3` ⇒ Mistral-EU /
+  vLLM ; US-managed inference refused). Two complementary enforcement surfaces
+  (ADR-B7-9-005) : scaffold-time Janus refusal (exit 3, `_refuse_if_forbidden_combination`)
+  + review-time I.3 T3-RULE-005 (`forbidden:` token, tier-scaled WARN/FAIL).
+  EU alternatives verified verbatim against `compliance-tiers.md` §10.2
+  (ADR-B7-9-006). Rule-ID block `J8-RULE-004..006` allocated sequentially after
+  the live `J8-RULE-003` (ADR-J8-004 numbering invariant ; never reused).

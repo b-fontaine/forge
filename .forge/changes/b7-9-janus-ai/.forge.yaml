@@ -1,5 +1,5 @@
 name: b7-9-janus-ai
-status: planned
+status: implemented
 created: 2026-06-22
 schema: default
 constitution_version: "2.0.0"
@@ -29,5 +29,5 @@ timeline:
   specified: 2026-06-22
   designed: 2026-06-22
   planned: 2026-06-22
-  # implemented: <auto-filled by /forge:implement>
+  implemented: 2026-06-22
   # archived: <auto-filled by /forge:archive>

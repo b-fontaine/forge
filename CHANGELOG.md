@@ -14,6 +14,25 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ### Added
 
+- **Janus LLM-provider rules for `ai-native-rag` (B.7.9 / J.8.c, `b7-9-janus-ai`)** —
+  extends the J.8 refusal catalogue with three new rules for the `ai-native-rag`
+  LLM gateway: `J8-RULE-004` (Vertex AI refused as default provider, any tier),
+  `J8-RULE-005` (AWS Bedrock refused as default provider, any tier), and
+  `J8-RULE-006` (`--eu-tier T3` ⇒ US-managed inference refused). The sanctioned
+  alternative is **Mistral-EU (Mistral on Scaleway)** or **self-hosted vLLM**
+  (OpenAI/Anthropic-via-EU-gateway at T1 only) — verified verbatim against
+  `compliance-tiers.md` §10.2 (CLOUD Act forcing). These are provider × tier
+  *combination* refusals (the archetype stays permitted): a new
+  `dispatch-table.yml::forbidden_combinations:` sibling list (7-key entries) +
+  an additive `_refuse_if_forbidden_combination` helper invoked by the
+  `ai-native-rag` wrapper (exit 3, `[REFUSAL: <archetype>/<provider>@<tier>: …]`).
+  Two complementary surfaces: the scaffold-time Janus refusal above + the
+  review-time I.3 `T3-RULE-005` linter (`compliance-tiers.md::forbidden:` now
+  lists `vertex-ai` / `bedrock`, with matching `constitution-linter.sh`
+  REMEDIATION hints). Harness `b7-9.test.sh` (13 L1 + 2 L2) in `forge-ci.yml`.
+  Additive — `_refuse_if_forbidden` and `J8-RULE-001..003` untouched; the
+  candidate `ai-native-rag` still refuses a fresh `forge init` with exit 3.
+
 - **`ai-native-rag` pattern standards (B.7.3, `b7-standards`)** — three new
   `global/*.md` pattern standards the archetype schema references as
   `delivered_by: B.7.3`: `rag-patterns.md` (chunking/embeddings, hybrid retrieval

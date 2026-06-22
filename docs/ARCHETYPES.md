@@ -76,8 +76,27 @@ Refusals fire **before any scaffolding side-effect** : exit code is **3**
 | `J8-RULE-001` | `--archetype flutter-firebase`                | scaffolding of flutter-firebase                 | `default` archetype + adopter-managed Firebase overlay (out of Forge scope)         |
 | `J8-RULE-002` | `--eu-tier T3` + non-self-host Zitadel        | cloud-Zitadel / Auth0 / Keycloak-cloud variants | self-host Zitadel on EU-jurisdiction infrastructure                                  |
 | `J8-RULE-003` | `--eu-tier T3` + Datadog or SigNoz Cloud SaaS | Datadog exporter / `signoz.io` endpoints        | self-host SigNoz on EU-jurisdiction infrastructure (`infra/observability/` already defaults to local self-host) |
+| `J8-RULE-004` | `ai-native-rag` + Vertex AI default LLM provider | Vertex AI (GCP-managed inference) as default  | Mistral-EU (Mistral on Scaleway) / self-hosted vLLM ; OpenAI/Anthropic-via-EU-gateway at T1 only |
+| `J8-RULE-005` | `ai-native-rag` + AWS Bedrock default LLM provider | Bedrock (AWS-managed inference) as default   | Mistral-EU (Mistral on Scaleway) / self-hosted vLLM ; OpenAI/Anthropic-via-EU-gateway at T1 only |
+| `J8-RULE-006` | `ai-native-rag` + `--eu-tier T3` + US-managed inference | US-managed inference endpoints at T3   | Mistral on Scaleway (SecNumCloud) / self-hosted vLLM on EU infrastructure            |
 
 Full rule catalogue : `.forge/standards/global/janus-orchestration-rules.md`.
+
+### LLM-provider refusals (`ai-native-rag`, J.8.c)
+
+The `ai-native-rag` archetype refuses **non-sovereign LLM providers** at
+scaffold time. `J8-RULE-004` (Vertex AI) and `J8-RULE-005` (AWS Bedrock)
+refuse those providers as the *default* LLM gateway regardless of declared
+tier (GCP/AWS-managed inference is CLOUD Act exposure per
+`compliance-tiers.md` §10.2). `J8-RULE-006` refuses any US-managed inference
+endpoint at `--eu-tier T3` (100% EU jurisdiction required). The sanctioned
+alternative in every case is **Mistral-EU (Mistral on Scaleway)** or a
+**self-hosted vLLM** gateway ; OpenAI/Anthropic via an EU-jurisdiction
+gateway is acceptable at **T1 only**. These are provider × tier combination
+refusals (the archetype itself is permitted) — they live in
+`dispatch-table.yml::forbidden_combinations:` and complement the review-time
+I.3 `T3-RULE-005` linter (`compliance-tiers.md::forbidden:` tokens `vertex-ai`
+/ `bedrock`).
 
 ## EU compliance tier (`--eu-tier`)
 
@@ -89,7 +108,7 @@ backward compat (no tier-specific refusals fire).
 |------|-----------------------------------------------|---------------------------------------------------------------------------------|
 | T1   | RGPD via DPA (cloud SaaS acceptable)          | Informational only — `[INFO: T1: tier recorded ; no refusal at this tier ; ...]` |
 | T2   | Self-hostable recommended                     | Informational only.                                                              |
-| T3   | SecNumCloud / EUCS High strict EU jurisdiction | Refusals fire (J8-RULE-002 + J8-RULE-003 — cloud identity + Datadog + SigNoz Cloud blocked) |
+| T3   | SecNumCloud / EUCS High strict EU jurisdiction | Refusals fire (J8-RULE-002 + J8-RULE-003 — cloud identity + Datadog + SigNoz Cloud blocked ; J8-RULE-006 — US-managed LLM inference blocked for `ai-native-rag`) |
 
 When `--eu-tier` is set (any tier), the wrapper writes a one-line
 ledger file `<target>/.forge/.forge-tier` containing the chosen tier
