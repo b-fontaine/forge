@@ -1,5 +1,5 @@
 name: b7-5-ai-act
-status: implemented
+status: archived
 created: 2026-06-22
 schema: default
 constitution_version: "2.0.0"
@@ -11,6 +11,8 @@ depends_on:
   - i2-compliance-tiers       # T1/T2/T3 gradient + Phase A (BDFL) / Phase B (Themis) governance precedent the artefacts mirror
   - b7-standards              # global/llm-gateway.md ("AI Act transparency obligations B.7.5 territory") + rag-patterns.md (IX.6/XI.5/XI.6 hooks the artefacts link)
   - b7-2-scaffolder           # runtime evidence surfaces the obligations-index maps to: prompt-audit span (IX.6) + Qwik fallbackUsed indicator (FR-B7-2-020)
+archived_to:
+  - .forge/specs/ai-native-rag.md  # B.7.5/B.7.8 ADDED block (FR-B75-* / NFR-B75-* / ADR-B75-*) appended at archive ; prior B.7 blocks preserved
 # Unblocks (change.schema.json forbids extra top-level fields, so this lives in a
 # comment, not frontmatter — same convention as sibling b7-9-janus-ai):
 #   K.5 Themis (compliance officer) — this brick ships the frozen v1.0.0
@@ -26,4 +28,4 @@ timeline:
   designed: 2026-06-22
   planned: 2026-06-22
   implemented: 2026-06-22
-  # archived:    <pending>
+  archived: 2026-06-22
