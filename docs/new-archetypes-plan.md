@@ -1974,7 +1974,7 @@ archétypes, comme outillage périphérique. Codifié **Module L** en §1.4 + li
 
 ---
 
-## 0.12 Status update — 2026-06-21 (T6/B.8 ✅ COMPLET ; T7/B.7 🔵 3/9 briques)
+## 0.12 Status update — 2026-06-21 (T6/B.8 ✅ COMPLET ; T7/B.7 🔵 4/9 briques)
 
 > **Resync majeure.** Les sections de statut §0.0–§0.11 s'arrêtaient au
 > 2026-05-30 et le tableau §11 marquait encore **T6 et T7 `⏸️ Pending`**.
@@ -2006,7 +2006,7 @@ cible par défaut, fresh-init Kong-less.
   « DBOS Go SDK breaking changes » devient **caduc** pour la stack Rust. Le caveat
   §13.3 « garde Temporal en option » est donc *de facto* le défaut.
 
-### T7 — Module B.7 (`ai-native-rag`) 🔵 EN COURS — 3 briques / 9
+### T7 — Module B.7 (`ai-native-rag`) 🔵 EN COURS — 4 briques / 9
 
 Décision amont (mainteneur 2026-06-11, `.forge/_memory/b7-ai-native-rag-exploration.md`) :
 **T7 démarre par B.7, pas B.6** (B.7 réutilise le substrat 2.0.0 livré par B.8 →
