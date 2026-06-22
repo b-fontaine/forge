@@ -1,0 +1,31 @@
+name: b7-pythia
+status: archived
+created: 2026-06-22
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - K.2     # docs/new-archetypes-plan.md §9 line 2665 — Pythia (AI/RAG) specialist agent
+  - B.7.4   # docs/new-archetypes-plan.md §6.2 line 2585 — Pythia agent for ai-native-rag
+depends_on:
+  - b7-standards    # global/{rag-patterns,llm-gateway,mcp-servers}.md — the standards Pythia owns/consumes
+  - b7-2-scaffolder # templates/ai-native-rag/1.0.0/* — the RAG pipeline / LLM gateway / MCP stubs Pythia tunes
+  - k3-demeter      # precedent layout (persona + Janus delta + harness + CLAUDE.md row) + <MODULE>-RULE-NNN namespace
+  - j8-janus-rules  # ADR-J8-004 rule-ID format inherited by K2-RULE-*
+archived_to:
+  - .forge/specs/ai-native-rag.md  # K.2 ADDED block (FR-K2-PYT-* / NFR-K2-PYT-* / ADR-K2-*) appended at archive ; prior B.7 blocks preserved
+# Q-001 (persona name collision) RESOLVED 2026-06-22 — maintainer ratified
+#   Option B, name "Sibyl" (ADR-K2-001 / open-questions.md Q-001 Resolution).
+#   Persona = .claude/agents/sibyl.md ; the shipped Product-Analyst-Pythia is
+#   untouched. Q-002 + Q-003 answered via ADR-K2-002 / ADR-K2-003. The change is
+#   now `implemented` ; archival is a separate pass (orchestrator verifies).
+# COLLISION with sibling brick b7-9-janus-ai — co-edits cross-layer-orchestrator.md
+#   + CLAUDE.md in DISJOINT sections (Pythia → Dispatch Table + Step 3 + Quality
+#   Gates ; b7-9 → Forbidden-archetypes/J8-RULE catalogue). See design.md
+#   § "Shared-file collision with sibling bricks".
+timeline:
+  proposed: 2026-06-22
+  specified: 2026-06-22
+  designed: 2026-06-22
+  planned: 2026-06-22
+  implemented: 2026-06-22
+  archived: 2026-06-22
