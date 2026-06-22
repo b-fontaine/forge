@@ -30,6 +30,7 @@
 | Cross-layer quality gate — Rust layer | **Tribune** (Rust Quality Guardian) | Tribune is the authoritative Rust quality gate; Janus aggregates its verdict but does not override it. |
 | Security review across layers — auth boundaries, tenant isolation, secret handling, cross-layer attack surface | **Aegis** (Security Auditor) | Aegis performs security reviews that cross layer boundaries; a single cross-layer security pass is more coherent than per-layer security reviews that cannot see the full boundary. |
 | Data stewardship across layers — tier classification, DPA, CLOUD Act exposure | **Demeter** (Data Steward EU) | Demeter performs data-stewardship reviews that cross layer boundaries ; complementary to Aegis's vulnerability-focused security pass. |
+| AI/RAG specialist work on `ai-native-rag` — embeddings/retrieval tuning, pgvector HNSW `ef_search`, MCP server hardening, prompt-audit + mandatory-fallback gates | **Sibyl** (AI/RAG Specialist) | Sibyl drives AI-pipeline tuning + prompt-audit/fallback review for `ai-native-rag` cross-layer changes ; advisory, complementary to Demeter's data-stewardship and Aegis's vulnerability passes. |
 
 ---
 
@@ -200,6 +201,8 @@ For each layer declared in `layers:`, Janus packages the portion of the proposal
 
 Janus dispatches design work concurrently to all per-layer orchestrators via Claude Code's team/send-message machinery. Each orchestrator SHALL produce its own `design-<layer>.md` file in the change directory (e.g. `design-backend.md`, `design-frontend.md`, `design-infra.md`). Janus does not begin step 4 until all dispatches have been acknowledged. Each per-layer design MUST follow the per-layer design template (`.forge/templates/design-per-layer.md`) and carry a `<!-- Layer: <id> -->` header. The delegation frame MUST include the section of specs whose FR-ID prefix matches the layer (`FR-BE-`, `FR-FE-`, `FR-IN-`) plus any `FR-GL-` requirements that have cross-layer scope.
 
+For projects whose root `.forge.yaml` declares `schema: ai-native-rag`, Janus additionally briefs **Sibyl** (AI/RAG Specialist) to advise the per-layer RAG / LLM-gateway / MCP design — the AI-pipeline specialist pass — and collects a `RAG Readiness Report`. A `Blocking` finding in that report (the Article XI.5 mandatory-fallback gate — see Sibyl's recommendation catalogue in `.claude/agents/sibyl.md`) blocks progression to Step 4, analogous to a `[NEEDS CLARIFICATION]` on a missing per-layer design. Sibyl is advisory: its tuning recommendations (embeddings/retrieval, pgvector HNSW `ef_search`, MCP hardening, prompt-audit coverage) are `Advisory` / `Concern` and do not block on their own — only the XI.5 fallback gate does. See `.claude/agents/sibyl.md`.
+
 ### Step 4 — Per-Layer Design Collection
 
 Janus waits for all per-layer designs to be delivered and checks that none is missing or flagged as incomplete. Any per-layer orchestrator that returns an incomplete deliverable, a `[NEEDS CLARIFICATION]` marker, or an explicit refusal MUST cause Janus to surface the same marker upward: `[NEEDS CLARIFICATION: <layer> design incomplete — <reason>]`. Progression to step 5 is blocked until every per-layer design is present and complete.
@@ -249,6 +252,7 @@ Janus enforces the following gates by dispatching to authoritative specialists �
 - **Rust quality gate** — dispatched to **Tribune** at step 10 when `backend` is a touched layer. Tribune's checklist is authoritative for `backend/`.
 - **Security gate** — dispatched to **Aegis** at step 9. Aegis examines cross-layer attack surface; its findings are blocking.
 - **Data-stewardship gate** — dispatched to **Demeter** at step 9 alongside Aegis. Demeter examines declared compliance tier consistency, DPA declaration posture, and CLOUD Act exposure in dependency manifests across all layers. Its findings (severity `Critical` or `High`) are blocking.
+- **AI/RAG readiness gate** — dispatched to **Sibyl** at step 3 for `ai-native-rag` projects. Sibyl reviews embeddings/retrieval tuning, pgvector HNSW `ef_search`, MCP server hardening, and prompt-audit coverage, and returns a `RAG Readiness Report`. A `Blocking` finding (the Article XI.5 mandatory-fallback gate — see `.claude/agents/sibyl.md` § Recommendation Catalogue) blocks the change.
 - **Cross-layer coherence checks** — executed by Janus itself at steps 5 and 6 (interface audit and standards drift check). These are Janus's only first-party enforcement actions; all others are delegated.
 
 *Janus is not itself a quality gate. Each per-layer quality gate is authoritative for its layer.* Janus's role is to ensure all gates have been dispatched, their verdicts collected, and blocking findings resolved before marking a change ready.
@@ -263,6 +267,7 @@ The `global/multi-layer-workflow.md` standard (a sibling delivery of the `b1-wor
 - Article IX.4 (contracts as security surface) — Hermes-API has reviewed any proto changes; Aegis has reviewed cross-layer attack surface.
 - Article X (quality) — `cross-layer-summary.md` carries the `<!-- Audit: B.1.7 -->` traceability header.
 - Article XII (governance) — Demeter has reviewed the tier classification, DPA declaration, and CLOUD Act exposure ; any blocking finding has been routed back and resolved before close.
+- Article XI (AI-First) — for `ai-native-rag` projects, **Sibyl** has reviewed the AI-pipeline tuning + the mandatory non-AI fallback (XI.5) and prompt-audit span coverage (IX.6) at Step 3 ; any `Blocking` (XI.5 fallback) finding has been resolved before close.
 
 **Delegation frame template**: Every specialist briefing from Janus MUST follow this structure:
 

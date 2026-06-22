@@ -129,6 +129,7 @@ jobs:
             "b7-3.test.sh --level 1"
             "b7-2.test.sh --level 1"
             "b7-9.test.sh --level 1,2"
+            "b7-pythia.test.sh --level 1,2"
           )
           fail=0
           for entry in "${harnesses[@]}"; do
