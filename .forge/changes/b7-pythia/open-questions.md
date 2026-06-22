@@ -102,7 +102,7 @@ This question no longer blocks the flip to `implemented`.
 
 ## Q-002: K2-RULE namespace — pre-allocate or grow incrementally?
 
-- **Status**: open
+- **Status**: answered
 - **Raised in**: proposal.md § Solution K.2.a ; specs.md FR-K2-PYT-006 /
   120-cluster
 - **Raised on**: 2026-06-22
@@ -135,13 +135,21 @@ mirroring ADR-K3-005. Per ADR-J8-004 inheritance, IDs are never reused.
 
 ### Resolution
 
-_(pending — to be resolved by ADR-K2-002 in design.md.)_
+**Resolved 2026-06-22 by ADR-K2-002 (design.md).** Chosen: **Option B —
+incremental growth, 6 seed rules**, mirroring `k3-demeter` ADR-K3-005. The seed
+catalogue (`.claude/agents/sibyl.md` § Recommendation Catalogue) is
+`K2-RULE-001..006`: one per checklist area plus the XI.5 fallback gate
+(`K2-RULE-006`, the only `Blocking`-severity rule). Severity vocabulary is
+`Advisory` < `Concern` < `Blocking` (advisory agent — softer than the J8/K3
+policy-refusal ladders). Per ADR-J8-004 inheritance, IDs are never reused; future
+K.2 extensions append `K2-RULE-007..`. Asserted by `b7-pythia.test.sh`
+`_test_b7p_007_rule_catalogue` + `_test_b7p_008_fallback_blocking`.
 
 ---
 
 ## Q-003: Advisory agent vs scanner — does Pythia ship a scanner script?
 
-- **Status**: open
+- **Status**: answered
 - **Raised in**: proposal.md § Solution + § Scope Out ; specs.md (overall shape)
 - **Raised on**: 2026-06-22
 - **Raised by**: @bfontaine
@@ -185,4 +193,16 @@ integrity across a fresh checkout instead.
 
 ### Resolution
 
-_(pending — to be resolved by ADR-K2-003 in design.md.)_
+**Resolved 2026-06-22 by ADR-K2-003 (design.md).** Chosen: **Option B — advisory
+agent, NO scanner.** Sibyl ships only `.claude/agents/sibyl.md` (persona
+checklists + `RAG Readiness Report` template + `K2-RULE-*` catalogue) in the
+`observability-specialist.md` (Panoptes) mould — nothing executable. NO
+`bin/forge-pythia*.sh` / `bin/forge-sibyl*.sh`, NO `.forge/data/*.yml`, NO
+exit-code contract, NO new standard. Rationale: the plan §9 K.2 verbs are
+advisory; HNSW/embeddings tuning is workload-specific and non-deterministic (a
+generic scanner cannot synthesise the adopter's labelled eval set — guessing a
+number would violate Article III.4). The principal justified divergence from the
+`k3-demeter` precedent. Guarded by `b7-pythia.test.sh` `_test_b7p_018_no_scanner`
+(no scanner / data file) + `_test_b7p_013_no_new_standard` (no new standard); the
+single L2 fixture `_test_b7p_l2_anchor_integrity` asserts persona-anchor integrity
+across a fresh checkout instead of a scanner-exit-code run.

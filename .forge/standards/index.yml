@@ -438,18 +438,18 @@ standards:
 
   - id: global/rag-patterns
     path: standards/global/rag-patterns.md
-    triggers: [rag, retrieval, embeddings, pgvector, hnsw, re-ranking, hybrid-search, vector-search, ai-native-rag, chunking, context-window]
+    triggers: [rag, retrieval, embeddings, pgvector, hnsw, re-ranking, hybrid-search, vector-search, ai-native-rag, chunking, context-window, ef-search, embeddings-tuning, sibyl]
     scope: all
     priority: high
 
   - id: global/llm-gateway
     path: standards/global/llm-gateway.md
-    triggers: [llm-gateway, llm, prompt-audit, token-budget, mistral, vllm, openai, byok, kill-switch, ai-native-rag, tier-aware]
+    triggers: [llm-gateway, llm, prompt-audit, token-budget, mistral, vllm, openai, byok, kill-switch, ai-native-rag, tier-aware, sibyl]
     scope: all
     priority: high
 
   - id: global/mcp-servers
     path: standards/global/mcp-servers.md
-    triggers: [mcp, rmcp, model-context-protocol, tool-router, stdio, streamable-http, mcp-oauth, ai-native-rag, sandboxing]
+    triggers: [mcp, rmcp, model-context-protocol, tool-router, stdio, streamable-http, mcp-oauth, ai-native-rag, sandboxing, sibyl]
     scope: all
     priority: high

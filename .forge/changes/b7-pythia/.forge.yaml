@@ -1,5 +1,5 @@
 name: b7-pythia
-status: planned
+status: implemented
 created: 2026-06-22
 schema: default
 constitution_version: "2.0.0"
@@ -11,11 +11,11 @@ depends_on:
   - b7-2-scaffolder # templates/ai-native-rag/1.0.0/* — the RAG pipeline / LLM gateway / MCP stubs Pythia tunes
   - k3-demeter      # precedent layout (persona + Janus delta + harness + CLAUDE.md row) + <MODULE>-RULE-NNN namespace
   - j8-janus-rules  # ADR-J8-004 rule-ID format inherited by K2-RULE-*
-# BLOCKED on Q-001 — persona name collision with existing Product-Analyst-Pythia.
-#   Maintainer ratification of ADR-K2-001 required before /forge:implement.
-#   Tracked in open-questions.md (Status: open, BLOCKING). The change.schema.json
-#   closed shape has no `blocked_on` field, so this is recorded as a comment +
-#   the timeline below intentionally stops at `planned` (no implemented/archived).
+# Q-001 (persona name collision) RESOLVED 2026-06-22 — maintainer ratified
+#   Option B, name "Sibyl" (ADR-K2-001 / open-questions.md Q-001 Resolution).
+#   Persona = .claude/agents/sibyl.md ; the shipped Product-Analyst-Pythia is
+#   untouched. Q-002 + Q-003 answered via ADR-K2-002 / ADR-K2-003. The change is
+#   now `implemented` ; archival is a separate pass (orchestrator verifies).
 # COLLISION with sibling brick b7-9-janus-ai — co-edits cross-layer-orchestrator.md
 #   + CLAUDE.md in DISJOINT sections (Pythia → Dispatch Table + Step 3 + Quality
 #   Gates ; b7-9 → Forbidden-archetypes/J8-RULE catalogue). See design.md
@@ -25,5 +25,5 @@ timeline:
   specified: 2026-06-22
   designed: 2026-06-22
   planned: 2026-06-22
-  # implemented: <pending — BLOCKED on Q-001 ratification>
-  # archived: <pending>
+  implemented: 2026-06-22
+  # archived: <pending — STOP before archive ; orchestrator verifies independently>

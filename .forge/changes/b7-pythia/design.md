@@ -32,6 +32,16 @@ specialist **Delphi** (the oracle's seat — thematically a retrieval site).
 - The brick / change name stays **`b7-pythia`** regardless (it documents the
   roadmap K.2 "Pythia" row ; the persona's final name is independent).
 
+> **RATIFIED 2026-06-22 (Q-001 Resolution, `open-questions.md`)** : the
+> maintainer chose **Option B** and selected the name **Sibyl** (a Greek
+> prophetess/seer) over this ADR's recommended "Delphi". The ratified binding —
+> which **supersedes the "Delphi" recommendation above** — is :
+> - Persona file : `.claude/agents/sibyl.md`.
+> - H1 : `# Agent: AI/RAG Specialist (Sibyl)`.
+> - The shipped Product-Analyst-Pythia (`.claude/agents/product-analyst.md`) and
+>   its 4 references are **not** modified (zero churn).
+> - The brick / change name stays `b7-pythia`.
+
 **Why Option B over A** : renaming a shipped, 4-file-referenced persona (Option
 A) is higher churn + higher regression risk than naming a brand-new agent. The
 roadmap "Pythia (AI/RAG)" is a label, not a contract ; the documentary link to

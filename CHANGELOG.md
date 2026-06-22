@@ -14,6 +14,28 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ### Added
 
+- **K.2 AI/RAG specialist agent `Sibyl` (`b7-pythia`)** — a new advisory
+  `.claude/agents/sibyl.md` persona for the `ai-native-rag` archetype: four
+  checklists (Embeddings & Retrieval, pgvector HNSW Tuning, MCP Server Hardening,
+  Prompt Audit & Fallback) operationalising the three B.7.3 b7-standards
+  (`rag-patterns.md` / `llm-gateway.md` / `mcp-servers.md`) verbatim, a `RAG
+  Readiness Report` template, and a 6-rule recommendation catalogue
+  (`K2-RULE-001..006`) whose only `Blocking` rule is the Article XI.5
+  mandatory-fallback gate (`K2-RULE-006`). **Advisory only — NO scanner, NO data
+  file, NO new standard** (ADR-K2-003 divergence from the `k3-demeter` precedent;
+  HNSW/embeddings tuning is workload-specific and cannot be reduced to a
+  deterministic scan). Janus dispatches Sibyl at **Step 3** (design pass, not the
+  Step 9 security pass) for `ai-native-rag` projects: delta-edits to
+  `cross-layer-orchestrator.md` (Dispatch Table row + Step 3 note + Quality Gates
+  bullet + Constitution-compliance bullet, all disjoint from the J8-RULE
+  Forbidden-archetypes catalogue). `index.yml` triggers extended additively
+  (`sibyl` on rag-patterns/llm-gateway/mcp-servers + `ef-search` /
+  `embeddings-tuning` on rag-patterns — no new entry). CLAUDE.md + `forge-master.md`
+  roster gain an AI/RAG-Specialist row. The maintainer ratified the name **Sibyl**
+  (Q-001 Option B) — the shipped Product-Analyst-Pythia is untouched. Harness
+  `b7-pythia.test.sh` (18 L1 + 1 L2) in `forge-ci.yml`. Additive; no regression to
+  `j7` / `j8` / `k3` / `b7-1` / `b7-2a` / `b7-3` / `b7-2`.
+
 - **`ai-native-rag` pattern standards (B.7.3, `b7-standards`)** — three new
   `global/*.md` pattern standards the archetype schema references as
   `delivered_by: B.7.3`: `rag-patterns.md` (chunking/embeddings, hybrid retrieval

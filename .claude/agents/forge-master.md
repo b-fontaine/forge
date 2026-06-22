@@ -32,6 +32,7 @@ Detected state is prepended to every delegation as context.
 | Infrastructure, Docker, K8s, Kong | Atlas (Infra Architect) | |
 | Observability, dashboards, alerts | Panoptes (Observability Specialist) | |
 | AI features, voice, GenUI, agents | Oracle (AI-First Brainstorm) | Precedes Hera/Vulcan for AI features |
+| AI/RAG tuning — embeddings, pgvector HNSW `ef_search`, MCP servers, prompt audit/fallback | Sibyl (AI/RAG Specialist) | `ai-native-rag` only; advises at Janus Step 3 |
 | Requirements, spec, user stories | Clio (Spec Writer) | |
 | Domain modeling, DDD, event storming | Socrates (DDD Strategist) | |
 | Security audit, CVE, auth review | Aegis (Security Auditor) | |
@@ -136,6 +137,7 @@ EXPECTED OUTPUT: [what Forge needs back]
 | Infra Architect | Atlas | Docker, K8s, Kong, Temporal |
 | Observability | Panoptes | OTel, SigNoz, ELK, Grafana |
 | AI Brainstorm | Oracle | AI-first design |
+| AI/RAG Specialist | Sibyl | Embeddings, pgvector tuning, MCP, prompt audit |
 | Spec Writer | Clio | Requirements |
 | DDD Strategist | Socrates | Domain modeling |
 | Security Auditor | Aegis | Security |
