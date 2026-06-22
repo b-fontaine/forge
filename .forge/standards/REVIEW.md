@@ -899,3 +899,30 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   I.3, `compliance-tiers.md`, `data-stewardship-rules.md` K.3); runtime Janus AI
   rules (J.8.c) deferred to `b7-9-janus-ai`. MCP auth couples to `identity.yaml`
   (Zitadel) + Envoy SecurityPolicy JWT (B.8.12).
+
+## 2026-06-22 — Initial ratification (b7-5-ai-act, B.7.5 + B.7.8)
+
+  | Standard                              | Version       | Decision | Next review due | Notes                                                                                                          |
+  |---------------------------------------|---------------|----------|-----------------|----------------------------------------------------------------------------------------------------------------|
+  | global/ai-act-dora-artefacts.md       | 1.0.0         | KEEP     | 2027-06-22      | Birth: governs the EU AI Act + DORA regulatory-artefact content schema + Phase A (BDFL, frozen) → Phase B (Themis K.5) governance for the `.forge/compliance/{ai-act,dora}/` members shipped by the `ai-native-rag` archetype. |
+  | global/compliance-artefacts-bundle.md | 1.0.0 → 1.1.0 | AMEND    | 2027-06-22      | Additive minor bump: the I.6 hand-off bundle now collects the B.7.5/B.7.8 AI-Act + DORA artefacts under `regulatory/{ai-act,dora}/*` (graceful absence). Six base members unchanged; determinism recipe untouched; NIS2/CRA siblings still reserved. Realises FR-I6-CA-053. |
+
+- **Decision**: KEEP (new `global/ai-act-dora-artefacts.md` v1.0.0) +
+  AMEND (`global/compliance-artefacts-bundle.md` `1.0.0 → 1.1.0`).
+- **Next review due**: 2027-06-22 (12-month cycle).
+- **Notes**: B.7.5 (AI Act risk-classification / transparency / model+dataset
+  cards) + B.7.8 (DORA incident-reporting / RoI) regulatory artefacts for the
+  `ai-native-rag` archetype, shipped under `.forge/compliance/{ai-act,dora}/`
+  and wired into the I.6 bundle (`bundle.sh` directory-walk, additive). Every
+  regulatory specific is **grounded-or-deferred** per Article III.4: the
+  archetype profile (`ARCHITECTURE-TARGET.md` §10.3), the DORA RoI deadline
+  (§10.4), the Themis charter "< 24h" figure (§9.2), and the prompt-audit
+  transparency surface (`llm-gateway.md`) are cited; the precise AI Act
+  risk-category mapping, the finance high-risk determination, the bias-eval
+  legal trigger, the DORA notification windows, and the authoritative RoI schema
+  are left as `[NEEDS CLARIFICATION]` markers tagged **Themis (K.5)** Phase-B
+  work items (NOT invented). The negative-grep guard (`b7-5.test.sh`
+  `_test_b75_030`) is the deterministic anti-hallucination backstop. The I.6
+  bundle contract bumped `1.0.0 → 1.1.0` in lock-step (the `i6.test.sh` count
+  assertion stays GREEN — its L2 fixture stages only the 4 canonical surfaces
+  into a tmpdir, so it is hermetic to the new live artefacts).

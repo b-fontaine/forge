@@ -1,0 +1,27 @@
+# Audit: B.7.5+B.7.8 (b7-5-ai-act)
+# DORA Register of Information (RoI) — adopter-fillable template.
+#
+# Referenced by the §10.4 deadline "RoI à soumettre 30 avr 2026 ESA"
+# (docs/ARCHITECTURE-TARGET.md). This is a STRUCTURE skeleton only; the
+# authoritative mandatory-field schema is a Themis (K.5) Phase-B determination.
+#
+# needs_clarification: >-
+#   [NEEDS CLARIFICATION: the authoritative DORA Register-of-Information field
+#   schema (the mandatory templates / fields the ESAs require) — Themis (K.5) to
+#   supply from the official DORA text; the fields below are an adopter-fillable
+#   starting structure, NOT the legally authoritative field list.]
+#
+# Fill the placeholders, remove the <FILL: ...> tokens, and submit per your
+# competent authority's process.
+schema_version: "1.0.0"
+register_of_information:
+  entity:
+    name: "<FILL: reporting entity name>"
+    identifier: "<FILL: LEI or competent-authority identifier>"
+  ict_third_party_providers:
+    - provider_name: "<FILL: e.g. Mistral on Scaleway>"
+      service: "<FILL: e.g. LLM inference (EU-hosted)>"
+      criticality: "<FILL: critical | important | other>"
+  submission:
+    competent_authority: "<FILL: your ESA / national competent authority>"
+    reference_deadline: "<FILL: e.g. 2026-04-30 (see incident-reporting.md §10.4 ground)>"

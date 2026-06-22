@@ -35,6 +35,28 @@ minor bump and will be called out under a `### BREAKING` subsection.
   (Q-001 Option B) — the shipped Product-Analyst-Pythia is untouched. Harness
   `b7-pythia.test.sh` (18 L1 + 1 L2) in `forge-ci.yml`. Additive; no regression to
   `j7` / `j8` / `k3` / `b7-1` / `b7-2a` / `b7-3` / `b7-2`.
+- **B.7.5 + B.7.8 AI-Act + DORA regulatory artefacts (`b7-5-ai-act`)** — the
+  `ai-native-rag` archetype now ships EU **AI Act** + **DORA** regulatory
+  artefacts under `.forge/compliance/{ai-act,dora}/`: AI Act
+  `risk-classification.md` (grounded transparency posture + deployer escalation
+  triggers), `transparency-obligations.md` (duties → Forge evidence surfaces),
+  adopter-fillable `model-card.template.md` + `dataset-card.template.md`, an
+  `obligations-index.yaml`; and DORA `incident-reporting.md` (grounded "< 24h"
+  charter figure + the §10.4 RoI deadline), `roi-register.template.yaml`, an
+  `obligations-index.yaml`. New standard `global/ai-act-dora-artefacts.md`
+  v1.0.0 governs the content schema + Phase A (BDFL, frozen) → Phase B
+  (Themis K.5) governance. The I.6 hand-off bundle (`bundle.sh`) is extended to
+  collect the artefacts under `regulatory/{ai-act,dora}/*` — the bundle contract
+  `compliance-artefacts-bundle.md` bumps **1.0.0 → 1.1.0** (additive; six base
+  members + determinism recipe unchanged; `i6.test.sh` updated in lock-step).
+  Every regulatory specific is **grounded-or-deferred** per Article III.4: the
+  precise risk-category mapping, finance high-risk determination, bias-eval
+  legal trigger, DORA notification windows, and authoritative RoI schema are
+  `[NEEDS CLARIFICATION]` Themis Phase-B work items, NOT invented; a negative-grep
+  guard (`b7-5.test.sh` `_test_b75_030`) is the deterministic backstop. Harness
+  `b7-5.test.sh` (16 L1 + 3 L2, incl. bundle integration / determinism /
+  graceful-absence) in `forge-ci.yml`. `index.yml` + `REVIEW.md` registered.
+  NIS2 / CRA siblings reserved. Additive (since 0.5.0).
 
 - **`ai-native-rag` pattern standards (B.7.3, `b7-standards`)** — three new
   `global/*.md` pattern standards the archetype schema references as

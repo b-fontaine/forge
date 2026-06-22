@@ -355,3 +355,62 @@ Product-Analyst-Pythia is left untouched). Covered by
 Janus dispatches Sibyl at Step 3 for `ai-native-rag` projects. The archetype's
 promotion to `scaffoldable: true` remains gated on a green `b7-6-harness`
 (unchanged by this brick).
+
+---
+
+## ADDED Requirements (b7-5-ai-act, archived 2026-06-22)
+
+B.7.5 + B.7.8 — EU AI-Act + DORA regulatory artefacts for the `ai-native-rag`
+archetype. Namespace `FR-B75-AA-*` (AI-Act) / `FR-B75-DO-*` (DORA) /
+`FR-B75-BD-*` (bundle + standard + harness + docs) / `NFR-B75-*` / `ADR-B75-*`.
+Constitution v2.0.0 — no amendment. **Anti-hallucination is LOAD-BEARING**
+(NFR-B75-004) : no fabricated legal article / recital / deadline ; ungrounded
+obligations carry `status: needs-clarification` + `themis_owner: K.5`. Covered by
+`.forge/scripts/tests/b7-5.test.sh` (≥14 L1 + 3 L2, registered in `forge-ci.yml`).
+
+### Functional
+**Cluster 1 — AI-Act artefacts `.forge/compliance/ai-act/` (FR-B75-AA-001..030)**
+- **AA-001/002** — directory presence + audit comment on every member.
+- **AA-010/011** — `risk-classification.md` : grounded posture + escalation triggers ; `[NEEDS CLARIFICATION]` markers for ungrounded category mapping.
+- **AA-012** — `transparency-obligations.md` : evidence linkage (prompt-audit IX.6 + Qwik `fallbackUsed`).
+- **AA-020/021** — `model-card.template.md` + `dataset-card.template.md` skeletons (no legal assertion).
+- **AA-025/026** — `obligations-index.yaml` obligation→evidence map + schema shape (`regulation: ai-act`).
+- **AA-030** — no fabricated legal citation (enforced by FR-B75-BD-102).
+
+**Cluster 2 — DORA artefacts `.forge/compliance/dora/` (FR-B75-DO-001..020)**
+- **DO-001/002** — directory + audit comment.
+- **DO-010/011** — `incident-reporting.md` : grounded obligation + NEEDS-CLARIFICATION markers (incident windows).
+- **DO-015** — `roi-register.template.yaml` skeleton.
+- **DO-016** — `obligations-index.yaml` (`regulation: dora`).
+- **DO-020** — no fabricated legal citation.
+
+**Cluster 3 — Bundle wiring (FR-B75-BD-001..015)**
+- **BD-001** — `bundle.sh` collects `regulatory/{ai-act,dora}/*` members.
+- **BD-002/003/004** — additive (existing 6 members unchanged) ; `SOURCE_DATE_EPOCH` determinism preserved ; graceful absence (no dirs → base 6, exit 0).
+- **BD-010/011** — I.6 standard `compliance-artefacts-bundle.md` bundle-schema table + forward-compat note (1.0.0 → 1.1.0) ; `i6.test.sh` member-count assertion updated in lock-step.
+- **BD-015** — `forge-compliance.yml` gains NO new step (ADR-B75-005).
+
+**Cluster 4 — Standard `global/ai-act-dora-artefacts.md` (FR-B75-BD-020..031)**
+- **BD-020..027** — file + H1 + anchors + frontmatter narrative + ≥6 H2 + artefact-content-schema table + two-phase governance (BDFL Phase A frozen → Themis Phase B) + Consumption protocol (cites the I.6 bundle) + ≥3 MUST NOT + RFC-2119 + Themis cross-link.
+- **BD-030/031** — `index.yml` entry + `REVIEW.md` birth + the I.6-amendment REVIEW entry.
+
+**Cluster 5 — Test harness (FR-B75-BD-100..115)**
+- **BD-100/101** — `b7-5.test.sh` skeleton + ≥14 L1 coverage.
+- **BD-102** — L1 anti-hallucination negative-grep (fails on `Article N` / `Art. N` / `recital` outside a NEEDS-CLARIFICATION marker).
+- **BD-110** — L2 bundle-integration + `SOURCE_DATE_EPOCH` determinism (`diff -q` byte-identical) + graceful-absence.
+
+### Non-Functional
+- **NFR-B75-001** additive/backward-compatible · **002** determinism · **003** no external dependency · **004** **anti-hallucination (Article III.4) — LOAD-BEARING** (ungrounded → `needs-clarification` + `themis_owner: K.5`) · **005** I.6 release-version bump deferred to maintainer · **006** standard file-size budget · **007** CI line budget · **008** harness perf budget.
+
+### ADRs (ratified — maintainer 2026-06-22; orchestrator independent verification GREEN, anti-hallucination CLEAN)
+- **ADR-B75-001** — per-regulation `.forge/compliance/{ai-act,dora}/` layout + bundle `regulatory/` subdir (mirrors ADR-I6-CA-002 ; `nis2/` + `cra/` reserved, not created).
+- **ADR-B75-002** — bundle wiring lands now ; I.6 `compliance-artefacts-bundle.md` 1.0.0 → 1.1.0 + `i6.test.sh` count assertion updated in lock-step.
+- **ADR-B75-003** — new standard `global/ai-act-dora-artefacts.md` (not folded into an existing standard).
+- **ADR-B75-004** — harness `b7-5.test.sh` placed after `i5.test.sh` in CI.
+- **ADR-B75-005** — `forge-compliance.yml` gains NO new step (the bundle already aggregates the regulatory members).
+
+### Open questions
+- **Legal (Themis Phase B)** : `Q-001..Q-005` (AI-Act risk-category mapping + article numbers ; DORA incident windows ; finance-sector high-risk determination ; bias-evaluation obligation ; obligation-class grounding) — all `[NEEDS CLARIFICATION]`, deferred to Themis (K.5) ; **not fabricated, not blocking**. Design `Q-010..014` resolved at design.
+
+### Downstream
+Unblocks **K.5 Themis** — the frozen v1.0.0 `.forge/compliance/{ai-act,dora}/` artefacts Themis maintains on a Phase-B rolling cadence. The archetype's promotion to `scaffoldable: true` remains gated on `b7-6-harness`.

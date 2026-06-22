@@ -4,9 +4,9 @@
 <!-- Trigger: compliance, bundle, auditor, dpa, audit-ledger, nis2, dora, cra, ai-act, regulatory-handoff -->
 
 ```yaml
-version: 1.0.0
-last_reviewed: 2026-05-12
-expires_at: 2027-05-12
+version: 1.1.0
+last_reviewed: 2026-06-22
+expires_at: 2027-06-22
 exception_constitutional: false
 linter_rule: null
 enforcement:
@@ -15,6 +15,12 @@ enforcement:
 forbidden: []
 rationale: "Documents the deterministic .tgz hand-off bundle for EU regulator counter-parties."
 ```
+
+> **v1.1.0 (2026-06-22, `b7-5-ai-act`)** — additive minor bump: the bundle
+> now also collects the B.7.5/B.7.8 AI-Act + DORA regulatory artefacts under
+> `regulatory/ai-act/*` + `regulatory/dora/*` (graceful absence when the
+> archetype is not present). The six base members are unchanged. See the
+> § Bundle content schema rows below and § Forward compatibility.
 
 ## Purpose & EU compliance rationale
 
@@ -43,19 +49,22 @@ content is sufficient to satisfy first-pass review under :
 Adopters needing richer attestation (license enrichment,
 vulnerability cross-refs, transparency-log signing, regulatory
 deadline tracking) layer their preferred upstream tooling on top
-of this baseline. The full NIS2 / DORA / CRA / AI Act regulatory
-deadline artefacts under `.forge/compliance/{nis2,dora,cra,ai-act}/`
-require **Themis** (K.5, T7+) to maintain ; the bundle schema in
-this v1.0.0 is **forward-stable** so Themis-territory artefacts
-drop into the same layout without a breaking change (see § Forward
-compatibility below).
+of this baseline. The **AI Act + DORA** regulatory artefacts under
+`.forge/compliance/{ai-act,dora}/` shipped with `b7-5-ai-act`
+(B.7.5/B.7.8) and ride this bundle additively at **v1.1.0** under
+`regulatory/{ai-act,dora}/` (see § Bundle content schema). The
+**NIS2 / CRA** siblings under `.forge/compliance/{nis2,cra}/` remain
+**reserved** (not yet shipped) and require **Themis** (K.5, T7+) to
+maintain ; the bundle schema is **forward-stable** so the reserved
+artefacts drop into the same `regulatory/` layout without a breaking
+change (see § Forward compatibility below).
 
 ## Bundle content schema
 
 A successful bundle invocation produces a single `.tgz` file
-(default name `forge-compliance-artefacts.tgz`) containing exactly
-the following six members at the exact relative paths inside the
-archive :
+(default name `forge-compliance-artefacts.tgz`) containing **6 base
+members + N regulatory members** at the exact relative paths inside
+the archive. The six base members (always present) :
 
 | Member path                              | Source                                                                 | Schema                                                                                                       |
 |------------------------------------------|------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------|
@@ -66,10 +75,21 @@ archive :
 | `audit/audit-ledger.md`                  | Script-generated snapshot                                              | UTF-8 Markdown, H1 + 3 H2 sections (`Archived changes`, `Standards reviews`, `Active rule catalogues`)       |
 | `sbom/sbom.cdx.json`                     | Output of `bin/forge-sbom.sh` (J.8.d)                                  | CycloneDX 1.5 JSON ; minimal envelope when no lockfile present (FR-I6-CA-019)                                |
 
+In addition, when the target carries the B.7.5/B.7.8 regulatory
+artefacts, the bundle collects **N regulatory members** (additive,
+v1.1.0, `b7-5-ai-act`) — graceful absence applies (zero members when
+the directory is absent) :
+
+| Member path                              | Source                                                                 | Schema                                                                                                       |
+|------------------------------------------|------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------|
+| `regulatory/ai-act/*`                    | Copy of `.forge/compliance/ai-act/*` (B.7.5/B.7.8)                      | One member per file ; UTF-8, byte-identical to source ; see `global/ai-act-dora-artefacts.md`               |
+| `regulatory/dora/*`                      | Copy of `.forge/compliance/dora/*` (B.7.5/B.7.8)                        | One member per file ; UTF-8, byte-identical to source ; see `global/ai-act-dora-artefacts.md`               |
+
 Adding or removing a member is a **SemVer minor bump** on this
-standard. Renaming an existing member is a **SemVer major bump**
-because downstream consumers (I.5 future workflow, auditor
-tooling) reference paths by string.
+standard (the v1.1.0 regulatory expansion is exactly such an additive
+bump). Renaming an existing member is a **SemVer major bump** because
+downstream consumers (I.5 future workflow, auditor tooling) reference
+paths by string.
 
 The `audit/audit-ledger.json` schema :
 
@@ -146,8 +166,8 @@ Today, adopters consume the bundle directly :
 2. Hand `forge-compliance-artefacts.tgz` to the auditor /
    regulator counter-party.
 3. Auditor extracts `tar -xzf forge-compliance-artefacts.tgz` and
-   reads `MANIFEST` first to verify the six members' SHA-256
-   checksums.
+   reads `MANIFEST` first to verify every member's SHA-256 checksum
+   (the 6 base members + any `regulatory/` members).
 
 The bundle is consumed by Demeter (`.claude/agents/demeter.md`) at
 review time : Demeter reads `audit/audit-ledger.json` when
@@ -155,14 +175,19 @@ classifying historical posture and verifying that the tier
 declaration in `.forge/.forge-tier` is supported by archived
 audit trail.
 
-When Themis (K.5, T7+) ships, Themis MUST :
+The **AI Act + DORA** regulatory artefacts already ride the bundle
+under `regulatory/{ai-act,dora}/` as of v1.1.0 (`b7-5-ai-act`,
+B.7.5/B.7.8). When Themis (K.5, T7+) ships, Themis MUST :
 
-- Add NIS2 / DORA / CRA / AI Act regulatory deadline artefacts
-  under a new `regulatory/` subdirectory inside the bundle
-  (additive ; no rename of existing members).
-- Bump this standard from `1.0.0` → `1.1.0` (minor) per
-  `global/standards-lifecycle.md` SemVer rules.
-- Update the bundle MANIFEST to include the new members.
+- Add the reserved **NIS2 / CRA** regulatory deadline artefacts
+  under the same `regulatory/` subdirectory (additive ; no rename of
+  existing members) and maintain the shipped AI Act + DORA artefacts
+  on its rolling cadence.
+- Bump this standard one **minor** per `global/standards-lifecycle.md`
+  SemVer rules for each additive expansion.
+- Update the bundle MANIFEST to include the new members (the
+  directory-walk in `bundle.sh` already picks up any new
+  `regulatory/<regulation>/` subdirectory automatically).
 
 ## Regeneration cadence
 
@@ -200,13 +225,15 @@ sense) :
    `--skip-mtime-pinning`, or equivalent escape hatch that bypasses
    the determinism guarantee. Reproducible output is a
    non-negotiable contract per NFR-I6-CA-005.
-3. Adopters MUST NOT add NIS2 / DORA / CRA / AI Act regulatory
+3. Adopters MUST NOT add the still-reserved **NIS2 / CRA** regulatory
    deadline artefacts to the bundle under any path before Themis
-   (K.5, T7+) ships. Until then, the regulatory layer is **out of
-   bundle scope** and adopters track deadlines manually per
-   `docs/COMPLIANCE.md` § Cross-references. The bundle layout is
-   forward-stable so Themis-territory artefacts drop in additively
-   when ready.
+   (K.5, T7+) ships. Until then, that reserved layer is **out of
+   bundle scope** and adopters track those deadlines manually per
+   `docs/COMPLIANCE.md` § Cross-references. (The AI Act + DORA
+   artefacts shipped with `b7-5-ai-act` and DO ride the bundle under
+   `regulatory/{ai-act,dora}/` — see `global/ai-act-dora-artefacts.md`.)
+   The bundle layout is forward-stable so the reserved artefacts drop
+   in additively when ready.
 4. The bundle MUST NOT be modified after emission. Adopters who
    need richer attestation (Sigstore signing, license enrichment,
    transparency-log upload) produce SIBLING artefacts ; they MUST
@@ -227,12 +254,14 @@ evolution**. Future changes MAY :
 
 Future changes MUST NOT :
 
-- Rename or remove the six existing v1.0.0 members.
+- Rename or remove the six base members (present since v1.0.0).
 - Change the `MANIFEST` format (the `<sha256> <size> <path>` triple).
 - Break the `SOURCE_DATE_EPOCH` determinism guarantee.
 
-When Themis (K.5, T7+) ships, the schema graduates to v1.1.0
-**additively** — no major bump required.
+The schema graduated to **v1.1.0 additively** with `b7-5-ai-act`
+(the AI Act + DORA `regulatory/` members). When Themis (K.5, T7+)
+ships the reserved NIS2 / CRA members, each expansion is a further
+additive minor bump — no major bump required.
 
 ## Constitutional Compliance
 

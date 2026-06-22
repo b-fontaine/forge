@@ -453,3 +453,11 @@ standards:
     triggers: [mcp, rmcp, model-context-protocol, tool-router, stdio, streamable-http, mcp-oauth, ai-native-rag, sandboxing, sibyl]
     scope: all
     priority: high
+
+  # ─── B.7.5/B.7.8 — AI Act + DORA regulatory artefacts (b7-5-ai-act) ───
+
+  - id: global/ai-act-dora-artefacts
+    path: standards/global/ai-act-dora-artefacts.md
+    triggers: [ai-act, dora, compliance, regulatory, model-card, dataset-card, transparency, incident-reporting, themis]
+    scope: all
+    priority: high
