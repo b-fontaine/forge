@@ -900,6 +900,31 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   rules (J.8.c) deferred to `b7-9-janus-ai`. MCP auth couples to `identity.yaml`
   (Zitadel) + Envoy SecurityPolicy JWT (B.8.12).
 
+## 2026-06-22 — Janus LLM-provider rules (b7-9-janus-ai, J.8.c / B.7.9)
+
+- **Reviewer**: @bfontaine
+- **Reviewed standards**:
+
+  | Standard                            | Version       | Decision          | Next review due | Notes                                                                                                          |
+  |-------------------------------------|---------------|-------------------|-----------------|----------------------------------------------------------------------------------------------------------------|
+  | global/janus-orchestration-rules.md | (md, no semver) | KEEP-WITH-CHANGES | 2027-06-22      | +3 catalogue rows (J8-RULE-004/005/006) ; "Extending the catalogue" step 1 prose updated (sibling `forbidden_combinations:` list now exists) ; "Refusal vs warning semantics" notes the new refusals. Content review (no `version:` frontmatter — `.md` pattern standard). |
+  | global/compliance-tiers.md          | 1.0.0 → 1.1.0 | KEEP-WITH-CHANGES | 2027-06-22      | `forbidden:` `[]` → `[vertex-ai, bedrock]` (LLM-provider tokens) so the generic I.3 T3-RULE-005 review-time linter catches them ; §10.2 matrix UNCHANGED (no row/cell shift — byte-identical-to-ARCHITECTURE-TARGET Interdiction 5 preserved). **SemVer-minor bump 1.0.0 → 1.1.0** (`last_reviewed`/`expires_at` → 2026-06-22 / 2027-06-22) per standards-lifecycle for the additive token edit (FR-B7-9-062). `i2.test.sh::_test_i2_005` was relaxed from exact version/date pins to frontmatter-validity checks (maintainer "Option B", 2026-06-22 — a mutable versioned field must not be exact-pinned by a sibling change's gate). |
+  | global/forbidden-components-rules.md| 1.0.0 → 1.1.0 | KEEP-WITH-CHANGES | 2027-06-22      | New "LLM-provider `forbidden:` coupling" interim-gap subsection documenting the `compliance-tiers.md::forbidden:` token approach + the `J8-RULE-004..006` scaffold-time cross-reference. **SemVer-minor bump 1.0.0 → 1.1.0** (`last_reviewed`/`expires_at` → 2026-06-22 / 2027-06-22) for the additive subsection. `i3.test.sh::_test_i3_008` was relaxed from the exact 1.0.0 version pin to a semver-validity check (maintainer "Option B", 2026-06-22). |
+
+- **Decision**: KEEP-WITH-CHANGES — all three edits are additive (Article XII
+  "Extending the catalogue" protocol, NOT amendments ; no `[T1,T2,T3]` enum
+  change, no refusal-semantics change).
+- **Next review due**: 2027-06-22 (12-month cycle).
+- **Notes**: J.8.c lands the Janus refusal rules for the `ai-native-rag`
+  LLM gateway — `J8-RULE-004` (Vertex AI default refused), `J8-RULE-005`
+  (AWS Bedrock default refused), `J8-RULE-006` (`--eu-tier T3` ⇒ Mistral-EU /
+  vLLM ; US-managed inference refused). Two complementary enforcement surfaces
+  (ADR-B7-9-005) : scaffold-time Janus refusal (exit 3, `_refuse_if_forbidden_combination`)
+  + review-time I.3 T3-RULE-005 (`forbidden:` token, tier-scaled WARN/FAIL).
+  EU alternatives verified verbatim against `compliance-tiers.md` §10.2
+  (ADR-B7-9-006). Rule-ID block `J8-RULE-004..006` allocated sequentially after
+  the live `J8-RULE-003` (ADR-J8-004 numbering invariant ; never reused).
+
 ## 2026-06-22 — Initial ratification (b7-5-ai-act, B.7.5 + B.7.8)
 
   | Standard                              | Version       | Decision | Next review due | Notes                                                                                                          |

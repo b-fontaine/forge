@@ -26,10 +26,16 @@ repo). Both MUST stay in sync — extension procedure below.
 | `J8-RULE-001` | `--archetype flutter-firebase`         | scaffold of flutter-firebase                    | ADR-007 ; archetype.schema.json v2     |
 | `J8-RULE-002` | `--eu-tier T3` + non-self-host Zitadel | cloud-Zitadel + Auth0 + Keycloak-cloud variants | ADR-007 ; identity.yaml                |
 | `J8-RULE-003` | `--eu-tier T3` + Datadog or SigNoz Cloud SaaS | Datadog exporter + signoz.io endpoints   | ADR-008 ; observability.yaml           |
+| `J8-RULE-004` | `ai-native-rag` + Vertex AI default LLM provider | Vertex AI (GCP-managed inference) as default | compliance-tiers.md §10.2 (`AWS / GCP / Azure` + `LLM Gateway`) ; llm-gateway.md ; ADR-B7-9-001 |
+| `J8-RULE-005` | `ai-native-rag` + AWS Bedrock default LLM provider | Bedrock (AWS-managed inference) as default | compliance-tiers.md §10.2 (`AWS / GCP / Azure` + `LLM Gateway`) ; llm-gateway.md ; ADR-B7-9-001 |
+| `J8-RULE-006` | `ai-native-rag` + `--eu-tier T3` + US-managed inference | US-managed inference endpoints at T3 | compliance-tiers.md §10.2 (`LLM Gateway` → `Pour T3 : Mistral on Scaleway ou vLLM self-host`) ; ADR-B7-9-001/006 |
 
 The full rule body (rationale, alternative, reference) lives in
-the runtime registry (`dispatch-table.yml::forbidden_archetypes`)
-and is mirrored verbatim in the agent file's "Forbidden archetypes
+the runtime registry — `dispatch-table.yml::forbidden_archetypes`
+for whole-archetype refusals (`J8-RULE-001`), and the sibling
+`dispatch-table.yml::forbidden_combinations` for provider × tier
+refusals (`J8-RULE-004..006`, J.8.c `b7-9-janus-ai`) — and is
+mirrored verbatim in the agent file's "Forbidden archetypes
 & combinations" section.
 
 ## Adoption path
@@ -74,8 +80,13 @@ J.8 distinguishes **refusal** from **warning** :
   (e.g. `--eu-tier` flag missing on production-bound projects).
 
 The Janus rule catalogue documents which rules are **refusals** and
-which are **warnings**. As of v0.4.0, all three seed rules
-(`J8-RULE-001..003`) are refusals.
+which are **warnings**. The seed rules (`J8-RULE-001..003`) are all
+refusals. J.8.c (`b7-9-janus-ai`) adds three more refusals for the
+`ai-native-rag` LLM gateway : `J8-RULE-004` (Vertex AI) and
+`J8-RULE-005` (AWS Bedrock) are **default-provider** refusals that
+fire regardless of declared tier ; `J8-RULE-006` is a **T3-only**
+refusal of US-managed inference. All six rules (`J8-RULE-001..006`)
+are refusals — no warning-class rule has shipped yet.
 
 ## Extending the catalogue
 
@@ -83,10 +94,15 @@ Adding a new rule requires :
 
 1. **Append a new entry** to
    `.forge/scaffolding/dispatch-table.yml::forbidden_archetypes`
-   (or to a sibling `forbidden_combinations:` list when the future
-   J.8 extension lands non-archetype refusals like
-   "T3 + ai-native-rag forces Mistral-EU"). Entry MUST carry
-   `name` / `reason` / `since` / `alternative` / `rule_id` keys.
+   (for whole-archetype refusals — entry MUST carry
+   `name` / `reason` / `since` / `alternative` / `rule_id` keys), OR
+   to the sibling `forbidden_combinations:` list for non-archetype
+   provider × tier refusals. That sibling list **now exists** — it
+   landed with J.8.c (`b7-9-janus-ai`, the "T3 + ai-native-rag forces
+   Mistral-EU" case foreseen here) and carries a 7-key shape
+   (`archetype` / `provider` / `tier` / `reason` / `since` /
+   `alternative` / `rule_id`), consumed by
+   `_refuse_if_forbidden_combination` (`bin/_forge-init-helpers.sh`).
 2. **Mirror the entry** in the agent file's "Forbidden archetypes
    & combinations" section under a new `J8-RULE-NNN` H4 sub-heading.
    Use the next available sequential ID.

@@ -101,6 +101,19 @@ if [ "${FORGE_AINR_FORCE_SCAFFOLD:-0}" != "1" ] && ! is_scaffoldable; then
   exit 3
 fi
 
+# ── J.8.c b7-9-janus-ai — LLM-provider combination refusal (FR-B7-9-045) ──────
+# Defense-in-depth scaffold-time refusal of a non-sovereign LLM provider (Vertex
+# AI / Bedrock at any tier ; US-managed inference at T3) per J8-RULE-004..006.
+# Positioned AFTER the scaffoldability gate so it only fires post-promotion (a
+# candidate init never reaches here — the gate above refuses first, ADR-B7-2-001
+# untouched). The configured provider comes from FORGE_AINR_LLM_PROVIDER ; the
+# scaffold's sovereign default (Mistral-EU / vLLM, global/llm-gateway.md) does
+# not refuse. The helper resolves the tier ($FORGE_EU_TIER → .forge/.forge-tier)
+# and fail-opens when the dispatch-table is unreachable.
+if declare -f _refuse_if_forbidden_combination >/dev/null 2>&1; then
+  _refuse_if_forbidden_combination "$ARCHETYPE" "${FORGE_AINR_LLM_PROVIDER:-mistral-eu}"
+fi
+
 # ── Parse stable ABI flags (reached only once scaffoldable / under override) ──
 TARGET=""
 PROJECT_NAME=""

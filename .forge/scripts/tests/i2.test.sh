@@ -115,14 +115,19 @@ _test_i2_005_frontmatter_version() {
   if [ ! -f "$STD_FILE" ]; then
     echo "    standard file missing: $STD_FILE" >&2; return 1
   fi
-  if ! grep -q "version: 1.0.0" "$STD_FILE"; then
-    echo "    'version: 1.0.0' missing" >&2; return 1
+  # Relaxed from exact pins (was 1.0.0 / 2026-05-11 / 2027-05-11) to
+  # frontmatter-validity checks by b7-9-janus-ai (maintainer "Option B",
+  # 2026-06-22): version + lifecycle dates are mutable by design and must not
+  # be exact-pinned by a sibling change's gate (the b7-9 SemVer bump to 1.1.0
+  # would otherwise break this archived gate).
+  if ! grep -qE "^version: [0-9]+\.[0-9]+\.[0-9]+" "$STD_FILE"; then
+    echo "    semver 'version:' frontmatter missing" >&2; return 1
   fi
-  if ! grep -q "last_reviewed: 2026-05-11" "$STD_FILE"; then
-    echo "    'last_reviewed: 2026-05-11' missing" >&2; return 1
+  if ! grep -qE "^last_reviewed: [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]" "$STD_FILE"; then
+    echo "    ISO 'last_reviewed:' frontmatter missing" >&2; return 1
   fi
-  if ! grep -q "expires_at: 2027-05-11" "$STD_FILE"; then
-    echo "    'expires_at: 2027-05-11' missing" >&2; return 1
+  if ! grep -qE "^expires_at: [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]" "$STD_FILE"; then
+    echo "    ISO 'expires_at:' frontmatter missing" >&2; return 1
   fi
   if ! grep -q "linter_rule: t3-forbidden-components" "$STD_FILE"; then
     echo "    'linter_rule: t3-forbidden-components' forward-pointer missing" >&2; return 1

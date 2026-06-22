@@ -120,3 +120,47 @@ forbidden_archetypes:
     alternative: "default archetype + add Firebase as adopter-managed overlay (out of Forge scope)"
     rule_id: J8-RULE-001
 
+# ── Forbidden combinations (J.8.c b7-9-janus-ai — provider × tier refusals) ──
+# <!-- Audit: B.7.9 + J.8.c (b7-9-janus-ai) -->
+# Sibling list to forbidden_archetypes: above. Where forbidden_archetypes:
+# refuses a whole archetype, this list refuses a provider × tier COMBINATION
+# WITHIN a permitted archetype (ai-native-rag is permitted; a non-sovereign
+# LLM provider within it is not). Foreseen by
+# global/janus-orchestration-rules.md "Extending the catalogue" step 1.
+#
+# Consumed by:
+#   - bin/_forge-init-helpers.sh::_refuse_if_forbidden_combination
+#     (wrapper-side defense in depth, invoked by forge-init-ai-native-rag.sh)
+#
+# Entry shape (7 keys): archetype / provider / tier / reason / since /
+#   alternative / rule_id. `tier: any` fires regardless of declared tier
+#   (a default-provider refusal — never a valid tier value); `tier: T3`
+#   fires only when the resolved tier equals T3.
+#
+# Refusal exit code: 3 (policy violation per ADR-J8-003).
+# Refusal stderr format:
+#   [REFUSAL: <archetype>/<provider>@<tier>: <rule_id>: <reason> ; alternative: <alt>]
+
+forbidden_combinations:
+  - archetype: ai-native-rag
+    provider: vertex-ai
+    tier: any            # fires regardless of declared tier (never a valid default)
+    reason: "Vertex AI = GCP-managed inference ; CLOUD Act incompatible with EU/premium positioning"
+    since: "0.5.0"
+    alternative: "Mistral-EU (Mistral on Scaleway) or self-hosted vLLM ; OpenAI/Anthropic via EU-jurisdiction gateway at T1 only"
+    rule_id: J8-RULE-004
+  - archetype: ai-native-rag
+    provider: bedrock
+    tier: any
+    reason: "AWS Bedrock = AWS-managed inference ; CLOUD Act incompatible with EU/premium positioning"
+    since: "0.5.0"
+    alternative: "Mistral-EU (Mistral on Scaleway) or self-hosted vLLM ; OpenAI/Anthropic via EU-jurisdiction gateway at T1 only"
+    rule_id: J8-RULE-005
+  - archetype: ai-native-rag
+    provider: us-managed-inference
+    tier: T3
+    reason: "T3 (SecNumCloud / EUCS High) requires 100% EU jurisdiction ; US-managed inference is CLOUD Act exposure"
+    since: "0.5.0"
+    alternative: "Mistral on Scaleway (SecNumCloud) or self-hosted vLLM on EU infrastructure"
+    rule_id: J8-RULE-006
+

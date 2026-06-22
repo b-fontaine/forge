@@ -802,6 +802,9 @@ REMEDIATION = {
     "inngest":         "replace with Temporal (orchestration.yaml::default_by_language.rust, §VIII.2) ; DBOS is a future-option pending a Rust SDK",
     "firebase":        "remove ; Firebase disqualified at all EU tiers per compliance-tiers.md §10.2",
     "aws-managed":     "replace with self-host EU / OVHcloud / Scaleway / Outscale (T3)",
+    # LLM-provider tokens (b7-9-janus-ai / J.8.c — pairs with J8-RULE-004/005).
+    "vertex-ai":       "replace with Mistral-EU (Mistral on Scaleway) or self-hosted vLLM ; OpenAI/Anthropic-via-EU-gateway at T1 only",
+    "bedrock":         "replace with Mistral-EU (Mistral on Scaleway) or self-hosted vLLM ; OpenAI/Anthropic-via-EU-gateway at T1 only",
 }
 
 def discover_standards():

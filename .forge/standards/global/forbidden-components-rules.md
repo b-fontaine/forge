@@ -4,9 +4,9 @@
 <!-- Trigger: forbidden, t3-forbidden, t3-rule, linter, t1, t2, t3, eu-tier, ci-enforcement, forbidden-components -->
 
 ```yaml
-version: 1.0.0
-last_reviewed: 2026-05-12
-expires_at: 2027-05-12
+version: 1.1.0
+last_reviewed: 2026-06-22
+expires_at: 2027-06-22
 exception_constitutional: false
 linter_rule: t3-forbidden-components
 enforcement: ci
@@ -183,11 +183,34 @@ Three candidate rules are deferred and documented in
 Adopters who want immediate `dynamodb` / `firestore` / `cosmosdb`
 enforcement at T3 can extend
 `.forge/standards/global/compliance-tiers.md::forbidden:`
-(currently `[]`) with the tokens — the generic linter picks them
+with the tokens — the generic linter picks them
 up via T3-RULE-005 (matrix-row enforcement). The proper resolution
 is a future T6 standards refactor normalising the
 `persistence.yaml::forbidden_for_eu_strict:` block into the
 generic `forbidden:` convention.
+
+### LLM-provider `forbidden:` coupling (b7-9-janus-ai / J.8.c)
+
+The same `compliance-tiers.md::forbidden:` token approach now covers
+non-sovereign **LLM providers** for the `ai-native-rag` archetype. As
+of `compliance-tiers.md` v1.1.0 (2026-06-22), its `forbidden:` block
+lists `vertex-ai` + `bedrock` (was `[]`), so the generic
+**T3-RULE-005** review-time linter catches a manifest that pins those
+providers in the working tree — tier-scaled WARN at T1/T2, FAIL at T3,
+with the `REMEDIATION` hint pointing at Mistral-EU (Mistral on
+Scaleway) / self-hosted vLLM (OpenAI/Anthropic-via-EU-gateway at T1
+only).
+
+This review-time net is **complementary** to the scaffold-time Janus
+refusal `J8-RULE-004..006` (`global/janus-orchestration-rules.md`,
+exit 3, blocking) : the Janus rule refuses the *declared* provider
+before scaffolding ; T3-RULE-005 catches a provider that slipped past
+that gate (e.g. an adopter who hand-edited the LLM-gateway config
+post-scaffold). Both surfaces quote the same `compliance-tiers.md`
+§10.2 gradient, so they never contradict (NFR-B7-9-005). The interim
+gap (until a dedicated `T3-RULE-NNN` per-archetype LLM-provider rule
+lands, if ever needed) is closed by re-using the existing generic
+matrix-row enforcement — no new linter rule ID is consumed.
 
 ---
 
