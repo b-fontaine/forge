@@ -4,9 +4,9 @@
 <!-- Trigger: compliance, t1, t2, t3, eu-tier, dpa, schrems, cloud-act, tier-classification -->
 
 ```yaml
-version: 1.0.0
-last_reviewed: 2026-05-11
-expires_at: 2027-05-11
+version: 1.1.0
+last_reviewed: 2026-06-22
+expires_at: 2027-06-22
 exception_constitutional: false
 linter_rule: t3-forbidden-components
 enforcement: ci         # flipped from 'review' by i3-t3-forbidden-linter, 2026-05-12
@@ -41,14 +41,15 @@ rationale: >-
 > (NFR-B7-9-005). The §10.2 matrix itself is unchanged (no new row,
 > no cell shift) — only the enforcement `forbidden:` token list grew,
 > so the byte-identical-to-ARCHITECTURE-TARGET §10.2 Interdiction 5 is
-> preserved. The `version:` / `last_reviewed:` / `expires_at:`
-> frontmatter is intentionally held at the v1.0.0 / 2026-05 values :
-> the `i2-compliance-tiers` harness (`i2.test.sh::_test_i2_005`) pins
-> them, and bumping here would break that sibling change's gate
-> (NFR-B7-9-002 no-regression). The token-list edit is recorded in
-> `REVIEW.md` (2026-06-22, `b7-9-janus-ai`) as the audit trail in lieu
-> of the SemVer bump ; a future `i2` follow-up may re-version once the
-> pin is relaxed.
+> preserved. The frontmatter is **SemVer-bumped `1.0.0` → `1.1.0`**
+> (`last_reviewed` / `expires_at` rolled to 2026-06-22 / 2027-06-22)
+> per the standards-lifecycle discipline for the additive `forbidden:`
+> token edit (FR-B7-9-062). The `i2-compliance-tiers` harness
+> (`i2.test.sh::_test_i2_005`) was correspondingly **relaxed** from an
+> exact version/date pin to a frontmatter-validity check (maintainer
+> decision 2026-06-22, "Option B" — a versioned, mutable field must not
+> be exact-pinned by a sibling change's gate). The bump is recorded in
+> `REVIEW.md` (2026-06-22, `b7-9-janus-ai`).
 
 ---
 

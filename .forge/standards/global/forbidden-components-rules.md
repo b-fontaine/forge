@@ -4,9 +4,9 @@
 <!-- Trigger: forbidden, t3-forbidden, t3-rule, linter, t1, t2, t3, eu-tier, ci-enforcement, forbidden-components -->
 
 ```yaml
-version: 1.0.0
-last_reviewed: 2026-05-12
-expires_at: 2027-05-12
+version: 1.1.0
+last_reviewed: 2026-06-22
+expires_at: 2027-06-22
 exception_constitutional: false
 linter_rule: t3-forbidden-components
 enforcement: ci

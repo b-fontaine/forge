@@ -66,7 +66,7 @@ whole-archetype refusals. Overload `forbidden_archetypes:` with optional
 
 ## Q-003: I.3 review-time linter coupling — ship in-brick or as a follow-up?
 
-- **Status**: answered (default recorded ; maintainer may override)
+- **Status**: answered (maintainer-ratified in-brick + Option B)
 - **Raised in**: proposal.md J.8.c.4 (inline `[NEEDS CLARIFICATION]`) ;
   specs.md FR-B7-9-062..064
 - **Raised on**: 2026-06-22
@@ -104,6 +104,21 @@ a follow-up change?]`
   `_test_b7_9_062_tokens` test + task T-STD-I3) split cleanly to a
   follow-up change without blocking FR-B7-9-001..045/060/061. This is a
   scope preference, not a technical blocker.
+- **Maintainer ratification + version handling (Deviation #9, 2026-06-22)**:
+  the I.3 coupling is **confirmed in-brick**. During implementation the
+  additive `forbidden:` token edit collided with two *archived* sibling
+  gates that exact-pinned the standard versions
+  (`i2.test.sh::_test_i2_005` on `compliance-tiers.md`,
+  `i3.test.sh::_test_i3_008` on `forbidden-components-rules.md`). Maintainer
+  chose **"Option B"**: do the proper SemVer-minor bumps
+  (`compliance-tiers.md` + `forbidden-components-rules.md` `1.0.0` → `1.1.0`,
+  lifecycle dates → 2026-06-22 / 2027-06-22) per the standards-lifecycle
+  discipline, AND relax the two over-strict sibling pins to
+  frontmatter-validity checks (a versioned, mutable field must not be
+  exact-pinned by a sibling change's gate). The scope expansion to the
+  archived `i2`/`i3` test files is maintainer-ratified. All gates re-verified
+  GREEN (i2 14/0, i3 18/0, b7-9 15/0, j7 21/0, verify.sh + constitution-linter
+  PASS).
 
 ---
 

@@ -166,8 +166,10 @@ _test_i3_008_standard_exists() {
   if ! grep -Fq "enforcement: ci" "$STD_FILE"; then
     echo "    'enforcement: ci' frontmatter missing" >&2; return 1
   fi
-  if ! grep -Fq "version: 1.0.0" "$STD_FILE"; then
-    echo "    'version: 1.0.0' frontmatter missing" >&2; return 1
+  # Relaxed from the exact 1.0.0 pin by b7-9-janus-ai (maintainer "Option B",
+  # 2026-06-22): version is mutable by design (b7-9 bumps this standard to 1.1.0).
+  if ! grep -qE "^version: [0-9]+\.[0-9]+\.[0-9]+" "$STD_FILE"; then
+    echo "    semver 'version:' frontmatter missing" >&2; return 1
   fi
 }
 
