@@ -16,10 +16,14 @@ depends_on:
   - b7-standards          # global/llm-gateway.md forward-pointer (ADR-B7-3-002 : runtime Janus AI rules J.8.c → b7-9)
 archived_to:
   - .forge/specs/janus-rules.md  # J.8.c block APPENDED at archive (FR-B7-9-* / NFR-B7-9-* / ADR-B7-9-*) ; J.8.a/b/d blocks preserved
-collision_notes:
-  - file: .claude/agents/cross-layer-orchestrator.md
-    co_editor: b7-pythia
-    resolution: "this brick edits the 'Forbidden archetypes & combinations' H2 (new H3 sub-section + J8-RULE-004..006) ; b7-pythia edits the 'Dispatch Table' H2 (new Pythia routing row). Disjoint hunks (ADR-B7-9-004)."
+# Shared-file collision (change.schema.json forbids extra top-level fields, so
+# the collision contract lives in the markdown artifacts, not this frontmatter):
+#   .claude/agents/cross-layer-orchestrator.md is co-edited with sibling brick
+#   b7-pythia. This brick edits ONLY the "Forbidden archetypes & combinations"
+#   H2 (new H3 sub-section + J8-RULE-004..006) ; b7-pythia edits ONLY the
+#   "Dispatch Table" H2 (new Pythia routing row). Disjoint, non-adjacent hunks.
+#   Full contract: design.md ADR-B7-9-004 + collision-analysis section ;
+#   open-questions.md Q-004.
 timeline:
   proposed: 2026-06-22
   specified: 2026-06-22
