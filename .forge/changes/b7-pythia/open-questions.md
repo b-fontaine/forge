@@ -7,7 +7,7 @@ Q-NNN sequential per change, zero-padded to 3 digits, never reused.
 
 ## Q-001: Pythia name collision — K.2 AI/RAG agent vs existing Product Analyst
 
-- **Status**: open (BLOCKING — must resolve before status flips to `implemented`)
+- **Status**: answered
 - **Raised in**: proposal.md § "Naming collision" ; specs.md FR-K2-PYT-001
   (persona name + file path)
 - **Raised on**: 2026-06-22
@@ -78,9 +78,25 @@ suite is name-resolution-agnostic until the ADR locks it.
 
 ### Resolution
 
-_(pending — to be filled by ADR-K2-001 in design.md after maintainer
-ratification. Until then this question BLOCKS the flip to `implemented` per
-Article III.4.)_
+**Resolved 2026-06-22 by @bfontaine (maintainer ratification).** Chosen:
+**Option B — keep "Pythia" for the Product Analyst, name the new K.2 AI/RAG
+specialist agent `Sibyl`.** The maintainer selected **Sibyl** (a Greek
+prophetess/seer — thematically consistent with the oracle motif) over the
+design's recommended "Delphi"; both options keep the shipped
+Product-Analyst-Pythia untouched (zero churn to the 4 existing references).
+
+Binding for `/forge:implement`:
+- `<pythia-name>` placeholder throughout proposal/specs/design/tasks resolves to
+  **Sibyl**.
+- Persona file: `.claude/agents/sibyl.md`; header `# Agent: AI/RAG Specialist (Sibyl)`.
+- Brick name stays `b7-pythia` (it names the brick / the roadmap row, not the
+  persona).
+- The existing `.claude/agents/product-analyst.md` (Pythia) and its 4 references
+  (`forge-master.md` ×2, `onboard.md`, `propose.md`) are **not** modified.
+- ADR-K2-001 in design.md to be updated to record `Sibyl` as the ratified name
+  (superseding its "Delphi" recommendation).
+
+This question no longer blocks the flip to `implemented`.
 
 ---
 
