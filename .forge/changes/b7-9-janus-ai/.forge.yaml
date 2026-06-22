@@ -1,0 +1,29 @@
+name: b7-9-janus-ai
+status: planned
+created: 2026-06-22
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.7.9   # docs/new-archetypes-plan.md §6.2 — standard interdiction Vertex/Bedrock ; T3 ⇒ Mistral-EU/vLLM
+  - J.8.c   # docs/new-archetypes-plan.md §8 (J.8) + §0.0 line 207-210 — Janus ai-native-rag LLM-gateway rules, deferred from T5
+depends_on:
+  - j8-janus-rules        # J8-RULE-NNN namespace (ADR-J8-004), exit-3/[REFUSAL:] convention (ADR-J8-003), _refuse_if_forbidden + _forge-init-helpers.sh (ADR-J8-005), janus-orchestration-rules.md, .forge/.forge-tier ledger (ADR-J8-006)
+  - i2-compliance-tiers   # global/compliance-tiers.md §10.2 matrix (LLM Gateway + AWS/GCP/Azure rows) — VERIFIED source of Mistral-EU/vLLM ; tier gradient
+  - i3-t3-forbidden-linter # T3-RULE-NNN + generic forbidden: token enforcement + tier-scaled WARN/FAIL + REMEDIATION map (review-time coupling, Q-003)
+  - b7-1-schema           # ai-native-rag/1.0.0 candidate schema this brick adds rules for
+  - b7-2a-dispatch-register # bin/forge-init-ai-native-rag.sh wrapper this brick hooks the combination check into
+  - b7-2-scaffolder       # gated wrapper + scaffolder backbone (provider config the check guards)
+  - b7-standards          # global/llm-gateway.md forward-pointer (ADR-B7-3-002 : runtime Janus AI rules J.8.c → b7-9)
+archived_to:
+  - .forge/specs/janus-rules.md  # J.8.c block APPENDED at archive (FR-B7-9-* / NFR-B7-9-* / ADR-B7-9-*) ; J.8.a/b/d blocks preserved
+collision_notes:
+  - file: .claude/agents/cross-layer-orchestrator.md
+    co_editor: b7-pythia
+    resolution: "this brick edits the 'Forbidden archetypes & combinations' H2 (new H3 sub-section + J8-RULE-004..006) ; b7-pythia edits the 'Dispatch Table' H2 (new Pythia routing row). Disjoint hunks (ADR-B7-9-004)."
+timeline:
+  proposed: 2026-06-22
+  specified: 2026-06-22
+  designed: 2026-06-22
+  planned: 2026-06-22
+  # implemented: <auto-filled by /forge:implement>
+  # archived: <auto-filled by /forge:archive>
