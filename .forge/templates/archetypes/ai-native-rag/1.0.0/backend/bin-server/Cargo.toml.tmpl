@@ -1,0 +1,26 @@
+[package]
+name = "bin-server"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+# Net-new layer crates (the three ai-native-rag modules).
+rag = { path = "../rag" }
+llm_gateway = { path = "../llm_gateway" }
+mcp = { path = "../mcp" }
+
+# Substrate (axum + tracing/OTel). Connect/Temporal/Zitadel are consumed from
+# the 2.0.0 substrate by reference (see main.rs) — not re-declared here.
+tokio = { workspace = true }
+anyhow = { workspace = true }
+axum = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+tower-http = { workspace = true }
+
+[features]
+# Forwarded to the mcp crate so an operator can build the bin-server with the
+# HTTP MCP transport (default keeps the lighter stdio transport).
+default = []
+mcp-http = ["mcp/mcp-http"]

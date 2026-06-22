@@ -1,0 +1,80 @@
+# <!-- Audit: B.7.2 (b7-2-scaffolder, Phase 2) — ai-native-rag backend workspace manifest -->
+# Structural precedent: full-stack-monorepo backend/Cargo.toml.tmpl
+#
+# Cargo workspace root for <project-name>'s backend. Every external crate pin
+# lives HERE (the rendered Cargo.toml), never in a global/*.md standard
+# (FR-B7-2-041, ADR-B7-2-003 — b7-3 T-007 no-inline-pin guard stays GREEN).
+# Member crates inherit deps via `<dep>.workspace = true`.
+#
+# Members (the three net-new ai-native-rag layers + the DI entrypoint):
+#   rag         — chunking · embeddings (Embedder trait) · hybrid retrieval (RRF) ·
+#                 re-rank · pgvector HNSW · Temporal activity-only worker.
+#   llm_gateway — thin axum proxy: OpenAI-compat upstream, prompt-audit (IX.6),
+#                 token budget + kill-switch + non-AI fallback (XI.5), PII (XI.6).
+#   mcp         — rmcp tool_router server (search stub) + dual transport.
+#   bin-server  — DI wiring + axum entrypoint; substrate consumed by reference.
+#
+# The Connect-RPC / Temporal / Zitadel / OTel substrate is consumed from the
+# full-stack 2.0.0 stack BY REFERENCE (FR-B7-2-011), not re-declared here.
+
+[workspace]
+resolver = "2"
+members = [
+    "rag",
+    "llm_gateway",
+    "mcp",
+    "bin-server",
+]
+
+[workspace.dependencies]
+# ── Async / runtime ──
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1"
+futures = "0.3"
+
+# ── Error handling ──
+thiserror = "1"
+anyhow = "1"
+
+# ── Observability (IX.6 prompt-audit spans) ──
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# ── HTTP / transport (axum substrate) ──
+axum = "0.8"
+tower = "0.5"
+tower-http = { version = "0.6", features = ["trace"] }
+http = "1"
+
+# ── Database (pgvector access via sqlx) ──
+# sqlx 0.9 (NOT 0.8) is REQUIRED by pgvector 0.4.2 — pinning 0.8 puts two
+# sqlx-core versions in the graph and `pgvector::Vector: sqlx::Type` fails to
+# resolve (verify-then-pin LIVE, 2026-06-21). 0.9 split the old
+# `runtime-tokio-rustls` umbrella into `runtime-tokio` + `tls-rustls-ring`.
+sqlx = { version = "0.9", features = ["runtime-tokio", "tls-rustls-ring", "postgres", "macros"] }
+
+# ── Serialization ──
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# JSON Schema for MCP tool params — pinned to the version rmcp 1.7.0 uses so the
+# derived `JsonSchema` satisfies rmcp's tool-router bound.
+schemars = "1"
+
+# ── Testing ──
+tokio-test = "0.4"
+
+# ── Net-new pins (verify-then-pin LIVE — .forge/research/b7-2-verify-then-pin.md) ──
+# MCP servers (mcp) — official Rust SDK. `auth` = OAuth 2.0 (→ Zitadel/Envoy).
+# Transport features (transport-io / transport-streamable-http-server + ...) are
+# selected by the mcp crate's own `mcp-stdio` / `mcp-http` features (ADR-B7-2-005).
+rmcp = { version = "1.7.0", features = ["server", "macros", "schemars", "auth"] }
+# RAG pgvector access layer (rag) — HNSW vector_cosine_ops via sqlx.
+pgvector = { version = "0.4.2", features = ["sqlx"] }
+# LLM gateway upstream client + MistralEmbedder. async-openai 0.41.x is per-API
+# feature-gated; `embedding` turns on the embeddings client (pulls the `_api`
+# Client surface). Default already enables `rustls`.
+async-openai = { version = "0.41.1", features = ["embedding"] }
+# LocalEmbedder in-process ONNX embeddings (rag) — XI.5 fallback / T3 zero-egress.
+# Heavy native dep (pulls ONNX Runtime via `ort`); the rag crate keeps it OFF by
+# default behind the `local-embeddings` feature so default builds stay hermetic.
+fastembed = "5.17.2"

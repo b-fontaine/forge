@@ -1,0 +1,23 @@
+# <!-- Audit: B.7.2 (b7-2-scaffolder, Phase 3) — ai-native-rag llm-gateway Service -->
+# Structural precedent: full-stack-monorepo/infra/k8s/base/service.yaml.tmpl
+#
+# ClusterIP fronting the llm-gateway Deployment. The Envoy Gateway (B.8.4,
+# reused by reference) routes external Connect traffic to this Service; the Qwik
+# web-public surface reaches it as Qwik → Envoy → llm-gateway → rag pipeline.
+apiVersion: v1
+kind: Service
+metadata:
+  name: <project-name>-llm-gateway
+  labels:
+    app.kubernetes.io/name: <project-name>
+    app.kubernetes.io/component: llm-gateway
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: <project-name>
+    app.kubernetes.io/component: llm-gateway
+  ports:
+    - name: http
+      port: 8088
+      targetPort: http
+      protocol: TCP

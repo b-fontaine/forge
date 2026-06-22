@@ -1,0 +1,101 @@
+// Audit: B.7.2 (b7-2-scaffolder, Phase 3) — ai-native-rag RAG query landing route
+// Structural precedent: full-stack-monorepo/2.0.0/frontend/web-public/src/routes/index.tsx.tmpl
+// Standard: .forge/standards/web-frontend.yaml
+//
+// Minimal RAG query UI: an input → one unary Connect call (RagService.Query) →
+// renders the answer, the grounding sources, and a `fallbackUsed` indicator that
+// surfaces the Article XI.5 non-AI fallback path. Non-streaming request/response
+// baseline only — SSE / WebTransport ships in b7-10-streaming (ADR-B7-2-006).
+import { component$, useSignal } from "@builder.io/qwik";
+import type { DocumentHead } from "@builder.io/qwik-city";
+import { query, type RagAnswer } from "../lib/connect-client";
+
+export default component$(() => {
+  const question = useSignal<string>("");
+  const result = useSignal<RagAnswer | null>(null);
+  const loading = useSignal<boolean>(false);
+  const error = useSignal<string>("");
+
+  return (
+    <main>
+      <h1><project-name> — RAG query</h1>
+      <p>
+        Ask a question; the backend runs retrieval-augmented generation through
+        the in-repo LLM gateway and returns an answer grounded in source chunks.
+        If the AI upstream is unavailable, a non-AI fallback answer is served
+        (Article XI.5) — surfaced by the indicator below.
+      </p>
+
+      <form
+        preventdefault:submit
+        onSubmit$={async () => {
+          if (question.value.trim() === "") return;
+          loading.value = true;
+          error.value = "";
+          result.value = null;
+          try {
+            result.value = await query(question.value);
+          } catch (e) {
+            error.value = e instanceof Error ? e.message : String(e);
+          } finally {
+            loading.value = false;
+          }
+        }}
+      >
+        <input
+          type="text"
+          name="question"
+          placeholder="Ask a question…"
+          value={question.value}
+          onInput$={(_, el) => (question.value = el.value)}
+        />
+        <button type="submit" disabled={loading.value}>
+          {loading.value ? "Querying…" : "Query"}
+        </button>
+      </form>
+
+      {error.value !== "" && (
+        <p role="alert" class="error">
+          Query failed: {error.value}
+        </p>
+      )}
+
+      {result.value !== null && (
+        <section>
+          {result.value.fallbackUsed && (
+            <p class="fallback-indicator" role="status">
+              ⚠ Non-AI fallback answer (the AI upstream was unavailable or
+              over budget — Article XI.5).
+            </p>
+          )}
+          <h2>Answer</h2>
+          <p>{result.value.answer}</p>
+
+          {result.value.sources.length > 0 && (
+            <>
+              <h3>Sources</h3>
+              <ul>
+                {result.value.sources.map((s) => (
+                  <li key={s.documentId}>
+                    <strong>{s.documentId}</strong> (score{" "}
+                    {s.score.toFixed(3)}): {s.content}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </section>
+      )}
+    </main>
+  );
+});
+
+export const head: DocumentHead = {
+  title: "<project-name> — RAG query",
+  meta: [
+    {
+      name: "description",
+      content: "AI-native RAG query surface for <project-name> (Qwik City).",
+    },
+  ],
+};

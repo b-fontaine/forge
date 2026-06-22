@@ -1,0 +1,46 @@
+# <!-- Audit: B.7.2 (b7-2-scaffolder, Phase 1) — ai-native-rag/1.0.0 .gitignore -->
+
+# ── Secrets ──
+.env
+.env.local
+*.pem
+*.key
+
+# ── Rust (backend/) ──
+backend/target/
+backend/**/*.rs.bk
+# Cargo.lock backup files are excluded; Cargo.lock itself is committed (workspace best practice)
+backend/Cargo.lock.*
+
+# ── Qwik web-public (frontend/web-public/) ──
+frontend/web-public/node_modules/
+frontend/web-public/dist/
+frontend/web-public/server/
+frontend/web-public/.vite/
+frontend/web-public/tmp/
+
+# ── Node (tooling) ──
+node_modules/
+npm-debug.log
+
+# ── Local embedding model cache (LocalEmbedder / fastembed, first-run download) ──
+.fastembed_cache/
+backend/.fastembed_cache/
+
+# ── Generated proto / Connect codegen output ──
+backend/**/src/generated/connect/
+frontend/web-public/src/lib/generated/connect/
+
+# ── IDE ──
+.idea/
+.vscode/settings.json
+*.iml
+.DS_Store
+
+# ── Forge runtime state (not framework assets) ──
+.forge/_memory/
+.forge/changes/*/draft*/
+.omc/
+
+# ── Docker / Compose ──
+docker-compose.override.yml

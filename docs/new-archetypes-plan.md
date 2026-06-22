@@ -1974,6 +1974,73 @@ archétypes, comme outillage périphérique. Codifié **Module L** en §1.4 + li
 
 ---
 
+## 0.12 Status update — 2026-06-21 (T6/B.8 ✅ COMPLET ; T7/B.7 🔵 3/9 briques)
+
+> **Resync majeure.** Les sections de statut §0.0–§0.11 s'arrêtaient au
+> 2026-05-30 et le tableau §11 marquait encore **T6 et T7 `⏸️ Pending`**.
+> Or les deux ont avancé. Cette section rétablit la vérité du repo
+> (git + `.forge/changes/*/.forge.yaml`) au 2026-06-21. Le tableau §11 est
+> corrigé en conséquence (T6 ✅, T7 🔵 in progress).
+
+### T6 — Module B.8 (flagship 1.0.0 → 2.0.0) ✅ COMPLET
+
+**Released `v0.4.0`** — *« first stable cut (B.8 flagship migration complete) »*.
+Le **point de non-retour** (§10 Phase 2) est franchi : la flagship 2.0.0 est la
+cible par défaut, fresh-init Kong-less.
+
+- **Constitution v2.0.0** ratifiée (B.8.14-C1) : `§VIII.1 Kong → Envoy Gateway`.
+  Tous les changes post-B.8 portent `constitution_version: "2.0.0"`.
+- **17 changes B.8 archivés** : `b8-1-audit-baseline`, `b8-2-legacy-snapshot`,
+  `b8-3-schema-candidate` + `b8-3b-validator-versioned-schema`, `b8-4-envoy-gateway`,
+  `b8-5-postgres-pgvector` (`pgvector:0.8.2-pg17`), `b8-6-connect-rpc`
+  (`connectrpc 0.6.x`), `b8-7-zitadel`, `b8-9-qwik-web-public` (Qwik City +
+  Connect-ES v2), `b8-10-migrate-flagship`, `b8-11-nsma-linter`
+  (`no-state-management-alternatives` CI-blocking), `b8-12-e2e-migration`
+  (Envoy SecurityPolicy JWT), `b8-13-rollback-runbook` (`docs/ROLLBACK.md`),
+  `b8-14-promotion-prep` + `b8-14-promotion-flip` (B.8 COMPLETE, fresh-init 2.0.0),
+  `b8-15-upgrade-matrix` (ferme la **couche D** de T5.1 — `forge upgrade` matrix N-1→N).
+- **OTel trio rehosté** : `b8-signoz-unified`, `b8-obi-refresh`, `b8-coroot-rehost`.
+- **Déviation §10 Phase 2 actée — DBOS abandonné côté Rust** (`b8-orchestration-temporal-realign`,
+  "B8O" 2026-06-01) : pas de SDK DBOS Rust ⇒ **Temporal natif conservé**
+  (`temporalio-sdk 0.4.0`) pour la durable execution sur Postgres. Le risque §12
+  « DBOS Go SDK breaking changes » devient **caduc** pour la stack Rust. Le caveat
+  §13.3 « garde Temporal en option » est donc *de facto* le défaut.
+
+### T7 — Module B.7 (`ai-native-rag`) 🔵 EN COURS — 3 briques / 9
+
+Décision amont (mainteneur 2026-06-11, `.forge/_memory/b7-ai-native-rag-exploration.md`) :
+**T7 démarre par B.7, pas B.6** (B.7 réutilise le substrat 2.0.0 livré par B.8 →
+moins de net-new infra). Chaîne de **9 changes atomiques** (decision B, pas de
+monolithe). Spec accumulée : `.forge/specs/ai-native-rag.md`.
+
+| # | Brique | État |
+|---|--------|------|
+| 1 | `b7-1-schema` — `ai-native-rag/1.0.0.yaml` (candidate, scaffoldable:false ; phases `embeddings-pipeline` + `prompt-audit`) | ✅ archivé 2026-06-11 |
+| 2 | `b7-standards` — `global/{rag-patterns,llm-gateway,mcp-servers}.md` (pattern docs, **no pins**) | ✅ archivé 2026-06-13 |
+| 2a | `b7-2a-dispatch-register` — registre CLI, refus `init` exit 2→3 (résout Q-005) | ✅ archivé 2026-06-12 |
+| **3** | **`b7-2-scaffolder`** — templates `ai-native-rag/1.0.0/*` + backbone Rust (LLM gateway proxy + MCP rmcp + pipeline RAG) + verify-then-pin + wrapper gated overlay.sh + cli/assets bundle | ✅ **archivé 2026-06-21** (56 templates, 35 cargo tests, b7-2.test.sh L1 7/L2 3, verify.sh PASS ; revue indép. APPROVE-WITH-NITS ; pins LIVE rmcp 1.7.0/pgvector 0.4.2/async-openai 0.41.1/fastembed 5.17.2 ; reste candidate, promotion → b7-6) |
+| 4 | `b7-pythia` — agent K.2 (patron `k3-demeter`) | ⏳ pending |
+| 5 | `b7-9-janus-ai` — B.7.9 + **J.8.c** (refus Vertex/Bedrock ; T3 ⇒ Mistral-EU/vLLM) | ⏳ pending |
+| 6 | `b7-5-ai-act` — B.7.5 + B.7.8, débloque Themis K.5 + `.forge/compliance/{ai-act,dora}/` | ⏳ pending |
+| 7 | `b7-10-streaming` — Qwik SSE/WebTransport | ⏳ pending |
+| 8 | `b7-7-example` — `examples/forge-rag-example/` (3 demos) | ⏳ pending |
+| 9 | `b7-6-harness` — `b7.test.sh` ≥35 + snapshot tarball ; **gate de promotion** candidate→stable/scaffoldable (ADR-B7-1-002) | ⏳ pending |
+
+Dépendances dures : `1→2→3`, puis 4–9 largement parallélisables. La promotion de
+l'archétype à `stable` / `scaffoldable: true` est **gated sur un `b7-6-harness`
+vert** (ADR-B7-1-002, patron B.8.14-C2) — `forge init --archetype ai-native-rag`
+refuse donc proprement (exit 3) jusque-là. **J.8.c** (déféré de T5/§0.0 J.8) atterrit
+en brique #5.
+
+### Verify-then-pin — baseline (NON figé, à re-confirmer LIVE en B.7.2)
+
+Recherche `b7-standards` (2026-06-13) : `rmcp 1.7.0` / `pgvector` (crate Rust) `0.4.2`
+/ `async-openai 0.41.0`. Drift rmcp à 3 sources (README 0.16.0 / Context7 0.5.0 /
+crates.io LIVE 1.7.0, ADR-B7-3-003) → `cargo add` LIVE obligatoire au pin, dans le
+`Cargo.toml.tmpl` consommateur (leçon coroot/Q-004, Article III.4).
+
+---
+
 ## 0. Executive Summary (1 page)
 
 À la sortie de **v0.3.0** (2026-05-02), Forge a clos T0, T1, T2 P1, T2 P2 et T3 robustesse :
@@ -2689,8 +2756,8 @@ Reprise de ARCHITECTURE-TARGET §11.
 | **T5.2**  | **Anti-Hallucination Platform Verification (process)**                                              | ✅ **Done 2026-05-18** via `t5-2-platform-verification`. 8 L1 + 1 L2 opt-in (`FORGE_T52_LIVE=1` pub.dev smoke `flutter_bloc`) ; harness `t5-2.test.sh` 9/9 GREEN, wall-clock 0.06s L1 / 0.31s L1+L2. 4 surfaces drift-guard (agent + standards-lifecycle + CONTRIBUTING + LINTING) vérifiées verbatim. `standards-lifecycle.md` v1.0.0 → v1.1.0 (additive, frontmatter back-fill, REVIEW.md ledger 2026-05-18). Article III.4 (Ambiguity Protocol) reinforcement procédural — auto-validation par code-reviewer indépendant qui a attrapé "Article VIII" fabriquée → corrigée pré-archive. Release target v0.3.4 (patch). | Ajoute un 3e axe (platform compatibility) à la procédure document-specialist + cadence de re-revue `standards-lifecycle.md` v1.1.0.          |
 | **T5.3**  | **`t5-otel-dartastic-realign`**                                                                    | ✅ **Done 2026-05-18** via `t5-otel-dartastic-realign`. Inaugural application of T5.2 3-axis checklist on 3 Dartastic packages. Standard v1.1.0 → v2.0.0 breaking. FSM frontend (5 .dart files) + mobile-only template (4 .tmpl + cli/assets mirrors) rewritten. 3 archived changes carry `.forge-update-notes` forward-pointers (Article V immutability). Harness `t5-otel-dartastic.test.sh` 13/13 L1 GREEN ; L2 (`flutter analyze` on both archetypes) GREEN via `task validate` smoke-with-toolchains. Independent code-reviewer + 7 fix-forward iterations on Dartastic API symbol-level errors (caught by `flutter analyze`). First fixes carried in T5.3 (mobile-only analyzer dette 14 issues, gherkin uuid conflict removed, Taskfile mvdan/sh fixes, .env bootstrap, archetypes-smoke stdout surfacing). Détails §0.3. Target v0.4.0-rc.1. | Workiva (web-only) → Dartastic (all-platform). Bump `flutter/opentelemetry.md` v2.0.0 breaking. Q-006 resolution. |
 | **T5.3.1** | **`b1-1-dev-up-matrix-fixes` (template hygiene)**                                                  | ⏸️ Planned 2026-05-18 post-T5.3. Closes the `dev-up-matrix` red lights that T5.3 exposed (chiefly `image: scratch` placeholder in `full-stack-monorepo/docker-compose.dev.yml.tmpl:60` + `version: "3.X"` obsolete attribute). Détails §0.4. Effort `S`–`M`. Release : piggyback v0.4.0-rc.1 ou patch rc.2. | Hygiène pré-existante `b1-foundations`/`b1-delivery` template. Pas de lien avec Workiva → Dartastic ; séparé pour scope auditability + atomic revertability. |
-| **T6**    | **B.8 (flagship 1.0.0 → 2.0.0), Phase 2 ARCHITECTURE-TARGET, B.8.15 couche D upgrade-matrix**     | ⏸️ Pending.                                                                                                                                                                                                                             | Migration breaking flagship. **Point de non-retour**. B.8.15 ferme la dernière couche de T5.1 (upgrade matrix N-1 → N).                      |
-| **T7**    | **B.6 (event-driven-eu), B.7 (ai-native-rag), K.1, K.2, K.4, K.5**                               | ⏸️ Pending.                                                                                                                                                                                                                             | Deux nouveaux archétypes + 4 nouveaux agents.                                                                                                |
+| **T6**    | **B.8 (flagship 1.0.0 → 2.0.0), Phase 2 ARCHITECTURE-TARGET, B.8.15 couche D upgrade-matrix**     | ✅ **COMPLET — `v0.4.0`** (détails §0.12). Constitution v2.0.0 (§VIII.1 Kong→Envoy ratifié, B.8.14). 17 changes B.8 archivés + trio OTel rehosté. B.8.15 ferme la couche D de T5.1. **Point de non-retour franchi.** Déviation §10 Phase 2 : **DBOS abandonné côté Rust** (B8O 2026-06-01) ⇒ Temporal natif conservé (`temporalio-sdk 0.4.0`). | Migration breaking flagship. **Point de non-retour**. B.8.15 ferme la dernière couche de T5.1 (upgrade matrix N-1 → N).                      |
+| **T7**    | **B.6 (event-driven-eu), B.7 (ai-native-rag), K.1, K.2, K.4, K.5**                               | 🔵 **IN PROGRESS — B.7 d'abord** (mainteneur 2026-06-11 : réutilise substrat 2.0.0). Chaîne 9 briques, **3 livrées** : ✅ `b7-1-schema` (B.7.1, 2026-06-11) + ✅ `b7-2a-dispatch-register` (2026-06-12) + ✅ `b7-standards` (B.7.3, 2026-06-13). 🔵 `b7-2-scaffolder` (B.7.2 full) proposed 2026-06-21. ⏳ pending : `b7-pythia` (K.2), `b7-9-janus-ai` (J.8.c), `b7-5-ai-act` (K.5), `b7-10-streaming`, `b7-7-example`, `b7-6-harness` (gate promotion). **B.6 (event-driven-eu) non démarré.** | Deux nouveaux archétypes + 4 nouveaux agents.                                                                                                |
 | **T8**    | **B.9 (mobile-pwa-first / 2.0.0), B.3 (rust-cli-tui), pédagogie C.2-C.5**                        | ⏸️ Pending. **F.3 pulled forward, delivered 2026-05-12 via `f3-release-script-fix`.**                                                                                                                                                                | Renommage mobile + dernier archétype premium + walkthrough/anti-patterns/comparison/migration. F.3 release script fix shipped early (T5).    |
 | **T9+**   | **L.1 (multi-vendor agent core — Codex/Antigravity/Cursor via émetteurs), G.* (Forge Guardian, VSCode, pre-commit ; G.6 superseded by L.1), H.* (multi-tenant, télémétrie, compliance reports)** | ⏸️ Pending.                                                                                                                                                                                                                             | Outillage périphérique et enterprise après que les 5 archétypes soient stables. L.1 = portabilité multi-CLI source-unique + connecteurs (feasibility §0.11). |
 

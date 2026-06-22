@@ -1,0 +1,60 @@
+<!-- Audit: B.7.2 (b7-2-scaffolder, Phase 1) — ai-native-rag infra nested CLAUDE.md -->
+<!-- Scope: infra/ subtree only — infra standards -->
+
+# CLAUDE.md — <project-name>/infra
+
+## Scope
+
+This nested CLAUDE.md is loaded automatically by Claude Code when navigating any
+file under `infra/`. It scopes which Forge standards apply and which agent
+orchestrator owns work in this subtree. The root `CLAUDE.md` carries cross-cutting
+policies only. Flutter and Rust standards MUST NOT be loaded here.
+
+## Load These Standards (infra scope)
+
+- **global/tdd-rules** — always active (Article I), including for IaC validation.
+- **infra/docker** — multi-stage builds, distroless/Alpine-minimal final stage,
+  `HEALTHCHECK` required (Article VIII.3).
+- **infra/docker-compose** — `arn-` prefix on all services, named `arn-dev`
+  network, healthchecks, `depends_on: condition: service_healthy`.
+- **infra/kubernetes** — `base/` + `overlays/{dev,staging,prod}/`, resource
+  limits/requests on every container.
+- **infra/temporal** — Temporal namespace + worker deployment manifests only;
+  the RAG activity-worker logic lives in `backend/rag/`.
+- **observability/opentelemetry** — collector config, OTLP receiver/exporter.
+
+## DO NOT Load (explicit exclusions)
+
+- Any `flutter/*` standard — route to `frontend/web-public/CLAUDE.md` and Hera.
+- Any `rust/*` standard — route to `backend/CLAUDE.md` and Vulcan.
+- `global/proto-contracts` — cross-layer contract concern owned by Hermes-API.
+
+## Primary Agent
+
+**Atlas** — Infrastructure Architect. Panoptes (observability), Heracles
+(DevOps/CI), and **Aegis** (security audit) assist. Cross-layer changes defer to
+**Janus** via the root `CLAUDE.md`.
+
+## Reused B.8 substrate (no new infra component — NFR-B7-2-001)
+
+This archetype **reuses** the B.8 infra substrate by reference; it introduces no
+new infra component. RAG-specific additions are limited to:
+
+- **pgvector HNSW** — the `vector` extension + HNSW index definitions
+  (`postgres/init-pgvector.sql`), on the reused `pgvector:0.8.2-pg17` image
+  (B.8.5).
+- **`arn-llm-gateway` service wiring** — the in-repo LLM gateway proxy declared
+  in `docker-compose.dev.yml` (and, for prod, a K8s service in a later brick).
+
+Temporal (B8O), Zitadel (B.8.7), and the SigNoz/OBI/Coroot observability trio
+(B.8.8) are consumed as-is from the flagship substrate.
+
+## Architecture Non-Negotiables (Article VIII)
+
+- **Distroless final stages** — all Dockerfiles use a multi-stage build with a
+  distroless (or Alpine-minimal) final stage running as non-root.
+- **Compose conventions** — `arn-` prefix, `arn-dev` network, healthchecks,
+  `condition: service_healthy`. A bare `docker-compose.yml` is forbidden.
+- **K8s Kustomize layout** — `base/` + `overlays/{dev,staging,prod}/`.
+- This is a **DEV** compose; production hardening (TLS, auth gates, NetworkPolicy)
+  is an Aegis-audited delta before any prod rollout.

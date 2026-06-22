@@ -1,0 +1,38 @@
+<!-- Audit: B.7.2 (b7-2-scaffolder, Phase 1) — ai-native-rag backend/llm_gateway README -->
+<!-- Standard: .forge/standards/global/llm-gateway.md -->
+
+# `<project-name>` — LLM gateway
+
+A thin, in-repo **axum** proxy (architecture decision A) that exposes an
+**OpenAI-compatible** API to the rest of `<project-name>` and forwards requests
+to a configured upstream (Mistral-EU / Scaleway / self-hosted vLLM). It is the
+single choke point through which all model traffic flows, so the AI-First
+guardrails are enforced in one place.
+
+> **Status**: Phase 1 ships this README + the module placeholder so the layer
+> root exists. The Rust source (`async-openai` client, axum handlers, the
+> fallback branch and its tests) and the dependency pins land in Phase 2. Pins
+> live only in the rendered `Cargo.toml.tmpl` (`ADR-B7-2-003`).
+
+## Responsibilities (per `global/llm-gateway.md`)
+
+- **OpenAI-compatible proxy** — `chat/completions` + `embeddings` surface,
+  forwarded to `LLM_GATEWAY_UPSTREAM_BASE_URL` with `LLM_GATEWAY_API_KEY`.
+- **Tier-aware refusal hooks** — provider selection driven by `FORGE_EU_TIER`;
+  forbidden-component refusals reference Constitution I.3 + the compliance-tiers
+  standard. The *runtime* refusal rules themselves ship in B.7.9 (Janus AI);
+  this module ships the tier-aware **hooks**.
+- **Prompt-audit span (Article IX.6)** — every prompt is wrapped in an audit
+  span (no raw PII in span attributes) before the upstream call.
+- **Token budget + kill switch (Article XI.5)** — `LLM_GATEWAY_TOKEN_BUDGET`
+  bounds each request; `LLM_GATEWAY_KILL_SWITCH=true` forces the fallback path.
+- **PII guard (Article XI.6)** — inbound payloads are screened; sovereign tiers
+  keep text in-process.
+- **Non-AI fallback (Article XI.5)** — when the upstream is unavailable or the
+  budget is exceeded, a degraded path (cached / canned / explicit refusal) is
+  returned instead of failing open. This branch is unit-tested.
+
+## Configuration
+
+See the root `.env.example` for `LLM_GATEWAY_*`, `FORGE_EU_TIER`, and
+`EMBEDDINGS_PROVIDER`.

@@ -1,0 +1,56 @@
+// <!-- Audit: B.7.2 (b7-2-scaffolder, Phase 1) — ai-native-rag seed RAG service proto -->
+// Structural precedent: full-stack-monorepo/.../shared/protos/v1/example/example.proto.tmpl
+//
+// Seed proto for <project-name>'s RAG query surface. It is intentionally
+// minimal — just enough to exercise `buf lint`, `buf breaking`, and the Rust +
+// TS codegen toolchains, and to model the one RPC the Qwik web-public surface
+// calls through the LLM gateway.
+//
+// REPLACE or extend this file as you model real services. The namespace
+// `rag.v1` is project-agnostic so regenerating the archetype does not leak
+// project identity here.
+
+syntax = "proto3";
+
+package rag.v1;
+
+// RagService — the public RAG query surface. The Qwik web-public surface calls
+// Query via Connect-ES; the backend's LLM gateway runs retrieval + generation
+// with a mandatory non-AI fallback (Article XI.5).
+service RagService {
+  // Query runs retrieval-augmented generation for the given question and
+  // returns an answer plus the supporting source chunks. A non-streaming
+  // request/response baseline — streaming (SSE / WebTransport) ships in B.7.10.
+  rpc Query(QueryRequest) returns (QueryResponse);
+}
+
+message QueryRequest {
+  // question — the user's natural-language query.
+  string question = 1;
+
+  // top_k — how many retrieved chunks to consider (0 ⇒ server default).
+  uint32 top_k = 2;
+}
+
+message QueryResponse {
+  // answer — the generated answer, or a degraded/fallback answer when the AI
+  // upstream is unavailable (Article XI.5).
+  string answer = 1;
+
+  // sources — the retrieved chunks that grounded the answer.
+  repeated SourceChunk sources = 2;
+
+  // fallback_used — true when the non-AI fallback path produced the answer.
+  bool fallback_used = 3;
+}
+
+message SourceChunk {
+  // document_id — the source document this chunk came from.
+  string document_id = 1;
+
+  // content — the chunk text used as grounding context.
+  string content = 2;
+
+  // score — the fused (RRF) retrieval score for this chunk.
+  float score = 3;
+}

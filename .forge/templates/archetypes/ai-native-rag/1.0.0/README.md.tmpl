@@ -1,0 +1,141 @@
+<!-- Audit: B.7.2 (b7-2-scaffolder, Phase 1) — ai-native-rag/1.0.0 root README; candidate, scaffoldable:false -->
+<!-- Structural precedent: full-stack-monorepo/2.0.0/README.md.tmpl -->
+
+# <project-name>
+
+## Overview
+
+`<project-name>` is an AI-native RAG application scaffolded with the Forge
+framework's `ai-native-rag` archetype. It pairs a Rust backend (RAG pipeline +
+in-repo LLM gateway proxy + MCP servers) with a Qwik streaming web surface,
+backed by Postgres/pgvector (HNSW), Temporal, Zitadel (OIDC), and the
+SigNoz/OBI/Coroot observability trio. Protobuf definitions in `shared/protos/`
+are the single source of truth for all cross-layer contracts.
+
+> **Status**: this archetype is a `candidate` (`scaffoldable: false`). The
+> backbone (templates + scaffolder body + verify-then-pin) lands in B.7.2;
+> promotion to `stable` / `scaffoldable: true` is gated on a green B.7.6 harness
+> (`ADR-B7-2-001`). Until then `forge init --archetype ai-native-rag` refuses
+> cleanly (exit 3).
+
+## Architecture
+
+```text
+<project-name>/
+├── backend/             # Rust — Cargo workspace (RAG pipeline + LLM gateway + MCP)
+│   ├── llm_gateway/     # thin axum proxy, OpenAI-compatible, tier-aware hooks
+│   ├── mcp/             # rmcp MCP servers (stdio + streamable-HTTP)
+│   └── rag/             # chunking · embeddings · hybrid retrieval · re-ranking
+├── frontend/web-public/ # Qwik streaming UI (Connect-ES v2)
+├── infra/               # pgvector HNSW + Temporal + Zitadel + observability
+├── shared/protos/       # Protobuf contracts (source of truth)
+├── .forge/              # Forge framework assets
+├── .claude/             # Claude Code agents, commands, skills
+├── Taskfile.yml         # task dev/test/lint/proto/release
+└── docker-compose.dev.yml
+```
+
+- `backend/` — Rust Cargo workspace. Beyond the shared substrate (Connect
+  transport, Temporal workers, Zitadel/OTel), it ships three net-new layers:
+  - **`llm_gateway/`** — a thin axum proxy (decision A) exposing an
+    OpenAI-compatible API to the frontend and forwarding to Mistral-EU / vLLM.
+    Tier-aware refusal hooks, prompt-audit span (Article IX.6), token budget +
+    kill switch (Article XI.5), PII guard (Article XI.6), and a mandatory
+    non-AI fallback path. See `.forge/standards/global/llm-gateway.md`.
+  - **`mcp/`** — Model Context Protocol servers built on `rmcp`, exposing tools
+    over both stdio (local dev) and streamable-HTTP (prod, OAuth 2.1 →
+    Zitadel/Envoy-OIDC). See `.forge/standards/global/mcp-servers.md`.
+  - **`rag/`** — the retrieval pipeline: chunking + embeddings, hybrid
+    retrieval (vector + BM25 + RRF), coarse→exact re-ranking, pgvector HNSW
+    (`vector_cosine_ops`). Heavy work runs as Temporal activity-only workers.
+    See `.forge/standards/global/rag-patterns.md`.
+- `frontend/web-public/` — Qwik streaming UI. The streaming transport detail
+  (SSE / WebTransport) ships in a later brick (B.7.10); the baseline here is a
+  non-streaming request/response surface over Connect-ES v2. No Flutter mobile
+  surface ships in this archetype (web-public only).
+- `infra/` — reuses the B.8 substrate by reference; the RAG-specific additions
+  are the pgvector HNSW index definitions and the `llm-gateway` service wiring.
+- `shared/protos/` — Buf-managed `.proto` files; never duplicated in layer code.
+
+## Prerequisites
+
+Install the following tools before running anything locally:
+
+- **Rust ≥ 1.80** — <https://www.rust-lang.org/tools/install> (`cargo --version`)
+- **Buf ≥ 1.30** — <https://buf.build/docs/installation> (`buf --version`)
+- **Node.js 24** — for the Qwik web-public surface (`node --version`)
+- **Docker + Docker Compose** — <https://docs.docker.com/get-docker/> (`docker compose version`)
+- **Task (go-task)** — <https://taskfile.dev/installation/> (`task --version`)
+
+## Quickstart
+
+1. Copy the environment file and fill in local values:
+
+   ```bash
+   cp .env.example .env
+   # edit .env — DB password, ports, LLM gateway upstream + API key, tier
+   ```
+
+2. Start the compose stack (Postgres/pgvector + backend + observability):
+
+   ```bash
+   task dev:up
+   ```
+
+3. Regenerate Protobuf stubs after any `.proto` change:
+
+   ```bash
+   task proto
+   ```
+
+4. Run all layer tests:
+
+   ```bash
+   task test
+   ```
+
+## AI-First non-negotiables
+
+This archetype enforces the Constitution's AI-First articles in the scaffolded
+code:
+
+- **Mandatory fallback (XI.5)** — every AI feature has a non-AI fallback. The
+  LLM gateway degrades (cached / refusal) when the upstream is down or a token
+  budget is exceeded; embeddings fall back to the in-process `LocalEmbedder`.
+- **PII explicit consent (XI.6)** — the gateway carries a PII guard; the local
+  embedding path keeps text in-process (zero egress) for sovereign tiers.
+- **Prompt audit + token budget (IX.6)** — every prompt is traced with an audit
+  span and a token-budget check before the upstream call.
+- **Tier awareness** — selection of cloud vs local providers is driven by
+  `FORGE_EU_TIER`; T3 forces zero-egress local paths. The runtime refusal rules
+  themselves are enforced by a later brick (Janus AI, B.7.9); this scaffold
+  ships the tier-aware *hooks*.
+
+## Development workflow
+
+- All code changes go through the Forge pipeline:
+  `/forge:new` → specify → design → plan → implement → review → archive.
+  Read `.forge/constitution.md` for the non-negotiable rules.
+- Commit messages **must** use scoped Conventional Commits. Allowed scopes:
+  `backend`, `frontend`, `infra`, `protos`, `forge`, `docs`, `ci`.
+- Cross-layer changes (touching ≥ 2 layers simultaneously) are routed through
+  **Janus** — see root `CLAUDE.md` for the routing policy.
+
+## Documentation
+
+| File | Purpose |
+|------|---------|
+| `CLAUDE.md` | Root routing policy for Claude Code |
+| `backend/CLAUDE.md` | Rust-layer agent scope (Vulcan) |
+| `frontend/web-public/CLAUDE.md` | Qwik web-public agent scope (Hera) |
+| `infra/CLAUDE.md` | Infra-layer agent scope (Atlas) |
+| `.forge/constitution.md` | Forge non-negotiable rules |
+| `.forge/standards/global/rag-patterns.md` | RAG pipeline pattern standard |
+| `.forge/standards/global/llm-gateway.md` | LLM gateway pattern standard |
+| `.forge/standards/global/mcp-servers.md` | MCP servers pattern standard |
+
+## Scaffolding metadata
+
+- Generated by `/forge:init --archetype ai-native-rag`.
+- See `.forge/scaffold-manifest.yaml` for the exact Forge/Cargo/Buf versions at
+  scaffold time.

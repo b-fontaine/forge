@@ -226,3 +226,85 @@ Deliverables: `global/rag-patterns.md`, `global/llm-gateway.md`,
 ### Verify-then-pin baseline (research, NOT pinned here)
 crates.io LIVE 2026-06-13: `rmcp 1.7.0` / `pgvector 0.4.2` / `async-openai 0.41.0`.
 B.7.2-full re-verifies LIVE + pins WITH the consuming `Cargo.toml.tmpl`.
+
+---
+
+## ADDED Requirements (b7-2-scaffolder, archived 2026-06-21)
+
+**Namespace** : `FR-B7-2-*` / `NFR-B7-2-*` / `ADR-B7-2-*`. Ships the **scaffolder
+backbone** (B.7.2 full) the candidate schema (B.7.1) describes: the
+`.forge/templates/archetypes/ai-native-rag/1.0.0/*` tree + scaffold-plan + the
+verify-then-pin'd backend (LLM gateway / MCP / RAG) + the gated wrapper. The
+archetype stays `candidate`/`scaffoldable:false`; the CLI keeps refusing
+(exit 3). Promotion to stable + the ≥35-test promotion suite are b7-6
+(ADR-B7-2-001). Independent review (ReviewerB72, 2026-06-21): **APPROVE-WITH-NITS**;
+MAJOR (conformance grep) + MINOR (audit-reason fidelity) fixed pre-archive.
+
+Deliverables: `.forge/templates/archetypes/ai-native-rag/{scaffold-plan.yaml,
+1.0.0/**}` (56 `.tmpl`: backend rag/llm_gateway/mcp/bin-server + Qwik web-public +
+infra + shared/protos), gated real wrapper `bin/forge-init-ai-native-rag.sh`,
+`.forge/scripts/tests/b7-2.test.sh` (L1 7 + L2 3, in forge-ci.yml `--level 1`),
+`.forge/research/b7-2-verify-then-pin.md`, `features/b7-2-scaffolder.feature` (4).
+
+### Functional
+- **FR-B7-2-001..003** — versioned template tree (backend/frontend.web-public/infra/
+  shared.protos), `scaffold-plan.yaml` with full plan↔tree coverage, render-clean
+  (no `.tmpl`/`{{placeholder}}` survive) via overlay.sh.
+- **FR-B7-2-010..014** — backend: Cargo workspace (rendered `cargo check`/`test`
+  GREEN, 35 unit tests); axum bin-server reusing 2.0.0 substrate by reference;
+  `Embedder` trait + `MistralEmbedder`(default)/`LocalEmbedder`(fastembed, gated)
+  with T3⇒Local enforced; RAG pipeline (chunking/hybrid-retrieval vector+BM25+RRF/
+  coarse→exact rerank/pgvector HNSW `vector_cosine_ops`); Temporal activity-only
+  worker; LLM gateway thin axum proxy (prompt-audit IX.6, budget+kill-switch,
+  non-AI fallback XI.5, PII XI.6, tier-aware hooks); rmcp `#[tool_router]` +
+  `search` stub + dual transport (stdio default / streamable-HTTP, auth→Zitadel).
+- **FR-B7-2-020** — Qwik web-public shell (Connect-ES v2, RAG query UI + XI.5
+  `fallbackUsed` indicator), non-streaming baseline (SSE/WebTransport → b7-10);
+  no Flutter surface (ADR-B7-2-006).
+- **FR-B7-2-030** — infra reuses B.8 substrate by reference (pgvector 0.8.2/Temporal/
+  Zitadel/observability) + RAG-specific HNSW init + llm-gateway k8s wiring; no new
+  component.
+- **FR-B7-2-040..041** — verify-then-pin LIVE (`rmcp 1.7.0`/`pgvector 0.4.2`/
+  `async-openai 0.41.1`/`fastembed 5.17.2`), pins ONLY in the rendered
+  `backend/Cargo.toml.tmpl` (standards stay pin-free; b7-3 T-007 GREEN).
+- **FR-B7-2-050..052** — gated real wrapper (scaffoldability gate → overlay.sh
+  render; AMENDED ADR-B7-2-007: overlay.sh not init.sh); CLI + wrapper refuse
+  exit 3 while candidate (zero writes); schema+templates+plan+wrapper bundled into
+  `cli/assets` (`npm run bundle`), `cd cli && npm test` GREEN (ai-native-rag =
+  refusing-candidate partition).
+- **FR-B7-2-060** — `b7-2.test.sh` (L1: tree/plan-coverage/verify-then-pin/
+  pins-only/wrapper/wrapper-refuses/**standards-conformance**; L2: render-clean/
+  cargo-check/wrapper-render), registered in forge-ci.yml `--level 1`.
+
+### Non-Functional
+- **NFR-B7-2-001** — additive: schema/constitution/archetype.schema.json/B.7.3
+  standards/other archetypes untouched. (Plan-doc resync is a separate maintainer
+  task, committed separately.)
+- **NFR-B7-2-002** — no regression: verify.sh PASS (442/0), constitution-linter
+  PASS, validate-foundations PASS, b5/b7-1/b7-2a/b7-3 GREEN.
+- **NFR-B7-2-003** — modules ship `#[cfg(test)]` scaffolding (TDD-ready), not bare
+  stubs. **NFR-B7-2-004** — byte-stable re-render.
+
+### ADRs (ratified — maintainer 2026-06-21; independent reviewer APPROVE-WITH-NITS)
+- **ADR-B7-2-001** — promotion (stage flip) deferred to b7-6 (b8-3b invariant +
+  ADR-B7-1-002, B.8.14-C2 pattern); validated by direct overlay/wrapper fixture.
+- **ADR-B7-2-002** — single change (full backbone), not split b7-2b/c.
+- **ADR-B7-2-003** — pins only in rendered `Cargo.toml.tmpl`; standards pin-free.
+- **ADR-B7-2-004** — `Embedder` trait dual impl (Mistral default / fastembed local),
+  T3 forces Local (zero egress, XI.5 fallback).
+- **ADR-B7-2-005** — MCP dual transport feature-gated (`mcp-stdio` default /
+  `mcp-http` streamable-HTTP + server-side-http + tower).
+- **ADR-B7-2-006** — frontend = Qwik web-public only (no Flutter).
+- **ADR-B7-2-007** — wrapper renders via **overlay.sh, not init.sh** (init.sh is
+  flagship-hardcoded; amends FR-B7-2-050; init.sh untouched, zero flagship risk).
+
+### Deviations recorded (verify-then-pin caught at impl, III.4)
+`sqlx` pinned **0.9** (pgvector 0.4.2 requires it, not flagship's 0.8);
+`async-openai` needs feature `embedding`; `fastembed`/`local-embeddings` OFF by
+default (heavy ONNX); `async-openai` drifted 0.41.0→0.41.1 since the B.7.3 baseline.
+
+### Downstream (b7-6 picks up)
+Promotion candidate→stable/scaffoldable:true + ≥35-test promotion suite + snapshot
+tarball; `buf generate` + `cargo fetch` wiring (Qwik `rag_pb` import + Connect
+handler registration); Temporal activity contract (currently name-only markers);
+re-verify all 4 pins LIVE at promotion.
