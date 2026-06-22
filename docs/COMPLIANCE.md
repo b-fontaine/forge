@@ -166,6 +166,51 @@ member. The full content schema, determinism recipe, consumption
 protocol, and forward-compatibility rules live in
 [`compliance-artefacts-bundle.md`](../.forge/standards/global/compliance-artefacts-bundle.md).
 
+When the project carries the `ai-native-rag` archetype's regulatory
+artefacts (below), the bundle additionally collects them under
+`regulatory/ai-act/*` + `regulatory/dora/*` (bundle contract v1.1.0,
+`b7-5-ai-act`). They ride the bundle automatically — no extra step.
+
+---
+
+## Regulatory artefacts (AI Act + DORA)
+
+> **Audit**: B.7.5 + B.7.8 (`b7-5-ai-act`, 2026-06-22).
+
+The `ai-native-rag` archetype carries EU **AI Act** + **DORA** regulatory
+artefacts under
+[`.forge/compliance/ai-act/`](../.forge/compliance/ai-act/) and
+[`.forge/compliance/dora/`](../.forge/compliance/dora/). They capture the
+**grounded** compliance posture (the archetype profile is "RGPD + AI Act +
+DORA si finance", `ARCHITECTURE-TARGET.md` §10.3) and map each grounded
+obligation to the Forge runtime evidence surface that satisfies it (the IX.6
+prompt-audit record + the Qwik `fallbackUsed` indicator + the I.6
+audit-ledger snapshot).
+
+| Artefact | Regulation | Purpose |
+|---|---|---|
+| `ai-act/risk-classification.md`       | AI Act | Grounded transparency posture + deployer escalation triggers |
+| `ai-act/transparency-obligations.md`  | AI Act | Transparency duties → Forge evidence surfaces |
+| `ai-act/model-card.template.md`       | AI Act | Adopter-fillable model-card skeleton |
+| `ai-act/dataset-card.template.md`     | AI Act | Adopter-fillable dataset-card skeleton |
+| `ai-act/obligations-index.yaml`       | AI Act | Machine-readable obligation → evidence map |
+| `dora/incident-reporting.md`          | DORA   | Grounded incident-reporting obligation → evidence surfaces |
+| `dora/roi-register.template.yaml`     | DORA   | Adopter-fillable Register-of-Information skeleton |
+| `dora/obligations-index.yaml`         | DORA   | Machine-readable obligation → evidence map |
+
+The content schema + Phase A/B governance are documented in the standard
+[`ai-act-dora-artefacts.md`](../.forge/standards/global/ai-act-dora-artefacts.md).
+The artefacts reach an auditor via the I.6 hand-off bundle's `regulatory/`
+subdirectory (above).
+
+**Themis-Phase-B governance**: the artefacts are content-frozen at v1.0.0 under
+BDFL (Phase A). The precise legal determinations the repo cannot ground (AI Act
+risk-category mapping, finance high-risk determination, dataset-bias legal
+trigger, DORA notification windows, authoritative RoI schema) are carried as
+`[NEEDS CLARIFICATION]` markers — **Themis (K.5, T7+) Phase-B work items**, not
+framework defects. Forge does not invent legal specifics (Article III.4). The
+NIS2 / CRA siblings remain reserved.
+
 ---
 
 ## Reusable compliance workflow

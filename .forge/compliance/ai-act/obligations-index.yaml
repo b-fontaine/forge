@@ -1,0 +1,32 @@
+# Audit: B.7.5+B.7.8 (b7-5-ai-act)
+# AI Act obligation → Forge-evidence-surface index for the ai-native-rag
+# archetype. Grounded obligations carry concrete satisfied_by surfaces;
+# ungrounded obligation classes are flagged needs-clarification with a
+# themis_owner (K.5) — NOT asserted satisfied (Article III.4).
+schema_version: "1.0.0"
+regulation: ai-act
+obligations:
+  - id: transparency
+    title: "Users informed of AI interaction; AI output identifiable"
+    status: satisfied
+    satisfied_by:
+      - "Qwik fallbackUsed indicator (b7-2-scaffolder FR-B7-2-020)"
+      - "IX.6 prompt-audit record (global/llm-gateway.md)"
+    source: "docs/ARCHITECTURE-TARGET.md §10.3 ; global/llm-gateway.md"
+  - id: logging-record-keeping
+    title: "AI interactions logged for audit"
+    status: satisfied
+    satisfied_by:
+      - "IX.6 prompt-audit record"
+      - "I.6 audit-ledger snapshot"
+    source: "global/llm-gateway.md §'Prompt audit & observability'"
+  - id: conformity-assessment
+    title: "Conformity assessment / CE marking (if high-risk)"
+    status: needs-clarification
+    themis_owner: K.5
+    satisfied_by: []
+  - id: post-market-monitoring
+    title: "Post-market monitoring (if high-risk)"
+    status: needs-clarification
+    themis_owner: K.5
+    satisfied_by: []
