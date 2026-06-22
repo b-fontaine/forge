@@ -308,3 +308,50 @@ Promotion candidate→stable/scaffoldable:true + ≥35-test promotion suite + sn
 tarball; `buf generate` + `cargo fetch` wiring (Qwik `rag_pb` import + Connect
 handler registration); Temporal activity contract (currently name-only markers);
 re-verify all 4 pins LIVE at promotion.
+
+---
+
+## ADDED Requirements (b7-pythia, archived 2026-06-22)
+
+K.2 / B.7.4 — the **Sibyl** AI/RAG specialist agent (advisory, NOT a scanner —
+ADR-K2-003). Namespace `FR-K2-PYT-*` / `NFR-K2-PYT-*` / `ADR-K2-*`. Persona name
+**Sibyl** ratified by the maintainer (ADR-K2-001 / Q-001 — the shipped
+Product-Analyst-Pythia is left untouched). Covered by
+`.forge/scripts/tests/b7-pythia.test.sh` (18 L1 + 1 L2, registered in `forge-ci.yml`).
+
+### Functional
+- **FR-K2-PYT-001..003 / 010** — persona `.claude/agents/sibyl.md` : audit comments, H1 `# Agent: AI/RAG Specialist (Sibyl)`, `## Persona`, `## Purpose` (cites K.2 + B.7.4 + the 3 b7-standards ; `ai-native-rag`-scoped).
+- **FR-K2-PYT-004 / 020..027** — `## Checklists` H2 with 4 H3 (Embeddings & Retrieval ; pgvector HNSW `ef_search` tuning ; MCP server hardening ; Prompt-audit IX.6 + mandatory fallback XI.5 + PII XI.6), each citing the consumed b7-standard.
+- **FR-K2-PYT-005** — `## Output: RAG Readiness Report` H2 (advisory, Demeter-shaped : Summary counts + Findings template + status line — BLOCKED only on the XI.5 gate / TUNING-NEEDED on any Concern / READY otherwise).
+- **FR-K2-PYT-006 / 120..125** — `## Recommendation Catalogue` H2 with `K2-RULE-001..006` (severity Advisory / Concern / Blocking ; K2-RULE-006 = Blocking, the XI.5 mandatory-fallback gate ; ADR-J8-004 numbering invariant, never reused).
+- **FR-K2-PYT-007** — `## Integration` H2 : Janus Step 3 dispatch for `ai-native-rag` ; relationships to Oracle (brainstorm vs tune), Demeter (disjoint surfaces), Vulcan/Hera (advise vs implement).
+- **FR-K2-PYT-008** — `## Anti-Hallucination Protocol` H2 (Article III.4) : emit `[NEEDS CLARIFICATION:]` + STOP on an unspecified tuning target ; never fabricate `ef_search` / chunk-size / recall@k.
+- **FR-K2-PYT-011** — file footer with the audit cross-references (plan §9 / §6.2 / §0.12 + ARCHITECTURE-TARGET §9.2 + the 3 b7-standards).
+- **FR-K2-PYT-080 / 081** — additive `triggers:` on the `global/{rag-patterns,llm-gateway,mcp-servers}` index entries (+ `ef-search` / `embeddings-tuning`) ; NO new standard, NO new index entry (ADR-K2-005).
+- **FR-K2-PYT-082 / 083** — Janus delta (ADR-K2-004, Article IV.1) : Dispatch Table row + Step 3 design-pass paragraph + Quality-Gates AI/RAG-readiness bullet + Constitution-compliance Article XI bullet — all in sections DISJOINT from `b7-9-janus-ai`.
+- **FR-K2-PYT-084** — repo `CLAUDE.md` agent-delegation row routing AI/RAG tuning to Sibyl.
+- **FR-K2-PYT-086** — namespace guard : no `K2-RULE` token leaks into the J8 / K3 surfaces ; no scanner script / data file.
+
+### Non-Functional
+- **NFR-K2-PYT-001** — additive only.
+- **NFR-K2-PYT-002** — NO scanner / data file / new standard (ADR-K2-003 ; guarded by `_test_b7p_013` + `_test_b7p_018`).
+- **NFR-K2-PYT-003** — Article V audit trail (`[Story: FR-K2-PYT-*]` task tags).
+- **NFR-K2-PYT-004** — J.7 standards-yaml GREEN (the `index.yml` edit is additive).
+- **NFR-K2-PYT-005** — no regression (`j7` / `j8` / `k3` / `b7-1` / `b7-2a` / `b7-2` / `b7-3` GREEN).
+- **NFR-K2-PYT-006** — collision guard (Step 9 Aegis+Demeter narrative + the J8-RULE Forbidden-archetypes catalogue byte-untouched).
+- **NFR-K2-PYT-007** — name-agnostic harness (single `PYTHIA_AGENT` var → `.claude/agents/sibyl.md`) + a fresh-checkout anchor-integrity L2 fixture.
+
+### ADRs (ratified — maintainer 2026-06-22; orchestrator independent verification GREEN)
+- **ADR-K2-001** — persona name **Sibyl** (Option B — name the new K.2 agent, keep Product-Analyst-Pythia ; supersedes the design's "Delphi" recommendation).
+- **ADR-K2-002** — incremental `K2-RULE` growth (6 seed rules ; mirrors ADR-K3-005).
+- **ADR-K2-003** — advisory agent : NO scanner / data file / new standard (Panoptes mould ; `ef_search`/embeddings tuning is workload-specific, not deterministically scannable).
+- **ADR-K2-004** — Janus integration by delta-edit (Article IV.1) in sections disjoint from `b7-9-janus-ai`.
+- **ADR-K2-005** — standards-index additive triggers only (Sibyl consumes the B.7.3 b7-standards ; no new standard file).
+
+### Open questions (resolved)
+- **Q-001** (name collision) → ADR-K2-001 (Sibyl). **Q-002** (rule count) → ADR-K2-002 (6, incremental). **Q-003** (scanner vs advisory) → ADR-K2-003 (advisory).
+
+### Downstream
+Janus dispatches Sibyl at Step 3 for `ai-native-rag` projects. The archetype's
+promotion to `scaffoldable: true` remains gated on a green `b7-6-harness`
+(unchanged by this brick).

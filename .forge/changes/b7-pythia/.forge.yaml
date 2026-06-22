@@ -1,5 +1,5 @@
 name: b7-pythia
-status: implemented
+status: archived
 created: 2026-06-22
 schema: default
 constitution_version: "2.0.0"
@@ -11,6 +11,8 @@ depends_on:
   - b7-2-scaffolder # templates/ai-native-rag/1.0.0/* — the RAG pipeline / LLM gateway / MCP stubs Pythia tunes
   - k3-demeter      # precedent layout (persona + Janus delta + harness + CLAUDE.md row) + <MODULE>-RULE-NNN namespace
   - j8-janus-rules  # ADR-J8-004 rule-ID format inherited by K2-RULE-*
+archived_to:
+  - .forge/specs/ai-native-rag.md  # K.2 ADDED block (FR-K2-PYT-* / NFR-K2-PYT-* / ADR-K2-*) appended at archive ; prior B.7 blocks preserved
 # Q-001 (persona name collision) RESOLVED 2026-06-22 — maintainer ratified
 #   Option B, name "Sibyl" (ADR-K2-001 / open-questions.md Q-001 Resolution).
 #   Persona = .claude/agents/sibyl.md ; the shipped Product-Analyst-Pythia is
@@ -26,4 +28,4 @@ timeline:
   designed: 2026-06-22
   planned: 2026-06-22
   implemented: 2026-06-22
-  # archived: <pending — STOP before archive ; orchestrator verifies independently>
+  archived: 2026-06-22
