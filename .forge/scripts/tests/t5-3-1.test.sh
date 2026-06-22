@@ -123,18 +123,24 @@ _test_b1dum_l1_006_mirror_cli_assets_example_byte_identity() {
 }
 
 _test_b1dum_l1_007_four_copies_only() {
-  # Counts the 1.0.0 canonical docker-compose template set (source + cli/assets
-  # mirror + the two forge-fsm-example copies). The additive 2.0.0/ Kong-less
-  # variant (B.8.14 b8-14-promotion-flip) is a distinct artifact — excluded here
-  # and covered by b8-14-flip.test.sh; this guard still catches 1.0.0 proliferation.
+  # Counts the full-stack-monorepo 1.0.0 canonical docker-compose template set
+  # (source + cli/assets mirror + the two forge-fsm-example copies). ALL versioned
+  # subtrees (`N.N.N/`) are EXCLUDED — they are distinct artifacts shipping their
+  # own docker-compose: the additive 2.0.0/ Kong-less variant (B.8.14, covered by
+  # b8-14-flip.test.sh) AND other archetypes' versioned trees (e.g.
+  # ai-native-rag/1.0.0/, B.7.2 — a candidate with its own RAG compose). Version-
+  # aware, matching the b8-signoz / b8-3b scans; still catches flagship 1.0.0
+  # proliferation.
   local count
   count=$(find "$FORGE_ROOT_REAL" -name "docker-compose.dev.yml.tmpl" \
-            -not -path "*/node_modules/*" -not -path "*/.git/*" -not -path "*/2.0.0/*" 2>/dev/null \
+            -not -path "*/node_modules/*" -not -path "*/.git/*" \
+            -not -path '*/[0-9]*.[0-9]*.[0-9]*/*' 2>/dev/null \
           | wc -l | tr -d ' ')
   if [ "$count" != "4" ]; then
-    echo "    expected exactly 4 docker-compose.dev.yml.tmpl copies (1.0.0 set, excl. 2.0.0/), found $count (FR-B1-DUM-043)" >&2
+    echo "    expected exactly 4 docker-compose.dev.yml.tmpl copies (flagship 1.0.0 set, excl. versioned N.N.N/ subtrees), found $count (FR-B1-DUM-043)" >&2
     find "$FORGE_ROOT_REAL" -name "docker-compose.dev.yml.tmpl" \
-        -not -path "*/node_modules/*" -not -path "*/.git/*" -not -path "*/2.0.0/*" >&2
+        -not -path "*/node_modules/*" -not -path "*/.git/*" \
+        -not -path '*/[0-9]*.[0-9]*.[0-9]*/*' >&2
     return 1
   fi
 }
