@@ -11,10 +11,11 @@ Pas d'amendement requis (J.8 enforces, ne modifie pas).
 - **J.8.b** `--eu-tier` flag + T3 enforcement + ledger (FR-J8-040..060).
 - **J.8.d** CycloneDX 1.5 SBOM (FR-J8-070..090).
 
-**Note** : J.8.c (`ai-native-rag` LLM gateway rules) is NOT in this
-change — depends on T7 ai-native-rag archetype not yet shipped.
-A follow-up change extends the rule catalogue when that archetype
-lands.
+**Note** : J.8.c (`ai-native-rag` LLM gateway rules) **shipped 2026-06-22**
+via `b7-9-janus-ai` (T7 / B.7.9). Its ADDED block (`FR-B7-9-*` / `NFR-B7-9-*`
+/ `ADR-B7-9-*`) is appended at the END of this spec — it adds
+`J8-RULE-004..006` (Vertex / Bedrock default refusal ; `--eu-tier T3` ⇒
+Mistral-EU / vLLM). The J.8.a/b/d blocks below are unchanged.
 
 ---
 
@@ -357,3 +358,79 @@ interface + `EU_TIER_ENUM` typed `readonly ["T1", "T2", "T3"]`.
 
 Full design rationale + Mermaid diagrams + Open Questions resolution :
 `.forge/changes/j8-janus-rules/design.md`.
+
+---
+
+## J.8.c — Janus LLM-provider rules for `ai-native-rag` (b7-9-janus-ai)
+
+<!-- Audit: B.7.9 + J.8.c (b7-9-janus-ai) — archived 2026-06-22. -->
+<!-- ADDED block ; the J.8.a / J.8.b / J.8.d blocks above are preserved unchanged. -->
+
+**Namespace** : `FR-B7-9-*` / `NFR-B7-9-*` / `ADR-B7-9-*`. **Constitution** :
+v2.0.0 (no amendment — J.8.c ENFORCES the EU-sovereign LLM-provider posture
+already encoded in `compliance-tiers.md` §10.2). Rule IDs
+`J8-RULE-004/005/006` allocated sequentially after `J8-RULE-003` (ADR-J8-004 ;
+never reused). Refuse Vertex AI / AWS Bedrock as default LLM providers
+(CLOUD Act) ; at `--eu-tier T3` force Mistral-EU (Mistral on Scaleway) /
+self-hosted vLLM.
+
+### Functional Requirements (J.8.c)
+
+**Cluster 1 — Janus agent new rules (`J8-RULE-004..006`)**
+- **FR-B7-9-001** — New rules land INSIDE the existing `cross-layer-orchestrator.md` H2 "Forbidden archetypes & combinations", under a new H3 "LLM-provider rules (`ai-native-rag`)" after the `J8-RULE-003` H4 and before "Refusal semantics" (no new H2 — collision avoidance with `b7-pythia`, ADR-B7-9-004).
+- **FR-B7-9-002** — `J8-RULE-004` Vertex AI refused as default LLM provider (CLOUD Act / GCP-managed) ; cites §10.2 `AWS/GCP/Azure` + `LLM Gateway` rows ; alternative Mistral-EU / vLLM / OpenAI-via-EU-gateway@T1.
+- **FR-B7-9-003** — `J8-RULE-005` AWS Bedrock refused as default (same rationale family + alternative).
+- **FR-B7-9-004** — `J8-RULE-006` `--eu-tier T3` ⇒ Mistral-EU / vLLM ; any US-managed inference refused at T3 (cites §10.2 forcing note).
+- **FR-B7-9-005** — Each rule carries the four sub-bullets of `J8-RULE-001..003` (Rationale / Reference / Alternative / tier applicability).
+- **FR-B7-9-006** — The H3 carries `<!-- Audit: B.7.9 + J.8.c (b7-9-janus-ai) -->`.
+
+**Cluster 2 — `forbidden_combinations:` registry**
+- **FR-B7-9-020** — New top-level `forbidden_combinations:` list in `dispatch-table.yml`, sibling to `forbidden_archetypes:`.
+- **FR-B7-9-021** — 7-key entry shape (archetype/provider/tier/reason/since/alternative/rule_id) ; `tier: any` = default-refusal, `tier: T3` = tier-conditional.
+- **FR-B7-9-022** — Three seed entries (vertex-ai/any/J8-RULE-004 ; bedrock/any/J8-RULE-005 ; us-managed-inference/T3/J8-RULE-006), `since: "0.5.0"`.
+- **FR-B7-9-023** — YAML comment header documenting consumers + exit-3 + the `[REFUSAL:]` format.
+
+**Cluster 3 — Combination-refusal helper**
+- **FR-B7-9-040** — New additive `_refuse_if_forbidden_combination "<archetype>" "<provider>"` in `bin/_forge-init-helpers.sh` ; `_refuse_if_forbidden` unchanged (ADR-J8-005 pattern).
+- **FR-B7-9-041** — Tier resolved `$FORGE_EU_TIER` → `.forge/.forge-tier` first line → empty (empty ⇒ only `tier: any` matches ; no guessed default, Article III.4).
+- **FR-B7-9-042** — Match (archetype ∧ provider ∧ (`tier: any` ∨ tier == resolved)) ⇒ `[REFUSAL:]` to stderr + exit 3 (ADR-J8-003).
+- **FR-B7-9-043** — Refusal format `[REFUSAL: <archetype>/<provider>@<tier>: <rule_id>: <reason> ; alternative: <alternative>]`.
+- **FR-B7-9-044** — Fail-open (return 0) on unreachable dispatch-table.
+- **FR-B7-9-045** — `bin/forge-init-ai-native-rag.sh` sources + invokes the helper for its LLM-gateway provider (existing candidate exit-3 gate intact).
+
+**Cluster 4 — Standards updates**
+- **FR-B7-9-060** — `janus-orchestration-rules.md` rule catalogue gains 3 rows.
+- **FR-B7-9-061** — "Extending the catalogue" prose updated ("sibling list now exists") ; SemVer + `REVIEW.md` entry.
+- **FR-B7-9-062** — `compliance-tiers.md::forbidden:` += `vertex-ai`, `bedrock` (review-time I.3 `T3-RULE-005`) ; **SemVer-minor bump 1.0.0 → 1.1.0, shipped in-brick** (maintainer "Option B", 2026-06-22 ; the over-strict `i2.test.sh` pin was relaxed in lock-step).
+- **FR-B7-9-063** — `constitution-linter.sh::ADR-I3-001` REMEDIATION entries for `vertex-ai` / `bedrock`.
+- **FR-B7-9-064** — `forbidden-components-rules.md` LLM-provider interim-gap note (bumped 1.0.0 → 1.1.0 ; `i3.test.sh` pin relaxed in lock-step).
+
+**Cluster 5 — Test harness**
+- **FR-B7-9-080/081/082** — `b7-9.test.sh` (j8 / i3 layout) ; 13 L1 grep tests + 2 L2 fixtures (T3 refuse → exit 3 ; T1 no-refuse → exit 0).
+- **FR-B7-9-083** — `b7-9.test.sh --level 1,2` registered in `forge-ci.yml` after `b7-2.test.sh`.
+
+**Cluster 6 — Documentation**
+- **FR-B7-9-100** — `docs/ARCHETYPES.md` LLM-provider-refusals note (`J8-RULE-004..006` + Mistral-EU / vLLM).
+- **FR-B7-9-101** — `CHANGELOG.md [Unreleased]` entry.
+
+### Non-Functional Requirements (J.8.c)
+- **NFR-B7-9-001** — Additive only (no rule renumber ; `_refuse_if_forbidden` + ai-native-rag schema/templates untouched).
+- **NFR-B7-9-002** — No regression (verify.sh / linters / j7 / j8 / i3 / b7-* GREEN ; candidate `ai-native-rag` init still exit 3).
+- **NFR-B7-9-003** — Rule-ID numbering invariant (`J8-RULE-004..006` sequential after `J8-RULE-003` ; grep guards collision).
+- **NFR-B7-9-004** — Pattern alignment (bash + PyYAML inline ; no new external dep).
+- **NFR-B7-9-005** — Tier-scaled severity coherence (scaffold-time exit 3 + review-time WARN/FAIL quote the same §10.2 gradient ; never contradict).
+- **NFR-B7-9-006** — Article V audit trail (`[Story: FR-B7-9-XXX]` task tags ; `J8-RULE-NNN` stderr IDs ; this appended block, J.8.a/b/d preserved).
+
+### ADRs (J.8.c design)
+
+| ID | Decision |
+|----|----------|
+| ADR-B7-9-001 | Reuse the `J8-RULE-NNN` namespace ; allocate the next free block `J8-RULE-004..006` ; never reuse. |
+| ADR-B7-9-002 | New `forbidden_combinations:` sibling registry (NOT a `forbidden_archetypes:` extension) — provider×tier combinations, pre-foreseen by `janus-orchestration-rules.md` "Extending the catalogue" step 1. |
+| ADR-B7-9-003 | New additive `_refuse_if_forbidden_combination` helper (existing helper's archetype-only contract preserved) ; exit 3 (ADR-J8-003). |
+| ADR-B7-9-004 | Collision avoidance with `b7-pythia` : all J.8.c deltas to `cross-layer-orchestrator.md` stay INSIDE the "Forbidden archetypes & combinations" H2 ; Pythia edits the "Dispatch Table" H2. |
+| ADR-B7-9-005 | Two complementary enforcement surfaces : scaffold-time Janus refusal (exit 3) + review-time I.3 `T3-RULE-005` (tier-scaled WARN/FAIL) ; the I.3 coupling shipped in-brick (maintainer "Option B"). |
+| ADR-B7-9-006 | Mistral-EU (Mistral on Scaleway) + self-hosted vLLM VERIFIED verbatim against `compliance-tiers.md` §10.2 ; no provider specifics fabricated (Article III.4). |
+
+Full design rationale + collision analysis + Open Questions resolution :
+`.forge/changes/b7-9-janus-ai/design.md` + `open-questions.md`.
