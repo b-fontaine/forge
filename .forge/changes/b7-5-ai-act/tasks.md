@@ -28,34 +28,34 @@ confirmed; CI registration done.
 
 ### T-HAR — harness skeleton
 
-- [ ] **T-HAR-001** : Create `.forge/scripts/tests/b7-5.test.sh` — bash header
+- [x] **T-HAR-001** : Create `.forge/scripts/tests/b7-5.test.sh` — bash header
       (`#!/usr/bin/env bash`, `set -uo pipefail`), source `_helpers.sh`,
       PASS/FAIL counters, `--level 1|2|1,2|all` parsing (default 1), audit
       comment `# Audit: B.7.5+B.7.8 (b7-5-ai-act)`, `print_summary` close-out.
       Mirror the `i6.test.sh` layout. [Story: FR-B75-BD-100 / FR-B75-BD-113]
-- [ ] **T-HAR-002** : Define path variables : `AIACT_DIR`
+- [x] **T-HAR-002** : Define path variables : `AIACT_DIR`
       (`.forge/compliance/ai-act`), `DORA_DIR` (`.forge/compliance/dora`),
       `STD_FILE` (`global/ai-act-dora-artefacts.md`), `I6_STD`
       (`global/compliance-artefacts-bundle.md`), `BUNDLE_SCRIPT`, `INDEX_YML`,
       `REVIEW_MD`, `COMPLIANCE_DOC`, `CHANGELOG_MD`. [Story: FR-B75-BD-100]
-- [ ] **T-HAR-003** : Add ≥ 14 L1 stubs (`_test_b75_001..061`) all
+- [x] **T-HAR-003** : Add ≥ 14 L1 stubs (`_test_b75_001..061`) all
       `_not_implemented`, per the `design.md` L1 catalogue. [Story: FR-B75-BD-101 / FR-B75-BD-102]
-- [ ] **T-HAR-004** [P] : Add 3 L2 stubs (`_test_b75_l2_bundle_integration`,
+- [x] **T-HAR-004** [P] : Add 3 L2 stubs (`_test_b75_l2_bundle_integration`,
       `_test_b75_l2_bundle_determinism`, `_test_b75_l2_graceful_absence`) all
       `_not_implemented`. [Story: FR-B75-BD-110 / FR-B75-BD-111]
-- [ ] **T-HAR-005** : Test runner — iterate L1, gate L2 on `--level`, exit 0 if
+- [x] **T-HAR-005** : Test runner — iterate L1, gate L2 on `--level`, exit 0 if
       FAIL==0 else 1. [Story: FR-B75-BD-113]
-- [ ] **T-HAR-006** [P] : Register `b7-5.test.sh --level 1,2` in
+- [x] **T-HAR-006** [P] : Register `b7-5.test.sh --level 1,2` in
       `forge-ci.yml` `harness` matrix immediately after `i5.test.sh`; add a
       one-line comment noting the intentional b7-in-i-block placement
       (ADR-B75-004). Keep file < 300 lines. [Story: FR-B75-BD-112 / NFR-B75-007]
-- [ ] **T-XIMP-001** : **I.6 cross-impact verification** — read
+- [x] **T-XIMP-001** : **I.6 cross-impact verification** — read
       `i6.test.sh::_test_i6_l2_bundle_good` + `_setup_l2`; CONFIRM the i6 L2
       fixture `cp`s named surfaces into a tmpdir and never reads the live
       `.forge/compliance/` tree (so its `wc -l == 6` assertion is immune to the
       new artefacts). If it is NOT hermetic, record a deviation ADR and make the
       i6 count assertion variable in THIS change. [Story: ADR-B75-002 / NFR-B75-001]
-- [ ] **T-HAR-007** : RED gate — `b7-5.test.sh --level 1,2` exits 1
+- [x] **T-HAR-007** : RED gate — `b7-5.test.sh --level 1,2` exits 1
       (all FAIL); `i6.test.sh --level 1,2`, `verify.sh`, `constitution-linter.sh`
       unchanged. [Story: FR-B75-BD-113]
 
@@ -75,57 +75,57 @@ invented.**
 
 ### T-AA — AI-Act artefacts
 
-- [ ] **T-AA-001** : RED witness — confirm `_test_b75_001..013` + `_030` FAIL.
+- [x] **T-AA-001** : RED witness — confirm `_test_b75_001..013` + `_030` FAIL.
       [Story: FR-B75-AA-001..030]
-- [ ] **T-AA-002** : Create `.forge/compliance/ai-act/risk-classification.md`
+- [x] **T-AA-002** : Create `.forge/compliance/ai-act/risk-classification.md`
       per the `design.md` content shape : grounded transparency posture
       (cite §10.3 + llm-gateway.md), escalation triggers, the Q-001 + Q-003
       `[NEEDS CLARIFICATION]` markers verbatim. [Story: FR-B75-AA-010 / FR-B75-AA-011]
-- [ ] **T-AA-003** [P] : Create
+- [x] **T-AA-003** [P] : Create
       `.forge/compliance/ai-act/transparency-obligations.md` — obligations +
       the obligation→evidence table (Qwik `fallbackUsed` FR-B7-2-020; IX.6
       prompt-audit). [Story: FR-B75-AA-012]
-- [ ] **T-AA-004** [P] : Create
+- [x] **T-AA-004** [P] : Create
       `.forge/compliance/ai-act/model-card.template.md` +
       `dataset-card.template.md` — adopter-fillable skeletons (DPA-template
       pattern), Q-004 `[NEEDS CLARIFICATION]` on the bias-eval Article in the
       header; no legal duty asserted. [Story: FR-B75-AA-020 / FR-B75-AA-021]
-- [ ] **T-AA-005** : Create `.forge/compliance/ai-act/obligations-index.yaml`
+- [x] **T-AA-005** : Create `.forge/compliance/ai-act/obligations-index.yaml`
       per the `design.md` YAML : two grounded obligations (transparency,
       logging) `satisfied` + concrete `satisfied_by`; ungrounded
       (conformity-assessment, post-market-monitoring) `needs-clarification` +
       `themis_owner: K.5`. [Story: FR-B75-AA-025 / FR-B75-AA-026]
-- [ ] **T-AA-006** : Add the `<!-- Audit: B.7.5+B.7.8 (b7-5-ai-act) -->` anchor
+- [x] **T-AA-006** : Add the `<!-- Audit: B.7.5+B.7.8 (b7-5-ai-act) -->` anchor
       to every ai-act member. [Story: FR-B75-AA-002]
 
 ### T-DO — DORA artefacts
 
-- [ ] **T-DO-001** : RED witness — confirm `_test_b75_020..022` FAIL.
+- [x] **T-DO-001** : RED witness — confirm `_test_b75_020..022` FAIL.
       [Story: FR-B75-DO-001..020]
-- [ ] **T-DO-002** : Create `.forge/compliance/dora/incident-reporting.md` —
+- [x] **T-DO-002** : Create `.forge/compliance/dora/incident-reporting.md` —
       grounded obligation (cite the "< 24h" charter figure §9.2 + RoI "30 avr
       2026" §10.4 verbatim), obligation→evidence (I.6 audit-ledger + IX.6
       prompt-audit), the Q-002 `[NEEDS CLARIFICATION]` for the precise DORA
       windows. [Story: FR-B75-DO-010 / FR-B75-DO-011]
-- [ ] **T-DO-003** [P] : Create
+- [x] **T-DO-003** [P] : Create
       `.forge/compliance/dora/roi-register.template.yaml` — adopter-fillable
       RoI skeleton; Q `[NEEDS CLARIFICATION]` for the authoritative field
       schema. [Story: FR-B75-DO-015]
-- [ ] **T-DO-004** [P] : Create
+- [x] **T-DO-004** [P] : Create
       `.forge/compliance/dora/obligations-index.yaml` (`regulation: dora`) —
       grounded incident-reporting + RoI entries; ungrounded pillars flagged.
       [Story: FR-B75-DO-016]
-- [ ] **T-DO-005** : Add the audit anchor to every dora member.
+- [x] **T-DO-005** : Add the audit anchor to every dora member.
       [Story: FR-B75-DO-002]
 
 ### T-REV — anti-hallucination review pass (MANDATORY before GREEN)
 
-- [ ] **T-REV-001** : **Demeter + Aegis review pass** on every artefact :
+- [x] **T-REV-001** : **Demeter + Aegis review pass** on every artefact :
       confirm every legal specific is either traceable to a cited repo source OR
       inside a `[NEEDS CLARIFICATION]` marker (NFR-B75-004 / Article III.4). Fix
       any ungrounded assertion (downgrade to a marker). This is a separate
       review lane (writer ≠ reviewer). [Story: NFR-B75-004]
-- [ ] **T-AA-DO-GREEN** : GREEN witness — `b7-5.test.sh --level 1` ; expect
+- [x] **T-AA-DO-GREEN** : GREEN witness — `b7-5.test.sh --level 1` ; expect
       `_test_b75_001..022` + `_030` (negative-grep) flip GREEN. The negative-grep
       test (`_test_b75_030`) is the deterministic backstop for T-REV-001.
       [Story: FR-B75-BD-102]
@@ -146,9 +146,9 @@ flip GREEN.
 
 ### T-STD — new standard
 
-- [ ] **T-STD-001** : RED witness — `_test_b75_040..041` FAIL.
+- [x] **T-STD-001** : RED witness — `_test_b75_040..041` FAIL.
       [Story: FR-B75-BD-020..027]
-- [ ] **T-STD-002** : Create `.forge/standards/global/ai-act-dora-artefacts.md`
+- [x] **T-STD-002** : Create `.forge/standards/global/ai-act-dora-artefacts.md`
       — H1 + audit + trigger comments; frontmatter (version 1.0.0, last_reviewed
       2026-06-22, expires_at 2027-06-22); 6 H2 (Purpose & EU regulatory scope ;
       Artefact content schema [table] ; Obligation → evidence traceability ;
@@ -156,14 +156,14 @@ flip GREEN.
       `regulatory/`] ; Interdictions [≥ 3 MUST NOT incl. the no-fabrication
       clause]) ; Themis cross-link ; `## Constitutional Compliance`.
       [Story: FR-B75-BD-020..027]
-- [ ] **T-STD-003** : GREEN witness — `_test_b75_040..041` GREEN.
+- [x] **T-STD-003** : GREEN witness — `_test_b75_040..041` GREEN.
       [Story: FR-B75-BD-022]
 
 ### T-BND — bundle wiring (additive)
 
-- [ ] **T-BND-001** : RED witness — `_test_b75_051` + the L2 bundle tests FAIL.
+- [x] **T-BND-001** : RED witness — `_test_b75_051` + the L2 bundle tests FAIL.
       [Story: FR-B75-BD-001..004]
-- [ ] **T-BND-002** : Extend `.forge/scripts/compliance/bundle.sh` : in the
+- [x] **T-BND-002** : Extend `.forge/scripts/compliance/bundle.sh` : in the
       Python inline block, after the 5 static members are assembled
       (`bundle.sh:358`), walk `<target>/.forge/compliance/ai-act/` +
       `dora/` and add each file to `members` keyed `regulatory/ai-act/<name>` /
@@ -171,37 +171,37 @@ flip GREEN.
       if a dir is absent. Touch NOTHING else (MANIFEST loop, gzip idiom, tar
       loop all consume `sorted(members.keys())` unchanged).
       [Story: FR-B75-BD-001 / FR-B75-BD-002 / FR-B75-BD-004]
-- [ ] **T-BND-003** : Update the `bundle.sh` header member-list comment
+- [x] **T-BND-003** : Update the `bundle.sh` header member-list comment
       (`:8-13`) to add the `regulatory/{ai-act,dora}/*` members (kept accurate
       per the I.6 convention). [Story: FR-B75-BD-001]
 
 ### T-I6 — I.6 standard + tests lock-step amendment
 
-- [ ] **T-I6-001** : Amend
+- [x] **T-I6-001** : Amend
       `.forge/standards/global/compliance-artefacts-bundle.md` : add
       `regulatory/ai-act/*` + `regulatory/dora/*` rows to the `## Bundle content
       schema` table; change "exactly 6 members" prose to "6 base + N regulatory";
       bump `version: 1.0.0 → 1.1.0`, refresh `last_reviewed`/`expires_at`; update
       the FR-I6-CA-053 forward-compat sentence to record the B.7.5/B.7.8 v1.1.0
       expansion (NIS2/CRA still reserved). [Story: FR-B75-BD-010 / FR-B75-BD-011]
-- [ ] **T-I6-002** : Confirm `i6.test.sh` stays GREEN (the L2 count assertion is
+- [x] **T-I6-002** : Confirm `i6.test.sh` stays GREEN (the L2 count assertion is
       hermetic per T-XIMP-001). If T-XIMP-001 found it non-hermetic, update the
       i6 count assertion to be member-count-variable HERE (single lock-step
       edit). [Story: NFR-B75-001]
-- [ ] **T-BND-GREEN** : GREEN witness — `_test_b75_051` (i6 standard amended)
+- [x] **T-BND-GREEN** : GREEN witness — `_test_b75_051` (i6 standard amended)
       flips GREEN. [Story: FR-B75-BD-010]
 
 ### T-IDX — index + REVIEW
 
-- [ ] **T-IDX-001** : Append the `global/ai-act-dora-artefacts` entry to
+- [x] **T-IDX-001** : Append the `global/ai-act-dora-artefacts` entry to
       `index.yml` under a new `# ─── B.7.5/B.7.8 …` section header, 9 triggers,
       scope all, priority high. [Story: FR-B75-BD-030]
-- [ ] **T-RVW-001** : Append the REVIEW.md H2
+- [x] **T-RVW-001** : Append the REVIEW.md H2
       `## 2026-06-22 — Initial ratification (b7-5-ai-act, B.7.5 + B.7.8)`
       recording the new standard `1.0.0 KEEP` + the
       `compliance-artefacts-bundle.md` `1.0.0 → 1.1.0` amendment.
       [Story: FR-B75-BD-031]
-- [ ] **T-IDX-GREEN** : GREEN witness — `_test_b75_050` GREEN.
+- [x] **T-IDX-GREEN** : GREEN witness — `_test_b75_050` GREEN.
       [Story: FR-B75-BD-030 / FR-B75-BD-031]
 
 ### Phase 3 exit gate
@@ -214,21 +214,25 @@ unchanged. Only the 2 docs L1 + the 3 L2 tests remain.
 
 ## Phase 4 — Docs + inventory
 
-- [ ] **T-DOC-001** : Add `docs/COMPLIANCE.md` H2 `## Regulatory artefacts
+- [x] **T-DOC-001** : Add `docs/COMPLIANCE.md` H2 `## Regulatory artefacts
       (AI Act + DORA)` after `## Auditor hand-off bundle`, cross-linking the
       artefacts dir + the standard + the bundle `regulatory/` subdirectory,
       noting Themis-Phase-B governance for the `[NEEDS CLARIFICATION]` items.
       [Story: FR-B75-BD-120]
-- [ ] **T-DOC-002** : GREEN witness — `_test_b75_060` GREEN. [Story: FR-B75-BD-120]
-- [ ] **T-LOG-001** : Add `CHANGELOG.md [Unreleased]` entry `### Added — B.7.5
+- [x] **T-DOC-002** : GREEN witness — `_test_b75_060` GREEN. [Story: FR-B75-BD-120]
+- [x] **T-LOG-001** : Add `CHANGELOG.md [Unreleased]` entry `### Added — B.7.5
       + B.7.8 AI-Act + DORA regulatory artefacts (b7-5-ai-act)` (artefacts +
       standard + bundle 1.1.0 + harness). [Story: FR-B75-BD-122]
-- [ ] **T-LOG-002** : GREEN witness — `_test_b75_061` GREEN. [Story: FR-B75-BD-122]
+- [x] **T-LOG-002** : GREEN witness — `_test_b75_061` GREEN. [Story: FR-B75-BD-122]
 - [ ] **T-INV-001** [P] : Update `docs/new-archetypes-plan.md` rows B.7.5 +
       B.7.8 (§6.2) Done; §0.12 line 2024 brick #6 flipped; §2760 T7 line moves
       the brick to "livrées". All cite `b7-5-ai-act`. [Story: FR-B75-BD-121]
+      **DEFERRED (intentionally unchecked)** — the plan/roadmap resync is a
+      separate maintainer task; touching it here would collide with in-flight
+      docs branches. Left for the docs-resync change.
 - [ ] **T-INV-002** [P] : Update `.forge/product/roadmap.md` inventory line.
-      [Story: FR-B75-BD-122]
+      [Story: FR-B75-BD-122] **DEFERRED (intentionally unchecked)** — see
+      T-INV-001 (same maintainer resync, same collision avoidance).
 
 ### Phase 4 exit gate
 
@@ -238,37 +242,37 @@ unchanged. Only the 2 docs L1 + the 3 L2 tests remain.
 
 ## Phase 5 — L2 fixtures + final gates
 
-- [ ] **T-L2-001** : Implement `_test_b75_l2_bundle_integration` — synthetic
+- [x] **T-L2-001** : Implement `_test_b75_l2_bundle_integration` — synthetic
       tmpdir (4 I.6 surfaces + the regulatory artefacts); run `bundle.sh`;
       assert the `.tgz` carries `regulatory/ai-act/*` + `regulatory/dora/*` +
       the 6 base members + a sorted MANIFEST listing all.
       [Story: FR-B75-BD-110 / FR-B75-BD-001 / FR-B75-BD-002]
-- [ ] **T-L2-002** : Implement `_test_b75_l2_bundle_determinism` — run the
+- [x] **T-L2-002** : Implement `_test_b75_l2_bundle_determinism` — run the
       extended bundle twice with `SOURCE_DATE_EPOCH=0`; `diff -q` byte-identical.
       [Story: FR-B75-BD-110 / FR-B75-BD-003 / NFR-B75-002]
-- [ ] **T-L2-003** : Implement `_test_b75_l2_graceful_absence` — tmpdir WITHOUT
+- [x] **T-L2-003** : Implement `_test_b75_l2_graceful_absence` — tmpdir WITHOUT
       `.forge/compliance/{ai-act,dora}/`; `bundle.sh` exits 0 with base 6
       members only. [Story: FR-B75-BD-111 / FR-B75-BD-004]
-- [ ] **T-L2-GREEN** : `b7-5.test.sh --level 1,2` — all GREEN, exit 0.
+- [x] **T-L2-GREEN** : `b7-5.test.sh --level 1,2` — all GREEN, exit 0.
       [Story: FR-B75-BD-113]
 
 ### T-GAT — final gates
 
-- [ ] **T-GAT-001** : `bash .forge/scripts/verify.sh` — overall PASS (additive;
+- [x] **T-GAT-001** : `bash .forge/scripts/verify.sh` — overall PASS (additive;
       no regression; Failed = 0; Passed ≥ prior baseline). [Story: NFR-B75-001]
-- [ ] **T-GAT-002** : `bash .forge/scripts/tests/i6.test.sh --level 1,2` — GREEN
+- [x] **T-GAT-002** : `bash .forge/scripts/tests/i6.test.sh --level 1,2` — GREEN
       (the I.6 bundle-member count assertion unbroken; the standard amendment
       tests, if any, GREEN). [Story: NFR-B75-001]
-- [ ] **T-GAT-003** : `bash .forge/scripts/constitution-linter.sh` — OVERALL
+- [x] **T-GAT-003** : `bash .forge/scripts/constitution-linter.sh` — OVERALL
       PASS (no inline `[NEEDS CLARIFICATION]` outside the intended artefact
       markers — confirm the linter does not flag the artefact markers; if it
       does, the artefacts' markers use a distinct comment form the linter
       excludes, per the i6 precedent). [Story: NFR-B75-004]
-- [ ] **T-GAT-004** : `bash bin/validate-standards-yaml.sh` — GREEN (new standard
+- [x] **T-GAT-004** : `bash bin/validate-standards-yaml.sh` — GREEN (new standard
       is MD, out of scope; live baseline preserved). [Story: NFR-B75-001]
-- [ ] **T-GAT-005** : `wc -l .github/workflows/forge-ci.yml` < 300.
+- [x] **T-GAT-005** : `wc -l .github/workflows/forge-ci.yml` < 300.
       [Story: NFR-B75-007]
-- [ ] **T-GAT-006** : Status flip `.forge.yaml` → `implemented`; timeline
+- [x] **T-GAT-006** : Status flip `.forge.yaml` → `implemented`; timeline
       populated. [Story: Article V]
 
 ### Phase 5 exit gate
@@ -291,12 +295,12 @@ regression). Status `implemented`. Ready for `/forge:archive` on user trigger.
 
 ## Anti-hallucination checklist (Article III.4 — re-verify before archive)
 
-- [ ] No AI-Act / DORA Article number, recital, or precise date in any artefact
+- [x] No AI-Act / DORA Article number, recital, or precise date in any artefact
       that is NOT traceable to a cited repo source OR inside a
       `[NEEDS CLARIFICATION]` marker (`_test_b75_030` negative-grep GREEN).
-- [ ] Every `obligations-index.yaml` `status: satisfied` entry names a concrete
+- [x] Every `obligations-index.yaml` `status: satisfied` entry names a concrete
       Forge evidence surface.
-- [ ] Every legal question the repo cannot answer is a `[NEEDS CLARIFICATION]`
+- [x] Every legal question the repo cannot answer is a `[NEEDS CLARIFICATION]`
       tagged "Themis (K.5)" — NOT an invented answer.
-- [ ] Context7 was NOT used for legal text (only — if at all — for any incidental
+- [x] Context7 was NOT used for legal text (only — if at all — for any incidental
       software API, of which this brick has none).

@@ -10,7 +10,13 @@
 #   - audit/audit-ledger.json                  (script-generated snapshot)
 #   - audit/audit-ledger.md                    (script-generated snapshot)
 #   - sbom/sbom.cdx.json                       (output of bin/forge-sbom.sh)
+#   - regulatory/ai-act/*                      (B.7.5/B.7.8 AI-Act artefacts, if present)
+#   - regulatory/dora/*                        (B.7.5/B.7.8 DORA artefacts, if present)
 #   - MANIFEST                                 (script-generated index)
+#
+# The regulatory/ members are ADDITIVE (b7-5-ai-act, bundle contract
+# v1.1.0) : present only when .forge/compliance/{ai-act,dora}/ exist at
+# the target ; absent silently otherwise (graceful absence).
 #
 # Usage :
 #   bash .forge/scripts/compliance/bundle.sh \
@@ -362,6 +368,25 @@ members = {
     "templates/forge-dpa-declared.template": dpa_template,
     "tier-matrix/compliance-tiers.md": tier_matrix,
 }
+
+# ─── Phase 4b — collect regulatory artefacts (B.7.5/B.7.8) ───────
+# Additive (ADR-B75-002 / FR-B75-BD-001) : walk the per-regulation
+# subdirectories under .forge/compliance/ and add each file keyed
+# regulatory/<regulation>/<name>. Graceful absence (FR-B75-BD-004) :
+# a missing subdirectory contributes zero members and is NOT an error
+# (adopter projects without the AI archetype). The MANIFEST + tar loop
+# below consume sorted(members.keys()) unchanged, so the new members
+# are absorbed with no change to the archive format or determinism
+# recipe.
+for _reg in ("ai-act", "dora"):
+    _reg_dir = os.path.join(target, ".forge/compliance", _reg)
+    if not os.path.isdir(_reg_dir):
+        continue
+    for _name in sorted(os.listdir(_reg_dir)):
+        _src = os.path.join(_reg_dir, _name)
+        if not os.path.isfile(_src):
+            continue
+        members[f"regulatory/{_reg}/{_name}"] = _read_bytes(_src)
 
 # MANIFEST format : "<sha256-hex>  <size-bytes>  <member-path>\n" sorted.
 manifest_lines = []
