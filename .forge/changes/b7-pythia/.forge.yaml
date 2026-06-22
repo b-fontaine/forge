@@ -1,0 +1,29 @@
+name: b7-pythia
+status: planned
+created: 2026-06-22
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - K.2     # docs/new-archetypes-plan.md §9 line 2665 — Pythia (AI/RAG) specialist agent
+  - B.7.4   # docs/new-archetypes-plan.md §6.2 line 2585 — Pythia agent for ai-native-rag
+depends_on:
+  - b7-standards    # global/{rag-patterns,llm-gateway,mcp-servers}.md — the standards Pythia owns/consumes
+  - b7-2-scaffolder # templates/ai-native-rag/1.0.0/* — the RAG pipeline / LLM gateway / MCP stubs Pythia tunes
+  - k3-demeter      # precedent layout (persona + Janus delta + harness + CLAUDE.md row) + <MODULE>-RULE-NNN namespace
+  - j8-janus-rules  # ADR-J8-004 rule-ID format inherited by K2-RULE-*
+# BLOCKED on Q-001 — persona name collision with existing Product-Analyst-Pythia.
+#   Maintainer ratification of ADR-K2-001 required before /forge:implement.
+#   Tracked in open-questions.md (Status: open, BLOCKING). The change.schema.json
+#   closed shape has no `blocked_on` field, so this is recorded as a comment +
+#   the timeline below intentionally stops at `planned` (no implemented/archived).
+# COLLISION with sibling brick b7-9-janus-ai — co-edits cross-layer-orchestrator.md
+#   + CLAUDE.md in DISJOINT sections (Pythia → Dispatch Table + Step 3 + Quality
+#   Gates ; b7-9 → Forbidden-archetypes/J8-RULE catalogue). See design.md
+#   § "Shared-file collision with sibling bricks".
+timeline:
+  proposed: 2026-06-22
+  specified: 2026-06-22
+  designed: 2026-06-22
+  planned: 2026-06-22
+  # implemented: <pending — BLOCKED on Q-001 ratification>
+  # archived: <pending>
