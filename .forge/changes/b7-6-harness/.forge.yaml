@@ -1,0 +1,23 @@
+name: b7-6-harness
+status: planned
+created: 2026-06-23
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.7.6  # docs/new-archetypes-plan.md §0.12 / §6.2 — ai-native-rag promotion gate: b7.test.sh ≥35 + live buf generate/cargo/tsc wiring + snapshot tarball + candidate→stable/scaffoldable:true flip (ADR-B7-1-002)
+depends_on:
+  - B.7.1   # .forge/schemas/ai-native-rag/1.0.0.yaml — the candidate schema this brick flips to stable/scaffoldable:true
+  - B.7.2   # .forge/templates/archetypes/ai-native-rag/1.0.0/** + bin/forge-init-ai-native-rag.sh — the gated scaffolder body whose b7-6 TODOs (buf generate / Connect handler registration / cargo fetch) this brick wires + verifies
+  - B.7.2a  # .forge/scaffolding/dispatch-table.yml — the CLI dispatch entry whose exit-3 refusal must STOP refusing once the schema is scaffoldable
+  - B.7.3   # global/{rag-patterns,llm-gateway,mcp-servers}.md — pattern standards the rendered tree must still conform to under live codegen+build
+  - B.7.5   # b7-5-ai-act — AI-Act/DORA artefacts aggregated by the promotion suite (b7-5.test.sh)
+  - B.7.9   # b7-9-janus-ai — runtime AI refusal rules aggregated by the promotion suite (b7-9.test.sh)
+  - B.7.10  # b7-10-streaming — the streaming surface whose deferred buf/tsc L2 legs ("rides b7-6") this brick runs live
+# Soft relation (NOT a hard depends_on): B.7.7 (b7-7-example, examples/forge-rag-example/)
+# consumes the promoted scaffoldable archetype; b7-7 should land AFTER this flip so its
+# example can be (re)generated from a stable archetype. Promotion does not require b7-7.
+timeline:
+  proposed: 2026-06-23
+  specified: 2026-06-23
+  designed: 2026-06-23
+  planned: 2026-06-23
