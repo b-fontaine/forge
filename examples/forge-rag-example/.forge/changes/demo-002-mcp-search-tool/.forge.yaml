@@ -1,0 +1,18 @@
+name: demo-002-mcp-search-tool
+status: archived
+created: 2026-06-23
+schema: ai-native-rag
+constitution_version: "1.0.0"
+parent_audit_items:
+  - B.7.7  # Illustrative single-layer backend demo (mcp/ server) of the RAG reference project
+depends_on:
+  - demo-001-doc-ingestion  # exposes the retriever demo-001 built as an MCP tool
+layers:
+  - backend
+timeline:
+  proposed: 2026-06-23
+  specified: 2026-06-23
+  designed: 2026-06-23
+  planned: 2026-06-23
+  implemented: 2026-06-23
+  archived: 2026-06-23

@@ -1,0 +1,28 @@
+name: demo-003-rag-query-ui
+status: archived
+created: 2026-06-23
+schema: ai-native-rag
+constitution_version: "1.0.0"
+parent_audit_items:
+  - B.7.7  # Multi-layer (Janus) STREAMING demo of the RAG reference project
+depends_on:
+  - demo-001-doc-ingestion  # the retriever the gateway grounds answers with
+  - B.7.10                  # consumes b7-10's RagService.QueryStream / queryStream contract
+# Multi-layer change (>= 2 layers) → routed by Janus (FR-GL-015); per-layer
+# designs + tasks (FR-GL-016).
+layers:
+  - backend
+  - frontend
+designs_per_layer:
+  backend: designs/design-backend.md
+  frontend: designs/design-frontend.md
+tasks_per_layer:
+  backend: tasks/tasks-backend.md
+  frontend: tasks/tasks-frontend.md
+timeline:
+  proposed: 2026-06-23
+  specified: 2026-06-23
+  designed: 2026-06-23
+  planned: 2026-06-23
+  implemented: 2026-06-23
+  archived: 2026-06-23
