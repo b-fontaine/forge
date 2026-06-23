@@ -728,15 +728,18 @@ if "skipped" not in joined_run:
 PY
 }
 
-# NFR-CI-002 + FR-CI-013 — workflow ≤ 300 lines (bumped 2026-05-12).
+# NFR-CI-002 + FR-CI-013 — workflow ≤ 340 lines (bumped 250→300 2026-05-12;
+# 300→340 2026-06-23 by b7-7-example for the MODIFIED FR-CI-012 second-tree
+# RAG gate block: the example job now gates two example trees, and the
+# workflow had zero headroom at 300).
 test_forge_ci_under_size_budget() {
   if [ ! -f "$WORKFLOW_FILE" ]; then
     echo "    workflow file missing" >&2; return 1
   fi
   local lines
   lines=$(wc -l < "$WORKFLOW_FILE" | tr -d ' ')
-  if [ "$lines" -gt 300 ]; then
-    echo "    forge-ci.yml is $lines lines (> 300 NFR-CI-002 budget)" >&2
+  if [ "$lines" -gt 340 ]; then
+    echo "    forge-ci.yml is $lines lines (> 340 NFR-CI-002 budget)" >&2
     return 1
   fi
 }

@@ -1,0 +1,118 @@
+# <!-- Audit: B.7.2 (b7-2-scaffolder, Phase 1) — ai-native-rag/1.0.0 dev compose -->
+# Structural precedent: full-stack-monorepo/2.0.0/docker-compose.dev.yml.tmpl
+#
+# =============================================================================
+# docker-compose.dev.yml — ai-native-rag archetype (LOCAL DEV ONLY)
+#
+# Archetype : ai-native-rag
+# Standard  : .forge/standards/infra/docker-compose.md
+#
+# Services declared in this stack:
+#   arn-db          — PostgreSQL 17 + pgvector (HNSW) — reuses B.8.5 image
+#   arn-backend     — Application backend (Rust; RAG pipeline + MCP) placeholder
+#   arn-llm-gateway — in-repo LLM gateway proxy (OpenAI-compatible) placeholder
+#   SigNoz unified observability (B.8.8) — out of Phase 1 scope to enumerate
+#   here; reuse the flagship 2.0.0 SigNoz block by reference at b1-delivery.
+#
+# IMPORTANT — before running `task dev:up`:
+#   1. Copy .env.example to .env   →   cp .env.example .env
+#   2. Fill in all required values in .env (DB password, ports, LLM upstream).
+#   .env MUST exist locally — the stack will refuse to start without it.
+#   .env is gitignored and MUST NEVER be committed.
+#
+# WARNING: this is the DEV stack only. Production workloads run on Kubernetes —
+#   see infra/k8s/ for manifests. Do NOT use this file for staging or prod.
+# =============================================================================
+
+# Compose v2 — no top-level `version:` key (deprecated 2024-01).
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # arn-db — PostgreSQL 17 + pgvector (HNSW), reuses the B.8.5 extension image.
+  # ---------------------------------------------------------------------------
+  arn-db:
+    image: pgvector/pgvector:0.8.2-pg17
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-forge-rag-example_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-forge-rag-example_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${ARG_DB_PORT:-5432}:5432"
+    volumes:
+      - arn-db-data:/var/lib/postgresql/data
+      - ./infra/postgres/init-pgvector.sql:/docker-entrypoint-initdb.d/10-init-pgvector.sql:ro
+    networks:
+      - arn-dev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-forge-rag-example_user} -d ${POSTGRES_DB:-forge-rag-example_dev}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # arn-backend — Application backend (Rust; RAG pipeline + MCP servers).
+  # The traefik/whoami placeholder responds 200 OK on GET / so `task dev:up`
+  # reaches steady state on a fresh scaffold. Replace with your real backend
+  # image (e.g. ghcr.io/org/forge-rag-example-backend:dev) once your Dockerfile
+  # is built, and restore a proper /health probe.
+  # ---------------------------------------------------------------------------
+  arn-backend:
+    image: traefik/whoami:v1.11.0
+    command: ["--port=8080"]
+    env_file: .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "${ARG_BACKEND_PORT:-8080}:8080"
+    networks:
+      - arn-dev
+    depends_on:
+      arn-db:
+        condition: service_healthy
+    healthcheck:
+      disable: true
+
+  # ---------------------------------------------------------------------------
+  # arn-llm-gateway — in-repo LLM gateway proxy (thin axum proxy, decision A).
+  # OpenAI-compatible API surface forwarding to Mistral-EU / vLLM upstream,
+  # with tier-aware refusal hooks, token budget + kill switch, and a non-AI
+  # fallback path (Article XI.5). Placeholder image until the Rust binary is
+  # built in Phase 2 — see backend/llm_gateway/ and global/llm-gateway.md.
+  # ---------------------------------------------------------------------------
+  arn-llm-gateway:
+    image: traefik/whoami:v1.11.0
+    command: ["--port=8088"]
+    env_file: .env
+    environment:
+      LLM_GATEWAY_UPSTREAM_BASE_URL: ${LLM_GATEWAY_UPSTREAM_BASE_URL}
+      LLM_GATEWAY_API_KEY: ${LLM_GATEWAY_API_KEY:-}
+      LLM_GATEWAY_TOKEN_BUDGET: ${LLM_GATEWAY_TOKEN_BUDGET:-8192}
+      LLM_GATEWAY_KILL_SWITCH: ${LLM_GATEWAY_KILL_SWITCH:-false}
+      FORGE_EU_TIER: ${FORGE_EU_TIER:-T1}
+    ports:
+      - "8088:8088"
+    networks:
+      - arn-dev
+    depends_on:
+      arn-backend:
+        condition: service_started
+    healthcheck:
+      disable: true
+
+# =============================================================================
+# Networks — single named network; default bridge is FORBIDDEN per standard.
+# =============================================================================
+networks:
+  arn-dev:
+    driver: bridge
+    name: arn-dev
+
+# =============================================================================
+# Volumes — named volumes for persistence between `task dev` invocations.
+# =============================================================================
+volumes:
+  arn-db-data:

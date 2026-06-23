@@ -14,6 +14,7 @@ GitHub without cloning.
 | Example | Archetype | Last updated | Description |
 |---|---|---|---|
 | [`forge-fsm-example/`](forge-fsm-example/) | `full-stack-monorepo` | 2026-04-30 | Flutter frontend + Rust backend + Kustomize k8s + Kong gateway + local OTel/SigNoz observability. 4 demo changes (3 archived + 1 specified). |
+| [`forge-rag-example/`](forge-rag-example/) | `ai-native-rag` | 2026-06-23 | Rust RAG backend (`rag/` pipeline + `mcp/` server + `llm_gateway/`) + Qwik streaming query UI + pgvector HNSW. 3 archived demo changes. Rendered via `overlay.sh` (archetype is `candidate` / `scaffoldable: false`). |
 
 Future archetypes (mobile-only B.4, flutter-firebase B.2) will add
 sibling directories here. The directory layout is flat — one example

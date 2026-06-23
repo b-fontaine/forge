@@ -1,0 +1,28 @@
+[package]
+name = "rag"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+serde = { workspace = true }
+sqlx = { workspace = true }
+pgvector = { workspace = true }
+async-openai = { workspace = true }
+
+# LocalEmbedder (fastembed → ONNX Runtime / ort) is a HEAVY native dependency.
+# It is OFF by default so default `cargo check`/`cargo test` stay fast and
+# hermetic. The Article XI.5 local-embeddings fallback (and T3 zero-egress
+# embeddings) require building with `--features local-embeddings`.
+fastembed = { workspace = true, optional = true }
+
+[features]
+default = []
+local-embeddings = ["dep:fastembed"]
+
+[dev-dependencies]
+tokio = { workspace = true }
+tokio-test = { workspace = true }

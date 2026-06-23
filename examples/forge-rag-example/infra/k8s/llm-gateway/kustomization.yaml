@@ -1,0 +1,16 @@
+# <!-- Audit: B.7.2 (b7-2-scaffolder, Phase 3) — ai-native-rag llm-gateway kustomization -->
+# Structural precedent: full-stack-monorepo/infra/k8s/base/kustomization.yaml.tmpl
+#
+# Bundles the RAG-specific llm-gateway Deployment + Service. Compose this into
+# your environment overlays alongside the reused B.8 substrate (Envoy Gateway,
+# Zitadel, observability) — no new infra component is introduced here.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - deployment.yaml
+  - service.yaml
+
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: forge-rag-example
