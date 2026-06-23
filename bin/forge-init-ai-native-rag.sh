@@ -167,17 +167,39 @@ bash "$OVERLAY_SH" \
   --plan "$ABS_PLAN" \
   ${FORCE:+$FORCE}
 
-# ── Post-render steps DEFERRED to b7-6 (need buf + network; ADR-B7-2-007) ──────
-# These are intentionally NOT implemented here — they require `buf` and network
-# access (the buf remote es/tonic plugins) + a populated cargo registry, which
-# are out of this brick's hermetic scope. b7-6-harness wires + verifies them:
-#   TODO(b7-6): cd "$TARGET/shared/protos" && buf generate
-#     → materialises the Rust tonic/prost stubs + the TS Connect `rag_pb`
-#       descriptor the Qwik web-public surface imports.
-#   TODO(b7-6): cd "$TARGET/backend" && cargo fetch
-#     → pre-populates the workspace dependency graph (the verify-then-pin ledger).
-# Until then, the rendered project documents `task proto` as the first build step
-# (see frontend/web-public/README.md + shared/protos/README.md).
+# ── Post-render codegen + dep-fetch (b7-6-harness, FR-B7-6-005) ────────────────
+# Realised by b7-6: the proto codegen + dependency pre-fetch the rendered project
+# needs before its first build. Both are BEST-EFFORT post-steps — the scaffold has
+# already rendered successfully (the wrapper's exit-0 success contract is the
+# RENDER, not codegen). `buf generate` needs the `buf` CLI + BSR network (the
+# remote es/tonic plugins, buf.gen.yaml); `cargo fetch` needs cargo + the crates.io
+# registry. When a tool or the network is absent we SKIP that step and tell the
+# adopter to run `task proto` — we never fail the scaffold on a codegen miss.
+#
+# Connect handler registration is a DOCUMENTED ADOPTER SEAM, not wired here: the
+# rendered bin-server (backend/bin-server/src/main.rs) mounts the Connect routes
+# under /connect at the adopter's wiring step, mirroring the flagship's
+# `grpc-api/src/transport_connect.rs` seed (an unwired `ConnectRouter::new()` with
+# `TODO(adopter)`). ai-native-rag consumes Connect "by reference" (b7-2 ADR-B7-2-007)
+# — b7-6 does NOT add a grpc-api crate (maintainer Option-A decision 2026-06-23).
+ainr_skip_codegen=0
+if command -v buf >/dev/null 2>&1; then
+  if ( cd "$TARGET/shared/protos" && buf generate ) >/dev/null 2>&1; then
+    echo "✓ proto stubs generated (buf generate) — Rust grpc-api + TS rag_pb descriptor"
+  else
+    echo "  note: buf generate did not complete (BSR network / plugin unavailable) — run 'task proto' after connecting" >&2
+    ainr_skip_codegen=1
+  fi
+else
+  ainr_skip_codegen=1
+fi
+if command -v cargo >/dev/null 2>&1; then
+  ( cd "$TARGET/backend" && cargo fetch ) >/dev/null 2>&1 \
+    && echo "✓ workspace dependencies pre-fetched (cargo fetch)" \
+    || echo "  note: cargo fetch did not complete (registry unavailable) — run 'cargo fetch' after connecting" >&2
+fi
 
 echo "✓ ai-native-rag scaffold rendered into $TARGET"
-echo "  next: cd $TARGET && task proto    # generate proto stubs (buf), then build"
+if [ "$ainr_skip_codegen" = "1" ]; then
+  echo "  next: cd $TARGET && task proto    # generate proto stubs (buf), then build"
+fi
