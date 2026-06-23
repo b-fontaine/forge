@@ -397,15 +397,21 @@ _test_b8sig_l1_017_mirror_count() {
   # docker-compose fragments (e.g. the B.8.5 postgres-17+pgvector datastore)
   # that are NOT part of the 1.0.0 SigNoz 6-copy mirror inventory and are
   # non-scaffoldable (candidate). Version-aware, like the delivery/b8-3b scans.
+  # ALSO EXCLUDED (b7-7-example, 2026-06-23): the ai-native-rag reference example
+  # `examples/forge-rag-example/` (+ its cli/assets mirror) ships its OWN
+  # docker-compose.dev.yml (postgres-17+pgvector RAG datastore) — a different
+  # archetype, NOT a SigNoz mirror copy; same rationale as the versioned subtrees.
   local count
   count=$(find "$FORGE_ROOT_REAL" -name 'docker-compose*.yml*' \
             -not -path '*/node_modules/*' -not -path '*/.git/*' \
-            -not -path '*/[0-9]*.[0-9]*.[0-9]*/*' 2>/dev/null | wc -l | tr -d ' ')
+            -not -path '*/[0-9]*.[0-9]*.[0-9]*/*' \
+            -not -path '*forge-rag-example*' 2>/dev/null | wc -l | tr -d ' ')
   if [ "$count" != "6" ]; then
     echo "    expected exactly 6 docker-compose copies, found $count (FR-B8-SIG-G-005)" >&2
     find "$FORGE_ROOT_REAL" -name 'docker-compose*.yml*' \
       -not -path '*/node_modules/*' -not -path '*/.git/*' \
-      -not -path '*/[0-9]*.[0-9]*.[0-9]*/*' 2>/dev/null >&2
+      -not -path '*/[0-9]*.[0-9]*.[0-9]*/*' \
+      -not -path '*forge-rag-example*' 2>/dev/null >&2
     return 1
   fi
 
