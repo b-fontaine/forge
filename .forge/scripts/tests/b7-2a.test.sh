@@ -56,8 +56,8 @@ if not isinstance(e.get("signals"), list):
     errs.append(f"signals not a list (got {type(e.get('signals')).__name__})")
 if e.get("since") != "0.5.0":
     errs.append(f"since={e.get('since')!r} != '0.5.0' (ADR-B7-2A-004)")
-if e.get("status") != "candidate":
-    errs.append(f"status={e.get('status')!r} != 'candidate' (ADR-B7-2A-005)")
+if e.get("status") != "stable":
+    errs.append(f"status={e.get('status')!r} != 'stable' (promoted in B.7.6; supersedes ADR-B7-2A-005 candidate)")
 if errs:
     for x in errs: print(f"    FAIL T-001: {x}", file=sys.stderr)
     sys.exit(1)

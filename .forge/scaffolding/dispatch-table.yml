@@ -66,22 +66,20 @@ archetypes:
   ai-native-rag:
     name: ai-native-rag
     scaffolder: "bin/forge-init-ai-native-rag.sh"
-    description: "AI-first RAG archetype — pgvector + LLM gateway (Mistral-EU / vLLM) + MCP servers + Qwik streaming UI. Schema promoted to stable/scaffoldable in B.7.6 — `forge init` scaffolds it."
+    description: "AI-first RAG archetype — pgvector + LLM gateway (Mistral-EU / vLLM) + MCP servers + Qwik streaming UI. Promoted to stable/scaffoldable in B.7.6 (b7-6-harness)."
     signals: []
     since: "0.5.0"
     # B.7.2a (b7-2a-dispatch-register) registered the entry; B.7.6 (b7-6-harness)
     # PROMOTED the 1.0.0 schema to `stage: stable` / `scaffoldable: true` (after the
-    # ≥35-test promotion suite + the harness-rust live-codegen CI gate). The
-    # wrapper's schema-driven gate is now OPEN and `forge init --archetype
-    # ai-native-rag` renders the tree (it no longer refuses with exit 3).
-    # NOTE: the `status:` field below is the cli-trust e2e scaffold-matrix marker
-    # (archetypes-smoke.test.ts + t5-1.test.sh T-016 gate it on `status != candidate`),
-    # NOT the schema stage. It is deliberately left `candidate` until a follow-up
-    # adds cli/test/e2e/archetype-fixtures/ai-native-rag.yml (FR-T51-055) and brings
-    # the archetype into the cli-trust scaffold matrix. Scaffoldability is
-    # schema-driven — the schema (the source of truth) IS promoted.
+    # ≥35-test promotion suite + the harness-rust live-codegen CI gate). `forge init
+    # --archetype ai-native-rag` now renders the tree (it no longer refuses exit 3),
+    # and the archetype joins the cli-trust scaffold matrix
+    # (cli/test/e2e/archetype-fixtures/ai-native-rag.yml, FR-T51-055 — toolchain-gated
+    # on buf+cargo, so skipped where they are absent). The `status:` field below is
+    # the matrix marker (archetypes-smoke.test.ts + t5-1.test.sh T-016 gate on
+    # `status != candidate`); flipped candidate→stable in lockstep with the promotion.
     # Resolves b7-1-schema Q-005. `since: 0.5.0` per VERSIONING.md (new archetype ⇒ MINOR).
-    status: candidate
+    status: stable
 
   # ─── Removed from taxonomy (t4-adr-ratification, 2026-05-04) ────
   # `flutter-firebase` was a placeholder slot for archetype B.2 in the

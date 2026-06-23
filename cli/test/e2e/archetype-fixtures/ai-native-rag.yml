@@ -1,0 +1,34 @@
+# Audit: T5.1 (cli-trust-harness) — fixture for archetype ai-native-rag
+#
+# Added by B.7.6 (b7-6-harness) when ai-native-rag was promoted to
+# stable/scaffoldable (FR-T51-055). File matrix asserted by
+# cli/test/e2e/archetypes-smoke.test.ts after
+# `forge init <slug> --archetype ai-native-rag --org dev.forge.test --target <tmp>`.
+#
+# has_rust_backend ⇒ the smoke run is toolchain-gated on cargo + buf; CI runners
+# (and the buf-less dev sandbox) skip-pass the actual scaffold, but the fixture
+# MUST exist + be well-formed (the dispatch-table cross-reference, FR-T51-055).
+# Required paths : MUST exist post-scaffold. Forbidden paths : MUST NOT exist.
+
+archetype: ai-native-rag
+
+has_rust_backend: true
+has_flutter_frontend: false
+
+required_paths:
+  - .forge/constitution.md
+  - .claude/settings.json
+  - .mcp.json
+  - Taskfile.yml
+  - CLAUDE.md
+  - README.md
+  - .gitignore
+  - docker-compose.dev.yml
+  - backend/Cargo.toml
+  - frontend/web-public/package.json
+  - shared/protos
+  - .forge.yaml
+
+forbidden_paths:
+  - cli
+  - .claude/settings.local.json
