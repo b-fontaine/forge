@@ -40,7 +40,7 @@ Shape constraints :
 - No `continue-on-error: true` anywhere.
 - Every `uses:` reference pinned to a tag (no `@main` / `@master`
   / `@HEAD` / `:latest`).
-- Workflow file ≤ 300 lines (NFR-CI-002 ; bumped from 250 on 2026-05-12 to accommodate the linear growth of harness entries across T5 — 18+ harnesses today vs ~10 at G.1 ship time).
+- Workflow file ≤ 340 lines (NFR-CI-002 ; bumped 250→300 on 2026-05-12, then 300→340 on 2026-06-23 for b7-7-example's second example-tree RAG gate, to accommodate the linear growth of harness entries across T5/B.7). The budget is asserted in four harnesses (c1, g1, t5-1, t5-otel-live-run) — bump them in lock-step.
 
 ## What's intentionally different from infra/ci-workflows.md
 

@@ -1,0 +1,95 @@
+// <!-- Audit: B.7.2 (b7-2-scaffolder, Phase 1) — ai-native-rag seed RAG service proto -->
+// Structural precedent: full-stack-monorepo/.../shared/protos/v1/example/example.proto.tmpl
+//
+// Seed proto for forge-rag-example's RAG query surface. It is intentionally
+// minimal — just enough to exercise `buf lint`, `buf breaking`, and the Rust +
+// TS codegen toolchains, and to model the one RPC the Qwik web-public surface
+// calls through the LLM gateway.
+//
+// REPLACE or extend this file as you model real services. The namespace
+// `rag.v1` is project-agnostic so regenerating the archetype does not leak
+// project identity here.
+
+syntax = "proto3";
+
+package rag.v1;
+
+// RagService — the public RAG query surface. The Qwik web-public surface calls
+// Query (unary) or QueryStream (server-streaming) via Connect-ES; the backend's
+// LLM gateway runs retrieval + generation with a mandatory non-AI fallback
+// (Article XI.5).
+service RagService {
+  // Query runs retrieval-augmented generation for the given question and
+  // returns an answer plus the supporting source chunks. A non-streaming
+  // request/response baseline — RETAINED as the documented XI.5 degradation
+  // target (the streaming UI degrades to this on repeated stream errors).
+  rpc Query(QueryRequest) returns (QueryResponse);
+
+  // QueryStream runs the SAME retrieval-augmented generation but streams the
+  // answer incrementally (B.7.10): the default streaming transport is Connect
+  // server-streaming (SSE-class), consumed in the browser with
+  // `for await (const chunk of ragClient.queryStream(...))`. WebTransport is a
+  // documented forward alternative, NOT a Connect-ES transport (ADR-B7-10-005).
+  // Article XI.4: the Qwik UI subscribes to this stream (no blocking AI call);
+  // Article XI.5: pre-stream and mid-stream failures degrade to a
+  // fallback-marked terminal chunk.
+  rpc QueryStream(QueryRequest) returns (stream QueryChunk);
+}
+
+message QueryRequest {
+  // question — the user's natural-language query.
+  string question = 1;
+
+  // top_k — how many retrieved chunks to consider (0 ⇒ server default).
+  uint32 top_k = 2;
+}
+
+message QueryResponse {
+  // answer — the generated answer, or a degraded/fallback answer when the AI
+  // upstream is unavailable (Article XI.5).
+  string answer = 1;
+
+  // sources — the retrieved chunks that grounded the answer.
+  repeated SourceChunk sources = 2;
+
+  // fallback_used — true when the non-AI fallback path produced the answer.
+  bool fallback_used = 3;
+}
+
+// QueryChunk — one frame of a streamed RAG answer (B.7.10, server-streaming
+// QueryStream). The stream emits, in order: an optional one-shot `sources` frame
+// (the retrieved chunks, emitted once before the tokens), then a run of
+// `token_delta` frames (the incremental generated answer, appended client-side),
+// then exactly one terminal frame with `done = true`. `fallback_used` marks the
+// Article XI.5 non-AI degradation so it is observable mid-stream: pre-stream
+// failure emits a single fallback-marked terminal chunk (sources +
+// fallback_used = true + done = true); mid-stream failure terminates the stream
+// with a final fallback_used = true, done = true marker (ADR-B7-10-003,
+// terminate-with-fallback-marker) — partial tokens already delivered are kept.
+message QueryChunk {
+  // token_delta — an incremental slice of the generated answer. Empty on the
+  // one-shot `sources` frame and on a pure terminal/fallback marker frame.
+  string token_delta = 1;
+
+  // sources — the retrieved grounding chunks. Emitted ONCE (the one-shot frame),
+  // before the token deltas, reusing the unary SourceChunk type (no duplicate).
+  repeated SourceChunk sources = 2;
+
+  // done — true on the single terminal frame that closes the stream.
+  bool done = 3;
+
+  // fallback_used — true when this stream degraded to the non-AI fallback
+  // (Article XI.5), set on the fallback-marked terminal chunk.
+  bool fallback_used = 4;
+}
+
+message SourceChunk {
+  // document_id — the source document this chunk came from.
+  string document_id = 1;
+
+  // content — the chunk text used as grounding context.
+  string content = 2;
+
+  // score — the fused (RRF) retrieval score for this chunk.
+  float score = 3;
+}

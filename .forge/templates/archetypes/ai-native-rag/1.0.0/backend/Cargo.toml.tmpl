@@ -31,6 +31,12 @@ members = [
 tokio = { version = "1", features = ["full"] }
 async-trait = "0.1"
 futures = "0.3"
+# Streaming RAG answer path (B.7.10): wrappers::ReceiverStream adapts a bounded
+# tokio::sync::mpsc Receiver into a Stream<Item = QueryChunk> for the Connect
+# server-streaming handler. Verify-then-pin LIVE 2026-06-23 (.forge/research/
+# b7-10-verify-then-pin.md); consumed by llm_gateway only. Pin lives HERE only
+# (ADR-B7-10-004 / NFR-B7-10-005), never in a standard or a frontend file.
+tokio-stream = "0.1.18"
 
 # ── Error handling ──
 thiserror = "1"

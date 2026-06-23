@@ -1,0 +1,7 @@
+# Audit: B.7.2 (b7-2-scaffolder, Phase 3) — ai-native-rag Qwik web-public Node pin
+# Structural precedent: full-stack-monorepo/2.0.0/frontend/web-public/.nvmrc.tmpl
+# Standard: .forge/standards/web-frontend.yaml
+# Node.js active LTS; satisfies @builder.io/qwik 1.20.0 engines.node ">=18.11".
+# Consumed by `nvm use` / `fnm use` / actions/setup-node --node-version-file .nvmrc
+# (all skip leading # comment lines and read the bare version below).
+24

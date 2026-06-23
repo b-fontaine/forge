@@ -1,0 +1,86 @@
+# <!-- Audit: B.7.2 (b7-2-scaffolder, Phase 3) — ai-native-rag llm-gateway Deployment -->
+# Structural precedent: full-stack-monorepo/infra/k8s/base/deployment.yaml.tmpl
+#
+# The in-repo LLM gateway proxy (backend/llm_gateway) as a Kubernetes Deployment.
+# This is the ONE RAG-specific infra addition (FR-B7-2-030): the gateway is the
+# Connect endpoint the Qwik web-public surface and app code call; all model
+# traffic funnels through it so audit/budget/tier-refusal/fallback are enforced
+# in one place (global/llm-gateway.md). It introduces no new infra COMPONENT —
+# Deployment/Service are standard k8s; Temporal/Zitadel/observability/pgvector
+# are reused from the B.8 substrate by reference (see infra/CLAUDE.md).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forge-rag-example-llm-gateway
+  labels:
+    app.kubernetes.io/name: forge-rag-example
+    app.kubernetes.io/component: llm-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: forge-rag-example
+      app.kubernetes.io/component: llm-gateway
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: forge-rag-example
+        app.kubernetes.io/component: llm-gateway
+    spec:
+      containers:
+        - name: llm-gateway
+          # Built from backend/llm_gateway (bin-server). Replace the placeholder
+          # tag with your published image (e.g. ghcr.io/org/forge-rag-example-backend).
+          image: forge-rag-example-backend:placeholder
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8088
+              protocol: TCP
+          env:
+            # OpenAI-compatible upstream (Mistral-EU / vLLM). The API key is a
+            # Secret, never a ConfigMap (Article XI.6 / secrets policy).
+            - name: LLM_GATEWAY_UPSTREAM_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: llm-gateway-env
+                  key: LLM_GATEWAY_UPSTREAM_BASE_URL
+                  optional: true
+            - name: LLM_GATEWAY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: llm-gateway-secrets
+                  key: LLM_GATEWAY_API_KEY
+                  optional: true
+            - name: LLM_GATEWAY_TOKEN_BUDGET
+              value: "8192"
+            - name: LLM_GATEWAY_KILL_SWITCH
+              value: "false"
+            # Compliance tier drives provider selection (T3 ⇒ zero-egress local).
+            - name: FORGE_EU_TIER
+              value: "T1"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: llm-gateway-env
+                  key: OTEL_EXPORTER_OTLP_ENDPOINT
+                  optional: true
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

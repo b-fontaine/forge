@@ -1,0 +1,20 @@
+name: b7-10-streaming
+status: archived
+archived_to:
+  - .forge/specs/ai-native-rag.md  # B.7.10 ADDED block (FR-B7-10-* / NFR-B7-10-* / ADR-B7-10-*) appended at archive ; prior B.7 blocks preserved
+created: 2026-06-22
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.7.10  # docs/new-archetypes-plan.md §6.2 — Qwik streaming patterns: SSE, WebTransport, cancel-on-unmount, retry exponentiel
+depends_on:
+  - B.7.1   # .forge/schemas/ai-native-rag/1.0.0.yaml (candidate scaffold schema; declares the Qwik streaming UI surface)
+  - B.7.2   # .forge/templates/archetypes/ai-native-rag/1.0.0/** — the unary RAG surface (rag.proto Query, Qwik web-public, llm_gateway) this brick extends with streaming
+  - B.7.3   # global/{rag-patterns,llm-gateway,mcp-servers}.md — streaming semantics (token streaming, prompt-audit, SSE on streamable-HTTP)
+timeline:
+  proposed: 2026-06-22
+  specified: 2026-06-22
+  designed: 2026-06-22
+  planned: 2026-06-22
+  implemented: 2026-06-23
+  archived: 2026-06-23

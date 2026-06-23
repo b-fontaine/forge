@@ -1,0 +1,293 @@
+# Forge Standards Index
+# Auto-injected by /forge:implement based on triggers
+version: "1.0.0"
+
+standards:
+  # Global Standards
+  - id: global/tdd-rules
+    path: standards/global/tdd-rules.md
+    triggers: [test, tdd, red-green-refactor, unit test, widget test, integration test, coverage, flutter_test, cargo test, bdd_widget_test, cucumber, mocktail, bloc_test]
+    scope: all
+    priority: critical
+
+  - id: global/bdd-rules
+    path: standards/global/bdd-rules.md
+    triggers: [bdd, gherkin, feature file, given when then, scenario, bdd_widget_test, cucumber-rs, step definitions, acceptance criteria]
+    scope: all
+    priority: critical
+
+  - id: global/ddd-rules
+    path: standards/global/ddd-rules.md
+    triggers: [domain, entity, value object, aggregate, repository, bounded context, ubiquitous language, domain event, use case, ddd]
+    scope: all
+    priority: high
+
+  - id: global/clean-architecture
+    path: standards/global/clean-architecture.md
+    triggers: [architecture, clean architecture, fsd, feature-sliced, hexagonal, layers, dependency rule, presentation, domain, data]
+    scope: all
+    priority: critical
+
+  - id: global/solid
+    path: standards/global/solid.md
+    triggers: [solid, srp, ocp, lsp, isp, dip, single responsibility, open closed, liskov, interface segregation, dependency inversion]
+    scope: all
+    priority: high
+
+  - id: global/naming
+    path: standards/global/naming.md
+    triggers: [naming, convention, snake_case, PascalCase, camelCase, file naming, class naming, variable naming]
+    scope: all
+    priority: medium
+
+  - id: global/git-workflow
+    path: standards/global/git-workflow.md
+    triggers: [git, commit, branch, PR, pull request, conventional commits, merge, rebase]
+    scope: all
+    priority: medium
+
+  - id: global/code-review
+    path: standards/global/code-review.md
+    triggers: [review, code review, checklist, PR review, merge request]
+    scope: all
+    priority: medium
+
+  # Flutter Standards
+  - id: flutter/architecture
+    path: standards/flutter/architecture.md
+    triggers: [flutter architecture, feature sliced, fsd flutter, clean architecture flutter, feature module, lazy loading flutter]
+    scope: flutter
+    priority: critical
+
+  - id: flutter/state-management
+    path: standards/flutter/state-management.md
+    triggers: [bloc, cubit, flutter_bloc, state management, BlocBuilder, BlocListener, BlocSelector, emit, event, state]
+    scope: flutter
+    priority: critical
+
+  - id: flutter/widget-patterns
+    path: standards/flutter/widget-patterns.md
+    triggers: [widget, stateful, stateless, custom widget, composition, keys, const widget, presentational, container widget]
+    scope: flutter
+    priority: high
+
+  - id: flutter/testing
+    path: standards/flutter/testing.md
+    triggers: [flutter test, widget test, golden test, integration test, mocktail, bloc_test, bdd_widget_test, pump, pumpWidget]
+    scope: flutter
+    priority: critical
+
+  - id: flutter/dependency-injection
+    path: standards/flutter/dependency-injection.md
+    triggers: [get_it, injectable, di, dependency injection, "@injectable", "@singleton", "@lazySingleton", getIt, locator]
+    scope: flutter
+    priority: high
+
+  - id: flutter/networking
+    path: standards/flutter/networking.md
+    triggers: [retrofit, dio, http, api, network, interceptor, DioException, Either, Failure, rest, endpoint]
+    scope: flutter
+    priority: high
+
+  - id: flutter/performance
+    path: standards/flutter/performance.md
+    triggers: [performance, jank, fps, rebuild, repaint, ListView, CachedNetworkImage, compute, isolate, devtools profiler]
+    scope: flutter
+    priority: high
+
+  - id: flutter/accessibility
+    path: standards/flutter/accessibility.md
+    triggers: [accessibility, a11y, semantics, screen reader, VoiceOver, TalkBack, contrast, WCAG, focus, semantic label]
+    scope: flutter
+    priority: high
+
+  - id: flutter/internationalization
+    path: standards/flutter/internationalization.md
+    triggers: [i18n, l10n, internationalization, localization, intl, ARB, flutter_localizations, locale, plural, translation]
+    scope: flutter
+    priority: high
+
+  - id: flutter/responsive-design
+    path: standards/flutter/responsive-design.md
+    triggers: [responsive, adaptive, LayoutBuilder, MediaQuery, breakpoint, mobile, tablet, desktop, screen size]
+    scope: flutter
+    priority: high
+
+  - id: flutter/opentelemetry
+    path: standards/flutter/opentelemetry.md
+    triggers: [opentelemetry flutter, otel flutter, tracing flutter, span flutter, OTLP flutter, opentelemetry_dart]
+    scope: flutter
+    priority: medium
+
+  - id: flutter/ai-integration
+    path: standards/flutter/ai-integration.md
+    triggers: [ai flutter, llm flutter, voice agent, webrtc flutter, genui, firebase_vertexai, flutter_genui, frontend agent]
+    scope: flutter
+    priority: medium
+
+  # Rust Standards
+  - id: rust/architecture
+    path: standards/rust/architecture.md
+    triggers: [rust architecture, hexagonal rust, ports adapters, domain rust, workspace crate, cargo workspace]
+    scope: rust
+    priority: critical
+
+  - id: rust/error-handling
+    path: standards/rust/error-handling.md
+    triggers: [thiserror, anyhow, Result, error handling, unwrap, expect, map_err, context, DomainError]
+    scope: rust
+    priority: critical
+
+  - id: rust/async-patterns
+    path: standards/rust/async-patterns.md
+    triggers: [tokio, async, await, spawn, join, select, channel, mpsc, broadcast, oneshot, Stream, future]
+    scope: rust
+    priority: high
+
+  - id: rust/testing
+    path: standards/rust/testing.md
+    triggers: [rust test, cargo test, cucumber-rs, proptest, mockall, tarpaulin, nextest, integration test rust]
+    scope: rust
+    priority: critical
+
+  - id: rust/grpc
+    path: standards/rust/grpc.md
+    triggers: [tonic, grpc, protobuf, proto, prost, service, rpc, streaming grpc, health check grpc]
+    scope: rust
+    priority: high
+
+  - id: rust/opentelemetry
+    path: standards/rust/opentelemetry.md
+    triggers: [tracing, tracing-opentelemetry, opentelemetry-otlp, instrument, span rust, metrics rust]
+    scope: rust
+    priority: medium
+
+  - id: rust/tui-design
+    path: standards/rust/tui-design.md
+    triggers: [ratatui, tui, terminal ui, crossterm, elm architecture rust, StatefulWidget, ratatui layout]
+    scope: rust
+    priority: medium
+
+  - id: rust/ffi-patterns
+    path: standards/rust/ffi-patterns.md
+    triggers: [ffi, flutter_rust_bridge, dart ffi, unsafe rust, cbindgen, foreign function]
+    scope: rust
+    priority: medium
+
+  # Infrastructure Standards
+  - id: infra/docker
+    path: standards/infra/docker.md
+    triggers: [docker, dockerfile, multi-stage, distroless, container, docker-compose, image, HEALTHCHECK]
+    scope: infra
+    priority: high
+
+  - id: infra/kubernetes
+    path: standards/infra/kubernetes.md
+    triggers: [kubernetes, k8s, deployment, service, configmap, helm, ingress, HPA, PDB, pod, namespace]
+    scope: infra
+    priority: high
+
+  - id: infra/kong
+    path: standards/infra/kong.md
+    triggers: [kong, api gateway, grpc transcoding, rate limiting, plugin, upstream, route, kong.yml]
+    scope: infra
+    priority: high
+
+  - id: infra/temporal
+    path: standards/infra/temporal.md
+    triggers: [temporal, workflow, activity, worker, saga, long-running, orchestration, signal, query temporal]
+    scope: infra
+    priority: medium
+
+  - id: infra/firebase
+    path: standards/infra/firebase.md
+    triggers: [firebase, firestore, firebase auth, firebase storage, cloud functions, firebase hosting, AppCheck, security rules]
+    scope: infra
+    priority: medium
+
+  # Observability Standards
+  - id: observability/opentelemetry
+    path: standards/observability/opentelemetry.md
+    triggers: [opentelemetry, otel, collector, OTLP, traces, metrics, logs, instrumentation, span, telemetry]
+    scope: observability
+    priority: critical
+
+  - id: observability/signoz
+    path: standards/observability/signoz.md
+    triggers: [signoz, SigNoz, ClickHouse, observability backend, dashboard signoz]
+    scope: observability
+    priority: medium
+
+  - id: observability/elk-stack
+    path: standards/observability/elk-stack.md
+    triggers: [elk, elasticsearch, logstash, kibana, filebeat, elastic APM, log aggregation]
+    scope: observability
+    priority: medium
+
+  - id: observability/prometheus-grafana
+    path: standards/observability/prometheus-grafana.md
+    triggers: [prometheus, grafana, metrics scraping, alertmanager, PromQL, dashboard grafana, /metrics endpoint]
+    scope: observability
+    priority: medium
+
+  # Cross-Cutting Standards (new)
+  - id: global/api-design
+    path: standards/global/api-design.md
+    triggers: [api, openapi, asyncapi, grpc, proto, rest, endpoint, swagger, versioning, pagination, contract, breaking change]
+    scope: all
+    priority: high
+
+  - id: global/test-strategy
+    path: standards/global/test-strategy.md
+    triggers: [test strategy, test pyramid, mutation testing, flaky test, test data, contract testing, load testing, test environment, coverage analysis]
+    scope: all
+    priority: high
+
+  # Monorepo Standards (full-stack-monorepo archetype — b1-foundations)
+  - id: global/monorepo-layout
+    path: standards/global/monorepo-layout.md
+    triggers: [monorepo, full-stack, full-stack-monorepo, layers, multi-layer, nested CLAUDE.md, FR-BE-, FR-FE-, FR-IN-, FR-GL-]
+    scope: monorepo
+    priority: high
+
+  - id: global/proto-contracts
+    path: standards/global/proto-contracts.md
+    triggers: [proto, protos, buf, grpc, protobuf, tonic-build, protoc_plugin, buf.yaml, contract, breaking change, shared/protos]
+    scope: protos
+    priority: high
+
+  - id: infra/docker-compose
+    path: standards/infra/docker-compose.md
+    triggers: [docker-compose, docker-compose.dev.yml, local-dev, compose, fsm-, healthcheck, .env.example, fsm-dev]
+    scope: infra
+    priority: medium
+
+  - id: infra/ci-workflows
+    path: standards/infra/ci-workflows.md
+    triggers: [ci, github actions, workflow, paths-filter, dorny, gate, integration, nightly, forge-backend, forge-frontend, forge-infra, forge-integration]
+    scope: infra
+    priority: high
+
+  - id: infra/k8s-overlays
+    path: standards/infra/k8s-overlays.md
+    triggers: [kustomize, overlay, kubernetes, k8s, deployment, namespace, replicas, hpa, ingress, base, dev, staging, prod, kubeconform]
+    scope: infra
+    priority: high
+
+  - id: infra/observability-local
+    path: standards/infra/observability-local.md
+    triggers: [observability, otel, opentelemetry, signoz, traces, metrics, logs, otlp, collector, clickhouse, fsm-otel-collector, fsm-signoz]
+    scope: infra
+    priority: high
+
+  - id: global/multi-layer-workflow
+    path: standards/global/multi-layer-workflow.md
+    triggers: [multi-layer, janus, cross-layer, "layers:", layers count, designs_per_layer, tasks_per_layer, cross-layer contract, multi-root verify]
+    scope: monorepo
+    priority: high
+
+  - id: global/forge-self-ci
+    path: standards/global/forge-self-ci.md
+    triggers: [forge-ci, self-ci, branch protection, dog-fooding, summary status, ludeeus, shellcheck, forge-ci.yml, .nvmrc]
+    scope: meta
+    priority: medium

@@ -19,19 +19,46 @@ frontend/web-public/
 └── src/
     ├── entry.ssr.tsx       # renderToStream SSR entry
     ├── root.tsx            # QwikCityProvider + RouterOutlet
-    ├── routes/index.tsx    # RAG query UI (input → Query → answer + sources + fallback indicator)
+    ├── routes/index.tsx    # streaming RAG UI (input → QueryStream → progressive answer + Stop/cancel + retry→unary + fallback indicator)
     └── lib/
-        ├── connect-client.ts          # Connect-ES v2 client → rag.v1.RagService.Query
+        ├── connect-client.ts          # Connect-ES v2 client → rag.v1.RagService.Query (unary) + QueryStream (server-streaming)
         └── generated/connect/         # buf-generated rag_pb.ts (materialised by `task proto`)
 ```
 
 ## RAG query UI
 
-`src/routes/index.tsx` ships a minimal, resumable UI: an input box fires one
-**unary** `RagService.Query` call via `src/lib/connect-client.ts`, then renders
-the answer, the grounding source chunks, and a **`fallbackUsed` indicator** that
-surfaces the Article XI.5 non-AI fallback path (shown when the AI upstream is
-unavailable or over budget).
+`src/routes/index.tsx` ships a minimal, resumable UI: an input box fires a
+**server-streaming** `RagService.QueryStream` call via `src/lib/connect-client.ts`,
+consumed with `for await` so the answer renders **progressively** (token-by-token,
+Article XI.4 — no blocking synchronous AI call). It also renders the grounding
+source chunks and a **`fallbackUsed` indicator** that surfaces the Article XI.5
+non-AI fallback path (shown when the AI upstream is unavailable or over budget).
+
+### Streaming, cancellation, and graceful degradation (B.7.10)
+
+- **Progressive render** — each `token_delta` frame appends to a Qwik signal as
+  it arrives; the one-shot `sources` frame is rendered before the tokens.
+- **Stop / cancel** — a Stop control aborts the in-flight stream via an
+  `AbortController` whose `signal` is threaded into the Connect call. The stream
+  is also cancelled **on unmount** (Qwik `useVisibleTask$` cleanup), so no
+  orphaned stream survives navigation away from the route.
+- **Exponential-backoff retry → unary degradation** — on transient stream errors
+  the UI retries with a named exponential-backoff policy (`DEFAULT_RETRY_POLICY`
+  / `exponentialBackoffMs` in `connect-client.ts`); on exhausting the bounded
+  attempts it **degrades to the unary `query()`** path — the UI-layer Article
+  XI.5 fallback (SSE-class → unary → non-AI fallback answer).
+
+### WebTransport — documented forward alternative (NOT the default)
+
+The **default** streaming transport is **Connect server-streaming** (SSE-class),
+because Connect-ES v2 is fetch/HTTP-based and **does not transport over
+WebTransport**. WebTransport (HTTP/3 datagrams/streams) is recorded here as a
+**forward alternative**, NOT wired in this archetype (ADR-B7-10-005): adopting it
+would mean a separate, non-Connect native-browser `WebTransport` client plus a
+dedicated backend HTTP/3 endpoint outside the Connect handler — a larger surface
+best landed as its own change. Until then, Connect server-streaming over the
+existing Envoy ingress is the streaming path; this note is the upgrade marker, not
+a scaffolded second transport.
 
 ## Connect-ES + proto codegen (run `task proto` first)
 
@@ -49,8 +76,10 @@ descriptor.
 
 - **Web-public only** — there is no Flutter mobile app in this archetype
   (`ADR-B7-2-006`). Adopters wanting a mobile surface add it as a separate change.
-- **Non-streaming baseline** — the SSE / WebTransport streaming transport ships
-  in `b7-10-streaming`. `Query` here is a single unary request/response.
+- **Streaming + unary** — `QueryStream` (server-streaming, SSE-class) is the
+  default answer path (B.7.10); the unary `Query` is **retained** as the UI-layer
+  XI.5 degradation target (the stream degrades to it on repeated stream errors).
+  WebTransport stays a documented forward alternative (above), not the default.
 
 ## Resources / pins (carried from the flagship 2.0.0 web-public, B.8.9)
 

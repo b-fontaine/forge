@@ -1,0 +1,176 @@
+# Forge Schema — ai-native-rag 1.0.0 (CANDIDATE)
+# <!-- Audit: B.7.1 (b7-1-schema) — AI-native RAG archetype scaffold schema -->
+#
+# The AI-first RAG archetype (plan §6.2 B.7): a Rust backend (RAG pipeline +
+# in-repo LLM gateway proxy + MCP servers) + Qwik streaming UI + Postgres/pgvector
+# + Temporal + Zitadel + SigNoz/OBI/Coroot. It is the shared contract that the
+# rest of the B.7 chain (standards, scaffolder, Pythia, compliance, example,
+# harness) validates against.
+#
+# Stage semantics (THIS file):
+#   - candidate + scaffoldable:false : there are NO templates yet (B.7.2). The
+#     b8-3b validator enforces candidate⇒scaffoldable:false; the CLI
+#     `selectScaffoldableVersion` returns null for this archetype, so
+#     `forge init --archetype ai-native-rag` refuses cleanly (exit 3) rather than
+#     emitting a broken scaffold. Promotion to `stable` + `scaffoldable:true`
+#     happens in the B.7 scaffolder-completion brick, gated on a green b7-6
+#     harness (ADR-B7-1-002, mirroring the B.8.14-C2 flip). Additive: no existing
+#     archetype is affected.
+#
+# `extends: ai-first` below is DOCUMENTARY PROVENANCE ONLY. No scaffold-schema
+# loader resolves `extends` (parseSchemaMeta + check_versioned_schema_siblings
+# read this file's own fields). The AI-First phases are therefore MATERIALISED
+# INLINE in `phases:` (ADR-B7-1-001), extended with the two B.7.1 phases
+# `embeddings-pipeline` and `prompt-audit`.
+#
+# Component references (ADR-B7-1-003): no inline version pins. Each component
+# with an existing standard cites it; `llm-gateway` / `mcp-servers` /
+# `rag-pipeline` have NO standard yet (delivered_by B.7.3) and carry no pin
+# (the rmcp / pgvector-crate verify-then-pin candidates are NOT committed here).
+
+name: ai-native-rag
+version: "1.0.0"
+stage: candidate
+scaffoldable: false
+extends: ai-first            # documentary provenance only — NOT loader-resolved (ADR-B7-1-001)
+
+description: >
+  AI-first RAG archetype: Rust backend (RAG pipeline + in-repo LLM gateway proxy +
+  MCP servers via rmcp) + Qwik streaming UI + Postgres/pgvector (HNSW) + Temporal +
+  Zitadel + SigNoz/OBI/Coroot. Protos as single source of truth. TDD + BDD
+  enforced per layer; multi-layer changes routed by Janus. Mandatory AI fallback
+  (Article XI.5); PII-guarded (XI.6); prompt-audit + token budget traced (IX.6).
+  Not scaffoldable until B.7.2 ships templates.
+
+tdd_enforced: true
+bdd_required_for_user_facing: true
+coverage_threshold: 80
+ai_fallback_required: true   # Article XI.5 — every AI feature has a non-AI fallback
+
+# ─── Component SET (reference-only, ADR-B7-1-003) ─────────────────
+#
+# Each entry: name + role + (standard | delivered_by). NO inline version pin —
+# the standard yaml is the single source of truth. The three deferred components
+# (llm-gateway / mcp-servers / rag-pipeline) have no standard yet; B.7.3 ships
+# llm-gateway.md / mcp-servers.md / rag-patterns.md.
+components:
+  - name: pgvector
+    role: persistence
+    standard: persistence.yaml      # postgres-17 + pgvector (shared with flagship B.8.5)
+  - name: temporal
+    role: orchestration
+    standard: orchestration.yaml    # default_by_language.rust: temporal (§VIII.2, B8O)
+  - name: zitadel
+    role: identity
+    standard: identity.yaml
+  - name: connect-rpc
+    role: transport
+    standard: transport.yaml
+  - name: qwik-streaming
+    role: web-public
+    standard: web-frontend.yaml     # Qwik (B.8.9)
+  - name: observability
+    role: observability
+    standard: observability.yaml    # SigNoz/OBI/Coroot (B.8.8)
+  - name: llm-gateway
+    role: ai-inference
+    delivered_by: B.7.3             # in-repo Rust axum proxy (Mistral-EU/vLLM); standard NOT YET
+  - name: mcp-servers
+    role: tooling
+    delivered_by: B.7.3             # rmcp servers (db/file/search); standard NOT YET
+  - name: rag-pipeline
+    role: retrieval
+    delivered_by: B.7.3             # chunking/embeddings/retrieval/re-ranking; standard NOT YET
+
+# ─── Layers ───────────────────────────────────────────────────────
+# Required triple backend/frontend/infra (b8-3b validator). The Qwik streaming UI
+# is a frontend.surfaces entry (ADR-B7-1-004), mirroring full-stack 2.0.0
+# web-public — not a new top-level layer.
+layers:
+  - id: backend
+    path: backend/
+    fr_id_prefix: FR-BE-
+    primary_agent: Vulcan
+    standards_scope: [rust, all]
+  - id: frontend
+    path: frontend/
+    fr_id_prefix: FR-FE-
+    primary_agent: Hera
+    standards_scope: [flutter, all]
+    surfaces:
+      - id: web-public
+        path: web-public/
+        stack: qwik
+        note: Qwik streaming UI (SSE / WebTransport) — B.7.10
+  - id: infra
+    path: infra/
+    fr_id_prefix: FR-IN-
+    primary_agent: Atlas
+    standards_scope: [infra, all]
+
+fr_id_prefix_cross_layer: FR-GL-
+
+# ─── Cross-layer orchestration ───────────────────────────────────
+cross_layer:
+  agent: Janus
+  triggers:
+    - layers_count_ge: 2
+
+# ─── Phases (INLINED — ADR-B7-1-001) ─────────────────────────────
+# AI-First flow materialised from ai-first/schema.yaml, extended with the two
+# B.7.1 phases: embeddings-pipeline (specs the pipeline before design) and
+# prompt-audit (gate on prompt-audit logging, wiring Article IX.6).
+phases:
+  - id: ai_brainstorm
+    agent: Oracle
+    artifact: [ai-capability-map.md, agent-architecture.md, risk-matrix.md]
+    gate: fallback_strategy_defined
+    next: proposal
+  - id: proposal
+    artifact: proposal.md
+    gate: constitution_compliance
+    next: specs
+  - id: specs
+    artifact: specs.md
+    agent: Clio
+    gate: anti_hallucination_check
+    next: embeddings-pipeline
+  - id: embeddings-pipeline          # B.7.1 addition (§6.2)
+    artifact: embeddings-pipeline.md
+    gate: pipeline_specified
+    next: features
+  - id: features
+    artifact: "features/*.feature"
+    includes: [happy_path_with_ai, fallback_scenarios, error_scenarios]
+    next: design
+  - id: design
+    artifact: design.md
+    agent: [Athena, Prometheus]
+    gate: constitution_compliance
+    next: prompt-audit
+  - id: prompt-audit                 # B.7.1 addition (§6.2) — wires Article IX.6
+    artifact: prompt-audit.md
+    gate: prompt_audit_logging_defined
+    next: tasks
+  - id: tasks
+    artifact: tasks.md
+    gate: per_task_constitution_check
+    next: implementation
+  - id: implementation
+    protocol: tdd_cycle
+    agent: [Hera, Vulcan, Prometheus]
+    next: review
+  - id: review
+    agent: [Nemesis, Tribune, Aegis, Prometheus]
+    checks: [coverage, fallback_verified, pii_audit, token_budget]
+    next: archive
+  - id: archive
+
+# ─── AI specifics (carried from ai-first — XI.5/XI.6, IX.6) ──────
+ai_specifics:
+  fallback_mandatory: true
+  pii_handling: explicit_consent_required
+  token_budget_documented: true
+  non_determinism_testing:
+    strategy: snapshot + property_based
+    acceptable_variance: defined_per_feature

@@ -14,6 +14,44 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ### Added
 
+- **`forge-rag-example` reference project (B.7.7, `b7-7-example`)** — the second
+  reference tree under `examples/`, demonstrating the `ai-native-rag` archetype
+  (sibling of `forge-fsm-example`). A fully-rendered `ai-native-rag/1.0.0` tree
+  (rendered via `overlay.sh` — the archetype is `candidate`, so `forge init`
+  still refuses exit 3) with **3 archived demo changes**: `demo-001-doc-ingestion`
+  (`rag/` pipeline — chunking, `Embedder`, pgvector HNSW, hybrid retrieval
+  vector+BM25+RRF, re-rank, XI.5 embedder fallback), `demo-002-mcp-search-tool`
+  (rmcp `search` tool, dual transport, schema-validated input), and
+  `demo-003-rag-query-ui` (multi-layer/Janus — Qwik **streaming** query UI
+  consuming b7-10's `QueryStream`/`queryStream` with progressive token render +
+  IX.6 prompt-audit across the stream + XI.5 `fallbackUsed` degrading the stream
+  to unary `Query`). New `FR-RAGEX-*`/`NFR-RAGEX-*` namespace consolidated into
+  `.forge/specs/example-reference.md`; the `example` CI job (FR-CI-012) extended
+  to gate **both** example trees (parse-only, ADR-B7-7-004); harness
+  `b7-7.test.sh` (22 L1 + L2 opt-in) in `forge-ci.yml`. Additive — no archetype/
+  schema/standard/CLI edit; the archetype stays `candidate`/`scaffoldable:false`
+  (promotion rides `b7-6-harness`). Tree ~1.6 MB (≤ 5 MB budget).
+- **Streaming RAG answer surface for `ai-native-rag` (B.7.10, `b7-10-streaming`)** —
+  adds a server-streaming answer path to the candidate archetype, layered
+  **additively** on the b7-2 unary surface (which is retained as the Article XI.5
+  degradation target). Proto: `rag.proto` gains `rpc QueryStream(QueryRequest)
+  returns (stream QueryChunk)` + a `QueryChunk` message (reusing `SourceChunk`),
+  unary `Query` unchanged. Backend: a new `llm_gateway/src/streaming.rs`
+  (`process_query_stream`) with **backpressure** (bounded `tokio::sync::mpsc`,
+  named `STREAM_CHANNEL_CAPACITY`), **cancellation** (`JoinHandle::abort` +
+  closed-channel signal), **mandatory XI.5 fallback** tested pre-stream
+  (fallback-marked terminal chunk) and mid-stream (terminate-with-marker keeping
+  partial tokens, ADR-B7-10-003), and a close-time PII-redacted prompt-audit
+  (IX.6/XI.6). Frontend: `connect-client.ts` gains `queryStream()` (Connect-ES v2
+  server-streaming `for await`) + a named exponential-backoff retry helper;
+  `routes/index.tsx` renders progressively (Article XI.4), with a Stop control,
+  cancel-on-unmount, and degradation to the unary `query()` path on retry
+  exhaustion. WebTransport is documented as a forward alternative only (Connect-ES
+  is fetch/HTTP — ADR-B7-10-005). One new pin `tokio-stream = "0.1.18"`
+  (verify-then-pin LIVE, in `backend/Cargo.toml.tmpl` only). Harness
+  `b7-10.test.sh` (7 L1 + 4 L2) in `forge-ci.yml` after `b7-2.test.sh`. The
+  archetype stays **candidate / scaffoldable:false** — promotion remains gated on
+  `b7-6-harness`; the streaming contract is consumed by `b7-7-example` (demo-003).
 - **Janus LLM-provider rules for `ai-native-rag` (B.7.9 / J.8.c, `b7-9-janus-ai`)** —
   extends the J.8 refusal catalogue with three new rules for the `ai-native-rag`
   LLM gateway: `J8-RULE-004` (Vertex AI refused as default provider, any tier),

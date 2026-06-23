@@ -1,0 +1,29 @@
+# <!-- Audit: B.7.7 (b7-7-example) — forge-rag-example root configuration -->
+# Forge Root Configuration for forge-rag-example
+# This file configures the Forge framework for the RAG reference project.
+# See .forge/schemas/ai-native-rag/1.0.0.yaml for the archetype contract.
+#
+# NOTE (candidate / scaffoldable:false): the ai-native-rag archetype is a
+# `candidate`, so `forge init --archetype ai-native-rag` refuses (exit 3). This
+# tree was rendered via overlay.sh against the 1.0.0 scaffold-plan, then
+# committed verbatim (ADR-B7-7-001). See README.md "How this example was built".
+
+schema: ai-native-rag
+schema_version: "1.0.0"
+constitution_version: "1.0.0"
+
+# Layers declared by the archetype (inherited from the schema, repeated here for
+# transparency and for tools that don't load the full schema). `infra` is reused
+# by reference (the pgvector/Temporal/Zitadel substrate is B.8's, consumed not
+# re-decided), so no demo is infra-primary.
+layers:
+  - id: backend
+    path: backend/
+  - id: frontend
+    path: frontend/web-public/
+  - id: infra
+    path: infra/
+
+# Versioning model — release-train by default (see the framework's
+# docs/VERSIONING.md "Monorepo Versioning Models").
+versioning_model: release-train

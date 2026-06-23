@@ -284,6 +284,16 @@ Article X. **Testable:** yes —
   `if: steps.examples-filter.outputs.examples == 'true'`.
 - **MUST** — no `continue-on-error: true` anywhere in the job ;
   consistent with `NFR-CI-003`.
+- **MODIFIED (b7-7-example, 2026-06-23)** — the `example` job now gates
+  **two** example trees under the same `examples/**` paths-filter. After the
+  `forge-fsm-example` steps (byte-preserved), it gains a second per-tree gate
+  block: `cd examples/forge-rag-example && bash .forge/scripts/verify.sh +
+  constitution-linter.sh` + a `yaml.safe_load` parse of the RAG tree's
+  `infra/**` + `shared/protos/*.yaml`. Parse-only / own-gates-only (no
+  `cargo build` / `npm` / `buf generate` / network — ADR-B7-7-004). The
+  summary aggregation (`needs: […example]`, skip-as-success) is unchanged.
+  Testable: `test_forge_ci_example_job_gates_rag_tree` +
+  `test_forge_ci_example_job_fsm_block_preserved` (b7-7.test.sh).
 
 **Constitution reference:** Articles V, X. **Testable:** yes —
 `test_forge_ci_example_job_present`,
@@ -295,9 +305,13 @@ Article X. **Testable:** yes —
 <!-- From change: c1-reference-project (2026-04-30) -->
 
 - **SHOULD** — adding the `example` job MUST keep `forge-ci.yml`
-  ≤ 300 lines (the size budget from `NFR-CI-002`; bumped 250→300 on
-  2026-05-12). Beyond that, the job MUST be extracted into a composite
-  action under `.github/actions/forge-ci-example/action.yml`.
+  ≤ 340 lines (the size budget from `NFR-CI-002`; bumped 250→300 on
+  2026-05-12, then 300→340 on 2026-06-23 by `b7-7-example` for the MODIFIED
+  FR-CI-012 second-tree RAG gate block — the example job now gates two trees;
+  the workflow had zero headroom at 300). Beyond that, the job MUST be
+  extracted into a composite action under
+  `.github/actions/forge-ci-example/action.yml`. The budget is enforced by
+  matching assertions in `c1.test.sh` **and** `g1.test.sh`, kept in sync.
 
 **Constitution reference:** Article X. **Testable:** yes —
 `test_forge_ci_under_size_budget` (c1.test.sh) — at archive
@@ -316,10 +330,12 @@ time of c1, `forge-ci.yml` is well under the 250-line cap.
 
 ### NFR-CI-002: Workflow file size
 
-- **SHOULD** — `forge-ci.yml` MUST be ≤ 300 lines (bumped 250→300 on
-  2026-05-12 for the linear growth of harness entries). Beyond that,
-  refactor into composite actions or matrix strategies. Enforced by
-  `test_forge_ci_under_size_budget`. As of 2026-05-31 the `harness` job
+- **SHOULD** — `forge-ci.yml` MUST be ≤ 340 lines (bumped 250→300 on
+  2026-05-12, then 300→340 on 2026-06-23 for b7-7-example's second-tree RAG
+  gate). Beyond that, refactor into composite actions or matrix strategies.
+  Enforced by `test_forge_ci_under_size_budget` (c1.test.sh + g1.test.sh) and
+  the sibling NFR-CI-002 assertions in t5-1.test.sh + t5-otel-live-run.test.sh —
+  all four kept in lock-step. As of 2026-05-31 the `harness` job
   runs its harnesses via a single declarative loop step (the prescribed
   "matrix/loop" remedy) so adding a harness no longer grows the workflow
   ~2 lines; the file sits at ~275 lines with comfortable headroom.

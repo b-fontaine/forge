@@ -1,0 +1,41 @@
+# <!-- Audit: B.7.2 (b7-2-scaffolder, Phase 1) — ai-native-rag codegen manifest -->
+# Structural precedent: full-stack-monorepo/2.0.0/shared/protos/buf.gen.yaml.tmpl
+#
+# Code-generation configuration for <project-name>'s proto contracts. Drives two
+# outputs from a single proto source:
+#   - Rust gRPC stubs (server + client) + prost messages → backend/crates/grpc-api/
+#   - TS Connect descriptors → frontend/web-public/src/lib/generated/connect/
+#
+# This archetype has no Flutter surface (ADR-B7-2-006), so no Dart codegen ships
+# (cf. the flagship 2.0.0 manifest's protocolbuffers/dart + connectrpc/dart
+# plugins). Regenerate with `task proto` (or `cd shared/protos && buf generate`).
+
+version: v2
+
+managed:
+  enabled: true
+
+plugins:
+  # ── Rust (tonic — server + client) — Article VII.2 gRPC SHALL retained ──
+  - remote: buf.build/community/neoeinstein-tonic:v0.4.0
+    out: ../../backend/crates/grpc-api/src/generated
+    opt:
+      - no_server=false
+      - no_client=false
+
+  # ── Rust (prost — messages) ──
+  - remote: buf.build/community/neoeinstein-prost:v0.4.0
+    out: ../../backend/crates/grpc-api/src/generated
+
+  # ── Connect codegen — Go (forward-compat) ──
+  - remote: buf.build/connectrpc/go:v1.20.0
+    out: ../../backend/crates/grpc-api/src/generated/connect/go
+    opt:
+      - paths=source_relative
+
+  # ── Connect codegen — TS (Connect v2 / Protobuf-ES v2) → Qwik web-public ──
+  - remote: buf.build/bufbuild/es:v2.2.0
+    out: ../../frontend/web-public/src/lib/generated/connect
+    opt:
+      - target=ts
+      - import_extension=js

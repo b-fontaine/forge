@@ -112,6 +112,11 @@ templates:
 - source: 1.0.0/backend/llm_gateway/src/handler.rs.tmpl
   target: backend/llm_gateway/src/handler.rs
   substitute: false
+# Streaming RAG answer pipeline (B.7.10) — server-streaming QueryStream
+# counterpart to handler::process_query; project-agnostic → substitute: false.
+- source: 1.0.0/backend/llm_gateway/src/streaming.rs.tmpl
+  target: backend/llm_gateway/src/streaming.rs
+  substitute: false
 # mcp crate
 - source: 1.0.0/backend/mcp/Cargo.toml.tmpl
   target: backend/mcp/Cargo.toml
