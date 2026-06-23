@@ -4,7 +4,17 @@
 <!-- guessed in the spec/design; they are surfaced for maintainer resolution, each -->
 <!-- with a recommended resolution grounded in a cited file read 2026-06-23. -->
 
-## Q-A — Single change vs split `b7-6-prep` + `b7-6-flip`?  [NEEDS CLARIFICATION]
+<!-- MAINTAINER RESOLUTION (2026-06-23): all open questions resolved. Q-A=single
+     change; Q-B=ADD a harness-rust CI job (option b, NOT the option-a skip-in-CI);
+     Q-C=aggregate 8 siblings + net-new e2e (≥35); Q-D=SHIP the deterministic
+     SOURCE_DATE_EPOCH .tgz snapshot; Q-E=npm run bundle (gitignored/CI-fresh).
+     Each item below carries its RESOLVED block. -->
+
+## Q-A — Single change vs split `b7-6-prep` + `b7-6-flip`?  ✅ RESOLVED (single change)
+
+**RESOLVED (maintainer, 2026-06-23): SINGLE change** (ADR-B7-6-001 as written). One
+change; the flip is the last, suite-gated task. No prep/flip split — no constitution
+amendment forces an Article XII window here (unlike B.8.14).
 
 **Question**: B.8.14 promoted the flagship via a two-brick split
 (`b8-14-promotion-prep` then `b8-14-promotion-flip`). Should b7-6 mirror the split,
@@ -33,12 +43,25 @@ or be a single change?
   wiring + held-guards; a `b7-6-flip` would do only the schema flip + bundle. Pure
   overhead absent an amendment; not recommended.
 
-## Q-B — How is the flip justified given buf is absent in CI AND locally, and cargo is absent in CI?  [NEEDS CLARIFICATION] — THE genuine decision
+## Q-B — How is the flip justified given buf is absent in CI AND locally, and cargo is absent in CI?  ✅ RESOLVED (option b — add a `harness-rust` CI job)
 
-**Question**: the promotion's whole point is that the archetype builds end-to-end
-(proto → codegen → Connect handler → cargo build → Qwik build). That live path has
-**never run**. Where does the green live run happen, and does CI need to gain a buf
-+ cargo job, or is the flip justified by a recorded local/manual run?
+**RESOLVED (maintainer, 2026-06-23): OPTION B — add a permanent `harness-rust` CI
+job.** ADR-B7-6-005 flips from the proposed option-a (SKIP-in-CI + one-time recorded
+local run) to **option b**: a NEW job in `.github/workflows/forge-ci.yml` that installs
+`buf` (`bufbuild/buf-setup-action`, pinned tag), a Rust toolchain
+(`dtolnay/rust-toolchain`, pinned), and node, then runs the b7-6 live path
+(`buf generate` → Rust+TS codegen → Connect handler registration → `cargo build`/`test`
+→ Qwik `tsc`) as a **permanent per-PR gate**. The flip is justified by THIS job going
+green in CI — not by an un-rechecked local run. The `summary` job's `needs:` list MUST
+include `harness-rust`. Note: this makes the live legs a permanent gate (re-run every
+PR), the rigorous long-term posture; the L2 legs still SKIP gracefully on a buf-less
+host (this dev host, where `which buf` is absent) so the suite stays runnable locally.
+
+**Original question (retained for the ledger)**: the promotion's whole point is that
+the archetype builds end-to-end (proto → codegen → Connect handler → cargo build →
+Qwik build). That live path has **never run**. Where does the green live run happen,
+and does CI need to gain a buf + cargo job, or is the flip justified by a recorded
+local/manual run?
 
 - **Why it's open (cited facts, 2026-06-23)**:
   - `buf generate` uses **remote BSR plugins** (`buf.gen.yaml.tmpl:20,27,31,37` —
@@ -77,7 +100,12 @@ or be a single change?
   should be installed on the dev host (so the planning agent / implementer can run
   option a locally) or whether option b is preferred.
 
-## Q-C — Exact ≥35-test composition: aggregate the siblings or only net-new e2e?  [recommended — confirm]
+## Q-C — Exact ≥35-test composition: aggregate the siblings or only net-new e2e?  ✅ RESOLVED (aggregate + net-new)
+
+**RESOLVED (maintainer, 2026-06-23): aggregate the 8 sibling harnesses + net-new
+e2e ⇒ ≥35** (ADR-B7-6-002 as written). Tier A re-runs b7-1/2/2a/3/5/9/10/pythia
+(superset gate), Tier B adds net-new L1 e2e, Tier C adds L2 live legs, Tier D adds
+held/post-flip guards.
 
 **Question**: should the suite re-run the sibling per-brick harnesses, or only add
 net-new end-to-end tests?
@@ -95,7 +123,13 @@ net-new end-to-end tests?
   and would NOT be a true superset gate. Aggregation is the honest interpretation
   of "validating the whole archetype end-to-end".
 
-## Q-D — Snapshot tarball: necessary now, and what format?  [NEEDS CLARIFICATION]
+## Q-D — Snapshot tarball: necessary now, and what format?  ✅ RESOLVED (ship the deterministic .tgz)
+
+**RESOLVED (maintainer, 2026-06-23): SHIP the deterministic `SOURCE_DATE_EPOCH`
+`.tgz` snapshot** (FR-B7-6-010 stays IN, not dropped). A scaffoldable archetype
+conventionally ships a snapshot so adopters can `forge upgrade`; b7-6 generates a
+byte-stable `.tgz` of the rendered ai-native-rag tree and asserts determinism + a
+size budget at L2.
 
 **Question**: the brief lists "possibly ship a snapshot tarball". Is one required
 at promotion, and in what format?
@@ -115,7 +149,12 @@ at promotion, and in what format?
   determinism-assert, possibly a new `forge upgrade` matrix cell à la b8-15) — it
   shouldn't be silently assumed into the promotion.
 
-## Q-E — `cli/assets` bundle regen mechanics for scaffoldable:true  [recommended — confirm, low-risk]
+## Q-E — `cli/assets` bundle regen mechanics for scaffoldable:true  ✅ RESOLVED (`npm run bundle`)
+
+**RESOLVED (maintainer, 2026-06-23): `npm run bundle`** (ADR-B7-6-003 as written).
+`cli/assets/` is gitignored + rebuilt fresh by CI; nothing to commit. The implementer
+re-runs `npm run bundle` to confirm `forge init --archetype ai-native-rag` stops
+refusing locally.
 
 **Question**: how does `forge init` stop refusing once the schema is flipped?
 
@@ -135,16 +174,18 @@ at promotion, and in what format?
 
 ---
 
-## Summary for the orchestrator
+## Summary for the orchestrator — ALL RESOLVED (2026-06-23)
 
-| Q | Decision needed | Recommendation | Genuine blocker? |
-|---|-----------------|----------------|------------------|
-| **Q-A** | single change vs prep/flip split | **single change** (no amendment forces a split) | low — confirm |
-| **Q-B** | where the live buf/cargo/tsc legs run + how the flip is justified | **option a**: SKIP in CI + recorded honest local/manual green run (needs buf installed + BSR); option b: add a buf+cargo CI job | **YES — the real decision** |
-| **Q-C** | suite composition | aggregate 8 siblings + ~20 net-new e2e (≈ 37+) | low — confirm |
-| **Q-D** | snapshot tarball | deterministic `.tgz` IF `forge upgrade` wanted now; else defer | medium — confirm necessity |
-| **Q-E** | bundle regen | `npm run bundle` (gitignored, CI-fresh) | none — confirmed |
+| Q | Decision needed | RESOLUTION (maintainer, 2026-06-23) |
+|---|-----------------|-------------------------------------|
+| **Q-A** | single change vs prep/flip split | **single change** (no amendment forces a split) |
+| **Q-B** | where the live buf/cargo/tsc legs run + how the flip is justified | **option b**: ADD a permanent `harness-rust` CI job (buf + Rust toolchain + node) running `b7-6.test.sh --level 1,2`; flip justified by THIS job green in CI |
+| **Q-C** | suite composition | aggregate 8 siblings + net-new e2e (≥ 35) |
+| **Q-D** | snapshot tarball | **ship** the deterministic `SOURCE_DATE_EPOCH` `.tgz` (FR-B7-6-010 IN) |
+| **Q-E** | bundle regen | `npm run bundle` (gitignored, CI-fresh) |
 
-**Could NOT confirm from precedent**: whether the maintainer wants buf installed
-on the dev host (needed to run the live legs locally per Q-B option a) — this is a
-prerequisite question for the implementer, surfaced under Q-B.
+**Resolution note (Q-B option b consequences)**: the new `harness-rust` job makes
+`forge-ci.yml` grow to **7 jobs** (from 6: harness/gates/cli/lint/example/summary)
+and pushes the line count past the current 340-line budget. Both cascades are
+handled in lock-step at the flip phase (job-count assertions in g1/c1/specs/standard;
+the size budget in g1/c1/t5-1/t5-otel-live-run + forge-ci.md + forge-self-ci.md).

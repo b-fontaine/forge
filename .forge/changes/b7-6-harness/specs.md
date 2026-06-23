@@ -41,10 +41,10 @@ candidate precondition. On archive these requirements consolidate into
 
 - **Q-A (single change vs split)** → ADR-B7-6-001 proposes **single change** (no
   amendment window forces a split); `[NEEDS CLARIFICATION]` for maintainer confirm.
-- **Q-B (buf/CI justification of the flip)** → ADR-B7-6-005 proposes the live L2
-  legs SKIP in the buf-less CI and the flip is justified by a recorded green
-  local/manual run where buf+BSR+cargo+node are present (option a), with adding a
-  CI buf+cargo job as option b; `[NEEDS CLARIFICATION]` — the genuine decision.
+- **Q-B (buf/CI justification of the flip)** → **RESOLVED (maintainer 2026-06-23):
+  option b** — ADD a permanent `harness-rust` CI job (buf + Rust toolchain + node)
+  that runs `b7-6.test.sh --level 1,2`, making the live codegen/build path a
+  per-PR gate; the flip is justified by THIS job green in CI (ADR-B7-6-005, option b).
 - **Q-C (suite composition)** → ADR-B7-6-002 (aggregate siblings + add e2e).
 - **Q-D (snapshot tarball)** → ADR-B7-6-004 proposes a deterministic snapshot;
   `[NEEDS CLARIFICATION]` for necessity.
@@ -141,37 +141,49 @@ candidate precondition. On archive these requirements consolidate into
 
 ### forge-ci line-budget lock-step (`FR-B7-6-03x`)
 
-- **FR-B7-6-030 (MODIFIED, lock-step)** — Registering `b7-6.test.sh` in the
-  `forge-ci.yml` harness array (FR-B7-6-001) — and, if Q-B resolves option b, also
-  adding a `harness-rust` buf+cargo+node job — GROWS the workflow past its current
-  size budget. `forge-ci.yml` is **300 lines today** (live-counted 2026-06-23) and
-  the budget is asserted in **four** places that MUST move in lock-step (a lesson:
-  b7-7 bumped one and missed a sibling assertion):
-  1. `.forge/scripts/tests/g1.test.sh::test_forge_ci_under_size_budget`
-     (line 343: `[ "$lines" -gt 300 ]`).
-  2. `.forge/scripts/tests/c1.test.sh::test_forge_ci_under_size_budget`
-     (line 738: `[ "$lines" -gt 300 ]`).
-  3. `.forge/specs/forge-ci.md` FR-CI-013 (line 298: "≤ 300 lines").
-  4. `.forge/standards/global/forge-self-ci.md` (line 43: "≤ 300 lines").
-  b7-6 MUST bump all four to b7-6's final line count (in the SAME commit that grows
-  the workflow), and re-run `g1.test.sh` + `c1.test.sh` to confirm GREEN.
-  **Reconciliation note (Article III.4):** a teammate reported these are "now 340",
-  but on the `b7-6-harness` branch all four read **300** and no `340` exists in any
-  of the four files (live-grepped 2026-06-23). The 340 bump presumably lives on the
-  b7-7 branch and has not merged to this base. b7-6 MUST re-read the LIVE numbers at
-  implement time (they may be 340 by then) and bump from whatever is current — NOT
-  from a hard-coded 300 — to avoid a stale-baseline conflict.
+- **FR-B7-6-030 (MODIFIED, lock-step) — size budget.** Registering `b7-6.test.sh`
+  in the `forge-ci.yml` harness array (FR-B7-6-001) AND adding the `harness-rust`
+  buf+rust+node job (Q-B option b) GROWS the workflow past its current size budget.
+  `forge-ci.yml` is **325 lines on this branch** (live-counted 2026-06-23, post
+  b7-7+b7-10 merge) and the budget is **340**, asserted in **FOUR** harnesses +
+  **TWO** docs that MUST move in lock-step (the b7-7 lesson: one bumped, a sibling
+  missed → red CI):
+  1. `.forge/scripts/tests/g1.test.sh::test_forge_ci_under_size_budget` (`-gt 340`).
+  2. `.forge/scripts/tests/c1.test.sh::test_forge_ci_under_size_budget` (`-gt 340`).
+  3. `.forge/scripts/tests/t5-1.test.sh` (`_test_t51_l1_017_ci_line_budget`, `-gt 340`).
+  4. `.forge/scripts/tests/t5-otel-live-run.test.sh` (`_test_olr_030_ci_matrix_entry`, `-gt 340`).
+  5. `.forge/specs/forge-ci.md` FR-CI-013 / NFR-CI-002 ("≤ 340 lines").
+  6. `.forge/standards/global/forge-self-ci.md` ("≤ 340 lines").
+  b7-6 adds the `b7-6.test.sh` harness entry (~1 line) + the `harness-rust` job
+  (~25-30 lines) + the `summary` `needs:` edit → past 340. Set the new budget with
+  headroom (**380**) and bump ALL SIX in the SAME commit that grows the workflow,
+  then re-run the four asserting harnesses to confirm GREEN. RE-READ the LIVE
+  numbers at implement (they are 340/325 on this branch — do NOT hard-code 300).
+- **FR-B7-6-030b (MODIFIED, lock-step) — job-count cascade (NEW, critical).** The
+  `harness-rust` job takes `forge-ci.yml` from **6 jobs** (`harness`, `gates`, `cli`,
+  `lint`, `example`, `summary`) to **7**. The "exactly 6 jobs" assertions MUST all
+  move in lock-step:
+  1. `g1.test.sh::test_forge_ci_workflow_shape` (expects exactly 6 → 7;
+     expected-set add `harness-rust`).
+  2. `c1.test.sh::test_forge_ci_workflow_shape_six_jobs` (6 → 7; rename to `_seven_jobs`
+     if the name asserts the count).
+  3. `.forge/specs/forge-ci.md` FR-CI-001 (6 jobs → 7).
+  4. `.forge/standards/global/forge-self-ci.md` job-count narrative (→ 7).
+  5. the `summary` job `needs:` list (`+ harness-rust`) and the `summary`
+     result-aggregation env/loop (the new job is a REQUIRED core job, like
+     `harness`/`gates`).
 - **FR-B7-6-031 (MODIFIED, forge-self-ci.md staleness refresh)** —
-  `.forge/standards/global/forge-self-ci.md` carries two stale narrative claims
-  that b7-6 (the right place, since it edits the CI workflow) MUST refresh:
-  - line 16 "`forge-ci.yml` declares **five jobs**" → **six** (`harness`, `gates`,
-    `cli`, `lint`, `example`, `summary` — `forge-ci.yml:33,150,170,193,214,261`,
-    live-counted; `example` was added by c1, `summary` aggregates them).
-  - line 43 the line budget → b7-6's final number (FR-B7-6-030).
+  `.forge/standards/global/forge-self-ci.md` carries narrative claims b7-6 (the right
+  place, since it edits the CI workflow) MUST refresh:
+  - the job-count narrative (currently says "five jobs" in the early prose) →
+    **seven** (`harness`, `gates`, `cli`, `lint`, `example`, `summary`,
+    `harness-rust`).
+  - the line budget → **380** (FR-B7-6-030).
   forge-self-ci.md has NO SemVer frontmatter (HTML-comment metadata only) and no
-  harness pins its content, so this is a narrative refresh (no version bump, no
-  REVIEW.md ledger entry required) — but it MUST be done so the meta-CI standard
-  stops lying about the job count + budget.
+  harness pins its content (per the project-memory note: only the compliance-tiers /
+  forbidden-components harnesses hard-pin a version — NOT forge-self-ci.md), so this
+  is a narrative refresh (no version bump, no REVIEW.md ledger entry required) — but
+  it MUST be done so the meta-CI standard stops lying about the job count + budget.
 
 ## Non-Functional
 
@@ -268,13 +280,20 @@ Feature: ai-native-rag promotion gate (b7-6 — candidate → stable/scaffoldabl
   defer the necessity decision to the maintainer (Q-D) — a scaffoldable archetype
   conventionally ships one for `forge upgrade` BASE recovery, but it is not
   required by the validator or the CLI gate.
-- **ADR-B7-6-005** — **Live legs SKIP in CI; flip justified by a recorded green
-  run.** buf is absent in CI and locally, cargo is absent in CI, and buf needs BSR
-  network (`buf.gen.yaml.tmpl:20-41`). Proposed (option a): the L2 live-codegen
-  legs SKIP in the buf-less CI (b7-10 precedent) and the flip is justified by a
-  green run on a host where buf+BSR+cargo+node are present, recorded honestly
-  (NFR-B7-6-006). Option b: add a buf+cargo+node CI job. `[NEEDS CLARIFICATION]`
-  — the genuine decision; do NOT flip on un-exercised live legs.
+- **ADR-B7-6-005** — **Add a `harness-rust` CI job; flip justified by that job
+  green in CI (RESOLVED option b, 2026-06-23).** buf is absent in CI and locally,
+  cargo is absent in CI, and buf needs BSR network (`buf.gen.yaml.tmpl:20-41`). The
+  maintainer chose **option b**: a NEW `harness-rust` job in `forge-ci.yml` installs
+  buf (`bufbuild/buf-setup-action`, pinned), a Rust toolchain
+  (`dtolnay/rust-toolchain`, pinned), and node, then runs `b7-6.test.sh --level 1,2`
+  — the full live path (`buf generate` → Rust+TS codegen → Connect handler
+  registration → `cargo build`/`test` → Qwik `tsc`) as a **permanent per-PR gate**.
+  The flip (T-041) is justified by THIS job going green, NOT by an un-rechecked local
+  run. The `summary` job `needs:` MUST include `harness-rust`. The L2 legs still SKIP
+  gracefully on a buf-less host (this dev host) so the suite stays locally runnable
+  (b7-10 SKIP precedent). Adding the job grows `forge-ci.yml` to **7 jobs** and past
+  the 340-line budget → the job-count + size-budget cascades (FR-B7-6-030/031) move
+  in lock-step. (Superseded option a: SKIP-in-CI + recorded local run — NOT chosen.)
 - **ADR-B7-6-006** — **Flip is the LAST task, only if green.** The promotion edit
   (FR-B7-6-020) + the lockstep inversions (FR-B7-6-021) land after the suite is
   green (NFR-B7-6-001). Mirrors the b8-14 prep→flip ordering, collapsed into one

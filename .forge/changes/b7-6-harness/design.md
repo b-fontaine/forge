@@ -95,28 +95,33 @@ isn't supported until the snapshot ships.
 **Consequences**: keeps the brick honest about an optional artifact.
 **Compliance**: III.4 (don't fabricate a tarball requirement).
 
-### ADR-B7-6-005 — Live legs SKIP in CI; flip justified by a recorded green run (proposed; Q-B — THE decision)
+### ADR-B7-6-005 — Add a `harness-rust` CI job; flip justified by it green in CI (RESOLVED option b, 2026-06-23)
 **Context**: `buf generate` needs buf + BSR network (remote plugins,
 `buf.gen.yaml.tmpl:20-41`); buf is absent in CI (no buf/cargo in any of
-`forge-ci.yml`'s six jobs, lines 33,150,170,193,214,261) AND on
-this dev host; cargo is absent in CI. The live codegen/build path has never run.
-**Decision (proposed, option a)**: the L2 live-codegen legs SKIP in the buf-less
-CI matrix job (the b7-10 `T-L2-003`/`T-L2-004` "rides b7-6" SKIP precedent), and
-the flip is justified by a **recorded green run on a host where buf + BSR + cargo +
-node are present** (locally: cargo ✓ + node ✓, but buf must be installed + BSR
-reachable), captured honestly in `.forge/research/b7-6-live-codegen.md` (real
-command + output + tool versions, NFR-B7-6-006). The CI-registered level is L1 +
-aggregation + held/post-flip guards (NFR-B7-6-003).
-**Alternative (option b)**: add a dedicated `harness-rust` CI job that installs
-buf (`bufbuild/buf-setup-action`) + a Rust toolchain (`dtolnay/rust-toolchain`) +
-node and runs `b7-6.test.sh --level 1,2` — making the live path a permanent CI
-gate. Heavier (BSR network in CI, longer job) but durable.
-**Consequences**: option a unblocks the flip without a CI overhaul but leans on a
-one-time human-run gate; option b is the rigorous long-term posture. **This is the
-genuine maintainer decision** — do NOT flip on un-exercised live legs.
-`[NEEDS CLARIFICATION]` Q-B.
-**Compliance**: I (the live legs ARE the e2e test — they must actually run
-somewhere before the flip); III.4 (honest run record, no fabricated CI-green).
+`forge-ci.yml`'s six jobs) AND on this dev host (`which buf` absent); cargo is
+absent in CI. The live codegen/build path has never run.
+**Decision (maintainer, option b)**: add a dedicated **`harness-rust` CI job** to
+`.github/workflows/forge-ci.yml` that installs buf (`bufbuild/buf-setup-action`,
+pinned tag), a Rust toolchain (`dtolnay/rust-toolchain`, pinned), and node, then
+runs `b7-6.test.sh --level 1,2` — making the live path (`buf generate` → Rust+TS
+codegen → Connect handler registration → `cargo build`/`test` → Qwik `tsc`) a
+**permanent per-PR gate**. The flip (T-041) is justified by THIS job going green in
+CI, NOT by a one-time local run. The `summary` job `needs:` list gains
+`harness-rust`, and the summary aggregator treats it as a REQUIRED core job. The
+`harness` job stays the L1+aggregation CI level; `harness-rust` adds the L2 live
+legs as their own job (BSR network + Rust toolchain isolated from the fast harness
+job). The L2 legs still SKIP gracefully on a buf-less host so the suite stays
+locally runnable (b7-10 `T-L2-003`/`T-L2-004` SKIP precedent).
+**Consequences**: the rigorous long-term posture — the live legs re-run on every
+PR. Costs: BSR network + a Rust toolchain + a longer job in CI; the job-count goes
+6 → 7 (FR-B7-6-030b cascade) and the line count past 340 → budget bumped to 380
+with headroom (FR-B7-6-030). A green local run is still recorded in
+`.forge/research/b7-6-live-codegen.md` for the parts runnable here (cargo backbone),
+but the **authoritative** gate is the CI job (no fabricated "CI-green with buf"
+claim — the CI job IS the green-with-buf evidence). (Superseded option a:
+SKIP-in-CI + one-time recorded local run — NOT chosen.)
+**Compliance**: I (the live legs ARE the e2e test — now run on every PR via the new
+job); III.4 (the gate is real CI, not a fabricated claim).
 
 ### ADR-B7-6-006 — Flip is the LAST task, only if green (ratified)
 **Context**: ADR-B7-1-002 gates promotion on a green b7-6; the b8-14 ordering
@@ -130,26 +135,30 @@ present and inverted by the flip task (b8-14-prep negative-guard + b8-15
 **Consequences**: an out-of-order flip fails the held-guard → can't merge green.
 **Compliance**: I (tests guard the edit); ADR-B7-1-002 honored.
 
-### ADR-B7-6-007 — The forge-ci size budget lives in 4 places; bump all in lock-step (ratified)
-**Context**: registering `b7-6.test.sh` in the harness array (and, under Q-B
-option b, a new `harness-rust` job) grows `forge-ci.yml`, which is **300 lines
-today** (live-counted 2026-06-23) — already at its size ceiling. The budget is
-asserted in **four** places: `g1.test.sh::test_forge_ci_under_size_budget`
-(`:343`), `c1.test.sh::test_forge_ci_under_size_budget` (`:738`),
-`forge-ci.md` FR-CI-013 (`:298`), and `forge-self-ci.md` (`:43`). A teammate
-reported "now 340"; on this branch all four read **300** and no `340` exists in
-them (the 340 bump is presumably on the unmerged b7-7 branch).
-**Decision**: bump all four in the SAME commit that grows the workflow, **from the
-LIVE number re-read at implement** (300 or 340 — do NOT hard-code), to b7-6's final
-line count; re-run `g1`+`c1` to confirm GREEN. Additionally refresh
-`forge-self-ci.md`'s stale narrative: "five jobs" → "six"
-(harness/gates/cli/lint/example/summary). forge-self-ci.md has no SemVer
-frontmatter and no harness pins its content → narrative refresh, no version bump.
+### ADR-B7-6-007 — The forge-ci size budget lives in 4 harnesses + 2 docs; the job count in 4 places; bump all in lock-step (ratified)
+**Context (live-counted 2026-06-23, post b7-7+b7-10 merge)**: `forge-ci.yml` is
+**325 lines** with a **340** budget and **6 jobs** (the b7-7 340-bump + the example
+job HAVE merged to this base — the spec's earlier "all read 300" reconciliation note
+is now stale; the LIVE values are 325/340/6). Registering `b7-6.test.sh` (~1 line)
+AND adding the `harness-rust` job (~25-30 lines, Q-B option b) grows the workflow
+past 340 and takes it to 7 jobs. The **size budget** is asserted in FOUR harnesses
+(`g1`, `c1`, `t5-1`, `t5-otel-live-run`) + TWO docs (`forge-ci.md`,
+`forge-self-ci.md`). The **job count** ("exactly 6") is asserted in `g1`
+(`test_forge_ci_workflow_shape`), `c1` (`..._six_jobs`), `forge-ci.md` FR-CI-001,
+`forge-self-ci.md`, and is encoded in the `summary` `needs:`/aggregator.
+**Decision**: in the SAME commit that grows the workflow — (1) bump the size budget
+340 → **380** (headroom) in all FOUR harnesses + TWO docs; (2) bump the job count
+6 → **7** in g1+c1+forge-ci.md+forge-self-ci.md, add `harness-rust` to every
+expected-set + the `summary` `needs:` + aggregator; (3) re-run g1+c1+t5-1+
+t5-otel-live-run to confirm GREEN. forge-self-ci.md has no SemVer frontmatter and no
+harness pins its content → narrative refresh, no version bump (project-memory:
+standards version is pinned by the harness ONLY for compliance-tiers /
+forbidden-components, NOT forge-self-ci.md).
 **Consequences**: avoids the b7-7 footgun (one assertion bumped, a sibling missed →
-red CI on the next push). The 4-places-in-lock-step rule is recorded so it doesn't
-recur.
-**Compliance**: I (the asserting harnesses stay green); III.4 (the reconciliation —
-300 vs the reported 340 — is recorded, not papered over).
+red CI). The two cascades (size in 6 spots, count in 4+1) are recorded so they
+don't recur.
+**Compliance**: I (the asserting harnesses stay green); III.4 (the LIVE 325/340/6
+baseline is recorded, the stale "300" reconciliation corrected).
 
 ---
 
@@ -167,11 +176,13 @@ bin/forge-init-ai-native-rag.sh              # OPTIONALLY MODIFIED — implement
 .forge/scripts/tests/b7-1.test.sh            # MODIFIED (lockstep) — T-005/006/L2 inverted to stable/scaffoldable
 .forge/scripts/tests/b7-2.test.sh            # MODIFIED (lockstep) — T-006 inverted (wrapper no longer refuses)
 .forge/scripts/tests/b7-2a.test.sh           # MODIFIED (lockstep) — L2 no longer exit 3
-.github/workflows/forge-ci.yml               # MODIFIED — register b7-6.test.sh (+ option-b rust job, Q-B); grows past the 300-line budget
-.forge/scripts/tests/g1.test.sh              # MODIFIED (lock-step) — size budget :343 (300→b7-6 final)
-.forge/scripts/tests/c1.test.sh              # MODIFIED (lock-step) — size budget :738 (300→b7-6 final)
-.forge/specs/forge-ci.md                     # MODIFIED (lock-step) — FR-CI-013 :298 ("≤ 300"→b7-6 final)
-.forge/standards/global/forge-self-ci.md     # MODIFIED — :43 budget (lock-step) + :16 "five jobs"→"six" (staleness refresh, narrative)
+.github/workflows/forge-ci.yml               # MODIFIED — register b7-6.test.sh + ADD harness-rust job (Q-B opt b) + summary needs/aggregator; grows past 340 → budget 380, 6→7 jobs
+.forge/scripts/tests/g1.test.sh              # MODIFIED (lock-step) — size budget 340→380 + workflow_shape 6→7 jobs (+harness-rust)
+.forge/scripts/tests/c1.test.sh              # MODIFIED (lock-step) — size budget 340→380 + six_jobs→seven_jobs (+harness-rust)
+.forge/scripts/tests/t5-1.test.sh            # MODIFIED (lock-step) — size budget 340→380 (_test_t51_l1_017_ci_line_budget)
+.forge/scripts/tests/t5-otel-live-run.test.sh # MODIFIED (lock-step) — size budget 340→380 (_test_olr_030_ci_matrix_entry)
+.forge/specs/forge-ci.md                     # MODIFIED (lock-step) — FR-CI-013/NFR-CI-002 ("≤ 340"→380) + FR-CI-001 (6→7 jobs)
+.forge/standards/global/forge-self-ci.md     # MODIFIED — budget 340→380 + job-count narrative →7 (staleness refresh, narrative; no SemVer bump)
 cli/assets/                                   # REGENERATED (gitignored) via npm run bundle
 ```
 
@@ -232,10 +243,11 @@ flowchart TD
   FLIP -->|no| STOP[do NOT flip]
 ```
 
-Option a (proposed): CI runs L1+aggregation (green there); the L2 live legs are
-run once on a buf-equipped host and recorded; the flip cites that record.
-Option b: a new `harness-rust` CI job installs buf+rust+node and makes L2 a
-permanent gate. Maintainer decides (Q-B).
+**RESOLVED (option b, 2026-06-23)**: the `harness` job runs L1+aggregation+held-guards
+(buf-less, green there); a NEW `harness-rust` job installs buf+rust+node and runs
+`b7-6.test.sh --level 1,2` — the L2 live legs are a **permanent per-PR gate** (not a
+one-time local run). The flip cites THIS CI job green. On a buf-less host the L2 legs
+still SKIP, so `--level 1,2` stays runnable locally.
 
 ## Testing strategy (Eris)
 
@@ -266,7 +278,8 @@ permanent gate. Maintainer decides (Q-B).
 - Article XI (AI-First): conformance tier asserts XI.5/IX.6/XI.6 survive codegen. ✅
 - Article XII: NOT engaged (no constitution amendment — the key difference from B.8.14). ✅
 - ADR-B7-1-002 promotion gate: suite gates the flip; flip is last. ✅
-- **No violation → gate PASS** (pending Q-B, the genuine decision).
+- **No violation → gate PASS** (Q-B RESOLVED 2026-06-23: option b — `harness-rust`
+  CI job is the permanent live gate; flip justified by it green in CI). ✅
 
 ---
 
