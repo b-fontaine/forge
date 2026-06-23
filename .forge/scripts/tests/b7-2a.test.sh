@@ -70,38 +70,47 @@ _test_b72a_l1_002_wrapper_exists_executable() {
   head -1 "$WRAPPER" | grep -qE '^#!.*\bbash\b' || { echo "    FAIL T-002: wrapper missing bash shebang" >&2; return 1; }
 }
 
+# T-003 — POST-PROMOTION (B.7.6 flip). The 1.0.0 schema is now stage:stable /
+# scaffoldable:true, so the wrapper's scaffoldability gate is OPEN and it NO LONGER
+# refuses with the candidate exit-3. Inverted from the pre-flip candidate-refusal
+# contract (ADR-B7-2A-002/003) by b7-6-harness: the legacy positional probe
+# (`testproj --org <rd>`, no ABI flags) now passes the scaffoldability gate and
+# reaches arg-parsing → exits 2 (unknown argument `testproj`), NOT the candidate 3,
+# and emits NO `[REFUSAL ...]`. This asserts the candidate refusal is gone.
 _test_b72a_l1_003_wrapper_refuses_no_writes() {
   [ -x "$WRAPPER" ] || { echo "    FAIL T-003: wrapper not runnable (covered by T-002)" >&2; return 1; }
   local tmp; tmp=$(mk_tmpdir_with_trap b7-2a-wrap)
   trap "rm -rf '$tmp'" RETURN
   local err rc
   err=$( cd "$tmp" && "$WRAPPER" testproj --org com.example.test 2>&1 1>/dev/null ); rc=$?
-  if [ "$rc" != "3" ]; then
-    echo "    FAIL T-003: wrapper exit=$rc != 3 (ADR-B7-2A-002)" >&2; return 1
+  # No longer the candidate exit-3 refusal (the gate is open post-promotion).
+  if [ "$rc" = "3" ]; then
+    echo "    FAIL T-003: wrapper still exits 3 (candidate refusal) AFTER the B.7.6 promotion (ADR-B7-2A-002 inverted)" >&2; return 1
   fi
-  printf '%s' "$err" | grep -qiE '\[REFUSAL' || { echo "    FAIL T-003: wrapper stderr lacks [REFUSAL ...] (ADR-B7-2A-003); got: $err" >&2; return 1; }
-  # zero writes: tmpdir must still be empty
-  if [ -n "$(ls -A "$tmp" 2>/dev/null)" ]; then
-    echo "    FAIL T-003: wrapper wrote files into the target dir (must be a no-op refusal): $(ls -A "$tmp")" >&2; return 1
+  if printf '%s' "$err" | grep -qiE '\[REFUSAL'; then
+    echo "    FAIL T-003: wrapper still emits a [REFUSAL ...] AFTER promotion (should pass the gate); got: $err" >&2; return 1
   fi
 }
 
 # ─── L2 (opt-in live) ─────────────────────────────────────────────────────────
 
 _test_b72a_l2_001_cli_refuses_exit3() {
-  # Registered + candidate/scaffoldable:false ⇒ resolveScaffolder refuse ⇒ exit 3.
-  # Requires the dispatch entry + schema bundled into cli/assets (npm run bundle).
+  # POST-PROMOTION (B.7.6 flip): the 1.0.0 schema is now stage:stable /
+  # scaffoldable:true, so resolveScaffolder selects 1.0.0 and the CLI renders — it
+  # NO LONGER refuses with exit 3. Inverted from the pre-flip exit-3 refusal by
+  # b7-6-harness. Requires the flipped schema bundled into cli/assets (npm run
+  # bundle). Opt-in (FORGE_B7_2A_LIVE=1) + cli/dist/index.js; skip-pass otherwise.
   local cli="$FORGE_ROOT/cli/dist/index.js"
   if [ "${FORGE_B7_2A_LIVE:-0}" != "1" ] || [ ! -f "$cli" ]; then
-    echo "    SKIP T-L2-001: set FORGE_B7_2A_LIVE=1 with a built+bundled CLI (cli/dist/index.js) to run the live exit-3 check" >&2
+    echo "    SKIP T-L2-001: set FORGE_B7_2A_LIVE=1 with a built+bundled CLI (cli/dist/index.js) to run the live post-promotion check" >&2
     return 0
   fi
   local tmp; tmp=$(mk_tmpdir_with_trap b7-2a-init)
   trap "rm -rf '$tmp'" RETURN
   ( cd "$tmp" && node "$cli" init testproj --archetype ai-native-rag --org com.example.test >/dev/null 2>&1 )
   local rc=$?
-  if [ "$rc" != "3" ]; then
-    echo "    FAIL T-L2-001: forge init --archetype ai-native-rag exit=$rc != 3 (registered, not scaffoldable)" >&2; return 1
+  if [ "$rc" = "3" ]; then
+    echo "    FAIL T-L2-001: forge init --archetype ai-native-rag exit=3 — still refusing AFTER the B.7.6 promotion (expected the scaffold to render; schema stable/scaffoldable:true)" >&2; return 1
   fi
 }
 

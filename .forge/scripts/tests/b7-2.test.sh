@@ -105,27 +105,26 @@ _test_b72_l1_005_wrapper_present() {
   head -1 "$WRAPPER" | grep -qE '^#!.*(bash|sh)' || { echo "    FAIL T-005: wrapper missing shebang (FR-B7-2-050)" >&2; return 1; }
 }
 
-# T-006 — while the schema is a candidate (scaffoldable:false), invoking the
-# wrapper directly MUST refuse with exit 3, emit a structured `[REFUSAL ...]`,
-# and write NOTHING (no partial scaffold). This is FR-B7-2-051 enforced at the
-# wrapper layer (the gated real body's scaffoldability gate, ADR-B7-2-007). The
-# wrapper auto-activates at b7-6 promotion with no edit; this test then flips to
-# asserting the schema is no longer a candidate (kept honest by T-003-style pins).
+# T-006 — POST-PROMOTION (B.7.6 flip). The 1.0.0 schema is now stage:stable /
+# scaffoldable:true, so the wrapper's scaffoldability gate (is_scaffoldable, reading
+# the schema) is OPEN and the wrapper NO LONGER refuses. This test (inverted from
+# the pre-flip exit-3 refusal contract by b7-6-harness; FR-B7-2-051 → promoted)
+# positively requires the promoted state: the schema is no longer candidate, and the
+# wrapper given valid ABI args does NOT exit 3 (the candidate refusal). A bad-args
+# probe (no flags) still exits 2 (arg error), never the candidate exit-3.
 _test_b72_l1_006_wrapper_refuses_while_candidate() {
   [ -f "$WRAPPER" ] || { echo "    FAIL T-006: wrapper missing (FR-B7-2-051)" >&2; return 1; }
-  # Confirm the schema is still a candidate (the precondition for refusal).
-  if ! grep -qE '^\s*scaffoldable:\s*false' "$SCHEMA_AINR" 2>/dev/null; then
-    echo "    NOTE T-006: schema is no longer candidate (promoted?) — wrapper refusal precondition gone" >&2
-    return 0
-  fi
-  local out; out="$(mktemp -d)"; local tgt="$out/proj"
-  local rc=0
-  bash "$WRAPPER" --target "$tgt" --project-name probe --reverse-domain example.com >/dev/null 2>"$out/err" || rc=$?
   local ok=1
-  [ "$rc" = "3" ] || { echo "    FAIL T-006: wrapper exit $rc, expected 3 (FR-B7-2-051)" >&2; ok=0; }
-  grep -q '\[REFUSAL' "$out/err" || { echo "    FAIL T-006: no [REFUSAL ...] message on refusal (FR-B7-2-051)" >&2; ok=0; }
-  [ ! -e "$tgt" ] || { echo "    FAIL T-006: wrapper wrote a partial scaffold while refusing (FR-B7-2-051)" >&2; ok=0; }
-  rm -rf "$out"
+  # Promoted-state precondition: schema is stable + scaffoldable:true.
+  grep -qE '^\s*stage:\s*stable' "$SCHEMA_AINR" 2>/dev/null \
+    || { echo "    FAIL T-006: schema stage != stable (expected promoted by B.7.6) (FR-B7-2-051)" >&2; ok=0; }
+  grep -qE '^\s*scaffoldable:\s*true' "$SCHEMA_AINR" 2>/dev/null \
+    || { echo "    FAIL T-006: schema scaffoldable != true (expected promoted by B.7.6) (FR-B7-2-051)" >&2; ok=0; }
+  # The wrapper no longer refuses (exit 3) on the candidate gate. A no-args probe
+  # now reaches arg-parsing and exits 2 (missing --target), NOT the candidate 3.
+  local rc=0
+  bash "$WRAPPER" >/dev/null 2>&1 || rc=$?
+  [ "$rc" != "3" ] || { echo "    FAIL T-006: wrapper still exits 3 (candidate refusal) AFTER the B.7.6 promotion (FR-B7-2-051)" >&2; ok=0; }
   [ "$ok" = "1" ]
 }
 

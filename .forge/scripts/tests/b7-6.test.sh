@@ -368,46 +368,42 @@ _test_b76_l1_b20_qwik_streaming_ui() {
 }
 
 # ════════════════════════════════════════════════════════════════════
-# Tier D — promotion held / post-flip guard.
-# Pre-flip: schema is candidate + CLI refuses (negative held-guard,
-# b8-14-prep). The flip task (Phase 4) INVERTS these (NFR-B7-6-001).
+# Tier D — promotion post-flip guard + committed snapshot.
+# POST-FLIP (B.7.6): the schema is stable/scaffoldable:true and the wrapper
+# renders (no longer refuses). These were the pre-flip held-guards (asserting
+# candidate + refusal); the flip task inverted them (NFR-B7-6-001, b8-15
+# "fails-loud once promotes" pattern). They now fail loud if the archetype is
+# ever reverted to candidate without reverting the promotion.
 # ════════════════════════════════════════════════════════════════════
 
-# T-D01 — promotion held-guard. BEFORE the flip this asserts the schema is still
-# candidate / scaffoldable:false (the flip has not happened out of order). AFTER
-# the flip (Phase 4) this body is inverted to assert stable / scaffoldable:true.
-# The single source of truth is the schema file (NFR-B7-6-001).
+# T-D01 — promotion guard (POST-FLIP). Asserts the schema is stage:stable /
+# scaffoldable:true — the promoted source-of-truth state (NFR-B7-6-001). Inverted
+# from the pre-flip candidate held-guard by the B.7.6 flip.
 _test_b76_d01_promotion_guard() {
   [ -f "$SCHEMA_AINR" ] || { echo "    FAIL T-D01: ai-native-rag schema missing: $SCHEMA_AINR (NFR-B7-6-001)" >&2; return 1; }
   local stage scaffoldable
   stage="$(grep -E '^stage:' "$SCHEMA_AINR" | head -1 | sed -E 's/^stage:[[:space:]]*//')"
   scaffoldable="$(grep -E '^scaffoldable:' "$SCHEMA_AINR" | head -1 | sed -E 's/^scaffoldable:[[:space:]]*//')"
-  # PRE-FLIP held-guard (inverted by Phase 4 T-041/T-043).
-  [ "$stage" = "candidate" ] \
-    || { echo "    FAIL T-D01: held-guard: stage='$stage' expected 'candidate' pre-flip (NFR-B7-6-001 — invert at the flip)" >&2; return 1; }
-  [ "$scaffoldable" = "false" ] \
-    || { echo "    FAIL T-D01: held-guard: scaffoldable='$scaffoldable' expected 'false' pre-flip (NFR-B7-6-001 — invert at the flip)" >&2; return 1; }
+  [ "$stage" = "stable" ] \
+    || { echo "    FAIL T-D01: post-flip: stage='$stage' expected 'stable' (NFR-B7-6-001 — promoted B.7.6)" >&2; return 1; }
+  [ "$scaffoldable" = "true" ] \
+    || { echo "    FAIL T-D01: post-flip: scaffoldable='$scaffoldable' expected 'true' (NFR-B7-6-001 — promoted B.7.6)" >&2; return 1; }
 }
 
-# T-D02 — CLI refusal held-guard. BEFORE the flip the wrapper refuses (exit 3,
-# zero writes) while the schema is candidate. AFTER the flip this is inverted to
-# assert the wrapper renders (NFR-B7-6-001). Hermetic (no toolchain — overlay
-# render is pure-python, but the refusal path needs no render at all).
+# T-D02 — CLI/wrapper guard (POST-FLIP). The schema is promoted, so the wrapper's
+# scaffoldability gate is OPEN: it NO LONGER refuses with the candidate exit-3.
+# Inverted from the pre-flip refusal held-guard by the B.7.6 flip (NFR-B7-6-001).
+# A no-args probe now reaches arg-parsing → exit 2 (missing --target), NOT 3.
 _test_b76_d02_cli_refusal_guard() {
   [ -x "$WRAPPER" ] || { echo "    FAIL T-D02: wrapper not runnable (NFR-B7-6-001)" >&2; return 1; }
-  # Only meaningful while candidate; if promoted, this guard is inverted by Phase 4.
-  if ! grep -qE '^scaffoldable:[[:space:]]*false' "$SCHEMA_AINR" 2>/dev/null; then
-    echo "    NOTE T-D02: schema no longer candidate (promoted) — refusal held-guard inverted at the flip" >&2
-    return 0
+  # Post-flip the candidate refusal precondition is gone; fail loud if it returns.
+  if grep -qE '^scaffoldable:[[:space:]]*false' "$SCHEMA_AINR" 2>/dev/null; then
+    echo "    FAIL T-D02: schema scaffoldable:false — reverted to candidate without reverting the promotion (NFR-B7-6-001)" >&2; return 1
   fi
-  local out; out="$(mktemp -d)"; local tgt="$out/proj"; local rc=0
-  bash "$WRAPPER" --target "$tgt" --project-name probe --reverse-domain example.com >/dev/null 2>"$out/err" || rc=$?
-  local ok=1
-  [ "$rc" = "3" ] || { echo "    FAIL T-D02: wrapper exit $rc, expected 3 while candidate (NFR-B7-6-001)" >&2; ok=0; }
-  grep -q '\[REFUSAL' "$out/err" || { echo "    FAIL T-D02: no [REFUSAL ...] on refusal (NFR-B7-6-001)" >&2; ok=0; }
-  [ ! -e "$tgt" ] || { echo "    FAIL T-D02: wrapper wrote a partial scaffold while refusing (NFR-B7-6-001)" >&2; ok=0; }
-  rm -rf "$out"
-  [ "$ok" = "1" ]
+  local rc=0
+  bash "$WRAPPER" >/dev/null 2>&1 || rc=$?
+  [ "$rc" != "3" ] \
+    || { echo "    FAIL T-D02: wrapper still exits 3 (candidate refusal) AFTER the B.7.6 promotion (NFR-B7-6-001)" >&2; return 1; }
 }
 
 # ════════════════════════════════════════════════════════════════════
