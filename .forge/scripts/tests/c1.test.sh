@@ -106,7 +106,7 @@ FAIL_NAMES=()
 # MANIFEST: test_demos_cover_distinct_layer_combinations      — NFR-EX-005
 #
 # Phase 3 — CI + docs + baselines cluster
-# MANIFEST: test_forge_ci_workflow_shape_six_jobs             — MODIFIED FR-CI-001
+# MANIFEST: test_forge_ci_workflow_shape_seven_jobs           — MODIFIED FR-CI-001
 # MANIFEST: test_forge_ci_example_job_present                 — FR-CI-012
 # MANIFEST: test_forge_ci_example_job_paths_filter            — FR-CI-012
 # MANIFEST: test_forge_ci_example_job_steps                   — FR-CI-012
@@ -608,8 +608,9 @@ PY
 
 # ─── Phase 3 — CI + docs + baselines tests ────────────────────
 
-# MODIFIED FR-CI-001 — workflow has exactly 6 top-level jobs.
-test_forge_ci_workflow_shape_six_jobs() {
+# MODIFIED FR-CI-001 — workflow has exactly 7 top-level jobs (6 → 7: b7-6-harness
+# added the `harness-rust` job, the ai-native-rag live codegen/build gate).
+test_forge_ci_workflow_shape_seven_jobs() {
   if [ ! -f "$WORKFLOW_FILE" ]; then
     echo "    workflow file missing: $WORKFLOW_FILE" >&2; return 1
   fi
@@ -617,7 +618,7 @@ test_forge_ci_workflow_shape_six_jobs() {
 import sys, yaml
 doc = yaml.safe_load(open(sys.argv[1]).read()) or {}
 jobs = doc.get("jobs", {})
-expected = {"harness", "gates", "cli", "lint", "example", "summary"}
+expected = {"harness", "gates", "cli", "lint", "example", "summary", "harness-rust"}
 if set(jobs.keys()) != expected:
     print(f"    expected jobs {sorted(expected)}, got {sorted(jobs.keys())}", file=sys.stderr)
     sys.exit(1)
@@ -688,7 +689,8 @@ if not guarded:
 PY
 }
 
-# MODIFIED FR-CI-006 — summary's needs list extended to include example.
+# MODIFIED FR-CI-006 — summary's needs list extended to include example (c1) and
+# harness-rust (b7-6 — the ai-native-rag live codegen/build gate).
 test_forge_ci_summary_aggregates_five_needs() {
   python3 - "$WORKFLOW_FILE" <<'PY' || return 1
 import sys, yaml
@@ -699,7 +701,7 @@ if needs is None:
     print("    jobs.summary.needs missing", file=sys.stderr); sys.exit(1)
 if isinstance(needs, str):
     needs = [needs]
-expected = {"harness", "gates", "cli", "lint", "example"}
+expected = {"harness", "gates", "cli", "lint", "example", "harness-rust"}
 if set(needs) != expected:
     print(f"    summary.needs must be {sorted(expected)}, got {sorted(needs)}", file=sys.stderr); sys.exit(1)
 PY
@@ -728,18 +730,18 @@ if "skipped" not in joined_run:
 PY
 }
 
-# NFR-CI-002 + FR-CI-013 — workflow ≤ 340 lines (bumped 250→300 2026-05-12;
+# NFR-CI-002 + FR-CI-013 — workflow ≤ 380 lines (bumped 250→300 2026-05-12;
 # 300→340 2026-06-23 by b7-7-example for the MODIFIED FR-CI-012 second-tree
-# RAG gate block: the example job now gates two example trees, and the
-# workflow had zero headroom at 300).
+# RAG gate; 340→380 2026-06-23 by b7-6-harness for the new harness-rust job —
+# the ai-native-rag live codegen/build gate, ADR-B7-6-005).
 test_forge_ci_under_size_budget() {
   if [ ! -f "$WORKFLOW_FILE" ]; then
     echo "    workflow file missing" >&2; return 1
   fi
   local lines
   lines=$(wc -l < "$WORKFLOW_FILE" | tr -d ' ')
-  if [ "$lines" -gt 340 ]; then
-    echo "    forge-ci.yml is $lines lines (> 340 NFR-CI-002 budget)" >&2
+  if [ "$lines" -gt 380 ]; then
+    echo "    forge-ci.yml is $lines lines (> 380 NFR-CI-002 budget)" >&2
     return 1
   fi
 }
@@ -869,7 +871,7 @@ main() {
   run_test test_demos_cover_distinct_layer_combinations
   echo ""
   echo "── Phase 3 : CI + docs + baselines cluster ──"
-  run_test test_forge_ci_workflow_shape_six_jobs
+  run_test test_forge_ci_workflow_shape_seven_jobs
   run_test test_forge_ci_example_job_present
   run_test test_forge_ci_example_job_paths_filter
   run_test test_forge_ci_example_job_steps

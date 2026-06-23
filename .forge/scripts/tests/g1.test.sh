@@ -98,11 +98,13 @@ perms = doc.get("permissions")
 if perms != {"contents": "read"}:
     errors.append(f"top-level permissions must be {{contents: read}}; got {perms!r}")
 
-# Exactly 6 jobs with the expected names. The 'example' job was
-# added by c1-reference-project (FR-CI-012) ; the original 5-job
-# shape from g1-forge-ci was MODIFIED in c1's specs.md.
+# Exactly 7 jobs with the expected names. The 'example' job was
+# added by c1-reference-project (FR-CI-012); 'harness-rust' was added
+# by b7-6-harness (the ai-native-rag live codegen/build gate,
+# ADR-B7-6-005). The original 5-job shape from g1-forge-ci was MODIFIED
+# in c1's specs.md, then again in b7-6's specs.md.
 jobs = doc.get("jobs") or {}
-expected_jobs = {"harness", "gates", "cli", "lint", "example", "summary"}
+expected_jobs = {"harness", "gates", "cli", "lint", "example", "summary", "harness-rust"}
 if set(jobs.keys()) != expected_jobs:
     errors.append(f"jobs must be exactly {sorted(expected_jobs)}; got {sorted(jobs.keys())}")
 
@@ -265,7 +267,7 @@ errors = []
 job = (doc.get("jobs") or {}).get("summary") or {}
 needs = job.get("needs") or []
 if isinstance(needs, str): needs = [needs]
-expected = {"harness", "gates", "cli", "lint", "example"}
+expected = {"harness", "gates", "cli", "lint", "example", "harness-rust"}
 if set(needs) != expected:
     errors.append(f"summary.needs must be {sorted(expected)}; got {sorted(needs)}")
 # Summary always runs (no `if:` short-circuit on a non-failure condition)
@@ -286,7 +288,7 @@ for s in steps:
     if isinstance(env, dict):
         for v in env.values():
             combined_text += "\n" + str(v)
-for j in ("harness", "gates", "cli", "lint", "example"):
+for j in ("harness", "gates", "cli", "lint", "example", "harness-rust"):
     if f"needs.{j}.result" not in combined_text:
         errors.append(f"summary script doesn't read `needs.{j}.result`")
 for e in errors:
@@ -335,17 +337,18 @@ test_forge_ci_no_unpinned_uses() {
   fi
 }
 
-# NFR-CI-002 — workflow ≤ 340 lines (bumped 250→300 2026-05-12; 300→340
-# 2026-06-23 by b7-7-example for the MODIFIED FR-CI-012 second-tree RAG gate
-# block: the example job now gates two example trees. Kept in sync with the
-# sibling assertion in c1.test.sh::test_forge_ci_under_size_budget.
+# NFR-CI-002 — workflow ≤ 380 lines (bumped 250→300 2026-05-12; 300→340
+# 2026-06-23 by b7-7-example for the MODIFIED FR-CI-012 second-tree RAG gate;
+# 340→380 2026-06-23 by b7-6-harness for the new harness-rust job — the
+# ai-native-rag live codegen/build gate (ADR-B7-6-005). Kept in sync with the
+# sibling assertions in c1 / t5-1 / t5-otel-live-run.
 test_forge_ci_under_size_budget() {
   if [ ! -f "$WORKFLOW_FILE" ]; then
     echo "    workflow file missing" >&2; return 1
   fi
   local lines; lines=$(wc -l < "$WORKFLOW_FILE")
-  if [ "$lines" -gt 340 ]; then
-    echo "    workflow $lines lines > 340 (NFR-CI-002)" >&2; return 1
+  if [ "$lines" -gt 380 ]; then
+    echo "    workflow $lines lines > 380 (NFR-CI-002)" >&2; return 1
   fi
 }
 
