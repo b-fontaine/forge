@@ -284,6 +284,16 @@ Article X. **Testable:** yes —
   `if: steps.examples-filter.outputs.examples == 'true'`.
 - **MUST** — no `continue-on-error: true` anywhere in the job ;
   consistent with `NFR-CI-003`.
+- **MODIFIED (b7-7-example, 2026-06-23)** — the `example` job now gates
+  **two** example trees under the same `examples/**` paths-filter. After the
+  `forge-fsm-example` steps (byte-preserved), it gains a second per-tree gate
+  block: `cd examples/forge-rag-example && bash .forge/scripts/verify.sh +
+  constitution-linter.sh` + a `yaml.safe_load` parse of the RAG tree's
+  `infra/**` + `shared/protos/*.yaml`. Parse-only / own-gates-only (no
+  `cargo build` / `npm` / `buf generate` / network — ADR-B7-7-004). The
+  summary aggregation (`needs: […example]`, skip-as-success) is unchanged.
+  Testable: `test_forge_ci_example_job_gates_rag_tree` +
+  `test_forge_ci_example_job_fsm_block_preserved` (b7-7.test.sh).
 
 **Constitution reference:** Articles V, X. **Testable:** yes —
 `test_forge_ci_example_job_present`,
@@ -295,9 +305,13 @@ Article X. **Testable:** yes —
 <!-- From change: c1-reference-project (2026-04-30) -->
 
 - **SHOULD** — adding the `example` job MUST keep `forge-ci.yml`
-  ≤ 300 lines (the size budget from `NFR-CI-002`; bumped 250→300 on
-  2026-05-12). Beyond that, the job MUST be extracted into a composite
-  action under `.github/actions/forge-ci-example/action.yml`.
+  ≤ 340 lines (the size budget from `NFR-CI-002`; bumped 250→300 on
+  2026-05-12, then 300→340 on 2026-06-23 by `b7-7-example` for the MODIFIED
+  FR-CI-012 second-tree RAG gate block — the example job now gates two trees;
+  the workflow had zero headroom at 300). Beyond that, the job MUST be
+  extracted into a composite action under
+  `.github/actions/forge-ci-example/action.yml`. The budget is enforced by
+  matching assertions in `c1.test.sh` **and** `g1.test.sh`, kept in sync.
 
 **Constitution reference:** Article X. **Testable:** yes —
 `test_forge_ci_under_size_budget` (c1.test.sh) — at archive

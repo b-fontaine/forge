@@ -29,6 +29,7 @@ rather than redefining them.
 | Change | Date | Phase | FRs added |
 |---|---|---|---|
 | [`c1-reference-project`](../changes/c1-reference-project/) | 2026-04-30 | First reference project (full-stack-monorepo) | FR-EX-001..010 + NFR-EX-001..006 |
+| [`b7-7-example`](../changes/b7-7-example/) | 2026-06-23 | Second reference project (ai-native-rag, 3 RAG demos) | FR-RAGEX-001..010 + NFR-RAGEX-001..005 + MODIFIED FR-CI-012 |
 
 ---
 
@@ -374,3 +375,71 @@ first archive cycle ; exceedance opens a follow-up change.
   demo-003's `cucumber-rs` scenarios across a live Kong
   instance — feature files exist for adopter inspection but
   steps are not all runtime-wired.
+
+---
+
+## ADDED Requirements (b7-7-example, archived 2026-06-23)
+
+B.7.7 — the **second reference project** under `examples/`:
+`forge-rag-example/`, demonstrating the `ai-native-rag` archetype.
+Namespace `FR-RAGEX-001..010` / `NFR-RAGEX-001..005` (distinct from c1's
+`FR-EX-*`, which governs the shared example-tree machinery b7-7 reuses).
+Covered by `.forge/scripts/tests/b7-7.test.sh` (22 L1 + L2 opt-in via
+`--require-example-tools`), registered in `forge-ci.yml`. The archetype
+stays **candidate / scaffoldable:false** — committing the example does not
+promote it (promotion rides `b7-6-harness`); the tree is rendered via
+`overlay.sh` (ADR-B7-7-001), NOT the refusing CLI.
+
+### Functional
+- **FR-RAGEX-001** — `examples/forge-rag-example/` exists at the repo root,
+  a fully-rendered `ai-native-rag/1.0.0` tree (`overlay.sh` of the
+  `b7-2-scaffolder` plan, b7-10-extended) with `backend/{rag,mcp,llm_gateway,
+  bin-server}`, `frontend/web-public/` (Qwik), `infra/`, `shared/protos/v1/rag/`,
+  its own `.forge/`, `.claude/`, `Taskfile.yml`, `docker-compose.dev.yml`,
+  `CLAUDE.md`, `README.md`, `.forge.yaml`, and a `.forge/scaffold-manifest.yaml`
+  recording `archetype: ai-native-rag` / `archetype_version: "1.0.0"` /
+  `stage: candidate` / `project_name: forge-rag-example`.
+- **FR-RAGEX-002/003** — top-of-tree `README.md` (4 canonical H2 sections +
+  the "does NOT show" note: candidate, no Flutter, no AI-Act/DORA demo, no
+  Pythia demo; demo-003 DOES show streaming) + one appended row in the
+  meta-`examples/README.md` (FSM row preserved).
+- **FR-RAGEX-004** — 3 archived demos: `demo-001-doc-ingestion` `[backend]`
+  (`rag/` pipeline: chunking, `Embedder`, pgvector HNSW upsert, hybrid
+  retrieval vector+BM25+RRF, re-rank), `demo-002-mcp-search-tool` `[backend]`
+  (rmcp `search` tool, dual transport, schema-validated input),
+  `demo-003-rag-query-ui` `[backend, frontend]` (Janus multi-layer, per-layer
+  designs/tasks; Qwik streaming UI consuming b7-10's `QueryStream`/`queryStream`,
+  XI.5 fallback degrading stream → unary `Query`). Each carries the 5
+  artefacts + a `features/<demo>.feature`.
+- **FR-RAGEX-005** — the demos materialise Article XI: `embeddings-pipeline`
+  (demo-001), IX.6 prompt-audit across the stream (demo-003), XI.5 non-AI
+  fallback (demo-001 embedder fallback + demo-003 `fallbackUsed` indicator).
+- **FR-RAGEX-006** — `.forge/changes/MANIFEST.md` lists the 3 demos.
+- **FR-RAGEX-007** — the RAG tree's own `verify.sh` + `constitution-linter.sh`
+  exit 0; archetype/workflow YAML parses (L2 opt-in).
+- **FR-RAGEX-008** — `b7-7.test.sh` (manifest pattern, mirrors `c1.test.sh`),
+  registered in `forge-ci.yml`'s harness loop after `c1.test.sh`.
+- **FR-RAGEX-009** — rendered via `overlay.sh` while candidate; committing it
+  keeps `ai-native-rag/1.0.0.yaml` `stage: candidate` / `scaffoldable:false`;
+  `forge init --archetype ai-native-rag` still refuses exit 3.
+- **FR-RAGEX-010** — this consolidation (additive; FR-EX-* untouched).
+
+### Non-Functional
+- **NFR-RAGEX-001** additive (no archetype/schema/standard/CLI edit; existing-file
+  edits confined to `forge-ci.yml` + `examples/README.md` + the test-budget
+  sync in `c1.test.sh`/`g1.test.sh`) · **002** tree ≤ 5 MB (baseline ~1.6 MB) ·
+  **003** `example` CI job stays ≤ 4 min (parse-only, ADR-B7-7-004) · **004**
+  each demo proposal ≤ 200 lines · **005** demos cover distinct layer + RAG-surface
+  combinations.
+
+### ADRs (ratified — maintainer 2026-06-23; orchestrator independent verification GREEN)
+- **ADR-B7-7-001** build now via `overlay.sh` (not gated on b7-6). **ADR-B7-7-002**
+  demo-003 is the multi-layer (Janus) demo + hard dep on `b7-10-streaming`
+  (b7-7 lands after b7-10). **ADR-B7-7-003** exactly 3 archived demos (no 4th
+  `specified`). **ADR-B7-7-004** CI is parse-only / own-gates-only (no `cargo
+  build` / `npm` / `buf generate` / network), mirroring c1 ADR-006.
+
+### Downstream
+The RAG example is the external-validation sibling of `forge-fsm-example`.
+The `ai-native-rag` promotion to `scaffoldable:true` (which makes `forge init`
+render this tree directly) rides `b7-6-harness` — the final B.7 brick.
