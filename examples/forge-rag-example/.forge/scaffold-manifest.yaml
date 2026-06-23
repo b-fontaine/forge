@@ -1,0 +1,9 @@
+archetype: ai-native-rag
+archetype_version: 1.0.0
+project_name: forge-rag-example
+reverse_domain: io.forge.example
+root_module: forge_rag_example
+scaffold_date: '2026-06-23T07:41:56.434312+00:00'
+scaffold_plan_sha: 3fdb501b82a8b8ffd88381e1e0dfae67b32cfde54a9cc7133f4e72db91d2e886
+template_set_sha: 711bd87f042846090cd8be0e360cb610871ca1697ba9c856a5272feafd307998
+tools: {}

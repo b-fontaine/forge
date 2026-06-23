@@ -14,6 +14,23 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ### Added
 
+- **`forge-rag-example` reference project (B.7.7, `b7-7-example`)** — the second
+  reference tree under `examples/`, demonstrating the `ai-native-rag` archetype
+  (sibling of `forge-fsm-example`). A fully-rendered `ai-native-rag/1.0.0` tree
+  (rendered via `overlay.sh` — the archetype is `candidate`, so `forge init`
+  still refuses exit 3) with **3 archived demo changes**: `demo-001-doc-ingestion`
+  (`rag/` pipeline — chunking, `Embedder`, pgvector HNSW, hybrid retrieval
+  vector+BM25+RRF, re-rank, XI.5 embedder fallback), `demo-002-mcp-search-tool`
+  (rmcp `search` tool, dual transport, schema-validated input), and
+  `demo-003-rag-query-ui` (multi-layer/Janus — Qwik **streaming** query UI
+  consuming b7-10's `QueryStream`/`queryStream` with progressive token render +
+  IX.6 prompt-audit across the stream + XI.5 `fallbackUsed` degrading the stream
+  to unary `Query`). New `FR-RAGEX-*`/`NFR-RAGEX-*` namespace consolidated into
+  `.forge/specs/example-reference.md`; the `example` CI job (FR-CI-012) extended
+  to gate **both** example trees (parse-only, ADR-B7-7-004); harness
+  `b7-7.test.sh` (22 L1 + L2 opt-in) in `forge-ci.yml`. Additive — no archetype/
+  schema/standard/CLI edit; the archetype stays `candidate`/`scaffoldable:false`
+  (promotion rides `b7-6-harness`). Tree ~1.6 MB (≤ 5 MB budget).
 - **Streaming RAG answer surface for `ai-native-rag` (B.7.10, `b7-10-streaming`)** —
   adds a server-streaming answer path to the candidate archetype, layered
   **additively** on the b7-2 unary surface (which is retained as the Article XI.5

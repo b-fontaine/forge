@@ -1,0 +1,31 @@
+// Audit: B.7.2 (b7-2-scaffolder, Phase 3) — ai-native-rag Qwik web-public tsconfig
+// Structural precedent: full-stack-monorepo/2.0.0/frontend/web-public/tsconfig.json.tmpl
+// Standard: .forge/standards/web-frontend.yaml
+// tsconfig is JSONC — // comments are valid (TypeScript parser). The `~/*` path
+// alias maps to ./src/* (Qwik starter convention). Generated Connect descriptors
+// land in src/lib/generated/connect/ and resolve via the `~/lib/...` alias.
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "target": "ES2020",
+    "module": "ES2022",
+    "lib": ["es2022", "DOM", "WebWorker", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "jsxImportSource": "@builder.io/qwik",
+    "strict": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "outDir": "tmp",
+    "noEmit": true,
+    "types": ["node", "vite/client"],
+    "moduleResolution": "Bundler",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "incremental": true,
+    "resolveJsonModule": true,
+    "paths": {
+      "~/*": ["./src/*"]
+    }
+  },
+  "include": ["src", "./*.d.ts", "./*.config.ts"]
+}

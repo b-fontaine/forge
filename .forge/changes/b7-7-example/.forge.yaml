@@ -1,0 +1,27 @@
+name: b7-7-example
+status: archived
+archived_to:
+  - .forge/specs/example-reference.md  # FR-RAGEX-001..010 + NFR-RAGEX-001..005 ADDED block + Archived-changes row
+  - .forge/specs/forge-ci.md           # MODIFIED FR-CI-012 (example job gates two trees) + FR-CI-013 budget 300→340
+created: 2026-06-22
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.7.7  # docs/new-archetypes-plan.md §0.12 T7 brick #8 — examples/forge-rag-example/ (3 demos)
+depends_on:
+  - B.7.1   # ai-native-rag/1.0.0 candidate schema (b7-1-schema, archived 2026-06-11)
+  - B.7.2a  # dispatch entry + refusing wrapper exit 3 (b7-2a-dispatch-register, archived 2026-06-12)
+  - B.7.3   # global/{rag-patterns,llm-gateway,mcp-servers}.md (b7-standards, archived 2026-06-13)
+  - B.7.2   # templates + scaffold-plan + verify-then-pin backbone (b7-2-scaffolder, archived 2026-06-21)
+  - B.7.10  # b7-10-streaming — Qwik SSE/WebTransport QueryStream/queryStream contract. HARD dep: demo-003 (streaming rag-query-UI) consumes it, so b7-7 lands AFTER b7-10 (ADR-B7-7-002, maintainer-ratified 2026-06-22 — option b). The example tree must be rendered from the b7-10-extended templates.
+  - C.1     # example-tree machinery reused (c1-reference-project: skip-guards, examples/README.md, example CI job)
+# Soft relationships (not hard deps):
+#   - B.7.6 (b7-6-harness) — promotion candidate→stable; b7-7 renders via overlay.sh
+#     and does NOT require promotion (ADR-B7-7-001).
+timeline:
+  proposed: 2026-06-22
+  specified: 2026-06-22
+  designed: 2026-06-22
+  planned: 2026-06-22
+  implemented: 2026-06-23
+  archived: 2026-06-23

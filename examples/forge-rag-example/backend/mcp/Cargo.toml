@@ -1,0 +1,26 @@
+[package]
+name = "mcp"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+tokio = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+schemars = { workspace = true }
+rmcp = { workspace = true }
+
+# HTTP transport deps (only used under feature mcp-http)
+axum = { workspace = true, optional = true }
+tower = { workspace = true, optional = true }
+
+[features]
+default = ["mcp-stdio"]
+mcp-stdio = ["rmcp/transport-io"]
+mcp-http = ["rmcp/transport-streamable-http-server", "rmcp/server-side-http", "rmcp/tower", "dep:axum", "dep:tower"]
+
+[dev-dependencies]
+tokio-test = { workspace = true }
