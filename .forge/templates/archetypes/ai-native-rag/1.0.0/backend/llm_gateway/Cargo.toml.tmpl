@@ -8,6 +8,11 @@ publish = false
 rag = { path = "../rag" }
 
 tokio = { workspace = true }
+# Streaming RAG answer path (B.7.10): Stream trait + ReceiverStream adapter for
+# the server-streaming QueryStream gateway entrypoint. Pins owned by the
+# workspace manifest (ADR-B7-10-004).
+tokio-stream = { workspace = true }
+futures = { workspace = true }
 async-trait = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }

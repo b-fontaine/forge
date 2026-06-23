@@ -13,6 +13,11 @@
 pub mod audit;
 pub mod fallback;
 pub mod handler;
+/// Streaming RAG answer pipeline (B.7.10) — the server-streaming counterpart to
+/// [`handler::process_query`], with backpressure / cancellation / pre- and
+/// mid-stream XI.5 fallback / close-time prompt-audit. Additive: the unary path
+/// is untouched.
+pub mod streaming;
 
 use rag::ComplianceTier;
 

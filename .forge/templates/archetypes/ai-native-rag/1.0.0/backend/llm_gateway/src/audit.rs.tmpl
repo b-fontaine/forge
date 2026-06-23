@@ -22,6 +22,9 @@ pub struct PromptAudit {
     pub completion_tokens: u32,
     /// Whether the non-AI fallback was invoked (XI.5 metric).
     pub fallback_invoked: bool,
+    /// Whether a streaming request was cancelled before completing (client Stop
+    /// / unmount, B.7.10 FR-B7-10-015). Always `false` on the unary path.
+    pub cancelled: bool,
 }
 
 /// Redact obvious PII before logging (Article XI.6 — "minimise PII ... before
@@ -94,6 +97,7 @@ pub fn emit(audit: &PromptAudit) {
         prompt_tokens = audit.prompt_tokens,
         completion_tokens = audit.completion_tokens,
         fallback_invoked = audit.fallback_invoked,
+        cancelled = audit.cancelled,
         "prompt-audit"
     );
 }

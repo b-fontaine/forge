@@ -61,6 +61,8 @@ pub async fn process_query<U: Upstream>(
         prompt_tokens: estimated_tokens,
         completion_tokens: 0,
         fallback_invoked: false,
+        // The unary path is never cancelled mid-flight (B.7.10 streaming-only).
+        cancelled: false,
     };
 
     let answer = match decide_route(config, estimated_tokens) {
