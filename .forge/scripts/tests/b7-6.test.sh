@@ -533,17 +533,31 @@ _test_b76_l2_c04_qwik_tsc() {
   return 0
 }
 
-# T-C05 — deterministic snapshot tarball (FR-B7-6-010). Build the ai-native-rag
-# snapshot via bin/forge-snapshot.sh into a temp snapshot dir twice and assert the
-# two .tar.gz are byte-identical (SOURCE_DATE_EPOCH determinism, NFR-B7-6-004) and
-# within the per-archetype size budget. SKIP when python3/tar absent.
-_test_b76_l2_c05_snapshot_determinism() {
-  command -v python3 >/dev/null 2>&1 || { echo "    SKIP T-C05: python3 absent" >&2; return 0; }
-  command -v tar >/dev/null 2>&1 || { echo "    SKIP T-C05: tar absent" >&2; return 0; }
-  [ -f "$SNAPSHOT_SH" ] || { echo "    SKIP T-C05: forge-snapshot.sh absent" >&2; return 0; }
-  # Finalized once the snapshot is wired (Q-D = ship the deterministic .tgz).
-  echo "    SKIP T-C05: snapshot determinism leg pending snapshot wiring (FR-B7-6-010)" >&2
-  return 0
+# T-D03 — committed snapshot tarball (FR-B7-6-010, Q-D = ship the deterministic
+# .tgz). The ai-native-rag scaffold snapshot ships at
+# .forge/scaffold-snapshots/ai-native-rag/1.0.0.tar.gz for `forge upgrade` BASE
+# recovery (the mobile-only/full-stack convention). It is built deterministically
+# by bin/forge-snapshot.sh (SOURCE_DATE_EPOCH + sorted + uid/gid0 + ustar + gzip
+# mtime0 — byte-identical rebuild verified, .forge/research/b7-6-live-codegen.md).
+# This asserts: present, ≤ 2 MB (the b4 _test_b4_019 budget), a valid gzip/tar, and
+# extractable (the b8-2 extract-round-trip). Always-run (hermetic, no toolchain).
+_test_b76_d03_snapshot_tarball() {
+  local snap="$FORGE_ROOT/.forge/scaffold-snapshots/ai-native-rag/1.0.0.tar.gz"
+  [ -f "$snap" ] || { echo "    FAIL T-D03: ai-native-rag snapshot tarball missing: $snap (FR-B7-6-010)" >&2; return 1; }
+  local ok=1
+  local size; size=$(wc -c < "$snap" | tr -d ' ')
+  local budget=$((2 * 1024 * 1024))
+  [ "$size" -le "$budget" ] || { echo "    FAIL T-D03: snapshot too large: ${size} bytes > ${budget} budget (FR-B7-6-010)" >&2; ok=0; }
+  file -b "$snap" 2>/dev/null | grep -qiE 'gzip|tar' \
+    || { echo "    FAIL T-D03: snapshot is not a gzip/tar archive (FR-B7-6-010)" >&2; ok=0; }
+  # Round-trip extractable (b8-2 FR-B8-2-012 pattern) — only when tar present.
+  if command -v tar >/dev/null 2>&1; then
+    local tmp; tmp="$(mktemp -d)"
+    tar -xzf "$snap" -C "$tmp" >/dev/null 2>&1 \
+      || { echo "    FAIL T-D03: snapshot not extractable via tar -xzf (FR-B7-6-010)" >&2; ok=0; }
+    rm -rf "$tmp"
+  fi
+  [ "$ok" = "1" ]
 }
 
 # ════════════════════════════════════════════════════════════════════
@@ -583,9 +597,10 @@ main() {
   run_test _test_b76_l1_b19_streaming_gateway_surface
   run_test _test_b76_l1_b20_qwik_streaming_ui
 
-  # Tier D — promotion held / post-flip guard (always).
+  # Tier D — promotion held / post-flip guard + committed snapshot (always).
   run_test _test_b76_d01_promotion_guard
   run_test _test_b76_d02_cli_refusal_guard
+  run_test _test_b76_d03_snapshot_tarball
 
   # Tier C — L2 live-codegen (toolchain-gated; SKIP-when-absent).
   case "$LEVEL" in
@@ -594,7 +609,6 @@ main() {
       run_test _test_b76_l2_c02_buf_generate
       run_test _test_b76_l2_c03_cargo_build_test
       run_test _test_b76_l2_c04_qwik_tsc
-      run_test _test_b76_l2_c05_snapshot_determinism
       ;;
   esac
 
