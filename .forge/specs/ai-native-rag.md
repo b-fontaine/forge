@@ -414,3 +414,56 @@ obligations carry `status: needs-clarification` + `themis_owner: K.5`. Covered b
 
 ### Downstream
 Unblocks **K.5 Themis** — the frozen v1.0.0 `.forge/compliance/{ai-act,dora}/` artefacts Themis maintains on a Phase-B rolling cadence. The archetype's promotion to `scaffoldable: true` remains gated on `b7-6-harness`.
+
+---
+
+## ADDED Requirements (b7-10-streaming, archived 2026-06-23)
+
+B.7.10 — streaming RAG answer surface for the `ai-native-rag` archetype: a
+server-streaming RPC + streaming gateway pipeline + Qwik progressive-render UI,
+layered **additively** on the b7-2 unary surface (which is retained as the
+documented Article XI.5 degradation target). Namespace `FR-B7-10-*` /
+`NFR-B7-10-*` / `ADR-B7-10-*`. Constitution v2.0.0 — no amendment. Covered by
+`.forge/scripts/tests/b7-10.test.sh` (7 L1 + 4 L2, registered in `forge-ci.yml`
+after `b7-2.test.sh`). Schema stays **candidate / scaffoldable:false** — promotion
+remains gated on `b7-6-harness`.
+
+### Functional
+**Streaming proto contract (FR-B7-10-001..003)**
+- **001** — `rag.proto` adds server-streaming `rpc QueryStream(QueryRequest) returns (stream QueryChunk)`; unary `Query` retained unchanged.
+- **002** — `QueryChunk { string token_delta; repeated SourceChunk sources; bool done; bool fallback_used; }` reusing the b7-2 `SourceChunk` (no duplicate type).
+- **003** — additive/backward-compatible: `buf lint` clean + `buf breaking` reports no breaking change vs the b7-2 baseline (asserted structurally at L1; live at L2 when `buf` present).
+
+**Backend streaming pipeline `backend/llm_gateway/src/streaming.rs` (FR-B7-10-010..015)**
+- **010** — `process_query_stream(...)` yields incremental chunks; reuses `decide_route` so kill-switch / tier-refusal / budget guards run before any upstream call; unary `process_query` retained.
+- **011** — `StreamingUpstream::generate_stream(...)` trait port; `FailingUpstream` + `MidStreamFailingUpstream` test doubles exercise the XI.5 branch.
+- **012** — **backpressure**: bounded `tokio::sync::mpsc` channel with named constant `STREAM_CHANNEL_CAPACITY` (no magic literal).
+- **013** — **cancellation**: producer in a spawned task; `StreamHandle::cancel()` aborts via `JoinHandle::abort`; consumer-drop also cancels (closed-channel signal). Close-time audit emitted on cancel.
+- **014** — **mandatory fallback (XI.5)**: pre-stream upstream failure → single fallback-marked terminal chunk (ranked sources, `fallback_used=true`, `done=true`); mid-stream failure → terminate-with-fallback-marker keeping partial tokens (ADR-B7-10-003). Both unit-tested with a failing upstream.
+- **015** — **prompt-audit (IX.6)** at stream close with final token counts + `fallback_invoked` + `cancelled`; `redact_pii` (XI.6) on the prompt path.
+
+**Frontend streaming UI `frontend/web-public` (FR-B7-10-020..023)**
+- **020** — `connect-client.ts` adds `queryStream(question, topK?, signal?)` async generator over the Connect-ES v2 server-streaming client (`for await`); unary `query()` retained; transport pins owned by `transport.yaml` (not re-pinned).
+- **021** — `routes/index.tsx` renders progressively (token deltas append to a `useSignal`, Article XI.4); surfaces `fallbackUsed`.
+- **022** — Stop control + cancel-on-unmount via `AbortController` threaded into the Connect call (`useVisibleTask$` cleanup); no orphaned stream on navigation.
+- **023** — named exponential-backoff retry helper (`DEFAULT_RETRY_POLICY` + `exponentialBackoffMs`); on exhaustion degrades to unary `query()` (UI-layer XI.5: SSE-class → unary → non-AI fallback).
+
+**WebTransport (FR-B7-10-030)** — documented forward alternative in `README.md` + a marked non-default scaffold note; **NOT** wired (Connect-ES is fetch/HTTP, not WebTransport — ADR-B7-10-005).
+
+**Harness (FR-B7-10-040)** — `b7-10.test.sh` L1 (proto streaming + unary-retained, backend markers, Qwik markers, WebTransport-documented, baseline-intact, no-inline-pin) + L2 (overlay render-clean, `buf lint`/`breaking`, Qwik `tsc`, `cargo check` — toolchain-gated, skip when absent); registered after `b7-2.test.sh`.
+
+### Non-Functional
+- **NFR-B7-10-001** additive (no edit to constitution / `archetype.schema.json` / the `ai-native-rag/1.0.0` schema / B.7.3 standards / `transport.yaml` / `web-frontend.yaml` / other archetypes) · **002** no regression (b7-2 L1 7 / L2 3, b7-1, b7-2a, b7-3, verify, linter all GREEN) · **003** rendered streaming modules ship `#[cfg(test)]` with the pre-stream + mid-stream fallback tested against a failing upstream · **004** determinism (byte-stable render) · **005** pin discipline — `tokio-stream = "0.1.18"` verify-then-pinned LIVE, ONLY in `backend/Cargo.toml.tmpl`.
+
+### ADRs (ratified — maintainer 2026-06-23; orchestrator independent verification GREEN)
+- **ADR-B7-10-001** — add server-streaming `QueryStream`, keep unary `Query` (the XI.5 degradation target).
+- **ADR-B7-10-002** — default streaming transport = Connect server-streaming (SSE-class), not WebTransport (Context7-confirmed Connect-ES v2 `for await`).
+- **ADR-B7-10-003** — mid-stream failure policy = terminate-with-fallback-marker (keep partial tokens).
+- **ADR-B7-10-004** — backend streaming seam = bounded `mpsc` → `tokio_stream::wrappers::ReceiverStream`; new crate `tokio-stream` pinned LIVE only in `Cargo.toml.tmpl`; `async-stream`/`tokio-util` deliberately avoided.
+- **ADR-B7-10-005** — WebTransport = documented forward alternative, not default-wired (Q-1 resolved: option a, documented-only).
+
+### Open questions (resolved)
+- **Q-1 (WebTransport depth)** — RESOLVED: option (a) documented-only forward alternative (ADR-B7-10-005). **Q-2** terminate-with-fallback-marker (ADR-B7-10-003). **Q-3** seam + `tokio-stream` resolved at IMPLEMENT (verify-then-pin LIVE, `0.1.18`). **Q-4** adding an RPC/message is non-breaking under the archetype `buf.yaml` `FILE` rules.
+
+### Downstream
+The streaming contract (`QueryStream` / `queryStream`) is **consumed by `b7-7-example`** (demo-003, RAG query UI in streaming mode). Live `buf generate` + Connect handler registration + `cargo fetch` + the ≥35-test promotion suite + the `candidate → stable` / `scaffoldable:true` flip remain in **`b7-6-harness`**.

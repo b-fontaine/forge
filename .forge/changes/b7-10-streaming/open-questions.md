@@ -3,14 +3,18 @@
 <!-- Anti-hallucination ledger (Constitution Article III.4). Items here are NOT -->
 <!-- guessed in the spec/design; they are surfaced for maintainer resolution. -->
 
-## `[NEEDS CLARIFICATION]` — blocking the Phase-3 README/WebTransport task only
+## Resolved at implement (2026-06-23)
 
-### Q-1 — WebTransport depth in this brick
+### Q-1 — WebTransport depth in this brick — RESOLVED: option (a) documented-only
 
-**[NEEDS CLARIFICATION: For B.7.10, is WebTransport to be (a) documented-only as a
-forward alternative with a clearly-marked non-default scaffold note — the proposed
-default, ADR-B7-10-005 — or (b) scaffolded as a real, opt-in native-browser
-WebTransport channel parallel to Connect server-streaming?]**
+**Decision (maintainer/orchestrator, 2026-06-23): option (a) — documented forward
+alternative with a clearly-marked non-default scaffold note (ADR-B7-10-005).** A
+native WebTransport channel (option b) is NOT built in this brick; if ever wanted
+it is a separate follow-up change. Original question was:
+> For B.7.10, is WebTransport to be (a) documented-only as a forward alternative
+> with a clearly-marked non-default scaffold note — the proposed default,
+> ADR-B7-10-005 — or (b) scaffolded as a real, opt-in native-browser WebTransport
+> channel parallel to Connect server-streaming?
 
 - **Why it is open**: Connect-ES v2 is fetch/HTTP-based and **does not transport
   over WebTransport** (Context7 `/connectrpc/connect-es`, 2026-06-22). So the
