@@ -1,5 +1,7 @@
 name: b7-6-harness
-status: implemented
+status: archived
+archived_to:
+  - .forge/specs/ai-native-rag.md  # B.7.6 ADDED block (FR-B7-6-* / NFR-B7-6-* / ADR-B7-6-*) appended at archive ; prior B.7 blocks preserved
 created: 2026-06-23
 schema: default
 constitution_version: "2.0.0"
@@ -22,3 +24,4 @@ timeline:
   designed: 2026-06-23
   planned: 2026-06-23
   implemented: 2026-06-23
+  archived: 2026-06-23

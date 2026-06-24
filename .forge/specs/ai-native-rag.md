@@ -467,3 +467,30 @@ remains gated on `b7-6-harness`.
 
 ### Downstream
 The streaming contract (`QueryStream` / `queryStream`) is **consumed by `b7-7-example`** (demo-003, RAG query UI in streaming mode). Live `buf generate` + Connect handler registration + `cargo fetch` + the ≥35-test promotion suite + the `candidate → stable` / `scaffoldable:true` flip remain in **`b7-6-harness`**.
+
+---
+
+## ADDED Requirements (b7-6-harness, archived 2026-06-23)
+
+B.7.6 — **the promotion gate** (final B.7 brick): flips `ai-native-rag` `candidate → stable` / `scaffoldable:false → true` so `forge init --archetype ai-native-rag` renders the tree (was exit 3). Namespace `FR-B7-6-*` / `NFR-B7-6-*` / `ADR-B7-6-*`. Single change (no constitution amendment forces a B.8.14-style prep/flip split). Covered by `.forge/scripts/tests/b7-6.test.sh` (35 tests at L1,2) + a new `harness-rust` CI job; the flip is the suite-gated final commit.
+
+### Functional
+- **FR-B7-6-001/002/003** — `b7-6.test.sh` (≥35 tests): an **L1 end-to-end structural tier** (layer roots; proto carries BOTH unary `Query` + streaming `QueryStream`/`QueryChunk`; codegen manifest; Connect-handler seam; scaffold-plan coverage; standards conformance; pins only in `Cargo.toml.tmpl`) + an **aggregation tier** re-running the 8 sibling B.7 harnesses (b7-1/2/2a/3/5/9/10/pythia, absent ⇒ clean SKIP) as a superset gate.
+- **FR-B7-6-004/005** — **L2 live-codegen tier** (SKIP-when-absent locally; RUN in the `harness-rust` CI job): render via `overlay.sh`, then `buf generate` → Rust+TS codegen → `cargo build`/`test` of the existing 4-crate workspace → Qwik `tsc` (the b7-10 `rag_pb` import now resolves). The deferred `forge-init-ai-native-rag.sh` TODOs (`buf generate`, `cargo fetch`) are realised + verified. **Connect handler = flagship parity (ADR — Option A)**: ai-native-rag ships NO `grpc-api` crate; the Connect line stays a documented adopter seam exactly as the stable flagship 2.0.0 (`ConnectRouter::new()` + `TODO(adopter)`); the gate proves the real end-to-end build (codegen + workspace build + Qwik tsc), not a compiled Connect handler.
+- **FR-B7-6-010** — deterministic `SOURCE_DATE_EPOCH` snapshot `.forge/scaffold-snapshots/ai-native-rag/1.0.0.tar.gz` (913 KB, byte-stable) for `forge upgrade` BASE recovery.
+
+### MODIFIED (the promotion — suite-gated, final commit)
+- **FR-B7-6-020** — `.forge/schemas/ai-native-rag/1.0.0.yaml` `stage: candidate→stable`, `scaffoldable: false→true` (the sole source-of-truth promotion edit; satisfies `validate-foundations.sh::check_versioned_schema_siblings`).
+- **FR-B7-6-021** — lockstep candidate-guard inversions (b8-14-flip break-cascade) in the SAME commit: `b7-1` T-005/006/L2, `b7-2` T-006, `b7-2a` T-003/L2, and **`b7-7`** `test_rag_archetype_still_candidate` (b7-7 was already merged; its candidate assertion is inverted to the promoted state).
+- **FR-B7-6-022** — `cli/assets` regen via `npm run bundle` (gitignored, CI-fresh) so `selectScaffoldableVersion` returns 1.0.0 and the CLI stops refusing.
+- **cli-trust cascade (mandatory, surfaced by the cli Vitest)** — the schema flip forces the dispatch `status: candidate→stable` flip (b7-2a T-001) + a new `cli/test/e2e/archetype-fixtures/ai-native-rag.yml` (FR-T51-055): `archetypes-smoke.test.ts` is data-driven off dispatch `status` (`scaffoldable = status != candidate`), so a scaffoldable schema with `status: candidate` breaks its exit-3 refusal assertion. ai-native-rag joins the cli-trust scaffold matrix (toolchain-gated on buf+cargo).
+- **FR-B7-6-030/031** — forge-ci line budget bumped **340→380** in lock-step across the four asserting harnesses (g1, c1, t5-1, t5-otel-live-run) + `forge-ci.md` + `forge-self-ci.md`; the **6→7 job-count cascade** for the new `harness-rust` job (g1/c1 shape asserts, `forge-ci.md` FR-CI-001, `forge-self-ci.md`, summary `needs:`).
+
+### Non-Functional
+- **NFR-B7-6-001** suite GATES the flip (held-guard before, inverted by the flip) · **002** no regression (full suite + verify + constitution-linter + validate-foundations GREEN; constitution / other standards / `archetype.schema.json` / frozen full-stack 1.0.0+2.0.0 trees byte-unchanged) · **003** CI-safe (L1+aggregation in the buf-less `harness` job; live legs in `harness-rust`) · **004** determinism · **005/006** pin discipline + honest justification (the live build is verified by `harness-rust` in CI, recorded in `.forge/research/b7-6-live-codegen.md`, not faked).
+
+### ADRs (ratified — maintainer 2026-06-23; orchestrator independent verification GREEN, live build GREEN in CI)
+- **ADR-B7-6-001** single change. **002** suite = aggregate siblings + net-new e2e. **003** bundle regen = `npm run bundle` (gitignored). **004** deterministic snapshot tarball. **005** **`harness-rust` buf+cargo+node CI job** runs the live legs as a permanent gate (Q-B option b). **006** flip is the LAST task, only if green. **007** the forge-ci budget lives in 4 places + 2 docs — bump in lock-step.
+
+### Downstream
+**B.7 is complete (9/9).** `forge init --archetype ai-native-rag` renders the full RAG tree. Follow-up (tracked, not a regression): the pre-existing `b8-1` shared-tree snapshot-rebuild flake (b8-1/12/13/14/15; passes in isolation, green in CI, untouched by B.7).

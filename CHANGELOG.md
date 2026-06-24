@@ -14,6 +14,23 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ### Added
 
+- **`ai-native-rag` promoted to stable / scaffoldable — B.7 COMPLETE 9/9 (B.7.6, `b7-6-harness`)** —
+  the promotion gate (final B.7 brick) flips `.forge/schemas/ai-native-rag/1.0.0.yaml`
+  `stage: candidate → stable`, `scaffoldable: false → true`, so
+  `forge init --archetype ai-native-rag` now renders the full RAG tree (was exit 3).
+  Gated by a new `.forge/scripts/tests/b7-6.test.sh` (35-test promotion suite:
+  end-to-end structural L1 + aggregation of all 8 sibling B.7 harnesses + held/post-flip
+  guards) and a new **`harness-rust` CI job** (`bufbuild/buf-action` + `dtolnay/rust-toolchain`
+  + node) that runs the **live `buf generate` → Rust+TS codegen → `cargo build`/`test` →
+  Qwik `tsc`** path — the deferred B.7.2/B.7.10 codegen legs, now exercised. Connect
+  handler stays a documented adopter seam (flagship parity — ai-native-rag ships no
+  `grpc-api` crate). Ships a deterministic `SOURCE_DATE_EPOCH` snapshot tarball for
+  `forge upgrade`. The flip cascades in lockstep: sibling candidate-guards inverted
+  (`b7-1`/`b7-2`/`b7-2a`/`b7-7`), dispatch `status → stable` + a new cli-trust e2e
+  fixture (`archetype-fixtures/ai-native-rag.yml`, FR-T51-055), the forge-ci line
+  budget bumped 340→380, and the workflow job count 6→7 — all kept in sync.
+  Additive: no constitution amendment, no other-archetype edit, frozen full-stack
+  1.0.0/2.0.0 trees byte-unchanged.
 - **`forge-rag-example` reference project (B.7.7, `b7-7-example`)** — the second
   reference tree under `examples/`, demonstrating the `ai-native-rag` archetype
   (sibling of `forge-fsm-example`). A fully-rendered `ai-native-rag/1.0.0` tree
