@@ -1974,13 +1974,13 @@ archétypes, comme outillage périphérique. Codifié **Module L** en §1.4 + li
 
 ---
 
-## 0.12 Status update — 2026-06-21 (T6/B.8 ✅ COMPLET ; T7/B.7 🔵 4/9 briques)
+## 0.12 Status update — 2026-06-21 (T6/B.8 ✅ COMPLET ; T7/B.7 ✅ COMPLET 9/9 au 2026-06-23)
 
 > **Resync majeure.** Les sections de statut §0.0–§0.11 s'arrêtaient au
 > 2026-05-30 et le tableau §11 marquait encore **T6 et T7 `⏸️ Pending`**.
 > Or les deux ont avancé. Cette section rétablit la vérité du repo
 > (git + `.forge/changes/*/.forge.yaml`) au 2026-06-21. Le tableau §11 est
-> corrigé en conséquence (T6 ✅, T7 🔵 in progress).
+> corrigé en conséquence (T6 ✅, T7 ✅ — B.7 complète 9/9 au 2026-06-23).
 
 ### T6 — Module B.8 (flagship 1.0.0 → 2.0.0) ✅ COMPLET
 
@@ -2006,12 +2006,16 @@ cible par défaut, fresh-init Kong-less.
   « DBOS Go SDK breaking changes » devient **caduc** pour la stack Rust. Le caveat
   §13.3 « garde Temporal en option » est donc *de facto* le défaut.
 
-### T7 — Module B.7 (`ai-native-rag`) 🔵 EN COURS — 4 briques / 9
+### T7 — Module B.7 (`ai-native-rag`) ✅ COMPLET — 9 briques / 9
 
 Décision amont (mainteneur 2026-06-11, `.forge/_memory/b7-ai-native-rag-exploration.md`) :
 **T7 démarre par B.7, pas B.6** (B.7 réutilise le substrat 2.0.0 livré par B.8 →
 moins de net-new infra). Chaîne de **9 changes atomiques** (decision B, pas de
 monolithe). Spec accumulée : `.forge/specs/ai-native-rag.md`.
+**🎉 B.7 COMPLET (9/9) le 2026-06-23** : `ai-native-rag/1.0.0` promu `stage: stable` /
+`scaffoldable: true` — `forge init --archetype ai-native-rag` rend désormais l'arbre
+RAG complet (était exit 3). Le build end-to-end (`buf generate` → codegen Rust+TS →
+`cargo build` → Qwik `tsc`) est prouvé vert par le job CI `harness-rust`.
 
 | # | Brique | État |
 |---|--------|------|
@@ -2019,18 +2023,18 @@ monolithe). Spec accumulée : `.forge/specs/ai-native-rag.md`.
 | 2 | `b7-standards` — `global/{rag-patterns,llm-gateway,mcp-servers}.md` (pattern docs, **no pins**) | ✅ archivé 2026-06-13 |
 | 2a | `b7-2a-dispatch-register` — registre CLI, refus `init` exit 2→3 (résout Q-005) | ✅ archivé 2026-06-12 |
 | **3** | **`b7-2-scaffolder`** — templates `ai-native-rag/1.0.0/*` + backbone Rust (LLM gateway proxy + MCP rmcp + pipeline RAG) + verify-then-pin + wrapper gated overlay.sh + cli/assets bundle | ✅ **archivé 2026-06-21** (56 templates, 35 cargo tests, b7-2.test.sh L1 7/L2 3, verify.sh PASS ; revue indép. APPROVE-WITH-NITS ; pins LIVE rmcp 1.7.0/pgvector 0.4.2/async-openai 0.41.1/fastembed 5.17.2 ; reste candidate, promotion → b7-6) |
-| 4 | `b7-pythia` — agent K.2 (patron `k3-demeter`) | ⏳ pending |
-| 5 | `b7-9-janus-ai` — B.7.9 + **J.8.c** (refus Vertex/Bedrock ; T3 ⇒ Mistral-EU/vLLM) | ⏳ pending |
-| 6 | `b7-5-ai-act` — B.7.5 + B.7.8, débloque Themis K.5 + `.forge/compliance/{ai-act,dora}/` | ⏳ pending |
-| 7 | `b7-10-streaming` — Qwik SSE/WebTransport | ⏳ pending |
-| 8 | `b7-7-example` — `examples/forge-rag-example/` (3 demos) | ⏳ pending |
-| 9 | `b7-6-harness` — `b7.test.sh` ≥35 + snapshot tarball ; **gate de promotion** candidate→stable/scaffoldable (ADR-B7-1-002) | ⏳ pending |
+| 4 | `b7-pythia` — agent K.2 **Sibyl** (advisory AI/RAG specialist, patron `k3-demeter`) | ✅ archivé 2026-06-22 (PR #29) |
+| 5 | `b7-9-janus-ai` — B.7.9 + **J.8.c** (refus Vertex/Bedrock ; T3 ⇒ Mistral-EU/vLLM) | ✅ archivé 2026-06-22 (PR #27) |
+| 6 | `b7-5-ai-act` — B.7.5 + B.7.8, débloque Themis K.5 + `.forge/compliance/{ai-act,dora}/` | ✅ archivé 2026-06-22 (PR #30) |
+| 7 | `b7-10-streaming` — surface RAG server-streaming (`QueryStream`/`queryStream` ; backpressure/cancel/XI.5 fallback ; UI Qwik progressive) | ✅ archivé 2026-06-23 (PR #31) |
+| 8 | `b7-7-example` — `examples/forge-rag-example/` (3 demos ; demo-003 streaming) | ✅ archivé 2026-06-23 (PR #31 via #32) |
+| 9 | `b7-6-harness` — `b7-6.test.sh` 35 tests + job CI `harness-rust` (live buf→cargo→tsc) + snapshot tarball ; **gate de promotion** candidate→stable/scaffoldable:true (ADR-B7-1-002) | ✅ **archivé 2026-06-23 (PR #33)** |
 
-Dépendances dures : `1→2→3`, puis 4–9 largement parallélisables. La promotion de
-l'archétype à `stable` / `scaffoldable: true` est **gated sur un `b7-6-harness`
-vert** (ADR-B7-1-002, patron B.8.14-C2) — `forge init --archetype ai-native-rag`
-refuse donc proprement (exit 3) jusque-là. **J.8.c** (déféré de T5/§0.0 J.8) atterrit
-en brique #5.
+Dépendances dures : `1→2→3`, puis 4–9 largement parallélisables (b7-7 après b7-10 ;
+b7-6 en dernier). La promotion à `stable` / `scaffoldable: true` (gate `b7-6-harness`,
+patron B.8.14-C2, ADR-B7-1-002) **est faite (2026-06-23, PR #33)** : `forge init
+--archetype ai-native-rag` rend désormais l'arbre (n'exit plus 3). **J.8.c** (déféré
+de T5/§0.0 J.8) a atterri en brique #5.
 
 ### Verify-then-pin — baseline (NON figé, à re-confirmer LIVE en B.7.2)
 
