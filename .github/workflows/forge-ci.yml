@@ -132,6 +132,10 @@ jobs:
             "b7-10.test.sh --level 1"
             "b7-9.test.sh --level 1,2"
             "b7-pythia.test.sh --level 1,2"
+            # b7-6 (promotion gate) at --level 1 here: L1 + aggregation + held/
+            # post-flip guards run buf-less/cargo-less. Its L2 live-codegen legs
+            # (buf generate / cargo build / Qwik tsc) run in the harness-rust job.
+            "b7-6.test.sh --level 1"
           )
           fail=0
           for entry in "${harnesses[@]}"; do
@@ -282,11 +286,43 @@ jobs:
               print(f'parsed: {p}')
           PY
 
+  # ─── harness-rust ── b7-6 live codegen/build gate (buf + Rust + node) ─
+  # The ai-native-rag promotion gate (B.7.6, ADR-B7-6-005 / Q-B option b). The
+  # main `harness` job runs b7-6 at --level 1 (buf-less L1 + aggregation + held
+  # guards); THIS job installs buf + a Rust toolchain + node and runs b7-6 at
+  # --level 1,2 so the LIVE legs run: `buf generate` (proto → Rust + TS stubs),
+  # `cargo build`/`test` of the rendered backend workspace, and the Qwik tsc
+  # ride-along. This is the permanent per-PR gate that justifies the
+  # candidate→stable/scaffoldable:true flip — the live path proven on every PR.
+  harness-rust:
+    name: ai-native-rag live codegen+build (b7-6 L2)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Install PyYAML
+        run: pip install pyyaml
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: cli/.nvmrc
+      # Install the buf CLI only (setup_only) — b7-6's L2 legs call `buf generate`
+      # directly against the rendered proto (the remote BSR es/tonic plugins are
+      # pinned in buf.gen.yaml.tmpl). Pinned CLI version for reproducible codegen.
+      - uses: bufbuild/buf-action@v1
+        with:
+          setup_only: true
+          version: "1.70.0"
+      - uses: dtolnay/rust-toolchain@stable
+      - name: b7-6 live codegen + build (--level 1,2)
+        run: bash .forge/scripts/tests/b7-6.test.sh --level 1,2
+
   # ─── summary ── aggregator → single required status ───────────
   summary:
     name: Summary (required status)
     runs-on: ubuntu-latest
-    needs: [harness, gates, cli, lint, example]
+    needs: [harness, gates, cli, lint, example, harness-rust]
     if: always()
     steps:
       - name: Aggregate job results
@@ -296,6 +332,7 @@ jobs:
           CLI_RESULT: ${{ needs.cli.result }}
           LINT_RESULT: ${{ needs.lint.result }}
           EXAMPLE_RESULT: ${{ needs.example.result }}
+          HARNESS_RUST_RESULT: ${{ needs.harness-rust.result }}
         run: |
           set -eu
           declare -A results
@@ -304,12 +341,14 @@ jobs:
           results[cli]="$CLI_RESULT"
           results[lint]="$LINT_RESULT"
           results[example]="$EXAMPLE_RESULT"
+          results[harness-rust]="$HARNESS_RUST_RESULT"
 
-          # The four core jobs MUST be exactly 'success'. The example
-          # job MAY be 'success' OR 'skipped' (paths-filter miss is
-          # not a failure). Any other value on any job → fail.
+          # The five core jobs MUST be exactly 'success' (harness-rust is the
+          # b7-6 live codegen/build gate). The example job MAY be 'success' OR
+          # 'skipped' (paths-filter miss is not a failure). Any other value on
+          # any job → fail.
           failed=()
-          for job in harness gates cli lint; do
+          for job in harness gates cli lint harness-rust; do
             if [ "${results[$job]}" != "success" ]; then
               failed+=("$job=${results[$job]}")
             fi
@@ -322,4 +361,4 @@ jobs:
             echo "::error::forge-ci: ${failed[*]} FAILED"
             exit 1
           fi
-          echo "::notice::forge-ci: 5/5 jobs PASS"
+          echo "::notice::forge-ci: 6/6 jobs PASS"

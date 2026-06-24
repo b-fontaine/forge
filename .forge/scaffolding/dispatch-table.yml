@@ -66,18 +66,20 @@ archetypes:
   ai-native-rag:
     name: ai-native-rag
     scaffolder: "bin/forge-init-ai-native-rag.sh"
-    description: "AI-first RAG archetype — pgvector + LLM gateway (Mistral-EU / vLLM) + MCP servers + Qwik streaming UI. Registered candidate; not yet scaffoldable (templates ship in B.7.2)."
+    description: "AI-first RAG archetype — pgvector + LLM gateway (Mistral-EU / vLLM) + MCP servers + Qwik streaming UI. Promoted to stable/scaffoldable in B.7.6 (b7-6-harness)."
     signals: []
     since: "0.5.0"
-    # B.7.2a (b7-2a-dispatch-register) — REGISTERED, NOT YET SCAFFOLDABLE.
-    # The 1.0.0 schema is `stage: candidate` / `scaffoldable: false`
-    # (.forge/schemas/ai-native-rag/1.0.0.yaml, B.7.1), so the CLI versioned-schema
-    # layer refuses `forge init --archetype ai-native-rag` with exit 3
-    # (resolveScaffolder → no scaffoldable version, init-archetype.ts:128). The
-    # scaffolder wrapper below is a refusing stub (defense in depth) until B.7.2
-    # ships templates + the real body and promotes the schema to stable/scaffoldable.
+    # B.7.2a (b7-2a-dispatch-register) registered the entry; B.7.6 (b7-6-harness)
+    # PROMOTED the 1.0.0 schema to `stage: stable` / `scaffoldable: true` (after the
+    # ≥35-test promotion suite + the harness-rust live-codegen CI gate). `forge init
+    # --archetype ai-native-rag` now renders the tree (it no longer refuses exit 3),
+    # and the archetype joins the cli-trust scaffold matrix
+    # (cli/test/e2e/archetype-fixtures/ai-native-rag.yml, FR-T51-055 — toolchain-gated
+    # on buf+cargo, so skipped where they are absent). The `status:` field below is
+    # the matrix marker (archetypes-smoke.test.ts + t5-1.test.sh T-016 gate on
+    # `status != candidate`); flipped candidate→stable in lockstep with the promotion.
     # Resolves b7-1-schema Q-005. `since: 0.5.0` per VERSIONING.md (new archetype ⇒ MINOR).
-    status: candidate
+    status: stable
 
   # ─── Removed from taxonomy (t4-adr-ratification, 2026-05-04) ────
   # `flutter-firebase` was a placeholder slot for archetype B.2 in the

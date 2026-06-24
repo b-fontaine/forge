@@ -1,5 +1,6 @@
-# Forge Schema — ai-native-rag 1.0.0 (CANDIDATE)
+# Forge Schema — ai-native-rag 1.0.0 (STABLE / SCAFFOLDABLE)
 # <!-- Audit: B.7.1 (b7-1-schema) — AI-native RAG archetype scaffold schema -->
+# <!-- Promoted: B.7.6 (b7-6-harness) — candidate→stable / scaffoldable:false→true -->
 #
 # The AI-first RAG archetype (plan §6.2 B.7): a Rust backend (RAG pipeline +
 # in-repo LLM gateway proxy + MCP servers) + Qwik streaming UI + Postgres/pgvector
@@ -8,14 +9,16 @@
 # harness) validates against.
 #
 # Stage semantics (THIS file):
-#   - candidate + scaffoldable:false : there are NO templates yet (B.7.2). The
-#     b8-3b validator enforces candidate⇒scaffoldable:false; the CLI
-#     `selectScaffoldableVersion` returns null for this archetype, so
-#     `forge init --archetype ai-native-rag` refuses cleanly (exit 3) rather than
-#     emitting a broken scaffold. Promotion to `stable` + `scaffoldable:true`
-#     happens in the B.7 scaffolder-completion brick, gated on a green b7-6
-#     harness (ADR-B7-1-002, mirroring the B.8.14-C2 flip). Additive: no existing
-#     archetype is affected.
+#   - stable + scaffoldable:true : the full template tree shipped (B.7.2, 55
+#     templates) and the assembled archetype was proven end-to-end by the b7-6
+#     promotion suite (≥35 tests) + the harness-rust CI job (buf generate → Rust+TS
+#     codegen → cargo build/test → Qwik tsc). The CLI `selectScaffoldableVersion`
+#     now returns 1.0.0, so `forge init --archetype ai-native-rag` renders the tree
+#     (it no longer refuses). The promotion (candidate→stable, scaffoldable
+#     false→true) happened in B.7.6, gated on a green b7-6 harness (ADR-B7-1-002,
+#     mirroring the B.8.14-C2 flip). Additive: no existing archetype is affected;
+#     the b8-3b validator's candidate⇒scaffoldable:false clause no longer applies
+#     and 1.0.0 (no prerelease) clears the stable version floor.
 #
 # `extends: ai-first` below is DOCUMENTARY PROVENANCE ONLY. No scaffold-schema
 # loader resolves `extends` (parseSchemaMeta + check_versioned_schema_siblings
@@ -30,8 +33,8 @@
 
 name: ai-native-rag
 version: "1.0.0"
-stage: candidate
-scaffoldable: false
+stage: stable
+scaffoldable: true
 extends: ai-first            # documentary provenance only — NOT loader-resolved (ADR-B7-1-001)
 
 description: >
@@ -40,7 +43,7 @@ description: >
   Zitadel + SigNoz/OBI/Coroot. Protos as single source of truth. TDD + BDD
   enforced per layer; multi-layer changes routed by Janus. Mandatory AI fallback
   (Article XI.5); PII-guarded (XI.6); prompt-audit + token budget traced (IX.6).
-  Not scaffoldable until B.7.2 ships templates.
+  Scaffoldable (promoted to stable in B.7.6 after a green b7-6 promotion suite).
 
 tdd_enforced: true
 bdd_required_for_user_facing: true

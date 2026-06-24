@@ -23,6 +23,7 @@ The full standard governing this spec is
 |---|---|---|---|
 | [`g1-forge-ci`](../changes/g1-forge-ci/) | 2026-04-29 | Forge's own CI workflow | FR-CI-001..011 + NFR-CI-001..006 |
 | [`c1-reference-project`](../changes/c1-reference-project/) | 2026-04-30 | Reference project — example tree CI | ADDED FR-CI-012..013 ; MODIFIED FR-CI-001 (5 → 6 jobs, adds `example`) ; MODIFIED FR-CI-006 (4 → 5 needs, treats `example=skipped` as success) |
+| [`b7-6-harness`](../changes/b7-6-harness/) | 2026-06-23 | ai-native-rag promotion gate — live codegen/build CI job | MODIFIED FR-CI-001 (6 → 7 jobs, adds `harness-rust`) ; MODIFIED FR-CI-006 (5 → 6 needs, adds `harness-rust`) ; MODIFIED NFR-CI-002 (340 → 380 line budget) |
 
 ---
 
@@ -67,8 +68,8 @@ The full standard governing this spec is
 
 **Constitution reference:** Article V (gates), Article VIII (CI
 infrastructure), Article X (quality). **Testable:** yes —
-`test_forge_ci_workflow_shape` (g1.test.sh, asserts 6 jobs) +
-`test_forge_ci_workflow_shape_six_jobs` (c1.test.sh).
+`test_forge_ci_workflow_shape` (g1.test.sh, asserts 7 jobs) +
+`test_forge_ci_workflow_shape_seven_jobs` (c1.test.sh).
 
 ### FR-CI-002: Harness job runs 4 test harnesses at L1+L2
 
@@ -305,13 +306,14 @@ Article X. **Testable:** yes —
 <!-- From change: c1-reference-project (2026-04-30) -->
 
 - **SHOULD** — adding the `example` job MUST keep `forge-ci.yml`
-  ≤ 340 lines (the size budget from `NFR-CI-002`; bumped 250→300 on
-  2026-05-12, then 300→340 on 2026-06-23 by `b7-7-example` for the MODIFIED
-  FR-CI-012 second-tree RAG gate block — the example job now gates two trees;
-  the workflow had zero headroom at 300). Beyond that, the job MUST be
+  ≤ 380 lines (the size budget from `NFR-CI-002`; bumped 250→300 on
+  2026-05-12, 300→340 on 2026-06-23 by `b7-7-example` for the MODIFIED
+  FR-CI-012 second-tree RAG gate, then 340→380 on 2026-06-23 by `b7-6-harness`
+  for the new `harness-rust` job). Beyond that, the job MUST be
   extracted into a composite action under
   `.github/actions/forge-ci-example/action.yml`. The budget is enforced by
-  matching assertions in `c1.test.sh` **and** `g1.test.sh`, kept in sync.
+  matching assertions in `c1.test.sh` **and** `g1.test.sh` (+ `t5-1.test.sh` +
+  `t5-otel-live-run.test.sh`), kept in sync.
 
 **Constitution reference:** Article X. **Testable:** yes —
 `test_forge_ci_under_size_budget` (c1.test.sh) — at archive
@@ -330,9 +332,10 @@ time of c1, `forge-ci.yml` is well under the 250-line cap.
 
 ### NFR-CI-002: Workflow file size
 
-- **SHOULD** — `forge-ci.yml` MUST be ≤ 340 lines (bumped 250→300 on
-  2026-05-12, then 300→340 on 2026-06-23 for b7-7-example's second-tree RAG
-  gate). Beyond that, refactor into composite actions or matrix strategies.
+- **SHOULD** — `forge-ci.yml` MUST be ≤ 380 lines (bumped 250→300 on
+  2026-05-12, 300→340 on 2026-06-23 for b7-7-example's second-tree RAG
+  gate, then 340→380 on 2026-06-23 for b7-6-harness's `harness-rust` live
+  codegen/build job). Beyond that, refactor into composite actions or matrix strategies.
   Enforced by `test_forge_ci_under_size_budget` (c1.test.sh + g1.test.sh) and
   the sibling NFR-CI-002 assertions in t5-1.test.sh + t5-otel-live-run.test.sh —
   all four kept in lock-step. As of 2026-05-31 the `harness` job
@@ -375,10 +378,11 @@ time of c1, `forge-ci.yml` is well under the 250-line cap.
 
 **In scope for the `forge-ci` workflow (delivered so far):**
 
-- The `forge-ci.yml` workflow with 6 jobs (harness, gates, cli,
-  lint, example, summary), conditional concurrency, minimal
+- The `forge-ci.yml` workflow with 7 jobs (harness, gates, cli,
+  lint, example, harness-rust, summary), conditional concurrency, minimal
   permissions, pinned actions — **g1-forge-ci** for the original
-  5 ; **c1-reference-project** for the 6th (`example`).
+  5 ; **c1-reference-project** for the 6th (`example`) ; **b7-6-harness**
+  for the 7th (`harness-rust`, the ai-native-rag live codegen/build gate).
 - `cli/.nvmrc` Node version pin — **g1-forge-ci**.
 - Standard `global/forge-self-ci.md` — **g1-forge-ci**.
 - Branch-protection guidance in `docs/CONTRIBUTING.md` —

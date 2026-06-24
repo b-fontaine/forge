@@ -13,20 +13,22 @@
 
 ## Workflow shape
 
-`forge-ci.yml` declares **five jobs** in a single workflow file :
+`forge-ci.yml` declares **seven jobs** in a single workflow file :
 
 | Job        | Role                                                                                                |
 |------------|-----------------------------------------------------------------------------------------------------|
-| `harness`  | Runs the 4 shell test harnesses (`foundations.test.sh`, `scaffolder.test.sh --level 1,2`, `workflow.test.sh --level 1,2`, `delivery.test.sh`). |
-| `gates`    | Runs `verify.sh` then `constitution-linter.sh` against the repo root.                                |
-| `cli`      | In `cli/` : `npm ci`, `npm run lint`, `npm test`, `npm run bundle`. Node version pinned via `cli/.nvmrc`. |
+| `harness`  | Runs every Forge shell test harness via a declarative loop (`foundations.test.sh`, `scaffolder.test.sh --level 1,2`, `workflow.test.sh --level 1,2`, `delivery.test.sh`, … through the B.7/B.8 harnesses). |
+| `gates`    | Runs `verify.sh` then `constitution-linter.sh` against the repo root (+ the CycloneDX SBOM gate).   |
+| `cli`      | In `cli/` : `npm ci`, `npm run lint`, `npm run bundle`, `npm test`. Node version pinned via `cli/.nvmrc`. |
 | `lint`     | Runs `ludeeus/action-shellcheck@2.0.0` against `.forge/scripts/` and `bin/` (two invocations, severity: warning). |
-| `summary`  | Depends on the four above, **always runs**, inspects each `needs.<job>.result` and exits non-zero if any is not `'success'`. Emits a single GitHub Actions notice annotation. |
+| `example`  | Validates the `examples/**` trees behind a `dorny/paths-filter` gate; `skipped` on a paths miss is treated as success (added by c1-reference-project, FR-CI-012). |
+| `harness-rust` | The ai-native-rag live codegen/build gate (added by b7-6-harness, ADR-B7-6-005): installs `buf` (`bufbuild/buf-action`) + a Rust toolchain (`dtolnay/rust-toolchain`) + node and runs `b7-6.test.sh --level 1,2` so the L2 live legs (`buf generate` → Rust+TS codegen → `cargo build`/`test` → Qwik `tsc`) run on every PR. |
+| `summary`  | Depends on the six above, **always runs**, inspects each `needs.<job>.result` and exits non-zero if any core job is not `'success'` (`example=skipped` is success). Emits a single GitHub Actions notice annotation. |
 
 The `summary` job is the **single required status** for branch
 protection (`forge-ci / summary`). Branch protection rules
-reference exactly this status — extending the gate to a 6th worker
-job only requires adding an entry to `summary.needs`.
+reference exactly this status — extending the gate to a new worker
+job only requires adding an entry to `summary.needs` + the aggregator.
 
 Shape constraints :
 
@@ -40,7 +42,7 @@ Shape constraints :
 - No `continue-on-error: true` anywhere.
 - Every `uses:` reference pinned to a tag (no `@main` / `@master`
   / `@HEAD` / `:latest`).
-- Workflow file ≤ 340 lines (NFR-CI-002 ; bumped 250→300 on 2026-05-12, then 300→340 on 2026-06-23 for b7-7-example's second example-tree RAG gate, to accommodate the linear growth of harness entries across T5/B.7). The budget is asserted in four harnesses (c1, g1, t5-1, t5-otel-live-run) — bump them in lock-step.
+- Workflow file ≤ 380 lines (NFR-CI-002 ; bumped 250→300 on 2026-05-12, 300→340 on 2026-06-23 for b7-7-example's second example-tree RAG gate, then 340→380 on 2026-06-23 for b7-6-harness's `harness-rust` live codegen/build job, to accommodate the linear growth of harness entries across T5/B.7). The budget is asserted in four harnesses (c1, g1, t5-1, t5-otel-live-run) — bump them in lock-step.
 
 ## What's intentionally different from infra/ci-workflows.md
 

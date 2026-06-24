@@ -220,13 +220,17 @@ _test_b71_l1_004_version() {
 _test_b71_l1_005_stage() {
   _ensure_py_cache || return 1
   local v; v=$(_get stage)
-  [ "$v" = "candidate" ] || { echo "    FAIL T-005: stage='$v' != 'candidate' (FR-B7-1-002)" >&2; return 1; }
+  # Promoted candidate→stable in B.7.6 (b7-6-harness flip, gated on a green b7-6 suite).
+  [ "$v" = "stable" ] || { echo "    FAIL T-005: stage='$v' != 'stable' (FR-B7-1-002; promoted B.7.6)" >&2; return 1; }
 }
 
+# Promoted scaffoldable:false→true in B.7.6 (the candidate⇒scaffoldable:false clause
+# no longer applies; stable + 1.0.0 clears the validator's version floor). Function
+# name kept for the b7-1 manifest/run_test wiring; the assertion is now True.
 _test_b71_l1_006_scaffoldable_false() {
   _ensure_py_cache || return 1
   local v; v=$(_get scaffoldable)
-  [ "$v" = "False" ] || { echo "    FAIL T-006: scaffoldable=$v != False (FR-B7-1-003; b8-3b candidate⇒scaffoldable:false)" >&2; return 1; }
+  [ "$v" = "True" ] || { echo "    FAIL T-006: scaffoldable=$v != True (FR-B7-1-003; promoted B.7.6)" >&2; return 1; }
 }
 
 _test_b71_l1_007_tdd_bdd_coverage() {
@@ -328,27 +332,24 @@ _test_b71_l1_018_header_block() {
 # ─── L2 tests (opt-in live) ───────────────────────────────────────────────────
 
 _test_b71_l2_001_init_refuses() {
-  # The refusal contract (Q-005 flip — B.7.2a registered ai-native-rag in the
-  # dispatch-table 2026-06-12): `forge init <name> --archetype ai-native-rag
-  # --org <rd>` now exits **3**. The archetype passes the init.ts:210
-  # dispatch-table gate (registered) and reaches the versioned-schema layer;
-  # selectScaffoldableVersion returns null for the candidate/scaffoldable:false
-  # 1.0.0 schema (init-archetype.ts:128) ⇒ resolveScaffolder refuse ⇒ exit 3
-  # (init.ts:232-238). Clean refusal, NO scaffold (NFR-B7-1-002). Requires the
-  # built CLI to have the B.7.2a dispatch entry + schema bundled into cli/assets
-  # (npm run bundle). Opt-in (FORGE_B7_1_LIVE=1) + cli/dist/index.js; skip-pass
-  # otherwise (mirrors b8-15 FORGE_B8_15_LIVE).
+  # POST-PROMOTION (B.7.6 flip): the 1.0.0 schema is now stage:stable /
+  # scaffoldable:true, so `forge init <name> --archetype ai-native-rag --org <rd>`
+  # NO LONGER refuses with exit 3 — selectScaffoldableVersion now returns 1.0.0 and
+  # the versioned scaffolder renders the tree. This L2 (inverted from the pre-flip
+  # exit-3 refusal contract by b7-6-harness) asserts the CLI no longer exits 3.
+  # Requires the built CLI with the flipped schema bundled into cli/assets (npm run
+  # bundle). Opt-in (FORGE_B7_1_LIVE=1) + cli/dist/index.js; skip-pass otherwise.
   local cli="$FORGE_ROOT/cli/dist/index.js"
   if [ "${FORGE_B7_1_LIVE:-0}" != "1" ] || [ ! -f "$cli" ]; then
-    echo "    SKIP T-L2-001: set FORGE_B7_1_LIVE=1 with a built+bundled CLI (cli/dist/index.js) to run the live init-refusal check" >&2
+    echo "    SKIP T-L2-001: set FORGE_B7_1_LIVE=1 with a built+bundled CLI (cli/dist/index.js) to run the live post-promotion init check" >&2
     return 0
   fi
   local tmp; tmp=$(mk_tmpdir_with_trap b7-1-init)
   trap "rm -rf '$tmp'" RETURN
   ( cd "$tmp" && node "$cli" init testproj --archetype ai-native-rag --org com.example.test >/dev/null 2>&1 )
   local rc=$?
-  if [ "$rc" != "3" ]; then
-    echo "    FAIL T-L2-001: forge init --archetype ai-native-rag exit=$rc != 3 (expected clean refusal — registered but no scaffoldable schema version; B.7.2a/Q-005)" >&2
+  if [ "$rc" = "3" ]; then
+    echo "    FAIL T-L2-001: forge init --archetype ai-native-rag exit=3 — still refusing AFTER the B.7.6 promotion (expected the scaffold to render; schema stable/scaffoldable:true)" >&2
     return 1
   fi
 }

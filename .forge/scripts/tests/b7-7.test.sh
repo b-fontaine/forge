@@ -260,8 +260,14 @@ test_examples_meta_readme_lists_rag_example() {
   fi
 }
 
-# FR-RAGEX-009 — committing the example must NOT promote the archetype:
-# the framework schema stays candidate / scaffoldable:false.
+# FR-RAGEX-009 — POST-PROMOTION (B.7.6 flip). The original contract was "committing
+# the EXAMPLE must NOT promote the framework schema" (it stayed candidate). The
+# PROMOTION instead happened in B.7.6 (b7-6-harness), gated on a green b7-6 suite —
+# NOT by committing the example. This assertion is inverted in lockstep with that
+# flip (the b8-14-flip break-cascade): the framework schema is now stable /
+# scaffoldable:true. The example tree itself is unchanged; FR-RAGEX-009's intent
+# (the example does not by itself flip the framework) is preserved — the flip's
+# author is b7-6, and that is what this now asserts.
 test_rag_archetype_still_candidate() {
   if [ ! -f "$SCHEMA_AINR" ]; then
     echo "    ai-native-rag schema missing: $SCHEMA_AINR" >&2; return 1
@@ -270,10 +276,10 @@ test_rag_archetype_still_candidate() {
 import sys, yaml
 d = yaml.safe_load(open(sys.argv[1])) or {}
 errs = []
-if d.get("stage") != "candidate":
-    errs.append(f"stage must stay 'candidate', got {d.get('stage')!r}")
-if d.get("scaffoldable") is not False:
-    errs.append(f"scaffoldable must stay false, got {d.get('scaffoldable')!r}")
+if d.get("stage") != "stable":
+    errs.append(f"stage expected 'stable' (promoted by B.7.6), got {d.get('stage')!r}")
+if d.get("scaffoldable") is not True:
+    errs.append(f"scaffoldable expected True (promoted by B.7.6), got {d.get('scaffoldable')!r}")
 if errs:
     for e in errs: print(f"    {e}", file=sys.stderr)
     sys.exit(1)
@@ -617,13 +623,15 @@ test_cli_still_refuses_rag_init() {
     out=$(bash "$WRAPPER_RAG" --help 2>&1 || true)
     : # wrapper presence + schema gate are the real contract; checked below.
   fi
-  # The candidate schema is what drives the exit-3 refusal
-  # (selectScaffoldableVersion returns null). Assert it directly.
+  # POST-PROMOTION (B.7.6 flip): the schema is now stage:stable / scaffoldable:true,
+  # so selectScaffoldableVersion returns 1.0.0 and the CLI scaffolds (it no longer
+  # refuses with exit 3). Inverted in lockstep with the b7-6 flip. Assert the
+  # promoted state directly.
   python3 - "$SCHEMA_AINR" <<'PY' || return 1
 import sys, yaml
 d = yaml.safe_load(open(sys.argv[1])) or {}
-if d.get("scaffoldable") is not False or d.get("stage") != "candidate":
-    print(f"    schema no longer refuses: stage={d.get('stage')!r} scaffoldable={d.get('scaffoldable')!r}", file=sys.stderr)
+if d.get("scaffoldable") is not True or d.get("stage") != "stable":
+    print(f"    schema not promoted: stage={d.get('stage')!r} scaffoldable={d.get('scaffoldable')!r} (expected stable/true after B.7.6)", file=sys.stderr)
     sys.exit(1)
 PY
 }
