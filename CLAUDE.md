@@ -61,6 +61,7 @@ Forge uses specialized agents. Delegation is automatic:
 | Trigger | Agent | Role |
 |---------|-------|------|
 | Flutter code | **Hera** | Flutter Team Orchestrator |
+| Qwik / SvelteKit web frontend | **Iris-Web** | Frontend Web Specialist |
 | Rust code | **Vulcan** | Rust Team Orchestrator |
 | Infrastructure | **Atlas** | Infra Architect |
 | Observability | **Panoptes** | Observability Specialist |

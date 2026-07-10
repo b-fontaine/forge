@@ -14,6 +14,27 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ### Added
 
+- **Iris-Web frontend web specialist agent (K.4, `k4-iris-web`)** — a new
+  `.claude/agents/iris-web.md` persona that maintains the Qwik / SvelteKit
+  web-frontend conventions for the `full-stack-monorepo` `frontend/web-public/`
+  surface, distinct from Hera (Flutter). Three sub-modules: **(K.4.a)** the
+  persona (Persona / Purpose / Checklists / Output: Web Frontend Readiness
+  Report / Rule Catalogue `K4-RULE-001..006` / Integration / Anti-Hallucination
+  / Audit cross-references), advisory ladder (`Advisory` < `Concern` <
+  `Blocking`, the one Blocking rule being client-bundle secret leakage);
+  **(K.4.b)** a new standard `.forge/standards/global/qwik-frontend-patterns.md`
+  codifying resumability, `routes/` conventions, SSR/SSG boundaries, Connect-ES
+  client usage, streaming UI + cancel-on-unmount (B.7.10 precedent), component
+  conventions, and Vitest testing (T5.3.3 precedent) — referencing
+  `web-frontend.yaml` for version pins as the single source of truth (no pin
+  duplication); **(K.4.c)** integration — `standards/index.yml` registration,
+  an **additive** Janus dispatch-table row in `cross-layer-orchestrator.md`
+  (Janus arbitrates between Iris-Web (Qwik) and Hera (Flutter) per
+  ARCHITECTURE-TARGET §9.2 line 743 — Hera's Flutter scope is untouched), and a
+  `CLAUDE.md` + `docs/GUIDE.md` agent-catalogue row. Gated by a new
+  `.forge/scripts/tests/k4.test.sh` (22 tests: 20 L1 + 2 L2 cross-surface),
+  registered in `forge-ci.yml`. Forward-stable for `mobile-pwa-first` (B.9,
+  Pending T8) to adopt additively.
 - **`ai-native-rag` promoted to stable / scaffoldable — B.7 COMPLETE 9/9 (B.7.6, `b7-6-harness`)** —
   the promotion gate (final B.7 brick) flips `.forge/schemas/ai-native-rag/1.0.0.yaml`
   `stage: candidate → stable`, `scaffoldable: false → true`, so
