@@ -171,23 +171,24 @@ _test_i6_020_standard_presence() {
 }
 
 # FR-I6-CA-044 — frontmatter version + lifecycle dates + linter_rule
-# LOCK-STEP NOTE (b7-5-ai-act, 2026-06-22) : the I.6 bundle standard was
-# bumped 1.0.0 → 1.1.0 (additive — the AI-Act + DORA regulatory members ride
-# the bundle under regulatory/{ai-act,dora}/). The version + lifecycle-date
-# assertions are updated here in lock-step with that ratified amendment
-# (ADR-B75-002). The linter_rule contract is unchanged.
+# LOCK-STEP NOTE (b7-5-ai-act, 2026-06-22 → b6-9-compliance, 2026-07-10) : the
+# I.6 bundle standard was bumped 1.0.0 → 1.1.0 (b7-5: AI-Act + DORA members
+# under regulatory/{ai-act,dora}/) and then 1.1.0 → 1.2.0 (b6-9: NIS2 members
+# under regulatory/nis2/ for event-driven-eu). The version + lifecycle-date
+# assertions are updated here in lock-step with each ratified amendment
+# (ADR-B75-002 / ADR-B69-002). The linter_rule contract is unchanged.
 _test_i6_021_standard_frontmatter() {
   if [ ! -f "$STD_FILE" ]; then
     echo "    standard file missing: $STD_FILE" >&2; return 1
   fi
-  if ! grep -q "version: 1.1.0" "$STD_FILE"; then
-    echo "    'version: 1.1.0' missing (expected after b7-5 lock-step bump)" >&2; return 1
+  if ! grep -q "version: 1.2.0" "$STD_FILE"; then
+    echo "    'version: 1.2.0' missing (expected after b6-9 lock-step bump)" >&2; return 1
   fi
-  if ! grep -q "last_reviewed: 2026-06-22" "$STD_FILE"; then
-    echo "    'last_reviewed: 2026-06-22' missing" >&2; return 1
+  if ! grep -q "last_reviewed: 2026-07-10" "$STD_FILE"; then
+    echo "    'last_reviewed: 2026-07-10' missing" >&2; return 1
   fi
-  if ! grep -q "expires_at: 2027-06-22" "$STD_FILE"; then
-    echo "    'expires_at: 2027-06-22' missing" >&2; return 1
+  if ! grep -q "expires_at: 2027-07-10" "$STD_FILE"; then
+    echo "    'expires_at: 2027-07-10' missing" >&2; return 1
   fi
   if ! grep -q "linter_rule: null" "$STD_FILE"; then
     echo "    'linter_rule: null' missing" >&2; return 1

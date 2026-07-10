@@ -127,10 +127,10 @@ _test_b75_001_compliance_dirs_present() {
       echo "    dora member missing: $m" >&2; return 1
     fi
   done
-  # nis2/ + cra/ are RESERVED — deliberately NOT created (ADR-B75-001).
-  if [ -d "$FORGE_ROOT_REAL/.forge/compliance/nis2" ]; then
-    echo "    nis2/ should be reserved (not created) — ADR-B75-001" >&2; return 1
-  fi
+  # cra/ is RESERVED — deliberately NOT created (ADR-B75-001). The sibling
+  # nis2/ reservation was DROPPED in lock-step by b6-9-compliance (ADR-B69-006):
+  # B.6.9 legitimately ships .forge/compliance/nis2/ for the event-driven-eu
+  # archetype, so asserting its absence here would break main. cra/ stays reserved.
   if [ -d "$FORGE_ROOT_REAL/.forge/compliance/cra" ]; then
     echo "    cra/ should be reserved (not created) — ADR-B75-001" >&2; return 1
   fi
@@ -449,13 +449,20 @@ _test_b75_050_index_review_entries() {
   fi
 }
 
-# FR-B75-BD-010 / FR-B75-BD-011 — I.6 standard bundle-schema table + 1.1.0
+# FR-B75-BD-010 / FR-B75-BD-011 — I.6 standard bundle-schema table + minor bump
+# LOCK-STEP NOTE (b6-9-compliance, 2026-07-10) : the I.6 bundle standard's
+# `version:` is a mutable field bumped by each additive expansion (b7-5 → 1.1.0,
+# b6-9 → 1.2.0, future CRA → 1.3.0). Per the REVIEW.md "Option B" precedent
+# (i2.test.sh / i3.test.sh, 2026-06-22), a sibling change's gate MUST NOT
+# exact-pin another standard's mutable version — it is relaxed here to a
+# semver-validity check (>= the 1.1.0 at which the ai-act/dora rows landed). The
+# real assertion (the ai-act/dora schema rows are present) is unchanged.
 _test_b75_051_i6_standard_amended() {
   if [ ! -f "$I6_STD" ]; then
     echo "    I.6 standard missing: $I6_STD" >&2; return 1
   fi
-  if ! grep -q "version: 1.1.0" "$I6_STD"; then
-    echo "    I.6 standard not bumped to 'version: 1.1.0'" >&2; return 1
+  if ! grep -Eq "version: 1\.[1-9][0-9]*\.[0-9]+" "$I6_STD"; then
+    echo "    I.6 standard version not a valid >= 1.1.0 semver (ai-act/dora rows expected)" >&2; return 1
   fi
   if ! grep -Fq "regulatory/ai-act/" "$I6_STD"; then
     echo "    'regulatory/ai-act/' bundle-schema row missing in I.6 standard" >&2; return 1

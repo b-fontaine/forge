@@ -477,3 +477,11 @@ standards:
     triggers: [themis, review-standards, standards-review, compliance-officer, nis2, dora, cra, ai-act, regulatory-deadline, k5-rule, review-cadence]
     scope: all
     priority: high
+
+  # ─── B.6.9 — NIS2 + DORA event-driven regulatory artefacts (b6-9-compliance) ───
+
+  - id: global/nis2-dora-eda-artefacts
+    path: standards/global/nis2-dora-eda-artefacts.md
+    triggers: [nis2, dora, event-driven-eu, compliance, regulatory, incident-reporting, roi, sbom, supply-chain, themis]
+    scope: all
+    priority: high
