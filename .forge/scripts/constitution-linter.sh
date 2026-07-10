@@ -805,6 +805,8 @@ REMEDIATION = {
     # LLM-provider tokens (b7-9-janus-ai / J.8.c — pairs with J8-RULE-004/005).
     "vertex-ai":       "replace with Mistral-EU (Mistral on Scaleway) or self-hosted vLLM ; OpenAI/Anthropic-via-EU-gateway at T1 only",
     "bedrock":         "replace with Mistral-EU (Mistral on Scaleway) or self-hosted vLLM ; OpenAI/Anthropic-via-EU-gateway at T1 only",
+    # Event-broker token (b6-10-janus-rule / B.6.10 — pairs with J8-RULE-007/008).
+    "confluent-cloud": "replace with self-hosted NATS JetStream or Redpanda on EU infrastructure ; no US-managed Kafka SaaS (Confluent Cloud / AWS MSK / Azure Event Hubs)",
 }
 
 def discover_standards():

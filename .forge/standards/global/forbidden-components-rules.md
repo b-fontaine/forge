@@ -4,9 +4,9 @@
 <!-- Trigger: forbidden, t3-forbidden, t3-rule, linter, t1, t2, t3, eu-tier, ci-enforcement, forbidden-components -->
 
 ```yaml
-version: 1.1.0
-last_reviewed: 2026-06-22
-expires_at: 2027-06-22
+version: 1.2.0
+last_reviewed: 2026-07-10
+expires_at: 2027-07-10
 exception_constitutional: false
 linter_rule: t3-forbidden-components
 enforcement: ci
@@ -211,6 +211,32 @@ post-scaffold). Both surfaces quote the same `compliance-tiers.md`
 gap (until a dedicated `T3-RULE-NNN` per-archetype LLM-provider rule
 lands, if ever needed) is closed by re-using the existing generic
 matrix-row enforcement — no new linter rule ID is consumed.
+
+### Event-broker `forbidden:` coupling (b6-10-janus-rule / B.6.10)
+
+The same `compliance-tiers.md::forbidden:` token approach now also covers
+non-sovereign **event brokers** for the `event-driven-eu` archetype. As of
+`compliance-tiers.md` v1.2.0 (2026-07-10), its `forbidden:` block lists
+`confluent-cloud` (alongside `vertex-ai` / `bedrock`), so the generic
+**T3-RULE-005** review-time linter catches a manifest that pins a US-managed
+Kafka SaaS in the working tree — tier-scaled WARN at T1/T2, FAIL at T3, with
+the `REMEDIATION` hint pointing at self-hosted NATS JetStream / Redpanda on
+EU infrastructure.
+
+This review-time net is **complementary** to the scaffold-time Janus refusal
+`J8-RULE-007..008` (`global/janus-orchestration-rules.md`, exit 3, blocking) :
+the Janus rule refuses the *declared* event broker before scaffolding ;
+T3-RULE-005 catches a broker that slipped past that gate. Both surfaces quote
+the same `compliance-tiers.md` §10.2 CLOUD Act gradient + the `event-driven-eu`
+schema flag `event_specifics.eu_sovereignty.no_kafka_saas_us`, so they never
+contradict (NFR-B6-JR-005). **No new `T3-RULE-NNN` ID is consumed** — the
+reserved `T3-RULE-008` slot (Persistence `forbidden_for_eu_strict:`, above) is
+untouched ; the token re-uses the existing generic matrix-row enforcement, the
+verbatim `b7-9-janus-ai` precedent. Only the named any-tier token
+(`confluent-cloud`) is added to `forbidden:` — the synthetic `us-managed-kafka`
+category token (`J8-RULE-008`, T3) lives only in
+`dispatch-table.yml::forbidden_combinations` (it never appears verbatim in a
+manifest), mirroring how `us-managed-inference` was not added for J.8.c.
 
 ---
 

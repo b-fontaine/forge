@@ -29,12 +29,15 @@ repo). Both MUST stay in sync — extension procedure below.
 | `J8-RULE-004` | `ai-native-rag` + Vertex AI default LLM provider | Vertex AI (GCP-managed inference) as default | compliance-tiers.md §10.2 (`AWS / GCP / Azure` + `LLM Gateway`) ; llm-gateway.md ; ADR-B7-9-001 |
 | `J8-RULE-005` | `ai-native-rag` + AWS Bedrock default LLM provider | Bedrock (AWS-managed inference) as default | compliance-tiers.md §10.2 (`AWS / GCP / Azure` + `LLM Gateway`) ; llm-gateway.md ; ADR-B7-9-001 |
 | `J8-RULE-006` | `ai-native-rag` + `--eu-tier T3` + US-managed inference | US-managed inference endpoints at T3 | compliance-tiers.md §10.2 (`LLM Gateway` → `Pour T3 : Mistral on Scaleway ou vLLM self-host`) ; ADR-B7-9-001/006 |
+| `J8-RULE-007` | `event-driven-eu` + Confluent Cloud event broker | Confluent Cloud (US-managed Kafka SaaS) as event broker | event-driven-eu schema `eu_sovereignty.no_kafka_saas_us` ; plan §6.1 B.6.10 ; compliance-tiers.md §10.2 (`AWS / GCP / Azure`) ; ADR-B6-JR-001/003 |
+| `J8-RULE-008` | `event-driven-eu` + `--eu-tier T3` + US-managed Kafka SaaS | US-managed Kafka SaaS (Confluent Cloud / AWS MSK / Azure Event Hubs) at T3 | event-driven-eu schema `eu_sovereignty.no_kafka_saas_us` ; plan §6.1 B.6.10 ; compliance-tiers.md §10.2 (`AWS / GCP / Azure`) ; ADR-B6-JR-001/003 |
 
 The full rule body (rationale, alternative, reference) lives in
 the runtime registry — `dispatch-table.yml::forbidden_archetypes`
 for whole-archetype refusals (`J8-RULE-001`), and the sibling
 `dispatch-table.yml::forbidden_combinations` for provider × tier
-refusals (`J8-RULE-004..006`, J.8.c `b7-9-janus-ai`) — and is
+refusals (`J8-RULE-004..006`, J.8.c `b7-9-janus-ai` ;
+`J8-RULE-007..008`, B.6.10 `b6-10-janus-rule`) — and is
 mirrored verbatim in the agent file's "Forbidden archetypes
 & combinations" section.
 
@@ -85,7 +88,11 @@ refusals. J.8.c (`b7-9-janus-ai`) adds three more refusals for the
 `ai-native-rag` LLM gateway : `J8-RULE-004` (Vertex AI) and
 `J8-RULE-005` (AWS Bedrock) are **default-provider** refusals that
 fire regardless of declared tier ; `J8-RULE-006` is a **T3-only**
-refusal of US-managed inference. All six rules (`J8-RULE-001..006`)
+refusal of US-managed inference. B.6.10 (`b6-10-janus-rule`) adds two
+more refusals for the `event-driven-eu` event broker : `J8-RULE-007`
+(Confluent Cloud) is a **default-provider** refusal that fires
+regardless of declared tier ; `J8-RULE-008` is a **T3-only** refusal
+of any US-managed Kafka SaaS. All eight rules (`J8-RULE-001..008`)
 are refusals — no warning-class rule has shipped yet.
 
 ## Extending the catalogue
