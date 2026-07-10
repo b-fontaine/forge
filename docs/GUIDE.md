@@ -219,6 +219,7 @@ est marqué `DONE`, et un résumé est ajouté au journal du projet.
 | Observability       | Panoptes | OTel, SigNoz, ELK, Prometheus        |
 | Security Auditor    | Aegis    | Audit de sécurité, OWASP             |
 | Data Steward EU     | Demeter  | Tier classification, DPA, CLOUD Act  |
+| Compliance Officer EU | Themis | NIS2/DORA/CRA, cycle review-standards |
 | DevOps Engineer     | Heracles | CI/CD, déploiement                   |
 
 ---

@@ -284,3 +284,56 @@ or re-sign it via Sigstore).
 The full step-by-step contract, tier-scaled severity aggregation
 recipe, consumption protocol, and interdictions live in
 [`forge-compliance-workflow.md`](../.forge/standards/global/forge-compliance-workflow.md).
+
+---
+
+## Standards review cadence (Themis)
+
+> **Audit**: K.5 (`k5-themis`, 2026-07-10).
+
+Forge ships a **compliance officer** agent — **Themis**
+([`.claude/agents/themis.md`](../.claude/agents/themis.md)) — and its
+automation `forge review-standards`
+([`bin/forge-review-standards.sh`](../bin/forge-review-standards.sh)).
+Themis works at **repo-lifecycle-time** (ongoing, ambient), distinct
+from Demeter's **scaffold-time** data-stewardship (see the Themis
+persona's "Boundary — Themis vs Demeter" section).
+
+Themis automates the 12-month standards review cadence codified in
+[`standards-lifecycle.md`](../.forge/standards/global/standards-lifecycle.md)
+and tracks the EU regulatory-deadline calendar.
+
+### Quick start
+
+```bash
+bash bin/forge-review-standards.sh --target $(pwd)
+# → standards-review-report.json ; exit 0 CLEARED / 1 REVIEW-DUE (WARN)
+```
+
+Optional flags : `--window <days>` (default 30), `--format json|md`,
+`--output <path>`, `--bundle` (drive the I.6 bundle + emit a
+regulatory-deadline summary), `--strict` (opt-in : an expired standard
+forces a blocking exit 3). The default posture is **WARN-only** — a
+review debt never freezes the pipeline
+(`standards-lifecycle.md` : "WARN n'est jamais bloquant").
+
+### Regulatory-deadline calendar
+
+Themis carries the NIS2 / DORA / CRA / AI Act deadlines **verbatim**
+from `docs/new-archetypes-plan.md` §7.1's I.6 bullet :
+
+- NIS2 reporting 24h/72h
+- DORA RoI ESA submission 30 avr 2026
+- CRA reporting 11 sept 2026, full requirements 11 déc 2027
+- AI Act phases 2025–2027 par catégorie de risque
+
+### CI cadence
+
+The sibling workflow
+[`.github/workflows/forge-standards-review.yml`](../.github/workflows/forge-standards-review.yml)
+runs the cadence check monthly (`on: schedule:`) and is
+`workflow_call`-invokable by adopters. It is deliberately separate from
+the per-PR blocking `forge-compliance.yml` gate (Themis is
+time-triggered and WARN-only). The `K5-RULE-*` catalogue + the review
+cadence live in
+[`standards-review-rules.md`](../.forge/standards/global/standards-review-rules.md).
