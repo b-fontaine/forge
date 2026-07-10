@@ -1,0 +1,22 @@
+name: b6-5-ci-templates
+status: archived
+created: 2026-07-10
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.6.5  # docs/new-archetypes-plan.md §6.1 — event-driven-eu per-layer CI templates (forge-events/forge-workflows/forge-infra)
+depends_on:
+  - B.6.2  # .forge/templates/archetypes/event-driven-eu/1.0.0 template tree + Taskfile targets these workflows invoke
+timeline:
+  proposed: 2026-07-10
+  specified: 2026-07-10
+  designed: 2026-07-10
+  planned: 2026-07-10
+  implemented: 2026-07-10
+  archived: 2026-07-10
+# NOTE (Article V): authored + implemented by a single executor in one session.
+# An INDEPENDENT reviewer + maintainer ratification pass is the honest gate
+# deferred (mirroring b6-2-scaffolder). Objective archive criteria are GREEN:
+# b6-5.test.sh L1 9/9 + L1,2 10/10; b6-2.test.sh L1,2 13/13 (plan↔tree still
+# green); b6-1.test.sh 19/19; verify.sh 518/0 PASS; constitution-linter.sh
+# OVERALL PASS. Additive — schema stays candidate (promotion → B.6.7).
