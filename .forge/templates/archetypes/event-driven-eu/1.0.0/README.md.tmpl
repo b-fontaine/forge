@@ -1,0 +1,45 @@
+# <project-name>
+
+EU-sovereign **event-driven** service scaffolded by Forge (`event-driven-eu`
+archetype, plan §6.1). NATS JetStream event backbone + Temporal saga orchestration
++ AsyncAPI 3.1 event contracts + a Postgres event store, on a Rust axum/Connect
+backend.
+
+> ⚠️ **Scaffold status (candidate).** `event-driven-eu` is a `candidate` archetype
+> (`.forge/schemas/event-driven-eu/1.0.0.yaml`, `scaffoldable: false`). This tree is
+> the B.6.2 backbone; promotion to a `stable`/`scaffoldable` archetype (so
+> `forge init --archetype event-driven-eu` renders it via the CLI) is gated on the
+> B.6.7 harness. Until then, render it directly with the wrapper /
+> `overlay.sh` (see below).
+
+## Layout
+
+| Path | What | Owner |
+|------|------|-------|
+| `backend/` | Rust workspace: `events` (NATS JetStream), `eventstore` (Postgres append-only store), `saga` (Temporal activity-only saga), `bin-server` (axum entrypoint) | Vulcan |
+| `shared/asyncapi/` | AsyncAPI 3.1 event contracts (the event single source of truth) | Hermes-Async (B.6.4) |
+| `shared/protos/` | Connect/gRPC protos + buf codegen (transport.yaml; `derived_outputs` incl. asyncapi-3.1) | — |
+| `infra/` | Dev NATS JetStream + Postgres event store + (optional) Temporal overlay | Atlas |
+
+A `frontend/` ops console is **deferred** (ADR-B6-1-004 — this archetype is
+backend-centric; a web surface is a later change).
+
+## Quickstart (local dev)
+
+```bash
+cp .env.example .env          # then fill in the required values
+task dev:up                   # NATS JetStream + Postgres (+ backend placeholder)
+task backend:test             # cargo test --workspace
+task proto                    # buf generate (Connect + AsyncAPI derived outputs)
+```
+
+## Constitution touch-points
+
+- **VIII.2** — Temporal for durable multi-step workflows; **no ad-hoc saga in
+  application code**. The `saga` crate is activity-only (the native SDK is
+  pre-alpha — see `backend/saga/`).
+- **VII.2/VII.3** — hexagonal Rust; `bin-server` is DI wiring only; typed errors
+  (`thiserror` in libs, `anyhow` in the binary).
+- **IX.4** — `tracing` spans on the request path.
+- **event_specifics** — event versioning, idempotency keys, saga compensation,
+  outbox/inbox (see `backend/events` + `backend/saga`).

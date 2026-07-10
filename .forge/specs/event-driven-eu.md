@@ -51,3 +51,38 @@ ADR-B6-1-004 (backend/frontend/infra triple; frontend = deferred ops surface).
 `verify.sh` + `constitution-linter.sh` no regression;
 `forge init --archetype event-driven-eu` refuses cleanly (exit 2 pre-registration;
 exit 3 once B.6.2 registers it while the schema stays candidate).
+
+## B.6.2 — scaffolder backbone (archived 2026-07-10)
+
+Ships `.forge/templates/archetypes/event-driven-eu/1.0.0/` (backend + infra +
+shared) + `scaffold-plan.yaml` + the gated `bin/forge-init-event-driven-eu.sh`
+wrapper + the `dispatch-table.yml` registration (`status: candidate`, `since: 0.6.0`).
+
+- **Backend** (Rust workspace, FR-B6-2-010..014): `events` (NATS JetStream —
+  versioned/idempotent `EventEnvelope`, `EventPublisher` port + `JetStreamPublisher`
+  dedup via `Nats-Msg-Id`, `InboxDedup`), `eventstore` (append-only Postgres
+  `PgEventStore` + `InMemoryEventStore` + `Projection`), `saga` (Temporal
+  activity-only: `Activity` marker traits + `Saga`/`SagaStep` compensation
+  coordinator; native SDK behind OFF-by-default `temporal-sdk` feature),
+  `bin-server` (axum entrypoint + DI). Verify-then-pin LIVE (FR-B6-2-040):
+  `async-nats 0.49.1`, `sqlx 0.9.0`, `temporalio-sdk 0.5.0`, `temporalio-client
+  0.5.0` — pins ONLY in `backend/Cargo.toml` (FR-B6-2-041).
+- **Infra** (FR-B6-2-020): dev NATS JetStream config, Postgres event-store schema
+  (`init-eventstore.sql`), optional local-dev Temporal overlay,
+  `docker-compose.dev.yml` (NATS + Postgres).
+- **Event contracts/transport** (FR-B6-2-030/031): AsyncAPI **3.1.0** contract
+  (`shared/asyncapi/`, validated against the official schema) + `shared/protos/`
+  (buf SSoT; Connect consumed by reference).
+- **CLI** (FR-B6-2-050..052): `forge init --archetype event-driven-eu` refuses
+  exit 3 + writes nothing (schema stays candidate; promotion → B.6.7).
+
+**ADRs**: ADR-B6-2-001 (promotion→B.6.7) · ADR-B6-2-002 (Connect by reference) ·
+ADR-B6-2-003 (no frontend first cut) · ADR-B6-2-004 (Temporal activity-only +
+feature-gated) · ADR-B6-2-005 (pins only in Cargo.toml).
+
+**Verification (archived state)**: rendered `cargo test --workspace` 16/0 +
+`clippy -D warnings` + `fmt --check` clean; `b6-2.test.sh` L1 10/10, L1,2 13/13
+(render-clean + rendered cargo check + gated wrapper render); built CLI
+`forge init --archetype event-driven-eu` → exit 3, no scaffold dir; `cd cli &&
+npm test` 88/89 (the 1 failure is the pre-existing ai-native-rag scaffold fixture,
+B.7 scope, reproduced on the b6-2-reverted baseline).

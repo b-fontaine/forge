@@ -1,0 +1,17 @@
+# infra/ — <project-name> (Atlas)
+
+Local-dev infrastructure for the event-driven-eu backend. Everything here is
+**dev-scoped**; production runs on Kubernetes (Helm charts — B.6.6).
+
+| Path | What |
+|------|------|
+| `nats/jetstream.conf` | Minimal single-node NATS JetStream (event backbone) |
+| `postgres/init-eventstore.sql` | Append-only event-store schema + inbox table |
+| `temporal/docker-compose.temporal.yml` | OPTIONAL local Temporal dev server + UI |
+
+Reused BY REFERENCE from the B.8 substrate (not re-declared here): Zitadel OIDC
+(identity.yaml), Envoy Gateway (§VIII.1), SigNoz/OBI/Coroot observability
+(observability.yaml).
+
+EU-sovereignty (event_specifics.eu_sovereignty): NATS JetStream / Redpanda only —
+**no Kafka SaaS US (Confluent Cloud)**. The enforcement rule list is B.6.10.

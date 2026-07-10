@@ -1,0 +1,89 @@
+# <!-- Audit: B.6.2 (b6-2-scaffolder) — <project-name> AsyncAPI 3.1 event contracts -->
+#
+# The event single source of truth for the event-driven-eu backend. Channels +
+# messages carried over NATS JetStream. AsyncAPI 3.1.0 is the latest released 3.x
+# spec (verified live 2026-07-10 — the plan's "AsyncAPI 3.1" label maps to the real
+# 3.1.0 schema). Validate with `task asyncapi:validate`. Bindings/codegen are the
+# job of Hermes-Async (B.6.4); versioning + validation rules are B.6.3
+# (global/asyncapi-contracts.md).
+asyncapi: 3.1.0
+
+info:
+  title: <project-name> events
+  version: 1.0.0
+  description: >
+    Domain events for <project-name>, published to NATS JetStream. Every message
+    carries the versioned, idempotent envelope the archetype mandates
+    (event_specifics: event_versioning + idempotency_keys). Subjects are namespaced
+    `events.v<version>.<EventType>` (see backend/events/src/envelope.rs).
+
+servers:
+  jetstream:
+    host: localhost:4222
+    protocol: nats
+    description: Local-dev NATS JetStream (docker-compose.dev.yml). Production is a clustered deployment (B.6.6).
+
+channels:
+  orderPlaced:
+    address: events.v1.OrderPlaced
+    description: An order was placed (seed example — replace with your domain events).
+    messages:
+      orderPlaced:
+        $ref: '#/components/messages/OrderPlaced'
+
+operations:
+  sendOrderPlaced:
+    action: send
+    summary: A producer publishes an OrderPlaced event (idempotent via Nats-Msg-Id).
+    channel:
+      $ref: '#/channels/orderPlaced'
+    messages:
+      - $ref: '#/channels/orderPlaced/messages/orderPlaced'
+  receiveOrderPlaced:
+    action: receive
+    summary: A consumer processes OrderPlaced (inbox dedup on idempotencyKey).
+    channel:
+      $ref: '#/channels/orderPlaced'
+    messages:
+      - $ref: '#/channels/orderPlaced/messages/orderPlaced'
+
+components:
+  messages:
+    OrderPlaced:
+      name: OrderPlaced
+      title: Order Placed
+      summary: Emitted when a customer places an order.
+      contentType: application/json
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+      payload:
+        $ref: '#/components/schemas/OrderPlacedPayload'
+  schemas:
+    EventHeaders:
+      type: object
+      description: JetStream headers common to every event envelope.
+      required: [Nats-Msg-Id]
+      properties:
+        Nats-Msg-Id:
+          type: string
+          description: The event idempotency key — JetStream deduplicates on it.
+    OrderPlacedPayload:
+      type: object
+      description: The OrderPlaced event body (event_version 1).
+      required: [orderId, customerId, totalCents]
+      properties:
+        orderId:
+          type: string
+          description: The order aggregate id (also the stream_id).
+        customerId:
+          type: string
+          description: The customer who placed the order.
+        totalCents:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Order total in minor units (cents).
+        placedAt:
+          type: string
+          format: date-time
+          description: When the order was placed (UTC).

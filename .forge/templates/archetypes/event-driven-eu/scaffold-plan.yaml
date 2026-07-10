@@ -1,0 +1,145 @@
+# <!-- Audit: B.6.2 (b6-2-scaffolder) — event-driven-eu/1.0.0 scaffold plan -->
+#
+# Drives overlay.sh --plan (the same renderer the flagship + ai-native-rag use).
+# Placeholders substituted by overlay.sh: <project-name>, <reverse-domain>,
+# <root-module>. `source:` paths are relative to the archetype dir
+# (.forge/templates/archetypes/event-driven-eu/). Auto-generated to match the
+# 1.0.0/ tree exactly (no orphan/dangling entries — b6-2.test.sh T-002).
+#
+# CANDIDATE / scaffoldable:false: the CLI refuses `forge init --archetype
+# event-driven-eu` (exit 3). This plan is rendered directly via overlay.sh (the
+# b6-2 L2 harness + the gated wrapper). Promotion to stable rides B.6.7.
+
+archetype: event-driven-eu
+version: 1.0.0
+
+# Official scaffolders run by init.sh BEFORE the overlay. None: the backend
+# ships full Cargo.toml manifests (no `cargo new`), so overlay alone produces a
+# complete tree. overlay.sh ignores this list.
+official_scaffolders: []
+
+templates:
+- source: 1.0.0/.env.example.tmpl
+  target: .env.example
+  substitute: true
+- source: 1.0.0/.gitignore.tmpl
+  target: .gitignore
+  substitute: false
+- source: 1.0.0/CLAUDE.md.tmpl
+  target: CLAUDE.md
+  substitute: true
+- source: 1.0.0/README.md.tmpl
+  target: README.md
+  substitute: true
+- source: 1.0.0/Taskfile.yml.tmpl
+  target: Taskfile.yml
+  substitute: true
+- source: 1.0.0/backend/CLAUDE.md.tmpl
+  target: backend/CLAUDE.md
+  substitute: true
+- source: 1.0.0/backend/Cargo.toml.tmpl
+  target: backend/Cargo.toml
+  substitute: false
+- source: 1.0.0/backend/bin-server/Cargo.toml.tmpl
+  target: backend/bin-server/Cargo.toml
+  substitute: false
+- source: 1.0.0/backend/bin-server/src/main.rs.tmpl
+  target: backend/bin-server/src/main.rs
+  substitute: false
+- source: 1.0.0/backend/bin-server/src/wiring.rs.tmpl
+  target: backend/bin-server/src/wiring.rs
+  substitute: false
+- source: 1.0.0/backend/events/Cargo.toml.tmpl
+  target: backend/events/Cargo.toml
+  substitute: false
+- source: 1.0.0/backend/events/src/consumer.rs.tmpl
+  target: backend/events/src/consumer.rs
+  substitute: false
+- source: 1.0.0/backend/events/src/envelope.rs.tmpl
+  target: backend/events/src/envelope.rs
+  substitute: false
+- source: 1.0.0/backend/events/src/lib.rs.tmpl
+  target: backend/events/src/lib.rs
+  substitute: false
+- source: 1.0.0/backend/events/src/publisher.rs.tmpl
+  target: backend/events/src/publisher.rs
+  substitute: false
+- source: 1.0.0/backend/eventstore/Cargo.toml.tmpl
+  target: backend/eventstore/Cargo.toml
+  substitute: false
+- source: 1.0.0/backend/eventstore/src/lib.rs.tmpl
+  target: backend/eventstore/src/lib.rs
+  substitute: false
+- source: 1.0.0/backend/eventstore/src/projection.rs.tmpl
+  target: backend/eventstore/src/projection.rs
+  substitute: false
+- source: 1.0.0/backend/eventstore/src/store.rs.tmpl
+  target: backend/eventstore/src/store.rs
+  substitute: false
+- source: 1.0.0/backend/rust-toolchain.toml.tmpl
+  target: backend/rust-toolchain.toml
+  substitute: false
+- source: 1.0.0/backend/saga/Cargo.toml.tmpl
+  target: backend/saga/Cargo.toml
+  substitute: false
+- source: 1.0.0/backend/saga/src/activity.rs.tmpl
+  target: backend/saga/src/activity.rs
+  substitute: false
+- source: 1.0.0/backend/saga/src/compensation.rs.tmpl
+  target: backend/saga/src/compensation.rs
+  substitute: false
+- source: 1.0.0/backend/saga/src/lib.rs.tmpl
+  target: backend/saga/src/lib.rs
+  substitute: false
+- source: 1.0.0/backend/saga/src/temporal.rs.tmpl
+  target: backend/saga/src/temporal.rs
+  substitute: false
+- source: 1.0.0/docker-compose.dev.yml.tmpl
+  target: docker-compose.dev.yml
+  substitute: true
+- source: 1.0.0/infra/CLAUDE.md.tmpl
+  target: infra/CLAUDE.md
+  substitute: true
+- source: 1.0.0/infra/README.md.tmpl
+  target: infra/README.md
+  substitute: true
+- source: 1.0.0/infra/nats/README.md.tmpl
+  target: infra/nats/README.md
+  substitute: false
+- source: 1.0.0/infra/nats/jetstream.conf.tmpl
+  target: infra/nats/jetstream.conf
+  substitute: false
+- source: 1.0.0/infra/postgres/README.md.tmpl
+  target: infra/postgres/README.md
+  substitute: false
+- source: 1.0.0/infra/postgres/init-eventstore.sql.tmpl
+  target: infra/postgres/init-eventstore.sql
+  substitute: true
+- source: 1.0.0/infra/temporal/README.md.tmpl
+  target: infra/temporal/README.md
+  substitute: false
+- source: 1.0.0/infra/temporal/docker-compose.temporal.yml.tmpl
+  target: infra/temporal/docker-compose.temporal.yml
+  substitute: true
+- source: 1.0.0/shared/asyncapi/README.md.tmpl
+  target: shared/asyncapi/README.md
+  substitute: true
+- source: 1.0.0/shared/asyncapi/asyncapi.yaml.tmpl
+  target: shared/asyncapi/asyncapi.yaml
+  substitute: true
+- source: 1.0.0/shared/protos/README.md.tmpl
+  target: shared/protos/README.md
+  substitute: true
+- source: 1.0.0/shared/protos/buf.gen.yaml.tmpl
+  target: shared/protos/buf.gen.yaml
+  substitute: true
+- source: 1.0.0/shared/protos/buf.yaml.tmpl
+  target: shared/protos/buf.yaml
+  substitute: true
+- source: 1.0.0/shared/protos/v1/events/events.proto.tmpl
+  target: shared/protos/v1/events/events.proto
+  substitute: false
+
+post_steps:
+- action: write_scaffold_manifest
+  target: .forge/scaffold-manifest.yaml

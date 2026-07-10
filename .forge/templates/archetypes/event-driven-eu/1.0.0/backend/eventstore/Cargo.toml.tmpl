@@ -1,0 +1,19 @@
+# <!-- Audit: B.6.2 (b6-2-scaffolder) — eventstore crate (append-only Postgres store) -->
+[package]
+name = "eventstore"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+events = { workspace = true }
+sqlx = { workspace = true }
+async-trait = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }

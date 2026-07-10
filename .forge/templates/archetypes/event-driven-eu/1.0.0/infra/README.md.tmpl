@@ -1,0 +1,11 @@
+# infra — <project-name>
+
+Dev infrastructure overlays. Bring up the base stack (NATS JetStream + Postgres)
+with `task dev:up`; the optional Temporal dev server with `task temporal:up`.
+
+- `nats/` — JetStream config + docs
+- `postgres/` — event-store schema + docs
+- `temporal/` — optional local Temporal overlay + docs
+
+Production topology (clustered NATS JetStream, Temporal history/matching/frontend/
+worker, Postgres backing) ships as Helm charts in B.6.6 — not in this backbone.

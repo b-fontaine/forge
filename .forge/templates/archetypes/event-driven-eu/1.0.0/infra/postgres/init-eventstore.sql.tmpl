@@ -1,0 +1,38 @@
+-- <!-- Audit: B.6.2 (b6-2-scaffolder) — <project-name> event-store schema/migration -->
+--
+-- Append-only event store for the event-driven-eu backend. Runs once on first DB
+-- init via docker-entrypoint-initdb.d (see docker-compose.dev.yml). The schema
+-- matches backend/eventstore/src/store.rs (PgEventStore). persistence.yaml:
+-- postgres-17.
+
+-- ── events: the append-only log ──────────────────────────────────────────────
+-- BIGSERIAL `seq` is the global monotonic order; `idempotency_key` is UNIQUE so a
+-- retried append (ON CONFLICT DO NOTHING) is a no-op — matches the store's
+-- idempotent append contract (event_specifics.idempotency_keys).
+CREATE TABLE IF NOT EXISTS events (
+    seq             BIGSERIAL   PRIMARY KEY,
+    event_id        UUID        NOT NULL,
+    stream_id       TEXT        NOT NULL,
+    event_type      TEXT        NOT NULL,
+    event_version   BIGINT      NOT NULL,
+    idempotency_key TEXT        NOT NULL,
+    payload         JSONB       NOT NULL,
+    occurred_at     TIMESTAMPTZ NOT NULL
+);
+
+-- Idempotent append: dedup on the business/idempotency key.
+CREATE UNIQUE INDEX IF NOT EXISTS events_idempotency_key_uidx
+    ON events (idempotency_key);
+
+-- Fast per-stream replay in sequence order (read_stream / projection rebuild).
+CREATE INDEX IF NOT EXISTS events_stream_seq_idx
+    ON events (stream_id, seq);
+
+-- ── inbox: consumer-side dedup (inbox pattern) ───────────────────────────────
+-- Durable backing for backend/events/src/consumer.rs::InboxDedup — a consumer
+-- records the idempotency key of every event it has processed so a NATS
+-- redelivery (at-least-once) is handled exactly once.
+CREATE TABLE IF NOT EXISTS inbox (
+    idempotency_key TEXT        PRIMARY KEY,
+    processed_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
