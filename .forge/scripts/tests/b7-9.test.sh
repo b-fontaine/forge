@@ -112,10 +112,15 @@ _test_b7_9_004_rule_006() {
   fi
 }
 
-# NFR-B7-9-003 — J8-RULE-004 is the next free ID : the live catalogue must
-# never define a J8-RULE-007+ before 004..006 land (guards against a
-# concurrently-landed J.8 rule grabbing 004). We assert 004/005/006 exist
-# AND that no higher-numbered J8-RULE collides (no 007 yet allocated).
+# NFR-B7-9-003 — J8-RULE-004..006 are the b7-9 block. We assert 004/005/006
+# exist AND that no J8-RULE-009+ collides.
+# COUPLING (b6-10-janus-rule / B.6.10, 2026-07-10): the upper bound was relaxed
+# from `J8-RULE-0(0[7-9]|[1-9][0-9])` to `J8-RULE-0(09|[1-9][0-9])` when B.6.10
+# legitimately allocated the next free block J8-RULE-007/008 (event-driven-eu
+# Kafka-SaaS refusals). The guard still catches a J8-RULE-009+ collision. This
+# is the same sibling-harness relaxation discipline b7-9 itself applied to
+# i2.test.sh / i3.test.sh — an over-strict numbering pin must not turn main CI
+# red when a downstream change allocates the next legitimate block.
 _test_b7_9_005_rule_004_is_next_free() {
   local rid
   for rid in J8-RULE-004 J8-RULE-005 J8-RULE-006; do
@@ -123,8 +128,8 @@ _test_b7_9_005_rule_004_is_next_free() {
       echo "    expected $rid allocated (next free block) but missing" >&2; return 1
     fi
   done
-  if grep -qrhoE "J8-RULE-0(0[7-9]|[1-9][0-9])" "$JANUS_AGENT" "$DISPATCH_TABLE"; then
-    echo "    a J8-RULE-007+ ID exists — 004..006 are NOT the next free block (collision)" >&2; return 1
+  if grep -qrhoE "J8-RULE-0(09|[1-9][0-9])" "$JANUS_AGENT" "$DISPATCH_TABLE"; then
+    echo "    a J8-RULE-009+ ID exists — 007..008 (b6-10) are NOT the next free block (collision)" >&2; return 1
   fi
 }
 

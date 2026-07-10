@@ -142,6 +142,9 @@ jobs:
             # toolchain-gated and stays local/opt-in (the harness job has no rust).
             "b6-1.test.sh --level 1,2"
             "b6-2.test.sh --level 1"
+            # b6-10 (Janus event-broker refusals) is hermetic grep + fixture, no
+            # toolchain needed — runs at --level 1,2 in the harness job.
+            "b6-10.test.sh --level 1,2"
             "k4.test.sh --level 1,2"
           )
           fail=0
