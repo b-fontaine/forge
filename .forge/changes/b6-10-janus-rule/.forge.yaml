@@ -1,0 +1,33 @@
+name: b6-10-janus-rule
+status: archived
+created: 2026-07-10
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.6.10   # docs/new-archetypes-plan.md §6.1 — standard interdiction : pas de Kafka SaaS US (Confluent Cloud), Redpanda acceptable
+depends_on:
+  - j8-janus-rules          # J8-RULE-NNN namespace (ADR-J8-004), exit-3/[REFUSAL:] convention (ADR-J8-003), janus-orchestration-rules.md
+  - b7-9-janus-ai           # forbidden_combinations: list + _refuse_if_forbidden_combination helper (REUSED) + I.3 token-coupling pattern + numbering-guard-relaxation precedent
+  - i2-compliance-tiers     # global/compliance-tiers.md §10.2 matrix (AWS/GCP/Azure CLOUD Act row) ; tier gradient ; forbidden: token list
+  - i3-t3-forbidden-linter  # T3-RULE-005 generic forbidden: token enforcement + tier-scaled WARN/FAIL + REMEDIATION map (review-time coupling)
+  - b6-1-schema             # event-driven-eu/1.0.0 candidate schema : event_specifics.eu_sovereignty.no_kafka_saas_us flag this brick enforces
+  - b6-2-scaffolder         # bin/forge-init-event-driven-eu.sh gated wrapper this brick hooks the combination check into ; NATS JetStream default
+archived_to:
+  - .forge/specs/janus-rules.md  # B.6.10 block APPENDED at archive (FR-B6-JR-* / NFR-B6-JR-* / ADR-B6-JR-*) ; J.8.a/b/c/d blocks preserved
+# Shared-file coupling (change.schema.json forbids extra top-level fields, so
+# the coupling contract lives in the markdown artifacts, not this frontmatter):
+#   - .claude/agents/cross-layer-orchestrator.md, .forge/scaffolding/dispatch-table.yml,
+#     CHANGELOG.md and .github/workflows/forge-ci.yml are co-edited with sibling
+#     B.6 lanes (B.6.3/4/5/6/9). This brick's deltas are additive + disjoint
+#     (new H3 sub-section ; appended forbidden_combinations entries ; appended
+#     harness row). Merge conflicts across the 6 PRs are handled centrally.
+#   - .forge/scripts/tests/b7-9.test.sh numbering guard relaxed (ADR-B6-JR-006):
+#     the archived b7-9 harness hard-pinned 006 as the last J8-RULE; allocating
+#     007/008 requires relaxing its upper bound (sibling-harness coupling).
+timeline:
+  proposed: 2026-07-10
+  specified: 2026-07-10
+  designed: 2026-07-10
+  planned: 2026-07-10
+  implemented: 2026-07-10
+  archived: 2026-07-10
