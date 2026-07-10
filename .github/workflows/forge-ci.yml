@@ -100,6 +100,10 @@ jobs:
             # I.6-reserved .forge/compliance/ layout + bumps the I.6 bundle
             # contract), not by its b7 NUMBER (ADR-B75-004).
             "b7-5.test.sh --level 1,2"
+            # b6-9 also lives in the i-block by SUBSTANCE (compliance family:
+            # fills the I.6-reserved .forge/compliance/nis2/ layout + bumps the
+            # I.6 bundle contract 1.1.0->1.2.0), not by its b6 NUMBER (ADR-B69-005).
+            "b6-9.test.sh --level 1,2"
             "f3.test.sh --level 1"
             "t5-1.test.sh --level 1"
             "t5-cargo.test.sh --level 1"
