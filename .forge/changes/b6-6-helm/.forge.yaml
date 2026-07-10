@@ -1,0 +1,15 @@
+name: b6-6-helm
+status: archived
+created: 2026-07-10
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.6.6  # docs/new-archetypes-plan.md §6.1 B.6.6 — production Helm charts: Temporal cluster (history/matching/frontend/worker) + Postgres backing, and a production NATS JetStream cluster (clustering/RAFT/persistence). Documentation T2/T3 (self-host EU).
+depends_on:
+  - B.6.2  # event-driven-eu/1.0.0 scaffolder backbone (dev NATS/Temporal overlays, backend/Cargo.toml temporalio-sdk pin) — this brick adds the production K8s charts alongside the dev backbone.
+timeline:
+  proposed: 2026-07-10
+  specified: 2026-07-10
+  designed: 2026-07-10
+  planned: 2026-07-10
+  implemented: 2026-07-10
