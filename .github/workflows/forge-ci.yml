@@ -91,6 +91,7 @@ jobs:
             "t5-otel-dartastic.test.sh --level 1"
             "j8.test.sh --level 1,2"
             "k3.test.sh --level 1,2"
+            "k5.test.sh --level 1,2"
             "i2.test.sh --level 1"
             "i6.test.sh --level 1,2"
             "i3.test.sh --level 1,2"
