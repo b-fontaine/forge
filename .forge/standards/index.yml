@@ -461,3 +461,11 @@ standards:
     triggers: [ai-act, dora, compliance, regulatory, model-card, dataset-card, transparency, incident-reporting, themis]
     scope: all
     priority: high
+
+  # ─── K.5 — Themis standards review cadence (k5-themis) ───────────
+
+  - id: global/standards-review-rules
+    path: standards/global/standards-review-rules.md
+    triggers: [themis, review-standards, standards-review, compliance-officer, nis2, dora, cra, ai-act, regulatory-deadline, k5-rule, review-cadence]
+    scope: all
+    priority: high

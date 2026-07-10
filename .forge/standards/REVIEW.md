@@ -951,3 +951,30 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   bundle contract bumped `1.0.0 → 1.1.0` in lock-step (the `i6.test.sh` count
   assertion stays GREEN — its L2 fixture stages only the 4 canonical surfaces
   into a tmpdir, so it is hermetic to the new live artefacts).
+
+## 2026-07-10 — Initial ratification (k5-themis, K.5)
+
+  | Standard                             | Version | Decision | Next review due | Notes                                                                                                                                                                                          |
+  |--------------------------------------|---------|----------|-----------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+  | global/standards-review-rules.md     | 1.0.0   | KEEP     | 2027-07-10      | Birth: the `K5-RULE-001..005` catalogue + EU regulatory-deadline calendar for the Themis compliance-officer agent (K.5) and its `forge review-standards` automation (`bin/forge-review-standards.sh`). |
+
+- **Reviewer**: @bfontaine
+- **Decision**: KEEP (new `global/standards-review-rules.md` v1.0.0).
+- **Next review due**: 2027-07-10 (12-month cycle).
+- **Notes**: K.5 ships the Themis compliance officer
+  (`.claude/agents/themis.md`) + the `forge review-standards` cadence
+  automation. The CLI walks `.forge/standards/` for `last_reviewed` /
+  `expires_at` frontmatter, classifies FRESH / DUE-SOON / EXPIRED /
+  STRUCTURAL against a `--window`, skips structural exceptions
+  (`expires_at: never` + `exception_constitutional: true`), and carries
+  the NIS2 / DORA / CRA / AI Act calendar copied **verbatim** from
+  `new-archetypes-plan.md` §7.1 I.6 bullet (Article III.4 — never
+  invented). WARN-only default (`standards-lifecycle.md` "WARN n'est
+  jamais bloquant") ; `--strict` opt-in blocking. `--bundle` DRIVES the
+  I.6 `bundle.sh` (never forks it) — `compliance-artefacts-bundle.md`
+  stays v1.1.0 (i6 pin untouched), `forge-compliance.yml` untouched (i5
+  pin untouched). The `standards-lifecycle.md` "Themis hook (deferred —
+  T7)" section flips to "shipped (K.5)" (delta, structural-exception
+  table preserved for `t4.test.sh::_test_t4_025`). This standard ships
+  as Markdown, so `bin/validate-standards-yaml.sh` (J.7) does not gate
+  it ; the frontmatter block is narrative.
