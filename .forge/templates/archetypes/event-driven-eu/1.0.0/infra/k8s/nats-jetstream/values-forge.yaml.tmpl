@@ -1,0 +1,70 @@
+# <!-- Audit: B.6.6 (b6-6-helm, FR-B6-HELM-020..023) — production NATS JetStream cluster Helm values overlay -->
+#
+# Forge Helm values OVERLAY for the upstream NATS chart, installed by Atlas:
+#
+#   helm repo add nats https://nats-io.github.io/k8s/helm/charts/
+#   helm install <project-name>-nats nats/nats \
+#     --version 2.14.2 -f values-forge.yaml
+#
+# This is the PRODUCTION event backbone: a 3-node CLUSTERED NATS with JetStream
+# enabled (RAFT quorum across the 3 nodes) and file-store PERSISTENT VOLUME
+# CLAIMS. It supersedes the single-node dev config infra/nats/jetstream.conf
+# (docker-compose.dev.yml) for real EU K8s deployment. EU-sovereignty: NATS
+# JetStream (CNCF, EU self-hostable) — NO Kafka SaaS US (B.6.10).
+#
+# Pin (verify-then-pin LIVE 2026-07-10 — `helm show chart nats/nats`):
+#   chart  nats/nats   --version 2.14.2   (appVersion 2.14.2, image nats:2.14.2-alpine)
+
+# ── Forge provenance on all chart resources ──
+global:
+  labels:
+    app.kubernetes.io/part-of: <project-name>
+
+config:
+  # ── Clustering: RAFT quorum. Must be >= 2 when JetStream is enabled; 3 gives a
+  #    fault-tolerant quorum (survives one node loss). Routes are wired by the
+  #    chart across the StatefulSet pods (nats://...-{0,1,2}...:6222).
+  cluster:
+    enabled: true
+    replicas: 3
+
+  # ── JetStream: file-backed persistence via a PVC per pod (RAFT-replicated).
+  #    Streams + consumer state survive pod restarts / rescheduling.
+  jetstream:
+    enabled: true
+    fileStore:
+      enabled: true
+      dir: /data
+      pvc:
+        enabled: true
+        size: 20Gi
+        # storageClassName: set to an EU-jurisdiction CSI class for T2/T3
+        # (leave null to use the cluster default StorageClass).
+        storageClassName:
+    memoryStore:
+      enabled: false
+
+  # ── Monitoring endpoint (HTTP /healthz, /jsz) — used by liveness/readiness
+  #    probes and (optionally) the Prometheus exporter. Matches the dev
+  #    http_port: 8222 in infra/nats/jetstream.conf.
+  monitor:
+    enabled: true
+    port: 8222
+
+# ── NATS server container: pinned image + modest production resources ──
+container:
+  image:
+    repository: nats
+    tag: 2.14.2-alpine     # verify-then-pin — chart 2.14.2 appVersion
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+
+# ── Prometheus NATS exporter: OFF by default; enable + wire to the OTel/SigNoz
+#    layer (observability.yaml) rather than pinning a scrape here. ──
+promExporter:
+  enabled: false
