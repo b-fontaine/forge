@@ -86,3 +86,60 @@ feature-gated) · ADR-B6-2-005 (pins only in Cargo.toml).
 `forge init --archetype event-driven-eu` → exit 3, no scaffold dir; `cd cli &&
 npm test` 88/89 (the 1 failure is the pre-existing ai-native-rag scaffold fixture,
 B.7 scope, reproduced on the b6-2-reverted baseline).
+
+## B.6.9 — compliance hooks (NIS2 + DORA) (archived 2026-07-10)
+
+<!-- Source change: `.forge/changes/b6-9-compliance/` — namespace FR-B69-* / NFR-B69-* / ADR-B69-*. -->
+
+Ships the regulatory layer for the `event-driven-eu` archetype (profile "NIS2 +
+DORA (si finance) + CRA", `ARCHITECTURE-TARGET.md` §10.3), the B.6 sibling of the
+B.7.5/B.7.8 AI-Act work. Every regulatory specific is **grounded-or-deferred**
+(Article III.4; the `b6-9.test.sh::_test_b69_030` negative-grep is the backstop).
+
+- **NIS2 artefacts** (`.forge/compliance/nis2/`, FR-B69-NIS2-001..030):
+  `incident-reporting.md` (the significant-incident obligation citing the grounded
+  **24h/72h** reporting windows verbatim — §10.4 + §7.1 — and the "< 24h" charter
+  figure — §9.2 — scoped to the NATS JetStream / Temporal / Postgres event-store
+  operational surface, mapped to the I.6 audit-ledger + IX.4 Rust OTel evidence
+  surfaces); `incident-report.template.yaml` (adopter-fillable 24h/72h notification
+  skeleton); `obligations-index.yaml` (`regulation: nis2` — `incident-reporting` +
+  `supply-chain-security` satisfied, ungrounded pillars `needs-clarification` /
+  `themis_owner: K.5`). Audit anchor `B.6.9 (b6-9-compliance)` on every member.
+- **DORA RoI submission helper** (`.forge/scripts/compliance/dora-roi-helper.sh`,
+  FR-B69-DORA-001..020): drives (reads, never forks) the b7-5
+  `dora/roi-register.template.yaml` base and specialises it for the archetype's
+  ICT third-party stack (NATS JetStream / Temporal / Postgres), citing the
+  grounded "30 avr 2026" ESA deadline; the authoritative ESA field schema is a
+  `[NEEDS CLARIFICATION]` (Themis K.5).
+- **SBOM CycloneDX auto-generation wiring** (FR-B69-SBOM-001..010): grounded that
+  event-driven-eu (Rust) SBOM rides the existing `bin/forge-sbom.sh`
+  (`Cargo.lock` → CycloneDX 1.5) + the I.6 bundle `sbom/sbom.cdx.json` member — no
+  new generator; mapped as the NIS2 supply-chain-transparency evidence surface.
+- **Bundle wiring** (FR-B69-BD-001..015): `bundle.sh` walk tuple gains `"nis2"`
+  (additive `regulatory/nis2/*`; graceful absence preserved); the I.6 bundle
+  contract `global/compliance-artefacts-bundle.md` bumped **1.1.0 → 1.2.0** (NIS2
+  reserved → shipped, CRA still reserved). `forge-compliance.yml` unchanged.
+- **Standard** `global/nis2-dora-eda-artefacts.md` v1.0.0 (6 H2 + 5 MUST NOT +
+  Phase A/B BDFL→Themis governance) + `index.yml` + `REVIEW.md` (birth + I.6
+  1.1.0→1.2.0 amendment). New harness `b6-9.test.sh` (17 L1 + 3 L2), registered in
+  `forge-ci.yml` after `b7-5.test.sh` (compliance family).
+
+**ADRs**: ADR-B69-001 (create `nis2/`; `cra/` reserved) · ADR-B69-002 (wire nis2
+into the bundle; 1.1.0→1.2.0 lock-step) · ADR-B69-003 (new standard) · ADR-B69-004
+(DORA helper is a script driving the b7-5 base, not a `dora/` file) · ADR-B69-005
+(harness after `b7-5.test.sh`) · ADR-B69-006 (`b7-5.test.sh` `nis2/`-reserved
+assertion dropped in lock-step; cra kept) · ADR-B69-007 (no `forge-compliance.yml`
+step).
+
+**Lock-step amendments** (shared-reservation discipline): `b7-5.test.sh` dropped
+its `_test_b75_001` `nis2/`-reserved assertion and relaxed its `_test_b75_051`
+I.6-version pin to semver-validity (Option B precedent); `i6.test.sh::_test_i6_021`
+frontmatter pins updated to 1.2.0 / 2026-07-10; `ai-act-dora-artefacts.md` +
+`docs/COMPLIANCE.md` stale "NIS2 reserved" prose corrected (NIS2 shipped, CRA
+reserved).
+
+**Verification (archived state)**: `b6-9.test.sh --level 1,2` 20/20 GREEN;
+`b7-5.test.sh --level 1,2` 19/19 GREEN (lock-step, no regression); `i6.test.sh
+--level 1,2` 16/16 GREEN; `verify.sh` 514 PASS / 0 FAIL / 1 WARN (pre-existing) →
+RESULT PASS; `constitution-linter.sh` OVERALL PASS (0 FAIL); `validate-standards-yaml.sh`
+STD-PASS (new standard is MD, out of J.7 scope); `forge-ci.yml` 375 lines (< 400).
