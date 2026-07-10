@@ -142,6 +142,9 @@ jobs:
             # toolchain-gated and stays local/opt-in (the harness job has no rust).
             "b6-1.test.sh --level 1,2"
             "b6-2.test.sh --level 1"
+            # b6-4 (Hermes-Async K.1 agent) — advisory persona + CLAUDE.md/GUIDE.md
+            # rows; grep-only L1 + 1 L2 anchor-integrity fixture (no cargo/no network).
+            "b6-4.test.sh --level 1,2"
             "k4.test.sh --level 1,2"
           )
           fail=0
