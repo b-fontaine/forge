@@ -1,0 +1,99 @@
+# <!-- Audit: K.5 (k5-themis) -->
+# Forge sibling standards-review cadence workflow (Themis, K.5). Standard :
+# .forge/standards/global/standards-review-rules.md
+#
+# Runs the `forge review-standards` cadence check AMBIENTLY :
+#   - on: schedule:      — monthly, realising the "issue de revue
+#     mensuelle" the standards-lifecycle.md standard describes.
+#   - on: workflow_call:  — adopters may also invoke it from their own
+#     pipelines.
+#
+# Deliberately a SIBLING of the per-PR blocking forge-compliance.yml
+# (I.5), NOT a step inside it (ADR-K5-005) : Themis is time-triggered
+# and WARN-only, while the compliance gate is PR-triggered and blocking.
+# The review step carries `continue-on-error: true` so a review debt
+# surfaces in the run log without freezing any pipeline
+# (standards-lifecycle.md "WARN n'est jamais bloquant").
+
+name: forge-standards-review
+
+on:
+  schedule:
+    # 06:00 UTC on the 1st of every month.
+    - cron: "0 6 1 * *"
+  workflow_call:
+    inputs:
+      window-days:
+        required: false
+        default: "30"
+        type: string
+        description: "Review window in days (standards due within N days)"
+      target-dir:
+        required: false
+        default: "."
+        type: string
+        description: "Repo root inside the runner workspace"
+
+concurrency:
+  group: forge-standards-review-${{ github.ref }}
+  cancel-in-progress: false
+
+# Minimum permission set (Aegis hygiene). No write access.
+permissions:
+  contents: read
+
+jobs:
+  standards-review:
+    name: Forge standards review cadence (Themis)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: Resolve SOURCE_DATE_EPOCH (commit ts || run ts)
+        env:
+          COMMIT_TS: ${{ github.event.head_commit.timestamp }}
+          RUN_TS: ${{ github.run_started_at }}
+        run: |
+          set -eu
+          TS="${COMMIT_TS:-$RUN_TS}"
+          EPOCH="$(date -u -d "$TS" +%s)"
+          echo "SOURCE_DATE_EPOCH=$EPOCH" >> "$GITHUB_ENV"
+          echo "::notice::SOURCE_DATE_EPOCH=$EPOCH (source: $TS)"
+
+      - id: review
+        name: Themis — forge review-standards cadence check
+        # WARN-only : a review debt (exit 1) must NOT fail the job. Only a
+        # genuine usage error (exit 2) or a --strict block (exit 3, not
+        # used here) would matter, and continue-on-error surfaces those in
+        # the run summary without freezing the pipeline.
+        continue-on-error: true
+        run: |
+          bash bin/forge-review-standards.sh \
+            --target "${{ inputs.target-dir || '.' }}" \
+            --window "${{ inputs.window-days || '30' }}" \
+            --format md \
+            --output standards-review-report.md
+
+      - name: Summarise review outcome
+        env:
+          REVIEW_RESULT: ${{ steps.review.outcome }}
+        run: |
+          set -eu
+          if [ "$REVIEW_RESULT" = "success" ]; then
+            echo "::notice::forge-standards-review: all standards fresh (CLEARED)"
+          else
+            echo "::warning::forge-standards-review: review debt detected — see standards-review-report.md (WARN, non-blocking)"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: forge-standards-review-report
+          path: standards-review-report.md
+          if-no-files-found: warn

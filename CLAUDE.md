@@ -68,6 +68,7 @@ Forge uses specialized agents. Delegation is automatic:
 | AI features | **Oracle** | AI-First Brainstorm |
 | AI/RAG tuning | **Sibyl** | AI/RAG Specialist |
 | Data stewardship | **Demeter** | Data Steward EU |
+| Regulatory compliance | **Themis** | Compliance Officer EU |
 | Writing specs | **Clio** | Spec Writer |
 | Domain modeling | **Socrates** | DDD Strategist |
 | Security audit | **Aegis** | Security Auditor |

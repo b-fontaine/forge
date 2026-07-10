@@ -220,6 +220,7 @@ est marqué `DONE`, et un résumé est ajouté au journal du projet.
 | Security Auditor    | Aegis    | Audit de sécurité, OWASP             |
 | Data Steward EU     | Demeter  | Tier classification, DPA, CLOUD Act  |
 | Frontend Web Specialist | Iris-Web | Qwik / SvelteKit web-public conventions, distinct de Hera (Flutter) |
+| Compliance Officer EU | Themis | NIS2/DORA/CRA, cycle review-standards |
 | DevOps Engineer     | Heracles | CI/CD, déploiement                   |
 
 ---

@@ -81,6 +81,26 @@ archetypes:
     # Resolves b7-1-schema Q-005. `since: 0.5.0` per VERSIONING.md (new archetype ⇒ MINOR).
     status: stable
 
+  event-driven-eu:
+    name: event-driven-eu
+    scaffolder: "bin/forge-init-event-driven-eu.sh"
+    description: "EU-sovereign event-driven archetype — NATS JetStream + Temporal saga orchestration + AsyncAPI 3.1 + Postgres event store, on a Rust axum/Connect backend. CANDIDATE — promoted to stable/scaffoldable in B.6.7."
+    signals: []
+    since: "0.6.0"
+    # B.6.2 (b6-2-scaffolder) registered this entry + shipped the templates + the
+    # gated wrapper (bin/forge-init-event-driven-eu.sh) + the verify-then-pin'd
+    # backend. The 1.0.0 schema stays `stage: candidate` / `scaffoldable: false`
+    # (.forge/schemas/event-driven-eu/1.0.0.yaml, B.6.1), so `forge init --archetype
+    # event-driven-eu` REFUSES with exit 3 (selectScaffoldableVersion → null). The
+    # backbone renders directly via overlay.sh (the b6-2 L2 harness + the gated
+    # wrapper under FORGE_EDE_FORCE_SCAFFOLD=1). PROMOTION to stable/scaffoldable is
+    # gated on the B.6.7 ≥35-test snapshot harness (mirrors B.7.6 / B.8.14-C2). The
+    # `status: candidate` marker keeps it in the refusing partition of
+    # archetypes-smoke.test.ts + out of the t5-1 T-016 scaffold-matrix gate.
+    # `since: 0.6.0` per VERSIONING.md (new archetype ⇒ MINOR; next after the 0.5.0
+    # ai-native-rag cut).
+    status: candidate
+
   # ─── Removed from taxonomy (t4-adr-ratification, 2026-05-04) ────
   # `flutter-firebase` was a placeholder slot for archetype B.2 in the
   # original audit roadmap (`il-s-agit-l-d-un-noble-gem.md`). Per ADR-007

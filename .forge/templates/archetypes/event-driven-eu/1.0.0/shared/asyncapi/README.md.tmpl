@@ -1,0 +1,18 @@
+# shared/asyncapi — event contracts (<project-name>)
+
+`asyncapi.yaml` is the **event single source of truth** (AsyncAPI 3.1.0 — the
+latest released 3.x spec). It describes the channels + messages carried over NATS
+JetStream. Validate:
+
+```bash
+task asyncapi:validate     # npx @asyncapi/cli validate asyncapi.yaml
+```
+
+Every message carries the versioned, idempotent envelope (see
+`backend/events/src/envelope.rs`): the `Nats-Msg-Id` header is the idempotency key
+(JetStream dedup), and subjects are `events.v<version>.<EventType>`.
+
+> Bindings + generated consumers/producers are maintained by **Hermes-Async**
+> (K.1 / B.6.4). AsyncAPI versioning + breaking-change validation rules are
+> **global/asyncapi-contracts.md** (B.6.3). Both are out of the B.6.2 backbone; the
+> `OrderPlaced` channel here is a seed example to replace with your domain events.

@@ -1,0 +1,20 @@
+name: k5-themis
+status: archived
+created: 2026-07-10
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - K.5   # ARCHITECTURE-TARGET §9.2 — Themis (compliance officer EU)
+depends_on:
+  - t4-adr-ratification      # ships standards-lifecycle.md + the 12-month review cadence (P-3)
+  - k3-demeter               # ships the K3-RULE-NNN namespace + the sibling data-steward agent Themis bounds against
+  - i2-compliance-tiers      # ships compliance-tiers.md (I.2) Themis consumes at the regulatory layer
+  - i5-compliance-workflow   # ships forge-compliance.yml (I.5) — forward-stable for Themis to hook additively
+  - i6-compliance-artefacts  # ships bundle.sh (I.6) — the deterministic .tgz Themis drives (not forks)
+timeline:
+  proposed: 2026-07-10
+  specified: 2026-07-10
+  designed: 2026-07-10
+  planned: 2026-07-10
+  implemented: 2026-07-10
+  archived: 2026-07-10

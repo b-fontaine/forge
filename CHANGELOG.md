@@ -35,6 +35,34 @@ minor bump and will be called out under a `### BREAKING` subsection.
   `.forge/scripts/tests/k4.test.sh` (22 tests: 20 L1 + 2 L2 cross-surface),
   registered in `forge-ci.yml`. Forward-stable for `mobile-pwa-first` (B.9,
   Pending T8) to adopt additively.
+- **Themis compliance-officer agent + `forge review-standards` automation (K.5, `k5-themis`)** —
+  the fifth Module-K agent (`.claude/agents/themis.md`), the EU **compliance
+  officer** for `tous EU` archetypes (`new-archetypes-plan.md` §9). Themis works
+  at **repo-lifecycle-time** (ongoing, ambient), explicitly bounded against
+  Demeter's scaffold-time data-stewardship (K.3) — the persona's "Boundary —
+  Themis vs Demeter" section keeps the two from ever being confused. Ships
+  **`bin/forge-review-standards.sh`** (bash thin + Python 3 inline, mirroring
+  `forge-demeter-scan.sh`): walks `.forge/standards/` for `last_reviewed` /
+  `expires_at` frontmatter (top-level YAML + fenced ```yaml blocks in `*.md`),
+  classifies each standard FRESH / DUE-SOON / EXPIRED / STRUCTURAL against a
+  `--window` (default 30d), skips structural exceptions (`expires_at: never` +
+  `exception_constitutional: true`), and emits a deterministic
+  (`SOURCE_DATE_EPOCH`) Standards Review Report carrying the verbatim NIS2 /
+  DORA / CRA / AI Act regulatory-deadline calendar (copied from
+  `new-archetypes-plan.md` §7.1 I.6 bullet — never invented). **WARN-only** by
+  default (`standards-lifecycle.md` "WARN n'est jamais bloquant"): exit 0
+  CLEARED / 1 REVIEW-DUE / 2 usage / 3 BLOCKED (only under `--strict`).
+  `--bundle` **drives** (never forks) the I.6 `bundle.sh` after writing a
+  regulatory-deadline summary. New standard
+  `global/standards-review-rules.md` (`K5-RULE-001..005` catalogue), a sibling
+  monthly CI workflow `.github/workflows/forge-standards-review.yml`
+  (`on: schedule:` + `workflow_call:`, `continue-on-error: true`), and
+  registration parity with Demeter (`CLAUDE.md` + `docs/GUIDE.md` +
+  `docs/COMPLIANCE.md`). The `standards-lifecycle.md` "Themis hook (deferred —
+  T7)" section flips to "shipped (K.5)". Gated by
+  `.forge/scripts/tests/k5.test.sh` (25 L1 + 2 L2). Additive — no constitution
+  amendment; `forge-compliance.yml` (I.5) and `bundle.sh` /
+  `compliance-artefacts-bundle.md` (I.6) untouched (their harnesses stay GREEN).
 - **`ai-native-rag` promoted to stable / scaffoldable — B.7 COMPLETE 9/9 (B.7.6, `b7-6-harness`)** —
   the promotion gate (final B.7 brick) flips `.forge/schemas/ai-native-rag/1.0.0.yaml`
   `stage: candidate → stable`, `scaffoldable: false → true`, so

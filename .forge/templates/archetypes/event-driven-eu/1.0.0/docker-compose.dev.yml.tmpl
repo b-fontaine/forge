@@ -1,0 +1,107 @@
+# <!-- Audit: B.6.2 (b6-2-scaffolder) — <project-name> dev stack (LOCAL DEV ONLY) -->
+#
+# =============================================================================
+# docker-compose.dev.yml — event-driven-eu archetype (LOCAL DEV ONLY)
+#
+# Services:
+#   ede-nats     — NATS server with JetStream enabled (the event backbone).
+#   ede-db       — PostgreSQL 17 event store (append-only `events` table).
+#   ede-backend  — Rust backend placeholder (replace with your built image).
+#
+# The OPTIONAL local-dev Temporal overlay lives separately in
+# infra/temporal/docker-compose.temporal.yml (`task temporal:up`) so the base dev
+# stack stays lean. The production NATS JetStream cluster (Helm) is B.6.6 — NOT
+# this file.
+#
+# Before `task dev:up`: cp .env.example .env and fill it in. .env is gitignored
+# and MUST NEVER be committed.
+#
+# WARNING: DEV ONLY. Production runs on Kubernetes (infra/, B.6.6).
+# =============================================================================
+
+# Compose v2 — no top-level `version:` key (deprecated 2024-01).
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # ede-nats — NATS + JetStream (persistent event backbone, single-node dev).
+  # Production clustering (RAFT / 3-node) is infra/nats-jetstream.md (B.6.3/B.6.6).
+  # ---------------------------------------------------------------------------
+  ede-nats:
+    image: nats:2.10-alpine
+    command: ["-c", "/etc/nats/jetstream.conf"]
+    ports:
+      - "${ARG_NATS_PORT:-4222}:4222"   # client
+      - "8222:8222"                     # monitoring
+    volumes:
+      - ede-nats-data:/data
+      - ./infra/nats/jetstream.conf:/etc/nats/jetstream.conf:ro
+    networks: [ede-dev]
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8222/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  # ---------------------------------------------------------------------------
+  # ede-db — PostgreSQL 17 event store. init-eventstore.sql runs on first boot.
+  # ---------------------------------------------------------------------------
+  ede-db:
+    image: postgres:17-alpine
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-<project-name>_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-<project-name>_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${ARG_DB_PORT:-5432}:5432"
+    volumes:
+      - ede-db-data:/var/lib/postgresql/data
+      - ./infra/postgres/init-eventstore.sql:/docker-entrypoint-initdb.d/10-init-eventstore.sql:ro
+    networks: [ede-dev]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-<project-name>_user} -d ${POSTGRES_DB:-<project-name>_dev}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # ede-backend — Rust backend placeholder (bin-server). Replace with your built
+  # image (e.g. ghcr.io/org/<project-name>-backend:dev) once your Dockerfile is
+  # built; the placeholder just reaches steady state so `task dev:up` succeeds.
+  # ---------------------------------------------------------------------------
+  ede-backend:
+    image: traefik/whoami:v1.11.0
+    command: ["--port=8080"]
+    env_file: .env
+    environment:
+      NATS_URL: ${NATS_URL:-nats://ede-nats:4222}
+      DATABASE_URL: ${DATABASE_URL}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "${ARG_BACKEND_PORT:-8080}:8080"
+    networks: [ede-dev]
+    depends_on:
+      ede-nats:
+        condition: service_healthy
+      ede-db:
+        condition: service_healthy
+    healthcheck:
+      disable: true
+
+# =============================================================================
+# Networks — single named network; the default bridge is FORBIDDEN per standard.
+# =============================================================================
+networks:
+  ede-dev:
+    driver: bridge
+    name: ede-dev
+
+# =============================================================================
+# Volumes — named volumes persist JetStream + Postgres data between runs.
+# =============================================================================
+volumes:
+  ede-nats-data:
+  ede-db-data:

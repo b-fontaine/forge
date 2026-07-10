@@ -91,6 +91,7 @@ jobs:
             "t5-otel-dartastic.test.sh --level 1"
             "j8.test.sh --level 1,2"
             "k3.test.sh --level 1,2"
+            "k5.test.sh --level 1,2"
             "i2.test.sh --level 1"
             "i6.test.sh --level 1,2"
             "i3.test.sh --level 1,2"
@@ -136,6 +137,11 @@ jobs:
             # post-flip guards run buf-less/cargo-less. Its L2 live-codegen legs
             # (buf generate / cargo build / Qwik tsc) run in the harness-rust job.
             "b7-6.test.sh --level 1"
+            # B.6 event-driven-eu chain (b6-1 schema, b6-2 scaffolder). L1 is the CI
+            # level; b6-2's L2 (cargo check on the rendered backend) is
+            # toolchain-gated and stays local/opt-in (the harness job has no rust).
+            "b6-1.test.sh --level 1,2"
+            "b6-2.test.sh --level 1"
             "k4.test.sh --level 1,2"
           )
           fail=0
