@@ -105,16 +105,39 @@ d'amendement de Constitution** (Article XII) :
 `t4.test.sh::_test_t4_025` vérifie que ce document liste explicitement
 `transport.yaml` et `state-management.yaml` dans la table ci-dessus.
 
-## Themis hook (deferred — T7)
+## Themis hook (shipped — K.5)
 
-L'automation mensuelle de la revue (génération d'issues Forge changes pour
-chaque standard expirant dans les 30 jours) est la responsabilité de
-l'agent **Themis** (compliance officer, module K.5 du plan
-`docs/new-archetypes-plan.md`). Themis n'est PAS livré dans ce change
-(t4) ; sa livraison est planifiée en T7 lors des modules B.6/B.7.
+> **Audit** : K.5 (`k5-themis`, 2026-07-10). La section "deferred — T7"
+> est mise à jour (delta Article IV.1) : l'agent **Themis** est livré.
 
-Jusqu'à T7, la revue est manuelle : le mainteneur scanne `verify.sh`
-pour les WARN d'expiration et ouvre les changes correspondants à la main.
+L'automation de la revue est désormais la responsabilité de l'agent
+**Themis** (compliance officer, module K.5 —
+`.claude/agents/themis.md`), qui expose le hook `forge review-standards`
+via le CLI **`bin/forge-review-standards.sh`**. Le CLI :
+
+1. walk `.forge/standards/` pour le frontmatter `last_reviewed` /
+   `expires_at` (YAML top-level dans les `*.yaml` + bloc fencé
+   ```` ```yaml ```` dans les `*.md`) ;
+2. classe chaque standard FRESH / DUE-SOON / EXPIRED / STRUCTURAL contre
+   une fenêtre `--window` configurable (défaut 30 jours) ;
+3. skippe les exceptions structurelles (`expires_at: never` +
+   `exception_constitutional: true`) — seul un amendement Article XII
+   les touche ;
+4. émet un Standards Review Report déterministe (JSON / Markdown) portant
+   le calendrier réglementaire NIS2 / DORA / CRA / AI Act, et pilote
+   optionnellement (`--bundle`) le bundle I.6.
+
+Le catalogue de règles (`K5-RULE-001..005`) vit dans
+`.forge/standards/global/standards-review-rules.md`. La cadence mensuelle
+tourne via le workflow sibling
+`.github/workflows/forge-standards-review.yml` (`on: schedule:` +
+`workflow_call:`, `continue-on-error: true` — WARN-only, non bloquant).
+
+Le CLI reste **WARN-only par défaut** (exit 1 = REVIEW-DUE, non
+bloquant), conformément à la doctrine "WARN n'est jamais bloquant"
+ci-dessus ; un opt-in `--strict` transforme un standard expiré en exit 3
+(BLOCKED) pour les adopters qui veulent un gate dur. Le mainteneur peut
+toujours scanner `verify.sh` manuellement — Themis automatise ce scan.
 
 ## Linter integration
 
