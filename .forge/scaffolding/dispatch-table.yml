@@ -185,4 +185,25 @@ forbidden_combinations:
     since: "0.5.0"
     alternative: "Mistral on Scaleway (SecNumCloud) or self-hosted vLLM on EU infrastructure"
     rule_id: J8-RULE-006
+  # ── B.6.10 (b6-10-janus-rule) — event-driven-eu Kafka-SaaS refusals ──
+  # <!-- Audit: B.6.10 (b6-10-janus-rule) -->
+  # Sibling of the J.8.c LLM-provider entries above. Enforces the schema flag
+  # event_specifics.eu_sovereignty.no_kafka_saas_us (event-driven-eu/1.0.0.yaml):
+  # Confluent Cloud (US-managed Kafka SaaS) is refused as the event broker
+  # regardless of tier; at T3 any US-managed Kafka SaaS is refused. Sanctioned
+  # brokers = self-hosted NATS JetStream (default) / Redpanda (EU-deployable).
+  - archetype: event-driven-eu
+    provider: confluent-cloud
+    tier: any            # fires regardless of declared tier (never a valid default)
+    reason: "Confluent Cloud = US-managed Kafka SaaS ; Schrems II / CLOUD Act incompatible with the event-driven-eu EU-sovereign posture (schema event_specifics.eu_sovereignty.no_kafka_saas_us)"
+    since: "0.6.0"
+    alternative: "self-hosted NATS JetStream (the archetype default) or Redpanda (Kafka-API-compatible, self-hostable, EU-deployable) on EU infrastructure"
+    rule_id: J8-RULE-007
+  - archetype: event-driven-eu
+    provider: us-managed-kafka
+    tier: T3
+    reason: "T3 (SecNumCloud / EUCS High) requires 100% EU jurisdiction ; any US-managed Kafka SaaS (Confluent Cloud / AWS MSK / Azure Event Hubs) is CLOUD Act exposure"
+    since: "0.6.0"
+    alternative: "self-hosted NATS JetStream or Redpanda on EU infrastructure (SecNumCloud / OVHcloud / Scaleway)"
+    rule_id: J8-RULE-008
 

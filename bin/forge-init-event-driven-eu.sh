@@ -95,6 +95,21 @@ if [ "${FORGE_EDE_FORCE_SCAFFOLD:-0}" != "1" ] && ! is_scaffoldable; then
   exit 3
 fi
 
+# ── B.6.10 b6-10-janus-rule — event-broker combination refusal (FR-B6-JR-041) ──
+# Defense-in-depth scaffold-time refusal of a non-sovereign event broker
+# (Confluent Cloud at any tier ; any US-managed Kafka SaaS at T3) per
+# J8-RULE-007/008. REUSES the _refuse_if_forbidden_combination helper shipped by
+# b7-9-janus-ai (already sourced above) — no new helper. Positioned AFTER the
+# scaffoldability gate so it only fires post-promotion (a candidate init never
+# reaches here — the gate above refuses first). The configured broker comes from
+# FORGE_EDE_EVENT_BROKER ; the scaffold's sovereign default (nats-jetstream, or
+# the acceptable Redpanda alternative) does not refuse. The helper resolves the
+# tier ($FORGE_EU_TIER → .forge/.forge-tier) and fail-opens when the
+# dispatch-table is unreachable.
+if declare -f _refuse_if_forbidden_combination >/dev/null 2>&1; then
+  _refuse_if_forbidden_combination "$ARCHETYPE" "${FORGE_EDE_EVENT_BROKER:-nats-jetstream}"
+fi
+
 # ── Parse stable ABI flags (reached only once scaffoldable / under override) ──
 TARGET=""
 PROJECT_NAME=""
