@@ -142,6 +142,7 @@ jobs:
             # toolchain-gated and stays local/opt-in (the harness job has no rust).
             "b6-1.test.sh --level 1,2"
             "b6-2.test.sh --level 1"
+            "k4.test.sh --level 1,2"
           )
           fail=0
           for entry in "${harnesses[@]}"; do

@@ -402,6 +402,14 @@ standards:
     scope: all
     priority: high
 
+  # ─── K.4 — Iris-Web Qwik frontend patterns (k4-iris-web) ─────────
+
+  - id: global/qwik-frontend-patterns
+    path: standards/global/qwik-frontend-patterns.md
+    triggers: [iris-web, qwik, qwik-city, sveltekit, resumability, routes, ssr, ssg, connect-es, streaming-ui, vitest, web-frontend-patterns, k4-rule]
+    scope: frontend
+    priority: high
+
   # ─── I.2 — Compliance tiers (i2-compliance-tiers) ────────────────
 
   - id: global/compliance-tiers

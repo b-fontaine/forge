@@ -1,0 +1,20 @@
+name: k4-iris-web
+status: archived
+created: 2026-07-10
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - K.4   # ARCHITECTURE-TARGET §9.2 line 734 — Iris-Web (frontend web specialist, Qwik/SvelteKit)
+depends_on:
+  - b8-9-qwik-web-public  # ships web-frontend.yaml v1.0.0 + the 2.0.0 frontend/web-public/ Qwik City surface Iris-Web owns conventions for
+  - b7-10-streaming       # ships the Connect-ES streaming client precedent (connect-client.ts, progressive render, cancel-on-unmount) the standard codifies
+  - j8-janus-rules        # ships the <MODULE>-RULE-NNN namespace format K4-RULE-* extends
+archived_to:
+  - .forge/specs/qwik-frontend.md  # 26 ADDED FRs (FR-K4-IW-001..125) + 6 NFRs + 4 ADRs (ADR-K4-001..004)
+timeline:
+  proposed: 2026-07-10
+  specified: 2026-07-10
+  designed: 2026-07-10
+  planned: 2026-07-10
+  implemented: 2026-07-10
+  archived: 2026-07-10
