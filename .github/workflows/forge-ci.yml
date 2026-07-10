@@ -136,6 +136,7 @@ jobs:
             # post-flip guards run buf-less/cargo-less. Its L2 live-codegen legs
             # (buf generate / cargo build / Qwik tsc) run in the harness-rust job.
             "b7-6.test.sh --level 1"
+            "k4.test.sh --level 1,2"
           )
           fail=0
           for entry in "${harnesses[@]}"; do
