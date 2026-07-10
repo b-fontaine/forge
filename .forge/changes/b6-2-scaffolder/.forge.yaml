@@ -1,0 +1,24 @@
+name: b6-2-scaffolder
+status: archived
+created: 2026-07-10
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.6.2  # docs/new-archetypes-plan.md §6.1 — event-driven-eu scaffolder (full): templates + backbone + verify-then-pin
+depends_on:
+  - B.6.1  # .forge/schemas/event-driven-eu/1.0.0.yaml (candidate scaffold schema this brick realises as templates)
+timeline:
+  proposed: 2026-07-10
+  specified: 2026-07-10
+  designed: 2026-07-10
+  planned: 2026-07-10
+  implemented: 2026-07-10
+  archived: 2026-07-10
+# NOTE (Article V): authored + implemented by a single executor in one session.
+# An INDEPENDENT reviewer + maintainer ratification pass is the one honest gate
+# deferred — recorded, not self-approved. Objective archive criteria are GREEN:
+# rendered backend cargo test 16/0 + clippy -D warnings + fmt --check clean;
+# b6-2.test.sh L1 10/10 + L2 3/3; forge init --archetype event-driven-eu → exit 3;
+# cli npm test 88/89 (the 1 failure is the PRE-EXISTING ai-native-rag scaffold
+# fixture, B.7 scope, reproduced on the b6-2-reverted baseline — not this change);
+# verify.sh + constitution-linter no regression.

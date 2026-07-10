@@ -11,7 +11,8 @@ Options:
   --source <dir>          local Forge source checkout (default: the files
                           bundled with this CLI)
   --archetype <name>      explicit archetype (e.g. default |
-                          full-stack-monorepo | mobile-only | ai-native-rag)
+                          full-stack-monorepo | mobile-only | ai-native-rag |
+                          event-driven-eu)
   --auto                  auto-detect archetype from target dir signals
                           (default: false)
   --wizard                force interactive wizard mode (default: false)

@@ -1,0 +1,22 @@
+name: b6-1-schema
+status: archived
+created: 2026-07-10
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.6.1  # docs/new-archetypes-plan.md §6.1 — event-driven-eu/1.0.0.yaml (extends tdd-rust + event-design/saga-orchestration phases)
+depends_on:
+  - B.8.3.b  # check_versioned_schema_siblings (validate-foundations.sh) — the generic versioned-schema validator this file must satisfy ON LANDING
+  - B.8.14   # cli/src/domain/schema-version.ts selectScaffoldableVersion — candidate/scaffoldable:false ⇒ no scaffoldable version. Init refuses exit 2 (unknown archetype) until B.6.2 registers event-driven-eu; exit 3 (selectScaffoldableVersion null) thereafter
+timeline:
+  proposed: 2026-07-10
+  specified: 2026-07-10
+  designed: 2026-07-10
+  planned: 2026-07-10
+  implemented: 2026-07-10
+  archived: 2026-07-10
+# NOTE (Article V): authored + implemented by a single executor in one session.
+# An INDEPENDENT reviewer + maintainer ratification pass (the b7-1 precedent) is
+# the one honest gate deferred — recorded here rather than self-approved. Tests
+# are GREEN (b6-1.test.sh 18/18, validate-foundations PASS, verify.sh +
+# constitution-linter no regression) which is the objective archive criterion.

@@ -1,0 +1,18 @@
+# <!-- Audit: B.6.2 (b6-2-scaffolder) — events crate (NATS JetStream backbone) -->
+[package]
+name = "events"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+async-nats = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }

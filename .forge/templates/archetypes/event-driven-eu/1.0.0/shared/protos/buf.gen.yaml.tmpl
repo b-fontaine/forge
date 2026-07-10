@@ -1,0 +1,34 @@
+# <!-- Audit: B.6.2 (b6-2-scaffolder) — codegen manifest -->
+# Code generation for <project-name>'s proto contracts (transport.yaml). Drives the
+# Rust gRPC/Connect stubs + the TS client from a single proto source. Regenerate
+# with `task proto` (or `buf generate`). Pins for the Connect Rust crate family
+# (connectrpc / neoeinstein-tonic / neoeinstein-prost) live in transport.yaml, not
+# here (that standard is the single source of truth for transport pins).
+#
+# event-driven-eu has no Flutter surface (ADR-B6-1-004), so no Dart plugin ships.
+version: v2
+
+managed:
+  enabled: true
+
+plugins:
+  # ── Rust (tonic — server + client) — Article VII.2 gRPC ──
+  - remote: buf.build/community/neoeinstein-tonic:v0.4.0
+    out: ../../backend/gen/rust
+    opt:
+      - no_server=false
+      - no_client=false
+  # ── Rust (prost — messages) ──
+  - remote: buf.build/community/neoeinstein-prost:v0.4.0
+    out: ../../backend/gen/rust
+  # ── Connect codegen — TS (Connect v2 / Protobuf-ES v2) ──
+  - remote: buf.build/bufbuild/es:v2.2.0
+    out: gen/ts
+    opt:
+      - target=ts
+      - import_extension=js
+  # ── Connect codegen — Go (forward-compat) ──
+  - remote: buf.build/connectrpc/go:v1.20.0
+    out: gen/go
+    opt:
+      - paths=source_relative

@@ -1,0 +1,22 @@
+# <!-- Audit: B.6.2 (b6-2-scaffolder) — saga crate (Temporal activity-only orchestration) -->
+[package]
+name = "saga"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[features]
+default = []
+# Pulls the pre-alpha native Temporal SDK. OFF by default so `cargo build`/`test`
+# stays hermetic and never compiles the unstable workflow API (activity-only bias,
+# infra/temporal.md). Enable with `--features temporal-sdk` to wire a real worker.
+temporal-sdk = ["dep:temporalio-sdk", "dep:temporalio-client"]
+
+[dependencies]
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+temporalio-sdk = { workspace = true, optional = true }
+temporalio-client = { workspace = true, optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true }

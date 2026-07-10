@@ -1,0 +1,46 @@
+# <!-- Audit: B.6.2 (b6-2-scaffolder) — <project-name> OPTIONAL local-dev Temporal overlay -->
+#
+# =============================================================================
+# OPTIONAL local-dev Temporal (dev server + Web UI). Kept SEPARATE from the base
+# docker-compose.dev.yml so the everyday NATS+Postgres loop stays lean. Start with
+# `task temporal:up`.
+#
+#   temporalio/auto-setup — an all-in-one dev server (its own ephemeral store); do
+#   NOT use for staging/prod. The PRODUCTION Temporal cluster (history/matching/
+#   frontend/worker + Postgres backing, Helm) is B.6.6 — NOT this overlay.
+#
+# ⚠️ The native Rust SDK (temporalio-sdk) the backend saga layer targets is
+#   Public Preview / pre-alpha (infra/temporal.md); the backend runs it
+#   activity-only and only behind the OFF-by-default `temporal-sdk` feature.
+# =============================================================================
+
+services:
+  ede-temporal:
+    image: temporalio/auto-setup:1.25.2
+    ports:
+      - "${TEMPORAL_GRPC_PORT:-7233}:7233"   # frontend gRPC
+    environment:
+      - DB=sqlite                            # dev-only ephemeral store
+    networks: [ede-temporal-dev]
+    healthcheck:
+      test: ["CMD", "tctl", "--address", "localhost:7233", "cluster", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  ede-temporal-ui:
+    image: temporalio/ui:2.34.0
+    depends_on:
+      ede-temporal:
+        condition: service_started
+    environment:
+      - TEMPORAL_ADDRESS=ede-temporal:7233
+    ports:
+      - "${TEMPORAL_UI_PORT:-8233}:8080"     # Web UI
+    networks: [ede-temporal-dev]
+
+networks:
+  ede-temporal-dev:
+    driver: bridge
+    name: ede-temporal-dev

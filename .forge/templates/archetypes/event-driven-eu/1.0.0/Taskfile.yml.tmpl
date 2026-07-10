@@ -1,0 +1,55 @@
+# <!-- Audit: B.6.2 (b6-2-scaffolder) — <project-name> task runner -->
+# go-task (https://taskfile.dev) tasks for local dev. `task --list` to enumerate.
+version: '3'
+
+tasks:
+  default:
+    cmds: [task --list]
+
+  dev:up:
+    desc: Start the local dev stack (NATS JetStream + Postgres event store).
+    cmds:
+      - test -f .env || (echo ".env missing — cp .env.example .env and fill it in" && exit 1)
+      - docker compose -f docker-compose.dev.yml up -d
+
+  dev:down:
+    desc: Stop the local dev stack.
+    cmds:
+      - docker compose -f docker-compose.dev.yml down
+
+  temporal:up:
+    desc: Start the OPTIONAL local-dev Temporal overlay (dev server + UI).
+    cmds:
+      - docker compose -f infra/temporal/docker-compose.temporal.yml up -d
+
+  temporal:down:
+    cmds:
+      - docker compose -f infra/temporal/docker-compose.temporal.yml down
+
+  backend:build:
+    desc: Build the Rust backend workspace.
+    dir: backend
+    cmds: [cargo build --workspace]
+
+  backend:test:
+    desc: Test the Rust backend workspace (TDD gate).
+    dir: backend
+    cmds: [cargo test --workspace]
+
+  backend:lint:
+    desc: Clippy + rustfmt gate (Tribune).
+    dir: backend
+    cmds:
+      - cargo clippy --workspace --all-targets -- -D warnings
+      - cargo fmt --all --check
+
+  proto:
+    desc: Generate Connect/gRPC stubs + AsyncAPI-derived outputs from shared/protos.
+    dir: shared/protos
+    cmds: [buf generate]
+
+  asyncapi:validate:
+    desc: Validate the AsyncAPI 3.1 event contracts.
+    dir: shared/asyncapi
+    cmds:
+      - npx -y @asyncapi/cli validate asyncapi.yaml
