@@ -14,6 +14,29 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ### Added
 
+- **Janus event-broker refusal rules for `event-driven-eu` (B.6.10, `b6-10-janus-rule`)** —
+  the standard interdiction from `new-archetypes-plan.md` §6.1 B.6.10 ("pas de
+  Kafka SaaS US (Confluent Cloud), Redpanda acceptable"), enforced at scaffold
+  time as two new Janus rules in the `J8-RULE-NNN` catalogue : **`J8-RULE-007`**
+  refuses **Confluent Cloud** (US-managed Kafka SaaS) as the `event-driven-eu`
+  event broker regardless of declared tier ; **`J8-RULE-008`** refuses any
+  US-managed Kafka SaaS (Confluent Cloud / AWS MSK / Azure Event Hubs) at
+  `--eu-tier T3`. The sanctioned brokers are the archetype's default self-hosted
+  **NATS JetStream** or the acceptable Kafka-API-compatible **Redpanda**
+  (self-hostable, EU-deployable), per the schema flag
+  `event_specifics.eu_sovereignty.no_kafka_saas_us`. The brick **reuses** the
+  `dispatch-table.yml::forbidden_combinations:` registry + the
+  `_refuse_if_forbidden_combination` helper shipped by `b7-9-janus-ai` (J.8.c) —
+  it appends two entries + a wrapper call site in
+  `bin/forge-init-event-driven-eu.sh`, with no new registry or helper. A
+  complementary review-time surface adds `confluent-cloud` to
+  `compliance-tiers.md::forbidden:` (v1.1.0 → v1.2.0) so the generic I.3
+  `T3-RULE-005` linter catches it (with a matching `constitution-linter.sh`
+  `REMEDIATION` hint) ; `forbidden-components-rules.md` gains an event-broker
+  coupling note (v1.1.0 → v1.2.0). Gated by a new
+  `.forge/scripts/tests/b6-10.test.sh` (12 tests : 9 L1 + 3 L2), registered in
+  `forge-ci.yml`. The archived `b7-9.test.sh` numbering guard was relaxed to
+  permit the newly-allocated `J8-RULE-007/008` (sibling-harness coupling).
 - **Iris-Web frontend web specialist agent (K.4, `k4-iris-web`)** — a new
   `.claude/agents/iris-web.md` persona that maintains the Qwik / SvelteKit
   web-frontend conventions for the `full-stack-monorepo` `frontend/web-public/`
