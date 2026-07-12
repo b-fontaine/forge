@@ -730,18 +730,20 @@ if "skipped" not in joined_run:
 PY
 }
 
-# NFR-CI-002 + FR-CI-013 — workflow ≤ 380 lines (bumped 250→300 2026-05-12;
+# NFR-CI-002 + FR-CI-013 — workflow ≤ 400 lines (bumped 250→300 2026-05-12;
 # 300→340 2026-06-23 by b7-7-example for the MODIFIED FR-CI-012 second-tree
 # RAG gate; 340→380 2026-06-23 by b7-6-harness for the new harness-rust job —
-# the ai-native-rag live codegen/build gate, ADR-B7-6-005).
+# the ai-native-rag live codegen/build gate, ADR-B7-6-005; 380→400 2026-07-12 by
+# b6-7-harness for the event-driven-eu promotion gate's harness-rust L2 step,
+# ADR-B6-7-005/007).
 test_forge_ci_under_size_budget() {
   if [ ! -f "$WORKFLOW_FILE" ]; then
     echo "    workflow file missing" >&2; return 1
   fi
   local lines
   lines=$(wc -l < "$WORKFLOW_FILE" | tr -d ' ')
-  if [ "$lines" -gt 380 ]; then
-    echo "    forge-ci.yml is $lines lines (> 380 NFR-CI-002 budget)" >&2
+  if [ "$lines" -gt 400 ]; then
+    echo "    forge-ci.yml is $lines lines (> 400 NFR-CI-002 budget)" >&2
     return 1
   fi
 }

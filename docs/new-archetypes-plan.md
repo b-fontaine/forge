@@ -2560,6 +2560,12 @@ fallback natif si push critique.
 - **B.6.6.** Templates Helm Temporal cluster (history/matching/frontend/worker) avec
   Postgres backing. Documentation T2/T3 (self-host EU). Effort : `M`.
 - **B.6.7.** Snapshot tarball + harness `b6.test.sh` (≥ 35 tests). Effort : `M`.
+  **✅ Done 2026-07-12 (`b6-7-harness`):** `b6-7.test.sh` (36 tests — Tier A aggregation
+  of b6-1/2/3/4/5/6/9/10 + Tier B e2e + Tier C live `buf build`/`cargo test` + Tier D
+  promotion guard) + committed snapshot `.forge/scaffold-snapshots/event-driven-eu/1.0.0.tar.gz`
+  + the suite-gated flip `candidate → stable`/`scaffoldable: true` (schema + dispatch
+  `status`, sibling held-guards inverted in lockstep). `forge init --archetype
+  event-driven-eu` now renders (no longer exit 3). B.6.8 (example) soft-follows this flip.
 - **B.6.8.** Reference project `examples/forge-eda-example/` avec 3 demos :
   ingestion HTTP → NATS, projection event store → read model, saga 3-steps. Effort : `L`.
 - **B.6.9.** Compliance hooks : SBOM CycloneDX auto-generation, NIS2 incident reporting

@@ -1,0 +1,28 @@
+name: b6-7-harness
+status: archived
+archived_to:
+  - .forge/specs/event-driven-eu.md  # B.6.7 ADDED/MODIFIED block (FR-B6-7-* / NFR-B6-7-* / ADR-B6-7-*) appended at archive ; prior B.6 blocks preserved
+created: 2026-07-12
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.6.7  # docs/new-archetypes-plan.md §6.1 / §0.13 — event-driven-eu promotion gate: b6-7.test.sh ≥35 + live buf generate/cargo wiring + snapshot tarball + candidate→stable/scaffoldable:true flip (ADR-B6-1-002)
+depends_on:
+  - B.6.1   # .forge/schemas/event-driven-eu/1.0.0.yaml — the candidate schema this brick flips to stable/scaffoldable:true
+  - B.6.2   # .forge/templates/archetypes/event-driven-eu/1.0.0/** + bin/forge-init-event-driven-eu.sh — the gated scaffolder body whose deferred codegen (buf generate / cargo fetch) this brick wires + verifies
+  - B.6.3   # global/{event-driven,asyncapi-contracts}.md + infra/nats-jetstream.md — pattern standards the rendered tree must still conform to under live codegen+build
+  - B.6.4   # b6-4 compliance artefacts aggregated by the promotion suite
+  - B.6.5   # b6-5 per-layer CI templates aggregated by the promotion suite
+  - B.6.6   # b6-6 Helm charts aggregated by the promotion suite
+  - B.6.9   # b6-9 compliance-family harness aggregated by the promotion suite
+  - B.6.10  # b6-10-janus-rule — event-broker refusal aggregated by the promotion suite
+# Soft relation (NOT a hard depends_on): B.6.8 (examples/forge-eda-example/) consumes
+# the promoted scaffoldable archetype; B.6.8 should land AFTER this flip so its example
+# can be (re)generated from a stable archetype. Promotion does not require B.6.8.
+timeline:
+  proposed: 2026-07-12
+  specified: 2026-07-12
+  designed: 2026-07-12
+  planned: 2026-07-12
+  implemented: 2026-07-12
+  archived: 2026-07-12

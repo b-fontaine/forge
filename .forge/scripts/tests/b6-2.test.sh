@@ -16,7 +16,7 @@
 #     T-006  wrapper refuses exit 3 + zero writes while candidate
 #     T-007  standards-conformance grep: NATS idempotency + event store + saga markers
 #     T-008  AsyncAPI 3.1 contract present + declares asyncapi: 3.1.0
-#     T-009  schema stays candidate/scaffoldable:false (promotion is B.6.7)
+#     T-009  schema is stable/scaffoldable:true (promoted candidate→stable in B.6.7)
 #     T-010  dispatch-table registers event-driven-eu (candidate) → wrapper path
 #   L2 (toolchain-gated, skip when absent):
 #     T-L2-001 render plan via overlay.sh → no .tmpl / no <placeholder>, byte-stable
@@ -115,14 +115,21 @@ _test_b62_l1_005_wrapper_present() {
 }
 
 _test_b62_l1_006_wrapper_refuses_while_candidate() {
+  # POST-PROMOTION (B.6.7 flip): the wrapper's scaffoldability gate is now OPEN
+  # (schema stable/scaffoldable:true), so it NO LONGER refuses with the candidate
+  # exit-3. Inverted from the pre-flip refusal contract by b6-7-harness (function
+  # name kept for the T-006 manifest). A probe with a missing required flag passes
+  # the gate and reaches arg-parsing → exit 2 (--target required), NOT the candidate
+  # 3, and emits NO [REFUSAL ...] — a fast check that does not trigger a full render
+  # (nor the wrapper's post-render buf/cargo steps).
   [ -f "$WRAPPER" ] || { echo "    FAIL T-006: wrapper missing (FR-B6-2-051)" >&2; return 1; }
-  local out; out="$(mk_tmpdir_with_trap b6-2-refuse)"
-  trap "rm -rf '$out'" RETURN
-  local rc=0
-  bash "$WRAPPER" --target "$out/proj" --project-name demo --reverse-domain com.example.demo >/dev/null 2>&1 || rc=$?
+  local err rc
+  err=$(bash "$WRAPPER" --project-name demo --reverse-domain com.example.demo 2>&1 1>/dev/null); rc=$?
   local ok=1
-  [ "$rc" = "3" ] || { echo "    FAIL T-006: wrapper exit $rc, expected 3 (candidate refusal) (FR-B6-2-051)" >&2; ok=0; }
-  [ ! -d "$out/proj" ] || { echo "    FAIL T-006: refused wrapper still created a scaffold dir (FR-B6-2-051)" >&2; ok=0; }
+  [ "$rc" != "3" ] || { echo "    FAIL T-006: wrapper still exits 3 (candidate refusal) AFTER the B.6.7 promotion (FR-B6-2-051)" >&2; ok=0; }
+  if printf '%s' "$err" | grep -qiE '\[REFUSAL'; then
+    echo "    FAIL T-006: wrapper still emits a [REFUSAL ...] AFTER promotion (should pass the gate); got: $err" >&2; ok=0
+  fi
   [ "$ok" = "1" ]
 }
 
@@ -153,10 +160,13 @@ _test_b62_l1_008_asyncapi_contract() {
 }
 
 _test_b62_l1_009_schema_still_candidate() {
+  # POST-PROMOTION (B.6.7 flip): the schema is now stage:stable / scaffoldable:true.
+  # Inverted from the pre-flip candidate assertion by b6-7-harness (function name kept
+  # for the T-009 manifest).
   [ -f "$SCHEMA" ] || { echo "    FAIL T-009: schema missing: $SCHEMA" >&2; return 1; }
   local ok=1
-  grep -qE '^\s*stage:\s*candidate' "$SCHEMA" || { echo "    FAIL T-009: schema stage != candidate — B.6.2 must NOT promote (promotion is B.6.7)" >&2; ok=0; }
-  grep -qE '^\s*scaffoldable:\s*false' "$SCHEMA" || { echo "    FAIL T-009: schema scaffoldable != false (b8-3b candidate⇒false)" >&2; ok=0; }
+  grep -qE '^\s*stage:\s*stable' "$SCHEMA" || { echo "    FAIL T-009: schema stage != stable — expected the B.6.7 promotion" >&2; ok=0; }
+  grep -qE '^\s*scaffoldable:\s*true' "$SCHEMA" || { echo "    FAIL T-009: schema scaffoldable != true — expected the B.6.7 promotion" >&2; ok=0; }
   [ "$ok" = "1" ]
 }
 
@@ -173,8 +183,8 @@ if a.get('name') != 'event-driven-eu':
     print("    FAIL T-010: dispatch name mismatch"); ok = False
 if a.get('scaffolder') != 'bin/forge-init-event-driven-eu.sh':
     print(f"    FAIL T-010: scaffolder path wrong: {a.get('scaffolder')!r}"); ok = False
-if a.get('status') != 'candidate':
-    print(f"    FAIL T-010: status must be candidate (got {a.get('status')!r}) — promotion is B.6.7"); ok = False
+if a.get('status') != 'stable':
+    print(f"    FAIL T-010: status must be stable (got {a.get('status')!r}) — promoted in B.6.7"); ok = False
 sys.exit(0 if ok else 1)
 PY
 }
