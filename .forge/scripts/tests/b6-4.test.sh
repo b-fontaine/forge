@@ -305,12 +305,17 @@ _test_b64_014_no_new_standard() {
 _test_b64_015_no_janus_index_edit() {
   # Divergence from b7-pythia: this brick wires NO Janus dispatch row and NO index
   # trigger. The persona may DESCRIBE Janus routing, but the Janus file itself must
-  # not gain a Hermes-Async dispatch row, and index.yml must not gain a hermes trigger.
+  # not gain a Hermes-Async dispatch row, and index.yml must not gain a hermes-async
+  # entry OF ITS OWN. Sibling standards (b6-3, global/event-driven.md and
+  # global/asyncapi-contracts.md) legitimately cite "hermes-async" inside their own
+  # `triggers: [...]` list — that's the standard describing its consumer, not this
+  # change editing index.yml — so only an `id:`/`path:` field naming hermes-async
+  # (i.e. a whole new entry authored BY this change) counts as a violation.
   if [ -f "$JANUS_AGENT" ] && grep -q "Hermes-Async" "$JANUS_AGENT"; then
     echo "    Janus edited (Hermes-Async row present in $JANUS_AGENT — out of scope, FR-B6-HA-083)" >&2; return 1
   fi
-  if [ -f "$STANDARDS_INDEX" ] && grep -qi "hermes-async" "$STANDARDS_INDEX"; then
-    echo "    standards index edited (hermes-async trigger in $STANDARDS_INDEX — out of scope, FR-B6-HA-083)" >&2; return 1
+  if [ -f "$STANDARDS_INDEX" ] && grep -Eiq '^\s*-?\s*(id|path)\s*:.*hermes-async' "$STANDARDS_INDEX"; then
+    echo "    standards index edited (hermes-async id/path entry in $STANDARDS_INDEX — out of scope, FR-B6-HA-083)" >&2; return 1
   fi
 }
 
