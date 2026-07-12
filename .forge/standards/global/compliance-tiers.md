@@ -4,13 +4,13 @@
 <!-- Trigger: compliance, t1, t2, t3, eu-tier, dpa, schrems, cloud-act, tier-classification -->
 
 ```yaml
-version: 1.1.0
-last_reviewed: 2026-06-22
-expires_at: 2027-06-22
+version: 1.2.0
+last_reviewed: 2026-07-10
+expires_at: 2027-07-10
 exception_constitutional: false
 linter_rule: t3-forbidden-components
 enforcement: ci         # flipped from 'review' by i3-t3-forbidden-linter, 2026-05-12
-forbidden: [vertex-ai, bedrock]   # LLM-provider tokens added by b7-9-janus-ai (J.8.c) ; I.3 (i3-t3-forbidden-linter) ENFORCES via T3-RULE-005
+forbidden: [vertex-ai, bedrock, confluent-cloud]   # LLM-provider tokens (b7-9-janus-ai, J.8.c) + event-broker token (b6-10-janus-rule, B.6.10) ; I.3 (i3-t3-forbidden-linter) ENFORCES via T3-RULE-005
 rationale: >-
   Codifies the EU compliance gradient T1/T2/T3 from
   docs/ARCHITECTURE-TARGET.md §10 so adopters and Demeter share a
@@ -50,6 +50,22 @@ rationale: >-
 > decision 2026-06-22, "Option B" — a versioned, mutable field must not
 > be exact-pinned by a sibling change's gate). The bump is recorded in
 > `REVIEW.md` (2026-06-22, `b7-9-janus-ai`).
+>
+> **Update (2026-07-10, `b6-10-janus-rule` / B.6.10)** — `forbidden:`
+> gains the event-broker token `confluent-cloud` (US-managed Kafka SaaS),
+> tracing to the same §10.2 `AWS / GCP / Azure` row (`CLOUD Act force max
+> T1`) and the `event-driven-eu` schema flag
+> `event_specifics.eu_sovereignty.no_kafka_saas_us: true`. The generic I.3
+> linter (`T3-RULE-005`) now catches it in working-tree manifests —
+> **complementary** to the scaffold-time Janus refusal (`J8-RULE-007..008`,
+> exit 3) shipped by the same change. The §10.2 matrix itself is unchanged
+> (no new row / cell — the byte-identical-to-ARCHITECTURE-TARGET Interdiction
+> 5 is preserved). Frontmatter **SemVer-bumped `1.1.0` → `1.2.0`**
+> (`last_reviewed` / `expires_at` → 2026-07-10 / 2027-07-10) per the
+> standards-lifecycle discipline for the additive token edit (FR-B6-JR-062).
+> `i2.test.sh::_test_i2_005` already accepts any valid semver/dates (relaxed
+> by `b7-9-janus-ai`), so no further harness change is needed. The bump is
+> recorded in `REVIEW.md` (2026-07-10, `b6-10-janus-rule`).
 
 ---
 

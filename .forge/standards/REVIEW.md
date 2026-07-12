@@ -1043,3 +1043,35 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   `ai-act-dora-artefacts.md` + `docs/COMPLIANCE.md` stale "NIS2 reserved" prose
   updated to "NIS2 shipped (B.6.9), CRA reserved". This standard ships as
   Markdown, so `bin/validate-standards-yaml.sh` (J.7) does not gate it.
+
+## 2026-07-10 — Janus event-broker rules (b6-10-janus-rule, B.6.10)
+
+- **Reviewer**: @bfontaine
+- **Reviewed standards**:
+
+  | Standard                            | Version       | Decision          | Next review due | Notes                                                                                                          |
+  |-------------------------------------|---------------|-------------------|-----------------|----------------------------------------------------------------------------------------------------------------|
+  | global/janus-orchestration-rules.md | (md, no semver) | KEEP-WITH-CHANGES | 2027-07-10      | +2 catalogue rows (J8-RULE-007/008) ; "Refusal vs warning semantics" + "full rule body" prose note the two new `event-driven-eu` event-broker refusals. Content review (no `version:` frontmatter — `.md` pattern standard). |
+  | global/compliance-tiers.md          | 1.1.0 → 1.2.0 | KEEP-WITH-CHANGES | 2027-07-10      | `forbidden:` `[vertex-ai, bedrock]` → `[vertex-ai, bedrock, confluent-cloud]` (event-broker token) so the generic I.3 T3-RULE-005 review-time linter catches it ; §10.2 matrix UNCHANGED (byte-identical-to-ARCHITECTURE-TARGET Interdiction 5 preserved). **SemVer-minor bump 1.1.0 → 1.2.0** (`last_reviewed`/`expires_at` → 2026-07-10 / 2027-07-10) per standards-lifecycle for the additive token edit (FR-B6-JR-062). `i2.test.sh::_test_i2_005` already accepts any valid semver/dates (relaxed by b7-9), so no further harness change needed. |
+  | global/forbidden-components-rules.md| 1.1.0 → 1.2.0 | KEEP-WITH-CHANGES | 2027-07-10      | New "Event-broker `forbidden:` coupling" subsection documenting the `confluent-cloud` token + the `J8-RULE-007..008` scaffold-time cross-reference ; NO new `T3-RULE-NNN` ID consumed (reserved `T3-RULE-008` Persistence slot untouched). **SemVer-minor bump 1.1.0 → 1.2.0** (`last_reviewed`/`expires_at` → 2026-07-10 / 2027-07-10). `i3.test.sh::_test_i3_008` already semver-validity only (relaxed by b7-9). |
+
+- **Decision**: KEEP-WITH-CHANGES — all three edits are additive (Article XII
+  "Extending the catalogue" protocol, NOT amendments ; no `[T1,T2,T3]` enum
+  change, no refusal-semantics change).
+- **Next review due**: 2027-07-10 (12-month cycle).
+- **Notes**: B.6.10 lands the Janus refusal rules for the `event-driven-eu`
+  event broker — `J8-RULE-007` (Confluent Cloud default refused, any tier),
+  `J8-RULE-008` (`--eu-tier T3` ⇒ any US-managed Kafka SaaS refused ; NATS
+  JetStream / Redpanda self-host forced). Reuses the `forbidden_combinations:`
+  registry + `_refuse_if_forbidden_combination` helper shipped by
+  `b7-9-janus-ai` (append entries + wrapper call site only ; no new
+  registry/helper). Two complementary enforcement surfaces (ADR-B6-JR-004) :
+  scaffold-time Janus refusal (exit 3) + review-time I.3 T3-RULE-005
+  (`confluent-cloud` token, tier-scaled WARN/FAIL). Sanctioned brokers verified
+  verbatim against the event-driven-eu schema
+  `event_specifics.eu_sovereignty.acceptable: [nats-jetstream, redpanda]`
+  (ADR-B6-JR-005). Rule-ID block `J8-RULE-007..008` allocated sequentially
+  after the live `J8-RULE-006` (ADR-J8-004 numbering invariant ; never reused).
+  The archived `b7-9.test.sh::_test_b7_9_005` numbering guard was relaxed to
+  permit 007/008 (ADR-B6-JR-006 — sibling-harness coupling, same discipline b7-9
+  applied to i2/i3).

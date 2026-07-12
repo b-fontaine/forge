@@ -434,3 +434,54 @@ self-hosted vLLM.
 
 Full design rationale + collision analysis + Open Questions resolution :
 `.forge/changes/b7-9-janus-ai/design.md` + `open-questions.md`.
+
+## B.6.10 — Janus event-broker rules for `event-driven-eu` (b6-10-janus-rule)
+
+<!-- Audit: B.6.10 (b6-10-janus-rule) — archived 2026-07-10. -->
+<!-- ADDED block ; the J.8.a / J.8.b / J.8.c / J.8.d blocks above are preserved unchanged. -->
+
+Constitution v2.0.0 (no amendment — B.6.10 ENFORCES the EU-sovereign
+event-broker posture already encoded in the `event-driven-eu` schema
+`event_specifics.eu_sovereignty` + `compliance-tiers.md` §10.2). The direct
+sibling of J.8.c : same `forbidden_combinations:` registry, same
+`_refuse_if_forbidden_combination` helper (REUSED, not re-created), same
+exit-3 / `[REFUSAL:]` convention, same I.3 review-time token coupling. Source
+plan : `docs/new-archetypes-plan.md` §6.1 (B.6.10).
+
+### Functional Requirements (B.6.10)
+
+- **FR-B6-JR-001** — New H3 `### Event-broker rules (\`event-driven-eu\`)` INSIDE the existing "Forbidden archetypes & combinations" H2 of `cross-layer-orchestrator.md`, after the J.8.c LLM-provider H3, before "Refusal semantics".
+- **FR-B6-JR-002** — `J8-RULE-007` : Confluent Cloud refused as event broker (any tier ; named US-managed Kafka SaaS, never a valid default).
+- **FR-B6-JR-003** — `J8-RULE-008` : `--eu-tier T3` ⇒ any US-managed Kafka SaaS refused (NATS JetStream / Redpanda self-host forced).
+- **FR-B6-JR-004** — Rule-body parity with `J8-RULE-004..006` (Rationale / Reference / Alternative / tier applicability).
+- **FR-B6-JR-005** — Audit anchor `<!-- Audit: B.6.10 (b6-10-janus-rule) -->` on the new H3.
+- **FR-B6-JR-020/021** — Two entries appended to the EXISTING `dispatch-table.yml::forbidden_combinations:` (confluent-cloud/any/J8-RULE-007 ; us-managed-kafka/T3/J8-RULE-008), `since: "0.6.0"`.
+- **FR-B6-JR-040/041** — The `_refuse_if_forbidden_combination` helper is REUSED (not modified/duplicated) ; `bin/forge-init-event-driven-eu.sh` invokes it (`"${FORGE_EDE_EVENT_BROKER:-nats-jetstream}"`) after the scaffoldability gate.
+- **FR-B6-JR-060/061** — `janus-orchestration-rules.md` catalogue += 2 rows ; "Refusal vs warning semantics" + "full rule body" prose updated.
+- **FR-B6-JR-062/063/064** — `compliance-tiers.md::forbidden:` += `confluent-cloud` (v1.1.0 → v1.2.0) ; `constitution-linter.sh` `REMEDIATION` += `confluent-cloud` ; `forbidden-components-rules.md` event-broker coupling subsection (v1.1.0 → v1.2.0). Reuses generic `T3-RULE-005` — NO new `T3-RULE-NNN` (reserved `T3-RULE-008` Persistence slot untouched).
+- **FR-B6-JR-080..083** — `.forge/scripts/tests/b6-10.test.sh` (9 L1 + 3 L2) registered in `forge-ci.yml`.
+- **FR-B6-JR-090** — `b7-9.test.sh::_test_b7_9_005` numbering guard relaxed to permit the newly-allocated 007/008 (sibling-harness coupling).
+- **FR-B6-JR-100/101** — `docs/ARCHETYPES.md` rows + note ; `CHANGELOG.md` entry.
+
+### Non-Functional Requirements (B.6.10)
+
+- **NFR-B6-JR-001** — Additive only ; `_refuse_if_forbidden_combination` + `_refuse_if_forbidden` unchanged (reuse) ; no `J8-RULE-001..006` renumber ; schema/templates/scaffolder untouched.
+- **NFR-B6-JR-002** — No regression (verify.sh / constitution-linter / validate-standards-yaml / j7 / j8 / b7-9 / i2 / i3 GREEN) ; fresh `event-driven-eu` init still refuses exit 3 (candidate) with the combination check dormant.
+- **NFR-B6-JR-003** — `J8-RULE-007..008` allocated sequentially after 006 (never reused, ADR-J8-004).
+- **NFR-B6-JR-004** — Harness mirrors `b7-9.test.sh` ; no new helper / external dependency.
+- **NFR-B6-JR-005** — Scaffold-time (Janus, exit 3) + review-time (I.3 `T3-RULE-005`) surfaces quote the same §10.2 gradient + schema `no_kafka_saas_us` posture.
+- **NFR-B6-JR-006** — Article V audit trail (`[Story: FR-B6-JR-XXX]` task tags ; `J8-RULE-NNN` stderr IDs ; this appended block, J.8.a/b/c/d preserved).
+
+### ADRs (B.6.10 design)
+
+| ID | Decision |
+|----|----------|
+| ADR-B6-JR-001 | Reuse the `J8-RULE-NNN` namespace ; allocate the next free block `J8-RULE-007..008` ; never reuse. |
+| ADR-B6-JR-002 | REUSE the `forbidden_combinations:` registry + `_refuse_if_forbidden_combination` helper (b7-9-janus-ai) — append entries + a wrapper call site only ; no new registry/helper. |
+| ADR-B6-JR-003 | Tier-scoping follows J.8.c : Confluent Cloud (named US SaaS) = `tier: any` (mirrors J8-RULE-004/005) ; `us-managed-kafka` (generic category) = `tier: T3` (mirrors J8-RULE-006). |
+| ADR-B6-JR-004 | I.3 coupling reuses generic `T3-RULE-005` via a `confluent-cloud` token — NO new `T3-RULE-NNN` (reserved `T3-RULE-008` Persistence slot untouched) ; only the named any-tier token added (parity with b7-9 not adding `us-managed-inference`). |
+| ADR-B6-JR-005 | Forward-looking guard grounded in the schema flag `event_specifics.eu_sovereignty.no_kafka_saas_us: true` ; NATS JetStream sovereign default, Redpanda sanctioned alternative, Confluent Cloud forbidden (Article III.4 — verified, no `[NEEDS CLARIFICATION]`). |
+| ADR-B6-JR-006 | Relax `b7-9.test.sh::_test_b7_9_005` numbering guard to permit 007/008 (sibling-harness coupling — same discipline b7-9 applied to i2/i3). |
+
+Full design rationale + tier-scoping analysis + Open Questions resolution :
+`.forge/changes/b6-10-janus-rule/design.md` + `open-questions.md`.

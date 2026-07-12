@@ -79,6 +79,8 @@ Refusals fire **before any scaffolding side-effect** : exit code is **3**
 | `J8-RULE-004` | `ai-native-rag` + Vertex AI default LLM provider | Vertex AI (GCP-managed inference) as default  | Mistral-EU (Mistral on Scaleway) / self-hosted vLLM ; OpenAI/Anthropic-via-EU-gateway at T1 only |
 | `J8-RULE-005` | `ai-native-rag` + AWS Bedrock default LLM provider | Bedrock (AWS-managed inference) as default   | Mistral-EU (Mistral on Scaleway) / self-hosted vLLM ; OpenAI/Anthropic-via-EU-gateway at T1 only |
 | `J8-RULE-006` | `ai-native-rag` + `--eu-tier T3` + US-managed inference | US-managed inference endpoints at T3   | Mistral on Scaleway (SecNumCloud) / self-hosted vLLM on EU infrastructure            |
+| `J8-RULE-007` | `event-driven-eu` + Confluent Cloud event broker | Confluent Cloud (US-managed Kafka SaaS) as event broker | self-hosted NATS JetStream (default) / Redpanda (Kafka-API-compatible, EU-deployable) on EU infrastructure |
+| `J8-RULE-008` | `event-driven-eu` + `--eu-tier T3` + US-managed Kafka SaaS | US-managed Kafka SaaS (Confluent Cloud / AWS MSK / Azure Event Hubs) at T3 | self-hosted NATS JetStream / Redpanda on EU infrastructure (SecNumCloud / OVHcloud / Scaleway) |
 
 Full rule catalogue : `.forge/standards/global/janus-orchestration-rules.md`.
 
@@ -98,6 +100,22 @@ refusals (the archetype itself is permitted) — they live in
 I.3 `T3-RULE-005` linter (`compliance-tiers.md::forbidden:` tokens `vertex-ai`
 / `bedrock`).
 
+### Event-broker refusals (`event-driven-eu`, B.6.10)
+
+The `event-driven-eu` archetype refuses **non-sovereign event brokers** at
+scaffold time. `J8-RULE-007` refuses **Confluent Cloud** (a US-managed Kafka
+SaaS) as the event broker regardless of declared tier (Schrems II / CLOUD Act
+per `compliance-tiers.md` §10.2). `J8-RULE-008` refuses any US-managed Kafka
+SaaS (Confluent Cloud / AWS MSK / Azure Event Hubs) at `--eu-tier T3` (100% EU
+jurisdiction required). The sanctioned brokers are the archetype's default
+**self-hosted NATS JetStream** or the acceptable Kafka-API-compatible
+**Redpanda** (self-hostable, EU-deployable) — the schema's
+`event_specifics.eu_sovereignty.acceptable: [nats-jetstream, redpanda]`. These
+are provider × tier combination refusals (the archetype itself is permitted) —
+they reuse `dispatch-table.yml::forbidden_combinations:` and complement the
+review-time I.3 `T3-RULE-005` linter (`compliance-tiers.md::forbidden:` token
+`confluent-cloud`).
+
 ## EU compliance tier (`--eu-tier`)
 
 `forge init --eu-tier <T1|T2|T3>` declares the project's intended EU
@@ -108,7 +126,7 @@ backward compat (no tier-specific refusals fire).
 |------|-----------------------------------------------|---------------------------------------------------------------------------------|
 | T1   | RGPD via DPA (cloud SaaS acceptable)          | Informational only — `[INFO: T1: tier recorded ; no refusal at this tier ; ...]` |
 | T2   | Self-hostable recommended                     | Informational only.                                                              |
-| T3   | SecNumCloud / EUCS High strict EU jurisdiction | Refusals fire (J8-RULE-002 + J8-RULE-003 — cloud identity + Datadog + SigNoz Cloud blocked ; J8-RULE-006 — US-managed LLM inference blocked for `ai-native-rag`) |
+| T3   | SecNumCloud / EUCS High strict EU jurisdiction | Refusals fire (J8-RULE-002 + J8-RULE-003 — cloud identity + Datadog + SigNoz Cloud blocked ; J8-RULE-006 — US-managed LLM inference blocked for `ai-native-rag` ; J8-RULE-008 — US-managed Kafka SaaS blocked for `event-driven-eu`) |
 
 When `--eu-tier` is set (any tier), the wrapper writes a one-line
 ledger file `<target>/.forge/.forge-tier` containing the chosen tier

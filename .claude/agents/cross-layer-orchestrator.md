@@ -152,6 +152,57 @@ after `J8-RULE-003` (never reused — ADR-J8-004 / ADR-B7-9-001).
   T1/T2 or when no tier is declared (Article III.4 — no guessed
   default).
 
+### Event-broker rules (`event-driven-eu`)
+
+<!-- Audit: B.6.10 (b6-10-janus-rule) -->
+
+B.6.10 extends the J.8 catalogue with event-broker refusals for the
+`event-driven-eu` archetype. The archetype itself is **permitted** ; what
+is refused is a non-sovereign event broker (a US-managed Kafka SaaS). These
+are **combination** refusals (broker within a permitted archetype), so they
+reuse the sibling `dispatch-table.yml::forbidden_combinations:` list and the
+`_refuse_if_forbidden_combination` helper (`bin/_forge-init-helpers.sh`)
+shipped by J.8.c — same exit code 3, same `[REFUSAL:]` convention. IDs
+`J8-RULE-007..008` are the next free sequential block after `J8-RULE-006`
+(never reused — ADR-J8-004 / ADR-B6-JR-001). The rule enforces the schema
+flag `event_specifics.eu_sovereignty.no_kafka_saas_us: true`
+(`.forge/schemas/event-driven-eu/1.0.0.yaml`), whose sanctioned brokers are
+`acceptable: [nats-jetstream, redpanda]`.
+
+#### J8-RULE-007 — Confluent Cloud refused as event broker (event-driven-eu)
+
+- **Rationale** : Confluent Cloud is a US-managed Kafka SaaS. Per the
+  `compliance-tiers.md` §10.2 `AWS / GCP / Azure` row — **CLOUD Act force
+  max T1** — and Schrems II, a US-jurisdiction managed broker is
+  incompatible with the `event-driven-eu` EU-sovereign posture as the event
+  broker. The archetype schema declares `no_kafka_saas_us: true` and names
+  B.6.10 as its enforcement rule list.
+- **Reference** : `.forge/schemas/event-driven-eu/1.0.0.yaml`
+  `event_specifics.eu_sovereignty.no_kafka_saas_us` ; plan §6.1 B.6.10 ;
+  `compliance-tiers.md` §10.2 `AWS / GCP / Azure` (`CLOUD Act force max
+  T1`) ; ADR-B6-JR-001/003 (rule-ID allocation + tier-scoping).
+- **Alternative** : self-hosted **NATS JetStream** (the archetype default)
+  or **Redpanda** (Kafka-API-compatible, self-hostable, EU-deployable) on EU
+  infrastructure.
+- **Tier applicability** : default-provider refusal, fires regardless of
+  declared tier (`tier: any`) — mirrors `J8-RULE-004` / `J8-RULE-005`.
+
+#### J8-RULE-008 — `--eu-tier T3` ⇒ NATS JetStream / Redpanda self-host (US-managed Kafka SaaS refused)
+
+- **Rationale** : T3 (SecNumCloud / EUCS High) requires **100% EU
+  jurisdiction** with zero CLOUD Act exposure. At T3, any US-managed Kafka
+  SaaS (Confluent Cloud + AWS MSK + Azure Event Hubs + any US-jurisdiction
+  managed Kafka) is refused as the event broker. Mirrors the `J8-RULE-006`
+  T3-enforcement shape (generic US-managed category token).
+- **Reference** : `.forge/schemas/event-driven-eu/1.0.0.yaml`
+  `event_specifics.eu_sovereignty.no_kafka_saas_us` ; plan §6.1 B.6.10 ;
+  `compliance-tiers.md` §10.2 `AWS / GCP / Azure` (`CLOUD Act force max
+  T1`) ; ADR-B6-JR-001/003.
+- **Alternative** : self-hosted NATS JetStream or Redpanda on EU
+  infrastructure (SecNumCloud / OVHcloud / Scaleway).
+- **Tier applicability** : T3 only (`tier: T3`) — does NOT fire at T1/T2 or
+  when no tier is declared (Article III.4 — no guessed default).
+
 ### Refusal semantics
 
 A refusal exits the wrapper with **exit code 3** (policy
