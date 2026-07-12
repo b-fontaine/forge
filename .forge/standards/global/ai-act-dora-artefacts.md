@@ -35,9 +35,11 @@ what the repo grounds:
 - **DORA** — a major-ICT-incident reporting obligation (the "< 24h" charter
   figure, §9.2) and the Register of Information deadline (§10.4).
 
-NIS2 (`event-driven-eu`) and CRA (commercial-binary) are **reserved**, not
-shipped here — the `.forge/compliance/{nis2,cra}/` siblings are deliberately
-absent.
+NIS2 (`event-driven-eu`) shipped separately via `b6-9-compliance` (B.6.9) under
+`.forge/compliance/nis2/` + `global/nis2-dora-eda-artefacts.md`; this standard
+stays scoped to the `ai-native-rag` AI Act + DORA content. CRA
+(commercial-binary) remains **reserved** — the `.forge/compliance/cra/` sibling
+is deliberately absent.
 
 ## Artefact content schema
 
@@ -126,8 +128,8 @@ The Phase-B maintainer is **Themis (K.5, compliance officer)** — the agent tha
 "Auto-check[s] NIS2/DORA/CRA artifacts (incident reporting < 24h, SBOM, vuln
 handling)" (`docs/ARCHITECTURE-TARGET.md` §9.2). This brick ships the frozen
 v1.0.0 artefacts Themis Phase B will maintain on a rolling cadence; the layout
-is forward-stable so Themis (and the reserved NIS2/CRA siblings) drop in
-additively.
+is forward-stable so Themis drops in additively (NIS2 shipped via
+`b6-9-compliance`; the CRA sibling remains reserved).
 
 ## Constitutional Compliance
 

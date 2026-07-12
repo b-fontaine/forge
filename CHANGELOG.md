@@ -14,6 +14,106 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ### Added
 
+- **Hermes-Async event-driven messenger agent (K.1, `b6-4-hermes-async`)** — a new
+  `.claude/agents/hermes-async.md` persona that maintains the AsyncAPI 3.1 event
+  contracts, generates NATS/Kafka protocol bindings, and enforces idempotency keys +
+  event versioning for the `event-driven-eu` archetype (the B.6 sibling of the K.2
+  Sibyl brick). Advisory specialist in the Sibyl/Panoptes mould — **NO scanner, NO
+  data file, NO new standard** (consumes the B.6.3 standards `global/event-driven.md`,
+  `global/asyncapi-contracts.md`, `infra/nats-jetstream.md` by reference). Ships four
+  greppable checklists (AsyncAPI Contract Maintenance / NATS/Kafka Binding Generation
+  / Idempotency-Key Enforcement / Event Versioning & Compatibility) grounded in the
+  real scaffolded code shapes (`EventEnvelope`, the `Nats-Msg-Id` publish-dedup header,
+  `InboxDedup`, the `Saga` compensator), an **Event Contract Readiness Report**
+  template, a `K1-RULE-001..006` recommendation catalogue (advisory ladder `Advisory`
+  < `Concern` < `Blocking`, the one Blocking rule being end-to-end idempotency /
+  exactly-once per Article VIII.2), and an anti-hallucination protocol requiring LIVE
+  verification (Context7) of AsyncAPI/NATS/Temporal API details. Registered in
+  `CLAUDE.md` + `docs/GUIDE.md` agent tables (disambiguated from **Hermes** (Flutter
+  perf) and **Hermes-API** (Connect codegen)). Gated by a new
+  `.forge/scripts/tests/b6-4.test.sh` (19 tests: 18 L1 + 1 L2 anchor-integrity),
+  registered in `forge-ci.yml`. This brick edits no Janus file and no standards index
+  (task-scoped divergence from the b7-pythia precedent).
+- **Per-layer CI templates for the `event-driven-eu` archetype (B.6.5, `b6-5-ci-templates`)** —
+  three GitHub Actions workflow templates scaffolded into an adopter's
+  `.github/workflows/`, mirroring the `full-stack-monorepo` per-layer convention
+  and adapted to the event-driven layer decomposition: **`forge-events.yml`**
+  (gates the `events` + `eventstore` crates — `task backend:lint` then
+  crate-scoped `cargo build/test -p events -p eventstore`), **`forge-workflows.yml`**
+  (gates the `saga` crate with default features — the pre-alpha `temporal-sdk`
+  feature stays OFF; a separate `saga-temporal-sdk` job runs
+  `--features temporal-sdk` only on manual `workflow_dispatch`, clearly
+  non-blocking per ADR-B6-2-004), and **`forge-infra.yml`** (NATS JetStream
+  config lint via `nats-server -c … -t`, AsyncAPI 3.1 validation via
+  `task asyncapi:validate` against the official schema, and a Postgres migration
+  check that applies `init-eventstore.sql` twice against an ephemeral
+  `postgres:17-alpine` for validity + idempotency). Each workflow uses
+  `dorny/paths-filter@v3`, invokes the archetype's own Taskfile targets, ends in
+  the Forge gates (`verify.sh` → `constitution-linter.sh`), pins all actions and
+  the archetype's `nats:2.10-alpine` / `postgres:17-alpine` images, and uses no
+  `continue-on-error`. Registered in
+  `.forge/templates/archetypes/event-driven-eu/scaffold-plan.yaml` and gated by a
+  new `.forge/scripts/tests/b6-5.test.sh` (10 tests: 9 L1 + 1 L2 render-clean),
+  registered in `forge-ci.yml`. Additive — the archetype schema stays
+  candidate/`scaffoldable:false` (promotion rides B.6.7).
+
+- **Production Helm charts for the `event-driven-eu` Temporal + NATS clusters (B.6.6, `b6-6-helm`)** —
+  the production Kubernetes deployment the B.6.2 scaffolder backbone
+  forward-referenced, authored under
+  `.forge/templates/archetypes/event-driven-eu/1.0.0/infra/k8s/` as Forge Helm
+  **values overlays** on upstream charts (the B.8.7 Zitadel / B.8.4 Envoy
+  chart-referenced-hybrid convention — no vendored `Chart.yaml`). **(a)**
+  `temporal-cluster/` deploys the four Temporal server roles
+  (**history / matching / frontend / worker**) on a **Postgres-backed**
+  persistence + visibility store (`server.config.persistence.datastores.*.sql`,
+  `pluginName: postgres12`; no removed Cassandra sub-chart), with the schema-setup
+  Job wired via Helm hooks; **(b)** `nats-jetstream/` deploys a **3-node
+  clustered** NATS with **JetStream** (RAFT quorum, file-store PVCs) + monitoring,
+  documenting runtime durable-consumer / queue-group provisioning; **(c)** each
+  chart carries a **T1 / T2 / T3 self-host EU** compliance posture citing
+  `compliance-tiers.md`, plus an `infra/k8s/README.md` index. Chart pins are
+  verify-then-pin LIVE (`temporal/temporal` `1.5.0`/server `1.31.1`; `nats/nats`
+  `2.14.2`) and both overlays are `helm template`-validated. The `temporalio-sdk`
+  **client** crate pin in `backend/Cargo.toml` (`0.5.0`) is untouched (orthogonal
+  to the **server** cluster version — no re-pin). Additive: the dev backbone is
+  byte-unchanged. Gated by `.forge/scripts/tests/b6-6.test.sh` (13 L1 + 1 L2
+  helm-render), registered in `forge-ci.yml`; the schema stays `candidate`
+  (promotion is B.6.7).
+
+- **event-driven-eu compliance hooks — NIS2 + DORA (B.6.9, `b6-9-compliance`)** —
+  the regulatory layer of the `event-driven-eu` archetype (profile "NIS2 + DORA
+  (si finance) + CRA", `ARCHITECTURE-TARGET.md` §10.3), the B.6 sibling of the
+  B.7.5/B.7.8 AI-Act work. Ships **(B.6.9.a)** NIS2 artefacts under
+  `.forge/compliance/nis2/` (`incident-reporting.md` — the significant-incident
+  reporting obligation with the grounded **24h/72h** windows verbatim, scoped to
+  the NATS JetStream / Temporal / Postgres event-store operational surface, →
+  the I.6 audit-ledger + IX.4 Rust OTel evidence surfaces ;
+  `incident-report.template.yaml` — an adopter-fillable 24h/72h notification
+  skeleton ; `obligations-index.yaml` — the machine-readable obligation→evidence
+  map: `incident-reporting` + `supply-chain-security` satisfied, ungrounded
+  pillars flagged `needs-clarification`/`themis_owner: K.5`) ; **(B.6.9.b)** the
+  DORA Register-of-Information submission helper
+  `.forge/scripts/compliance/dora-roi-helper.sh` (drives, never forks, the b7-5
+  `dora/roi-register.template.yaml` base and specialises it for the archetype's
+  ICT third-party stack — NATS/Temporal/Postgres) ; **(B.6.9.c)** SBOM CycloneDX
+  auto-generation wiring documentation — event-driven-eu's SBOM rides the
+  existing `bin/forge-sbom.sh` (Rust `Cargo.lock` → CycloneDX 1.5) + the I.6
+  bundle `sbom/sbom.cdx.json` member (no new generator) ; **(B.6.9.d)** the I.6
+  bundle wired additively — `bundle.sh` walk tuple gains `"nis2"`, the bundle
+  contract `global/compliance-artefacts-bundle.md` bumped **1.1.0 → 1.2.0**
+  (NIS2 members ride `regulatory/nis2/*`; NIS2 moves reserved → shipped, CRA
+  still reserved) ; **(B.6.9.e)** a new standard
+  `global/nis2-dora-eda-artefacts.md` v1.0.0 (6 H2 + 5 MUST NOT, Phase A/B
+  BDFL→Themis governance) + `index.yml` + `REVIEW.md` entries ; **(B.6.9.f)** a
+  new harness `.forge/scripts/tests/b6-9.test.sh` (17 L1 + 3 L2), registered in
+  `forge-ci.yml`. Every regulatory specific is **grounded-or-deferred** (Article
+  III.4; `_test_b69_030` negative-grep backstop). **Lock-step** (shared-
+  reservation discipline): `b7-5.test.sh` dropped its `nis2/`-reserved assertion
+  and relaxed its I.6-version pin to semver-validity; `i6.test.sh` frontmatter
+  pins updated to 1.2.0 / 2026-07-10; `ai-act-dora-artefacts.md` +
+  `docs/COMPLIANCE.md` stale "NIS2 reserved" prose corrected. `forge-compliance.yml`
+  unchanged (the artefacts ride the existing `bundle` step).
+
 - **Janus event-broker refusal rules for `event-driven-eu` (B.6.10, `b6-10-janus-rule`)** —
   the standard interdiction from `new-archetypes-plan.md` §6.1 B.6.10 ("pas de
   Kafka SaaS US (Confluent Cloud), Redpanda acceptable"), enforced at scaffold
@@ -37,6 +137,7 @@ minor bump and will be called out under a `### BREAKING` subsection.
   `.forge/scripts/tests/b6-10.test.sh` (12 tests : 9 L1 + 3 L2), registered in
   `forge-ci.yml`. The archived `b7-9.test.sh` numbering guard was relaxed to
   permit the newly-allocated `J8-RULE-007/008` (sibling-harness coupling).
+
 - **Iris-Web frontend web specialist agent (K.4, `k4-iris-web`)** — a new
   `.claude/agents/iris-web.md` persona that maintains the Qwik / SvelteKit
   web-frontend conventions for the `full-stack-monorepo` `frontend/web-public/`

@@ -34,6 +34,18 @@ templates:
 - source: 1.0.0/Taskfile.yml.tmpl
   target: Taskfile.yml
   substitute: true
+# ── Per-layer CI workflows (B.6.5, b6-5-ci-templates) — scaffolded into the
+#    adopter's .github/workflows/. substitute:true: the concurrency group carries
+#    <project-name>. GitHub ${{ ... }} expressions are NOT overlay placeholders. ──
+- source: 1.0.0/.github/workflows/forge-events.yml.tmpl
+  target: .github/workflows/forge-events.yml
+  substitute: true
+- source: 1.0.0/.github/workflows/forge-workflows.yml.tmpl
+  target: .github/workflows/forge-workflows.yml
+  substitute: true
+- source: 1.0.0/.github/workflows/forge-infra.yml.tmpl
+  target: .github/workflows/forge-infra.yml
+  substitute: true
 - source: 1.0.0/backend/CLAUDE.md.tmpl
   target: backend/CLAUDE.md
   substitute: true
@@ -120,6 +132,22 @@ templates:
   substitute: false
 - source: 1.0.0/infra/temporal/docker-compose.temporal.yml.tmpl
   target: infra/temporal/docker-compose.temporal.yml
+  substitute: true
+# B.6.6 (b6-6-helm) — production K8s Helm charts (values overlays on upstream charts).
+- source: 1.0.0/infra/k8s/README.md.tmpl
+  target: infra/k8s/README.md
+  substitute: true
+- source: 1.0.0/infra/k8s/temporal-cluster/values-forge.yaml.tmpl
+  target: infra/k8s/temporal-cluster/values-forge.yaml
+  substitute: true
+- source: 1.0.0/infra/k8s/temporal-cluster/README.md.tmpl
+  target: infra/k8s/temporal-cluster/README.md
+  substitute: true
+- source: 1.0.0/infra/k8s/nats-jetstream/values-forge.yaml.tmpl
+  target: infra/k8s/nats-jetstream/values-forge.yaml
+  substitute: true
+- source: 1.0.0/infra/k8s/nats-jetstream/README.md.tmpl
+  target: infra/k8s/nats-jetstream/README.md
   substitute: true
 - source: 1.0.0/shared/asyncapi/README.md.tmpl
   target: shared/asyncapi/README.md

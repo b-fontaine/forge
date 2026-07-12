@@ -12,11 +12,14 @@
 #   - sbom/sbom.cdx.json                       (output of bin/forge-sbom.sh)
 #   - regulatory/ai-act/*                      (B.7.5/B.7.8 AI-Act artefacts, if present)
 #   - regulatory/dora/*                        (B.7.5/B.7.8 DORA artefacts, if present)
+#   - regulatory/nis2/*                        (B.6.9 event-driven-eu NIS2 artefacts, if present)
 #   - MANIFEST                                 (script-generated index)
 #
-# The regulatory/ members are ADDITIVE (b7-5-ai-act, bundle contract
-# v1.1.0) : present only when .forge/compliance/{ai-act,dora}/ exist at
-# the target ; absent silently otherwise (graceful absence).
+# The regulatory/ members are ADDITIVE : the AI-Act + DORA members
+# (b7-5-ai-act, bundle contract v1.1.0) and the NIS2 members
+# (b6-9-compliance, bundle contract v1.2.0) are present only when
+# .forge/compliance/{ai-act,dora,nis2}/ exist at the target ; absent
+# silently otherwise (graceful absence).
 #
 # Usage :
 #   bash .forge/scripts/compliance/bundle.sh \
@@ -369,16 +372,17 @@ members = {
     "tier-matrix/compliance-tiers.md": tier_matrix,
 }
 
-# ─── Phase 4b — collect regulatory artefacts (B.7.5/B.7.8) ───────
-# Additive (ADR-B75-002 / FR-B75-BD-001) : walk the per-regulation
-# subdirectories under .forge/compliance/ and add each file keyed
-# regulatory/<regulation>/<name>. Graceful absence (FR-B75-BD-004) :
-# a missing subdirectory contributes zero members and is NOT an error
-# (adopter projects without the AI archetype). The MANIFEST + tar loop
-# below consume sorted(members.keys()) unchanged, so the new members
-# are absorbed with no change to the archive format or determinism
-# recipe.
-for _reg in ("ai-act", "dora"):
+# ─── Phase 4b — collect regulatory artefacts (B.7.5/B.7.8 + B.6.9) ─
+# Additive (ADR-B75-002 / FR-B75-BD-001 ; ADR-B69-002 / FR-B69-BD-001) :
+# walk the per-regulation subdirectories under .forge/compliance/ and
+# add each file keyed regulatory/<regulation>/<name>. Graceful absence
+# (FR-B75-BD-004 / FR-B69-BD-004) : a missing subdirectory contributes
+# zero members and is NOT an error (adopter projects without the given
+# archetype). The MANIFEST + tar loop below consume sorted(members.keys())
+# unchanged, so the new members are absorbed with no change to the
+# archive format or determinism recipe. ai-act/dora = v1.1.0 (b7-5) ;
+# nis2 = v1.2.0 (b6-9) ; cra stays reserved (not walked).
+for _reg in ("ai-act", "dora", "nis2"):
     _reg_dir = os.path.join(target, ".forge/compliance", _reg)
     if not os.path.isdir(_reg_dir):
         continue

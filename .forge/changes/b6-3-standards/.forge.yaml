@@ -1,0 +1,17 @@
+name: b6-3-standards
+status: archived
+created: 2026-07-10
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.6.3  # docs/new-archetypes-plan.md §6.1 B.6.3 — event-driven.md + asyncapi-contracts.md + nats-jetstream.md
+depends_on:
+  - B.6.1  # event-driven-eu/1.0.0.yaml components reference these standards as delivered_by: B.6.3
+  - B.6.2  # the scaffolder these standards describe (backend/{events,eventstore,saga}, shared/asyncapi, infra/nats)
+timeline:
+  proposed: 2026-07-10
+  specified: 2026-07-10
+  designed: 2026-07-10
+  planned: 2026-07-10
+  implemented: 2026-07-10
+  archived: 2026-07-10
