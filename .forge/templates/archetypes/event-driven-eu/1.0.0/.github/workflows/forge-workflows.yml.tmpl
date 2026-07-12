@@ -1,0 +1,128 @@
+# <!-- Audit: B.6.5 (b6-5-ci-templates, FR-B6-CI-020/021) -->
+# Per-layer CI workflow — WORKFLOWS layer (event-driven-eu archetype).
+#
+# Change surface: the `saga` crate (Temporal activity-only orchestration +
+# deterministic compensation coordinator). Structural sibling of forge-events;
+# crate-scoped to `saga`.
+#
+# TEMPORAL SDK CAVEAT (ADR-B6-2-004): the native `temporalio-sdk` is Public
+# Preview / pre-alpha and lives behind the saga crate's OFF-by-default
+# `temporal-sdk` feature. The BLOCKING PR gate below runs the saga crate with
+# DEFAULT features only — it never compiles the pre-alpha SDK. A separate,
+# clearly NON-BLOCKING `saga-temporal-sdk` job exercises `--features
+# temporal-sdk` and runs ONLY on manual `workflow_dispatch`, so a broken
+# pre-alpha SDK can never block a PR.
+
+name: forge-workflows
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  # Enables the opt-in, non-blocking saga-temporal-sdk job below (manual only).
+  workflow_dispatch: {}
+
+concurrency:
+  group: forge-workflows-<project-name>-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  filter:
+    name: Detect saga changes
+    runs-on: ubuntu-latest
+    outputs:
+      saga: ${{ steps.changes.outputs.saga }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            saga:
+              - 'backend/saga/**'
+              - 'backend/Cargo.toml'
+              - 'backend/Cargo.lock'
+              - 'backend/rust-toolchain.toml'
+
+  saga:
+    name: Saga build + gates (default features)
+    needs: filter
+    if: needs.filter.outputs.saga == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache cargo registry + git + target
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            backend/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('backend/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Install go-task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: task backend:lint
+        run: task backend:lint
+
+      # DEFAULT features — the pre-alpha `temporal-sdk` feature stays OFF.
+      - name: cargo build -p saga
+        working-directory: backend
+        run: cargo build -p saga
+
+      - name: cargo test -p saga
+        working-directory: backend
+        run: cargo test -p saga
+
+      - name: verify.sh
+        run: bash .forge/scripts/verify.sh
+
+      - name: constitution-linter.sh
+        run: bash .forge/scripts/constitution-linter.sh
+
+  # ---------------------------------------------------------------------------
+  # OPT-IN, NON-BLOCKING: compiles + tests the pre-alpha native Temporal SDK
+  # (Public Preview). Runs ONLY on manual `workflow_dispatch`, never on
+  # pull_request/push — so it can never gate a PR. Enable it from the Actions
+  # tab ("Run workflow") when you are ready to wire a real Temporal worker.
+  # ---------------------------------------------------------------------------
+  saga-temporal-sdk:
+    name: Saga (--features temporal-sdk) [opt-in, non-blocking]
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry + git + target
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            backend/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('backend/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: cargo test -p saga --features temporal-sdk
+        working-directory: backend
+        run: cargo test -p saga --features temporal-sdk

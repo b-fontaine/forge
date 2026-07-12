@@ -34,6 +34,18 @@ templates:
 - source: 1.0.0/Taskfile.yml.tmpl
   target: Taskfile.yml
   substitute: true
+# ── Per-layer CI workflows (B.6.5, b6-5-ci-templates) — scaffolded into the
+#    adopter's .github/workflows/. substitute:true: the concurrency group carries
+#    <project-name>. GitHub ${{ ... }} expressions are NOT overlay placeholders. ──
+- source: 1.0.0/.github/workflows/forge-events.yml.tmpl
+  target: .github/workflows/forge-events.yml
+  substitute: true
+- source: 1.0.0/.github/workflows/forge-workflows.yml.tmpl
+  target: .github/workflows/forge-workflows.yml
+  substitute: true
+- source: 1.0.0/.github/workflows/forge-infra.yml.tmpl
+  target: .github/workflows/forge-infra.yml
+  substitute: true
 - source: 1.0.0/backend/CLAUDE.md.tmpl
   target: backend/CLAUDE.md
   substitute: true
