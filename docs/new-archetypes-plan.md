@@ -2045,6 +2045,71 @@ crates.io LIVE 1.7.0, ADR-B7-3-003) → `cargo add` LIVE obligatoire au pin, dan
 
 ---
 
+## 0.13 Status update — 2026-07-12 (T7 — K.4/K.5 livrés ; B.6 8/10 briques archivées)
+
+> **Resync majeure.** §0.12 s'arrêtait au 2026-06-23 (T6 + B.7 complets). Neuf
+> PR ont mergé depuis (#36–#44) sur trois lots parallèles (worktrees isolés,
+> conflits résolus séquentiellement sur les fichiers registre partagés —
+> `CHANGELOG.md`, `.github/workflows/forge-ci.yml`, `.forge/standards/{index.yml,REVIEW.md}`,
+> `.forge/specs/event-driven-eu.md`). Le tableau §11 est corrigé en conséquence.
+
+### K.4 — Iris-Web ✅ archivé 2026-07-10 (PR #36)
+
+Frontend Web Specialist (Qwik/SvelteKit), scope `full-stack-monorepo`
+`frontend/web-public/`, distinct de Hera (Flutter). Persona
+`.claude/agents/iris-web.md` + standard `global/qwik-frontend-patterns.md` +
+row Janus dispatch additive. 22/22 tests `k4.test.sh --level 1,2`.
+Forward-stable pour `mobile-pwa-first` (B.9, T8) sans rework.
+
+### K.5 — Themis ✅ archivé 2026-07-12 (PR #37)
+
+Compliance officer NIS2/DORA/CRA, opère au **repo-lifecycle-time** (borne
+explicite vs Demeter K.3, scaffold-time). Persona `.claude/agents/themis.md` +
+`bin/forge-review-standards.sh` (`forge review-standards` — FRESH/DUE-SOON/
+EXPIRED/STRUCTURAL, WARN-only par défaut, `--strict`/`--bundle`) + workflow
+mensuel séparé `forge-standards-review.yml` (`on: schedule:` + `workflow_call:`,
+`continue-on-error: true` — ne bloque jamais une PR). Drive (jamais fork)
+`bundle.sh` (I.6). 27/27 tests `k5.test.sh --level 1,2`.
+
+### B.6 `event-driven-eu` — 8/10 briques archivées (PR #38–#44)
+
+Deux lots lancés en parallèle après B.6.2 (mêmes discipline TDD/Forge-pipeline/
+verify-then-pin que B.7) :
+
+| # | Brique | État |
+|---|--------|------|
+| 1 | `b6-1-schema` — `event-driven-eu/1.0.0.yaml` (candidate, phases `event-design` + `saga-orchestration`) | ✅ archivé 2026-07-10 (PR #38) |
+| 2 | `b6-2-scaffolder` — Rust hexagonal (`events`/`eventstore`/`saga`/`bin-server`), NATS JetStream, Temporal activity-only (feature `temporal-sdk` OFF par défaut, SDK pré-alpha), AsyncAPI 3.1, Postgres event-store | ✅ archivé 2026-07-10 (PR #38, avec #38) |
+| 3 | `b6-3-standards` — `global/{event-driven,asyncapi-contracts}.md` + `infra/nats-jetstream.md` | ✅ archivé 2026-07-12 (PR #39) |
+| 4 | `b6-4-hermes-async` — K.1 agent (persona + CLAUDE.md/GUIDE.md rows, pas de scanner/standard/index Janus édité) | ✅ archivé 2026-07-12 (PR #42) |
+| 5 | `b6-5-ci-templates` — `forge-events.yml`/`forge-workflows.yml`/`forge-infra.yml` scaffoldés | ✅ archivé 2026-07-12 (PR #40) |
+| 6 | `b6-6-helm` — charts Helm production Temporal (history/matching/frontend/worker + Postgres) + NATS JetStream cluster, posture T1/T2/T3 EU self-host | ✅ archivé 2026-07-12 (PR #41) |
+| 7 | `b6-9-compliance` — NIS2 (incident-reporting 24h/72h) + DORA RoI helper + SBOM CycloneDX wiring ; bundle I.6 `1.1.0→1.2.0` (NIS2 shipped, CRA reserved) | ✅ archivé 2026-07-12 (PR #44) |
+| 8 | `b6-10-janus-rule` — `J8-RULE-007/008` (refus Confluent Cloud tout tier ; refus Kafka SaaS US générique à T3), review-time `T3-RULE-005` coupling | ✅ archivé 2026-07-12 (PR #43) |
+| 9 | `b6-7-harness` — gate de promotion candidate→stable (≥35 tests, mirroring `b7-6-harness`) | ⏸️ Pending |
+| 10 | `b6-8-example` — `examples/forge-eda-example/` (3 demos) | ⏸️ Pending |
+
+Dépendances dures : `1→2` puis fan-out large (3/4/5/6/9/10 parallélisables,
+confirmé en pratique) ; 8 (example) après scaffolder+demos prêts ; 7
+(harness) en dernier — même patron que B.7. L'archétype reste
+`candidate`/`scaffoldable:false` ; `forge init --archetype event-driven-eu`
+refuse toujours exit 3 (attendu, la promotion est le rôle de B.6.7).
+
+**Leçon opérationnelle** (worktrees parallèles) : chaque nouvelle PR mergée sur
+`main` rend les PR sœurs encore ouvertes `CONFLICTING` sur les fichiers
+registre partagés (`CHANGELOG.md`, `forge-ci.yml`, `standards/index.yml`,
+`standards/REVIEW.md`, `specs/event-driven-eu.md`). Résolu séquentiellement à
+chaque merge (fetch + merge local dans le worktree du lot restant, réconciliation
+manuelle des deux côtés, re-run des harnesses concernés + `verify.sh` +
+`constitution-linter.sh`, re-check du budget de lignes `forge-ci.yml` ≤ 380
+— dépassé trois fois, retrimé à chaque fois). Un gap est resté ouvert sans
+correction rétroactive : `.forge/specs/event-driven-eu.md` n'a pas reçu de
+section pour B.6.3 ni B.6.6 (ces deux lots n'ont pas suivi la convention
+"une section par brique archivée" — noté ici, pas corrigé au nom d'un autre
+change).
+
+---
+
 ## 0. Executive Summary (1 page)
 
 À la sortie de **v0.3.0** (2026-05-02), Forge a clos T0, T1, T2 P1, T2 P2 et T3 robustesse :
@@ -2135,7 +2200,7 @@ sont créés. Cinq nouveaux agents Forge sont introduits. Plan de migration **4 
 | B.8       | Migration flagship 1.0.0 → 2.0.0 (Envoy/Temporal/Connect/Zitadel)                                                                                  | ARCHITECTURE-TARGET §11           | `XL`    | **COMPLETE 2026-06-05 (16/16)** — flip archived `b8-14-promotion-flip` (Constitution v2.0.0 §VIII.1 Kong→Envoy ; fresh init Kong-less)              |
 | B.9       | Migration `mobile-only / 1.0.0` → `mobile-pwa-first / 2.0.0` (PWA Qwik + Bloc renforcé)                                                            | ARCHITECTURE-TARGET §6.3          | `L`     | Pending (T8)                                                                                                                      |
 | I.1       | Compliance EU graded — JSON schemas (T1/T2/T3 + archetype v2)                                                                                      | ARCHITECTURE-TARGET §10           | `S`     | **Done 2026-05-04** via `t4-adr-ratification`                                                                                     |
-| I.2–I.6   | Compliance EU graded — standard `compliance-tiers.md`, linter rule, Demeter agent, `forge-compliance.yml` workflow, NIS2/DORA/CRA/AI Act artefacts | ARCHITECTURE-TARGET §10           | `M`–`L` | I.2 **Done 2026-05-12** via `i2-compliance-tiers` (`global/compliance-tiers.md` v1.0.0 + index entry + REVIEW birth + `docs/COMPLIANCE.md` + 14/14 L1 tests `i2.test.sh`). I.6 **Done 2026-05-12** via `i6-compliance-artefacts` (`.forge/scripts/compliance/bundle.sh` deterministic .tgz + DPA template + standard `global/compliance-artefacts-bundle.md` v1.0.0 + 16/16 tests `i6.test.sh --level 1,2`). I.3 **Done 2026-05-12** via `i3-t3-forbidden-linter` (`constitution-linter.sh::ADR-I3-001` section + standard `global/forbidden-components-rules.md` v1.0.0 with 10 `T3-RULE-001..010` rules + tier-scaled severity T1/T2 warn → T3 fail immediate + 14/14 L1 tests `i3.test.sh` ; resolves I.2 `linter_rule:` forward-pointer ; unblocks I.5). I.5 **Done 2026-05-12** via `i5-compliance-workflow` (reusable `.github/workflows/forge-compliance.yml` `on: workflow_call:` with 3 inputs / 1 output, orchestrant Demeter + linter + SBOM + bundle, upload `.tgz` via `actions/upload-artifact@v4`, standard `global/forge-compliance-workflow.md` v1.0.0 7 H2 + 4 MUST NOT + 8 triggers, 17/17 tests `i5.test.sh --level 1,2` incl. L2 act-opt-in skip-pass ; trois ADRs résolvent exit-code aggregation + SOURCE_DATE_EPOCH source + L2 gating). NIS2/DORA/CRA/AI Act regulatory deadline artefacts encore en attente — déférés à Themis (K.5, T7+) ; le bundle I.6 + workflow I.5 sont forward-stable pour les absorber additivement. |
+| I.2–I.6   | Compliance EU graded — standard `compliance-tiers.md`, linter rule, Demeter agent, `forge-compliance.yml` workflow, NIS2/DORA/CRA/AI Act artefacts | ARCHITECTURE-TARGET §10           | `M`–`L` | I.2 **Done 2026-05-12** via `i2-compliance-tiers` (`global/compliance-tiers.md` v1.0.0 + index entry + REVIEW birth + `docs/COMPLIANCE.md` + 14/14 L1 tests `i2.test.sh`). I.6 **Done 2026-05-12** via `i6-compliance-artefacts` (`.forge/scripts/compliance/bundle.sh` deterministic .tgz + DPA template + standard `global/compliance-artefacts-bundle.md` v1.0.0 + 16/16 tests `i6.test.sh --level 1,2`). I.3 **Done 2026-05-12** via `i3-t3-forbidden-linter` (`constitution-linter.sh::ADR-I3-001` section + standard `global/forbidden-components-rules.md` v1.0.0 with 10 `T3-RULE-001..010` rules + tier-scaled severity T1/T2 warn → T3 fail immediate + 14/14 L1 tests `i3.test.sh` ; resolves I.2 `linter_rule:` forward-pointer ; unblocks I.5). I.5 **Done 2026-05-12** via `i5-compliance-workflow` (reusable `.github/workflows/forge-compliance.yml` `on: workflow_call:` with 3 inputs / 1 output, orchestrant Demeter + linter + SBOM + bundle, upload `.tgz` via `actions/upload-artifact@v4`, standard `global/forge-compliance-workflow.md` v1.0.0 7 H2 + 4 MUST NOT + 8 triggers, 17/17 tests `i5.test.sh --level 1,2` incl. L2 act-opt-in skip-pass ; trois ADRs résolvent exit-code aggregation + SOURCE_DATE_EPOCH source + L2 gating). NIS2/DORA artefacts **livrés 2026-07-12** via B.6.9 (`event-driven-eu` scope) ; CRA reste réservé. Le bundle I.6 + workflow I.5 sont restés forward-stable pour les absorber additivement, sans édition (drive, ne fork jamais). |
 | J.1–J.6   | Six standards versionnés `.forge/standards/*.yaml` (transport / state-management / observability / orchestration / identity / persistence) v1.0.0  | ARCHITECTURE-TARGET §12.1         | `M`     | **Done 2026-05-04** via `t4-adr-ratification` ; J.1 `transport.yaml` bumpé en 1.1.0 le 2026-05-06 par `t5-connect-codegen` (codegen pinning, additif) |
 | J.7 / J.8 | `validate-standards-yaml.sh` linter + Janus forbidden-list orchestrator rules + `--eu-tier` flag + CycloneDX SBOM | ARCHITECTURE-TARGET §12.1 + §12.5 | `S`–`L` | J.7 **Done 2026-05-08** via `j7-validate-standards-yaml` (PR #4 merged) ; J.8 (a + b + d) **Done 2026-05-10** via `j8-janus-rules` (20/20 tests, +6 PASS verify.sh, smoke 74 SBOM components) ; J.8.c (`ai-native-rag` LLM gateway rules) deferred to T7 |
 | T5.1 | **CLI Trust Harness** — fix `Taskfile.yml.tmpl` + couches A (golden flags) + B (smoke par archétype) + C (pre-publish tarball gate). Couche D différée à B.8.15.                                                  | Issue post-v0.3.0 / v0.3.1 / v0.3.2 release pain | `M`     | **Partially done 2026-05-14** via `cli-trust-harness` — 17/17 L1 + 2 L2 opt-in dans `t5-1.test.sh`. **Extended 2026-05-16** par Option B (T5.1.E `t5-cargo-pin-refresh` + T5.1.F label fix inline). Pre-v0.3.3 release. Détails §0.1. |
@@ -2146,7 +2211,7 @@ sont créés. Cinq nouveaux agents Forge sont introduits. Plan de migration **4 
 | K.3       | Demeter (data steward EU)                                                                                                                          | ARCHITECTURE-TARGET §9.2          | `M`     | **Done 2026-05-12** via `k3-demeter` (persona + scanner + deny-list + standard + Janus delta ; 22/22 tests `k3.test.sh --level 1,2`) |
 | K.4       | Iris-Web (Qwik/SvelteKit)                                                                                                                          | ARCHITECTURE-TARGET §9.2          | `M`     | **Done 2026-07-10** via `k4-iris-web` (persona `iris-web.md` + `qwik-frontend-patterns.md` standard + index/Janus/CLAUDE.md/GUIDE integration ; Hera Flutter scope intact ; 22/22 tests `k4.test.sh --level 1,2`) |
 | L.1       | **Multi-vendor agent core** — source unique `.forge/agent-core/` (27 personas + 19 commands + 3 skills en YAML neutre) + connecteurs émetteurs par vendor (`.forge/connectors/{claude,codex,antigravity,cursor}/emit.*`) + capability-tiering. Claude reste first-class (zéro régression) ; Codex / Antigravity / Cursor par dégradation gracieuse. Élabore + supersède roadmap G.6. | Demande mainteneur 2026-05-30 (feasibility §0.11) | `XL` premier cut puis ~`XS`/vendor | Pending (T9+) — orthogonal à B.8. Détails §0.11. |
-| K.5       | Themis (compliance officer)                                                                                                                        | ARCHITECTURE-TARGET §9.2          | `M`     | Pending (T7) — automation `forge review-standards` ; cycle 12 mois lui-même livré (P-3)                                           |
+| K.5       | Themis (compliance officer)                                                                                                                        | ARCHITECTURE-TARGET §9.2          | `M`     | **Done 2026-07-12** via `k5-themis` (PR #37) — persona + `bin/forge-review-standards.sh` (`forge review-standards` automation) + workflow `forge-standards-review.yml` mensuel ; 27/27 tests `k5.test.sh --level 1,2`. Cycle 12 mois lui-même livré P-3.                                           |
 
 ---
 
@@ -2233,9 +2298,10 @@ Effort : `M` (J.1-J.5 du tableau §1.4).
 > seed (4 standards `Next review due: 2027-05-04`, 2 standards
 > `never (structural)` : `transport.yaml` ADR-006/ADR-009 + `state-management.yaml`
 > ADR-006).
-> ⏸️ **L'agent Themis (K.5) lui-même reste pending** (T7) — sans Themis,
-> `forge review-standards` n'est pas automatisé. Le mainteneur tient le calendrier
-> manuellement jusqu'à K.5 livré.
+> ✅ **Themis (K.5) livré 2026-07-12** via `k5-themis` (PR #37) — `forge
+> review-standards` (`bin/forge-review-standards.sh`) automatise désormais le
+> calendrier (FRESH/DUE-SOON/EXPIRED/STRUCTURAL, WARN-only par défaut). Détails
+> §11 T7 / §0.13.
 
 ### 2.4 P-4 — Schéma de classification compliance
 
@@ -2761,7 +2827,7 @@ Reprise de ARCHITECTURE-TARGET §11.
 | **T5.3**  | **`t5-otel-dartastic-realign`**                                                                    | ✅ **Done 2026-05-18** via `t5-otel-dartastic-realign`. Inaugural application of T5.2 3-axis checklist on 3 Dartastic packages. Standard v1.1.0 → v2.0.0 breaking. FSM frontend (5 .dart files) + mobile-only template (4 .tmpl + cli/assets mirrors) rewritten. 3 archived changes carry `.forge-update-notes` forward-pointers (Article V immutability). Harness `t5-otel-dartastic.test.sh` 13/13 L1 GREEN ; L2 (`flutter analyze` on both archetypes) GREEN via `task validate` smoke-with-toolchains. Independent code-reviewer + 7 fix-forward iterations on Dartastic API symbol-level errors (caught by `flutter analyze`). First fixes carried in T5.3 (mobile-only analyzer dette 14 issues, gherkin uuid conflict removed, Taskfile mvdan/sh fixes, .env bootstrap, archetypes-smoke stdout surfacing). Détails §0.3. Target v0.4.0-rc.1. | Workiva (web-only) → Dartastic (all-platform). Bump `flutter/opentelemetry.md` v2.0.0 breaking. Q-006 resolution. |
 | **T5.3.1** | **`b1-1-dev-up-matrix-fixes` (template hygiene)**                                                  | ⏸️ Planned 2026-05-18 post-T5.3. Closes the `dev-up-matrix` red lights that T5.3 exposed (chiefly `image: scratch` placeholder in `full-stack-monorepo/docker-compose.dev.yml.tmpl:60` + `version: "3.X"` obsolete attribute). Détails §0.4. Effort `S`–`M`. Release : piggyback v0.4.0-rc.1 ou patch rc.2. | Hygiène pré-existante `b1-foundations`/`b1-delivery` template. Pas de lien avec Workiva → Dartastic ; séparé pour scope auditability + atomic revertability. |
 | **T6**    | **B.8 (flagship 1.0.0 → 2.0.0), Phase 2 ARCHITECTURE-TARGET, B.8.15 couche D upgrade-matrix**     | ✅ **COMPLET — `v0.4.0`** (détails §0.12). Constitution v2.0.0 (§VIII.1 Kong→Envoy ratifié, B.8.14). 17 changes B.8 archivés + trio OTel rehosté. B.8.15 ferme la couche D de T5.1. **Point de non-retour franchi.** Déviation §10 Phase 2 : **DBOS abandonné côté Rust** (B8O 2026-06-01) ⇒ Temporal natif conservé (`temporalio-sdk 0.4.0`). | Migration breaking flagship. **Point de non-retour**. B.8.15 ferme la dernière couche de T5.1 (upgrade matrix N-1 → N).                      |
-| **T7**    | **B.6 (event-driven-eu), B.7 (ai-native-rag), K.1, K.2, K.4, K.5**                               | 🔵 **IN PROGRESS — B.7 ✅ COMPLET (9/9) au 2026-06-23** (mainteneur 2026-06-11 : réutilise substrat 2.0.0). `ai-native-rag` promu **stable / scaffoldable:true** (PR #33). Chaîne 9 briques **toutes archivées** : ✅ `b7-1-schema` (B.7.1) + ✅ `b7-2a-dispatch-register` + ✅ `b7-standards` (B.7.3) + ✅ `b7-2-scaffolder` (B.7.2, PR #25) + ✅ `b7-pythia` (K.2 Sibyl, PR #29) + ✅ `b7-9-janus-ai` (J.8.c, PR #27) + ✅ `b7-5-ai-act` (PR #30) + ✅ `b7-10-streaming` (PR #31) + ✅ `b7-7-example` (PR #31 via #32) + ✅ `b7-6-harness` (gate de promotion, PR #33). **Reste en T7 : B.6 (event-driven-eu) + K.1 / K.5 — non démarrés ; K.4 ✅ Iris-Web archivé 2026-07-10 via `k4-iris-web`.** | Deux nouveaux archétypes + 4 nouveaux agents.                                                                                                |
+| **T7**    | **B.6 (event-driven-eu), B.7 (ai-native-rag), K.1, K.2, K.4, K.5**                               | 🔵 **IN PROGRESS — B.7 ✅ COMPLET (9/9) au 2026-06-23** (mainteneur 2026-06-11 : réutilise substrat 2.0.0). `ai-native-rag` promu **stable / scaffoldable:true** (PR #33). Chaîne 9 briques **toutes archivées** : ✅ `b7-1-schema` (B.7.1) + ✅ `b7-2a-dispatch-register` + ✅ `b7-standards` (B.7.3) + ✅ `b7-2-scaffolder` (B.7.2, PR #25) + ✅ `b7-pythia` (K.2 Sibyl, PR #29) + ✅ `b7-9-janus-ai` (J.8.c, PR #27) + ✅ `b7-5-ai-act` (PR #30) + ✅ `b7-10-streaming` (PR #31) + ✅ `b7-7-example` (PR #31 via #32) + ✅ `b7-6-harness` (gate de promotion, PR #33). **K.4 ✅ Iris-Web archivé 2026-07-10 via `k4-iris-web` (PR #36).** **K.5 ✅ Themis archivé 2026-07-12 via `k5-themis` (PR #37).** **B.6 event-driven-eu — 8/10 briques archivées au 2026-07-12** : ✅ `b6-1-schema` (B.6.1, PR #38) + ✅ `b6-2-scaffolder` (B.6.2, PR #38) + ✅ `b6-3-standards` (B.6.3, PR #39) + ✅ `b6-4-hermes-async` (B.6.4/K.1, PR #42) + ✅ `b6-5-ci-templates` (B.6.5, PR #40) + ✅ `b6-6-helm` (B.6.6, PR #41) + ✅ `b6-9-compliance` (B.6.9, PR #44) + ✅ `b6-10-janus-rule` (B.6.10, PR #43). Schema reste `candidate`/`scaffoldable:false` (`forge init --archetype event-driven-eu` refuse toujours exit 3). **Reste en T7 : B.6.7 (harness ≥35 tests + flip candidate→stable, gate de promotion) + B.6.8 (`examples/forge-eda-example/`) — non démarrés.** Détails §0.13. | Deux nouveaux archétypes + 4 nouveaux agents.                                                                                                |
 | **T8**    | **B.9 (mobile-pwa-first / 2.0.0), B.3 (rust-cli-tui), pédagogie C.2-C.5**                        | ⏸️ Pending. **F.3 pulled forward, delivered 2026-05-12 via `f3-release-script-fix`.**                                                                                                                                                                | Renommage mobile + dernier archétype premium + walkthrough/anti-patterns/comparison/migration. F.3 release script fix shipped early (T5).    |
 | **T9+**   | **L.1 (multi-vendor agent core — Codex/Antigravity/Cursor via émetteurs), G.* (Forge Guardian, VSCode, pre-commit ; G.6 superseded by L.1), H.* (multi-tenant, télémétrie, compliance reports)** | ⏸️ Pending.                                                                                                                                                                                                                             | Outillage périphérique et enterprise après que les 5 archétypes soient stables. L.1 = portabilité multi-CLI source-unique + connecteurs (feasibility §0.11). |
 
