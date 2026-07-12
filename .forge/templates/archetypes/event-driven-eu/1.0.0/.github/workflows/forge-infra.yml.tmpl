@@ -1,0 +1,105 @@
+# <!-- Audit: B.6.5 (b6-5-ci-templates, FR-B6-CI-030/031/032/033) -->
+# Per-layer CI workflow — INFRA layer (event-driven-eu archetype).
+#
+# Change surface: infra manifests (NATS JetStream config, Postgres event-store
+# migration) and the AsyncAPI 3.1 event contract. Structural sibling of
+# full-stack-monorepo/forge-infra.yml, adapted to the event-driven substrate:
+# the kustomize/kubeconform overlay checks are replaced by
+#   1. NATS JetStream config lint  — nats-server -c … -t (config-test + exit)
+#   2. AsyncAPI 3.1 contract check  — task asyncapi:validate (official 3.1 schema)
+#   3. Postgres migration check     — apply init-eventstore.sql ×2 (valid + idempotent)
+# then the Forge gates (verify.sh → constitution-linter.sh) last. Image tags are
+# pinned to the archetype's docker-compose.dev.yml pins (nats:2.10 / postgres:17).
+
+name: forge-infra
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: forge-infra-<project-name>-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  filter:
+    name: Detect infra changes
+    runs-on: ubuntu-latest
+    outputs:
+      infra: ${{ steps.changes.outputs.infra }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            infra:
+              - 'infra/**'
+              - 'shared/asyncapi/**'
+
+  validate:
+    name: Infra validation
+    needs: filter
+    if: needs.filter.outputs.infra == 'true'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: forge
+          POSTGRES_PASSWORD: forge
+          POSTGRES_DB: eventstore
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U forge -d eventstore"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGPASSWORD: forge
+      DATABASE_URL: postgres://forge:forge@localhost:5432/eventstore
+    steps:
+      - uses: actions/checkout@v4
+
+      # 1. NATS JetStream config lint — parse the config and exit (nats-server -t).
+      #    Mounts the repo so the config path matches the committed layout.
+      - name: NATS JetStream config lint (nats-server -t)
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/w" -w /w \
+            nats:2.10-alpine nats-server -c infra/nats/jetstream.conf -t
+
+      # 2. AsyncAPI 3.1 contract validation against the official schema (bundled
+      #    by @asyncapi/cli). Invokes the archetype's own Taskfile target.
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install go-task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: task asyncapi:validate
+        run: task asyncapi:validate
+
+      # 3. Postgres migration check — apply the event-store schema against a live
+      #    Postgres, then re-apply to prove idempotency (IF NOT EXISTS DDL).
+      - name: Apply init-eventstore.sql (valid DDL)
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f infra/postgres/init-eventstore.sql
+
+      - name: Re-apply init-eventstore.sql (idempotency)
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f infra/postgres/init-eventstore.sql
+
+      - name: verify.sh
+        run: bash .forge/scripts/verify.sh
+
+      - name: constitution-linter.sh
+        run: bash .forge/scripts/constitution-linter.sh

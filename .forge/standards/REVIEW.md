@@ -979,6 +979,38 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   as Markdown, so `bin/validate-standards-yaml.sh` (J.7) does not gate
   it ; the frontmatter block is narrative.
 
+## 2026-07-10 — Initial ratification (b6-3-standards, B.6.3)
+
+  | Standard                       | Version | Decision | Next review due | Notes                                                                                                          |
+  |--------------------------------|---------|----------|-----------------|----------------------------------------------------------------------------------------------------------------|
+  | global/event-driven.md         | 1.0.0   | KEEP     | 2027-07-10      | Birth: event-driven patterns for event-driven-eu — versioned/idempotent envelope, idempotency keys (Nats-Msg-Id/append/inbox), saga + reverse-order compensation (Temporal activity-only, VIII.2), process manager, outbox/inbox, projections. |
+  | global/asyncapi-contracts.md   | 1.0.0   | KEEP     | 2027-07-10      | Birth: AsyncAPI 3.1 contract discipline — versioning (info.version / event_version / schema evolution), `asyncapi validate`, breaking-change `asyncapi diff` (buf-breaking equivalent, LIVE-verified). |
+  | infra/nats-jetstream.md        | 1.0.0   | KEEP     | 2027-07-10      | Birth: NATS JetStream production topology — RAFT (meta/stream/consumer groups), 3-or-5-node quorum, persistence/retention, durable pull/push consumer groups, EU sovereignty. |
+
+- **Reviewer**: @bfontaine
+- **Decision**: KEEP (three new Markdown pattern standards).
+- **Next review due**: 2027-07-10 (12-month cycle; `.md` standards carry no
+  `version:` frontmatter — section/content review, not semver).
+- **Notes**: Three new `{global,infra}/*.md` pattern standards for the
+  `event-driven-eu` archetype (T7, B.6.3), resolving the `delivered_by: B.6.3`
+  forward-references in `.forge/schemas/event-driven-eu/1.0.0.yaml` (components
+  `event-patterns` / `asyncapi` / `nats-jetstream`). **No crate version pins** are
+  shipped here — `async-nats` / `sqlx` / `temporalio-sdk` / `temporalio-client` pins
+  already ride with B.6.2's `backend/**/Cargo.toml.tmpl` (verify-then-pin LIVE;
+  transport.yaml/b8-6 precedent). Baseline recorded in
+  `.forge/research/b6-2-verify-then-pin.md` (crates.io LIVE 2026-07-10: async-nats
+  0.49.1 / sqlx 0.9.0 / temporalio-sdk 0.5.0). Every technical claim is grounded in a
+  scaffolded file path (`backend/{events,eventstore,saga}`, `shared/asyncapi`,
+  `infra/nats`, `infra/postgres`) OR a LIVE-verified tool fact (AsyncAPI CLI 6.0.2 /
+  diff 0.5.0 / parser 3.6.0, npm 2026-07-10; NATS clustering + consumer facts from
+  docs.nats.io) OR flagged as a deferred follow-up (transactional outbox +
+  process-manager workflow → B.6.4; `asyncapi diff` Taskfile/CI wiring → B.6.4/B.6.5;
+  production Helm cluster → B.6.6; forbidden-Kafka-SaaS enforcement → Janus B.6.10) —
+  Article III.4, never invented. `event-driven.md` references `infra/temporal.md`
+  (VIII.2) for the Temporal API rather than restating it. These standards ship as
+  Markdown, so `bin/validate-standards-yaml.sh` (J.7) does not gate them; the
+  header blocks are narrative.
+
 ## 2026-07-10 — Initial ratification (b6-9-compliance, B.6.9)
 
   | Standard                              | Version       | Decision | Next review due | Notes                                                                                                          |

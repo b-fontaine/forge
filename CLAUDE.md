@@ -67,6 +67,7 @@ Forge uses specialized agents. Delegation is automatic:
 | Observability | **Panoptes** | Observability Specialist |
 | AI features | **Oracle** | AI-First Brainstorm |
 | AI/RAG tuning | **Sibyl** | AI/RAG Specialist |
+| Event-driven / AsyncAPI | **Hermes-Async** | Event-Driven Messenger |
 | Data stewardship | **Demeter** | Data Steward EU |
 | Regulatory compliance | **Themis** | Compliance Officer EU |
 | Writing specs | **Clio** | Spec Writer |

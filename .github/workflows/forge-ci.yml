@@ -96,13 +96,9 @@ jobs:
             "i6.test.sh --level 1,2"
             "i3.test.sh --level 1,2"
             "i5.test.sh --level 1"
-            # b7-5 lives in the i-block by SUBSTANCE (compliance family: fills the
-            # I.6-reserved .forge/compliance/ layout + bumps the I.6 bundle
-            # contract), not by its b7 NUMBER (ADR-B75-004).
+            # b7-5/b6-9 live here by SUBSTANCE (compliance family), not by
+            # their b7/b6 NUMBER (ADR-B75-004/ADR-B69-005).
             "b7-5.test.sh --level 1,2"
-            # b6-9 also lives in the i-block by SUBSTANCE (compliance family:
-            # fills the I.6-reserved .forge/compliance/nis2/ layout + bumps the
-            # I.6 bundle contract 1.1.0->1.2.0), not by its b6 NUMBER (ADR-B69-005).
             "b6-9.test.sh --level 1,2"
             "f3.test.sh --level 1"
             "t5-1.test.sh --level 1"
@@ -141,11 +137,20 @@ jobs:
             # post-flip guards run buf-less/cargo-less. Its L2 live-codegen legs
             # (buf generate / cargo build / Qwik tsc) run in the harness-rust job.
             "b7-6.test.sh --level 1"
-            # B.6 event-driven-eu chain (b6-1 schema, b6-2 scaffolder). L1 is the CI
+            # B.6 event-driven-eu chain (b6-1 schema, b6-2 scaffolder, b6-3
+            # standards, b6-4 Hermes-Async agent, b6-5 CI templates). L1 is the CI
             # level; b6-2's L2 (cargo check on the rendered backend) is
             # toolchain-gated and stays local/opt-in (the harness job has no rust).
+            # b6-4 is grep-only (no cargo/no network). b6-5's L2 is overlay+PyYAML
+            # only (no rust), so it runs here and skip-passes if PyYAML is absent.
             "b6-1.test.sh --level 1,2"
             "b6-2.test.sh --level 1"
+            "b6-3.test.sh --level 1"
+            "b6-4.test.sh --level 1,2"
+            "b6-5.test.sh --level 1,2"
+            # b6-6 Helm charts (Temporal+NATS). L1 hermetic; L2 helm-render is
+            # toolchain-gated (needs helm + upstream repos), local/opt-in.
+            "b6-6.test.sh --level 1"
             "k4.test.sh --level 1,2"
           )
           fail=0

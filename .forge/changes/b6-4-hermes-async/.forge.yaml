@@ -1,0 +1,34 @@
+name: b6-4-hermes-async
+status: archived
+created: 2026-07-10
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - K.1     # docs/new-archetypes-plan.md §9 line 2668 — Hermes-Async (event-driven) specialist agent
+  - B.6.4   # docs/new-archetypes-plan.md §6.1 line 2556 — Hermes-Async agent for event-driven-eu
+depends_on:
+  - b6-1-schema     # .forge/schemas/event-driven-eu/1.0.0.yaml — the schema Hermes-Async serves (event_specifics + event-design/saga-orchestration phases)
+  - b6-2-scaffolder # backend/{events,eventstore,saga} + shared/asyncapi — the code shapes Hermes-Async disciplines
+  - b6-3-standards  # global/{event-driven,asyncapi-contracts}.md + infra/nats-jetstream.md — consumed BY REFERENCE (parallel lane; content not depended on to land)
+  - b7-pythia       # precedent advisory-specialist layout (persona + K2-RULE catalogue + harness + CLAUDE.md/GUIDE.md rows) + <MODULE>-RULE-NNN namespace inherited by K1-RULE-*
+  - j8-janus-rules  # ADR-J8-004 rule-ID format inherited by K1-RULE-*
+archived_to:
+  - .forge/specs/event-driven-eu.md  # K.1 ADDED block (FR-B6-HA-* / NFR-B6-HA-* / ADR-K1-*) appended at archive; prior B.6.1 + B.6.2 blocks preserved
+# Q-001 (Hermes-* name-adjacency), Q-002 (K1-RULE seed size), Q-003 (advisory vs
+#   scanner) all NON-BLOCKING — answered via ADR-K1-001..003. Unlike b7-pythia's
+#   Q-001, "Hermes-Async" is a distinct roster name (no collision with Hermes /
+#   Hermes-API), so there is no blocking gate. The change flips to implemented +
+#   archived in one pass.
+# DIVERGENCE FROM b7-pythia: this brick edits NO Janus file and NO standards index
+#   (task-boundary, FR-B6-HA-083); ships NO scanner / data file / new standard
+#   (ADR-K1-003). Consumes the b6-3-standards BY PATH (parallel lane).
+# COLLISION with sibling B.6 lanes (B.6.3/5/6/9/10): additive single rows/lines in
+#   CLAUDE.md + docs/GUIDE.md + CHANGELOG.md + forge-ci.yml — resolved centrally
+#   after the 6 PRs land (design.md § "Shared-file collision").
+timeline:
+  proposed: 2026-07-10
+  specified: 2026-07-10
+  designed: 2026-07-10
+  planned: 2026-07-10
+  implemented: 2026-07-10
+  archived: 2026-07-10

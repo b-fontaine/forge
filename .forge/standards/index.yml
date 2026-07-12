@@ -478,6 +478,26 @@ standards:
     scope: all
     priority: high
 
+  # ─── B.6.3 — event-driven-eu standards (b6-3-standards) ──────────
+
+  - id: global/event-driven
+    path: standards/global/event-driven.md
+    triggers: [event-driven, event-sourcing, saga, process-manager, outbox, inbox, idempotency-key, event-versioning, event-envelope, projection, read-model, compensation, nats-jetstream, event-driven-eu, hermes-async]
+    scope: all
+    priority: high
+
+  - id: global/asyncapi-contracts
+    path: standards/global/asyncapi-contracts.md
+    triggers: [asyncapi, event-contracts, asyncapi-cli, asyncapi-validate, asyncapi-diff, contract-validation, breaking-change, event-versioning, event-driven-eu, hermes-async]
+    scope: all
+    priority: high
+
+  - id: infra/nats-jetstream
+    path: standards/infra/nats-jetstream.md
+    triggers: [nats, jetstream, nats-jetstream, raft, clustering, consumer-group, durable-consumer, stream, persistence, redpanda, event-backbone, event-driven-eu]
+    scope: infra
+    priority: high
+
   # ─── B.6.9 — NIS2 + DORA event-driven regulatory artefacts (b6-9-compliance) ───
 
   - id: global/nis2-dora-eda-artefacts
