@@ -1,0 +1,23 @@
+name: b6-8-example
+status: archived
+archived_to:
+  - .forge/specs/example-reference.md  # FR-EDAEX-001..010 + NFR-EDAEX-001..005 ADDED block + Archived-changes section
+  - .forge/specs/forge-ci.md           # MODIFIED FR-CI-012 (example job gates three trees) + FR-CI-013/NFR-CI-002 budget 400→420
+created: 2026-07-12
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.6.8  # docs/new-archetypes-plan.md §6.1 / §0.13 T7 brick #10 — examples/forge-eda-example/ (3 demos)
+depends_on:
+  - B.6.1   # .forge/schemas/event-driven-eu/1.0.0.yaml (b6-1-schema, archived 2026-07-10)
+  - B.6.2   # .forge/templates/archetypes/event-driven-eu/1.0.0/** + bin/forge-init-event-driven-eu.sh (b6-2-scaffolder, archived 2026-07-10)
+  - B.6.3   # global/{event-driven,asyncapi-contracts}.md + infra/nats-jetstream.md (b6-3-standards, archived 2026-07-12)
+  - B.6.7   # b6-7-harness — PROMOTED event-driven-eu candidate→stable/scaffoldable:true (archived 2026-07-12). HARD dep: b6-8 renders the example through the REAL `forge init` CLI, which only works once the archetype is scaffoldable (ADR-B6-8-001). This is the divergence from b7-7-example's overlay.sh workaround.
+  - C.1     # example-tree machinery reused (c1-reference-project: skip-guards, examples/README.md, example CI job)
+timeline:
+  proposed: 2026-07-12
+  specified: 2026-07-12
+  designed: 2026-07-12
+  planned: 2026-07-12
+  implemented: 2026-07-12
+  archived: 2026-07-12

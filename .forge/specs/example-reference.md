@@ -443,3 +443,78 @@ promote it (promotion rides `b7-6-harness`); the tree is rendered via
 The RAG example is the external-validation sibling of `forge-fsm-example`.
 The `ai-native-rag` promotion to `scaffoldable:true` (which makes `forge init`
 render this tree directly) rides `b7-6-harness` — the final B.7 brick.
+
+---
+
+## ADDED Requirements (b6-8-example, archived 2026-07-12)
+
+B.6.8 — the **third reference project** under `examples/`:
+`forge-eda-example/`, demonstrating the `event-driven-eu` archetype.
+Namespace `FR-EDAEX-001..010` / `NFR-EDAEX-001..005` (distinct from c1's
+`FR-EX-*` machinery and b7-7's `FR-RAGEX-*`). Covered by
+`.forge/scripts/tests/b6-8.test.sh` (23 checks: L1 + L2 opt-in via
+`--require-example-tools`), registered in `forge-ci.yml`. Unlike b7-7, the
+archetype is **already `stable` / `scaffoldable:true`** (promoted by
+`b6-7-harness`), so the tree is rendered by the **real
+`forge init --archetype event-driven-eu` CLI** (ADR-B6-8-001), NOT via an
+`overlay.sh` workaround — a stronger demonstration of the public adopter flow.
+
+### Functional
+- **FR-EDAEX-001** — `examples/forge-eda-example/` exists at the repo root, a
+  fully-rendered `event-driven-eu/1.0.0` tree (real `forge init`) with
+  `backend/{events,eventstore,saga,bin-server}`, `infra/` (NATS JetStream +
+  Postgres event store + Temporal cluster), `shared/asyncapi/` (AsyncAPI 3.1) +
+  `shared/protos/v1/events/` (`EventService.Publish` + `ReadStream`), its own
+  `.forge/`, `.claude/`, `Taskfile.yml`, `docker-compose.dev.yml`, `CLAUDE.md`,
+  `README.md`, `.forge.yaml`, and a `.forge/scaffold-manifest.yaml` recording
+  `archetype: event-driven-eu` / `archetype_version: "1.0.0"` /
+  `project_name: forge-eda-example`.
+- **FR-EDAEX-002/003** — top-of-tree `README.md` (4 canonical H2 sections + the
+  "does NOT show" note: no ops-console frontend, no live broker/DB/Temporal
+  calls, no compliance demo, no Janus-rule demo) + one appended row in the
+  meta-`examples/README.md` (FSM + RAG rows preserved).
+- **FR-EDAEX-004** — 3 archived demos: `demo-001-ingestion-http-nats` `[backend]`
+  (axum HTTP → NATS JetStream publish, versioned idempotent `EventEnvelope`,
+  `Nats-Msg-Id` dedup), `demo-002-projection-readmodel` `[backend]` (Postgres
+  event store → deterministic replayable read-model projection, inbox dedup /
+  outbox-inbox), `demo-003-order-saga` `[backend, infra]` (Janus multi-layer,
+  per-layer designs/tasks; Temporal activity-only 3-step saga with reverse-order
+  compensation, Article VIII.2). Each carries the 5 artefacts + a
+  `features/<demo>.feature`.
+- **FR-EDAEX-005** — the demos materialise the event-driven surfaces: NATS
+  JetStream publish + idempotency dedup (demo-001), event-store projection +
+  inbox dedup (demo-002), Temporal saga + reverse-order compensation (demo-003).
+- **FR-EDAEX-006** — `.forge/changes/MANIFEST.md` lists the 3 demos.
+- **FR-EDAEX-007** — the EDA tree's own `verify.sh` + `constitution-linter.sh`
+  exit 0; the committed AsyncAPI / infra YAML parses (L2 opt-in).
+- **FR-EDAEX-008** — `b6-8.test.sh` (manifest pattern, mirrors `b7-7.test.sh`),
+  registered in `forge-ci.yml`'s harness loop after `b7-7.test.sh`.
+- **FR-EDAEX-009** — rendered by the real `forge init --archetype
+  event-driven-eu` CLI (the archetype is `stable`/`scaffoldable:true` since
+  `b6-7-harness`); committing the example keeps the schema + archetype template
+  tree byte-unchanged (the example carries its own copies under `examples/`).
+- **FR-EDAEX-010** — this consolidation (additive; FR-EX-* + FR-RAGEX-* untouched).
+
+### Non-Functional
+- **NFR-EDAEX-001** additive (no archetype/schema/standard/CLI edit; existing-file
+  edits confined to `forge-ci.yml` + the four budget-asserting harnesses +
+  `forge-self-ci.md` + `examples/README.md` + `docs/new-archetypes-plan.md`) ·
+  **002** tree ≤ 5 MB (baseline ~0.9 MB) · **003** `example` CI job stays ≤ 4 min
+  (parse-only, ADR-B6-8-004) · **004** each demo proposal ≤ 200 lines · **005**
+  demos cover distinct layer + event-surface combinations.
+
+### ADRs
+- **ADR-B6-8-001** render through the real `forge init` CLI (the archetype is
+  promoted/scaffoldable) — the divergence from b7-7's overlay.sh workaround, and
+  a stronger demonstration of the public adopter flow. **ADR-B6-8-002** demo-003
+  is the multi-layer (Janus) saga demo spanning `[backend, infra]` (the frontend
+  layer is deferred — ADR-B6-1-004). **ADR-B6-8-003** exactly 3 archived demos
+  (no 4th `specified`, mirroring b7-7). **ADR-B6-8-004** CI is parse-only /
+  own-gates-only for all three trees; `forge-ci.yml` line budget bumped 400→420
+  in lockstep across c1/g1/t5-1/t5-otel-live-run + `forge-self-ci.md`.
+
+### Downstream
+`forge-eda-example` completes the trio of archetype reference projects
+(`full-stack-monorepo` / `ai-native-rag` / `event-driven-eu`). Because it renders
+through the real CLI, it doubles as an end-to-end proof that the `b6-7-harness`
+promotion made `forge init --archetype event-driven-eu` actually work for adopters.

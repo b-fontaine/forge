@@ -1,0 +1,202 @@
+# Forge Schema — event-driven-eu 1.0.0 (STABLE / SCAFFOLDABLE)
+# <!-- Audit: B.6.1 (b6-1-schema) — event-driven EU archetype scaffold schema -->
+# <!-- Promoted: B.6.7 (b6-7-harness) — candidate→stable / scaffoldable:false→true -->
+#
+# The EU-sovereign event-driven archetype (plan §6.1 B.6): a Rust backend (NATS
+# JetStream producers/consumers + Postgres event store + Temporal activity-only
+# saga workers) + Connect transport + AsyncAPI 3.1 event contracts + Zitadel +
+# SigNoz/OBI/Coroot. It is the shared contract that the rest of the B.6 chain
+# (scaffolder, standards, Hermes-Async, CI pipelines, Helm charts, harness,
+# example) validates against.
+#
+# Stage semantics (THIS file):
+#   - stable + scaffoldable:true : the full template tree shipped (B.6.2, 48
+#     templates) and the assembled archetype was proven end-to-end by the b6-7
+#     promotion suite (≥35 tests) + the harness-rust CI job (`buf build` proto
+#     contract + `cargo test --workspace` of the rendered backend). The CLI
+#     `selectScaffoldableVersion` now returns 1.0.0, so `forge init --archetype
+#     event-driven-eu` renders the tree (it no longer refuses exit 3). The promotion
+#     (candidate→stable, scaffoldable false→true) happened in B.6.7, gated on a green
+#     b6-7 harness (ADR-B6-1-002, mirroring the B.7.6 (ai-native-rag) and B.8.14-C2
+#     (full-stack-monorepo) flips). Additive: no existing archetype is affected; the
+#     b8-3b validator's candidate⇒scaffoldable:false clause no longer applies and
+#     1.0.0 (no prerelease) clears the stable version floor.
+#
+# `extends: tdd-rust` below is DOCUMENTARY PROVENANCE ONLY. No scaffold-schema
+# loader resolves `extends` (parseSchemaMeta + check_versioned_schema_siblings
+# read this file's own fields). The tdd-rust phases are therefore MATERIALISED
+# INLINE in `phases:` (ADR-B6-1-001), extended with the two B.6.1 phases
+# `event-design` (AsyncAPI 3.1 contracts before design) and `saga-orchestration`
+# (Temporal saga/workflow design review gate — Article VIII.2).
+#
+# Component references (ADR-B6-1-003): NO inline version pins. Each component with
+# an existing standard cites it; `nats-jetstream` / `asyncapi` / `event-patterns`
+# have NO standard yet (delivered_by B.6.3: infra/nats-jetstream.md,
+# global/asyncapi-contracts.md, global/event-driven.md) and carry no pin (the
+# async-nats / temporalio-sdk / sqlx verify-then-pin candidates are NOT committed
+# here — they belong to the consuming Cargo.toml.tmpl that B.6.2 ships).
+
+name: event-driven-eu
+version: "1.0.0"
+stage: stable
+scaffoldable: true
+extends: tdd-rust            # documentary provenance only — NOT loader-resolved (ADR-B6-1-001)
+
+description: >
+  EU-sovereign event-driven archetype: Rust backend (NATS JetStream producers/
+  consumers + Postgres event store + Temporal activity-only saga workers) + Connect
+  transport + AsyncAPI 3.1 event contracts + Zitadel + SigNoz/OBI/Coroot. Protos +
+  AsyncAPI as the event/API single source of truth. TDD + BDD enforced per layer;
+  multi-layer changes routed by Janus. Event versioning + idempotency keys + saga
+  compensation are mandatory; no ad-hoc saga in application code (Article VIII.2 —
+  Temporal). Scaffoldable since B.6.7 (promoted candidate→stable).
+
+tdd_enforced: true
+bdd_required_for_user_facing: true
+coverage_threshold: 80
+
+# ─── Component SET (reference-only, ADR-B6-1-003) ─────────────────
+#
+# Each entry: name + role + (standard | delivered_by). NO inline version pin —
+# the standard yaml is the single source of truth. The three deferred components
+# (nats-jetstream / asyncapi / event-patterns) have no standard yet; B.6.3 ships
+# infra/nats-jetstream.md / global/asyncapi-contracts.md / global/event-driven.md.
+components:
+  - name: nats-jetstream
+    role: event-backbone
+    delivered_by: B.6.3             # infra/nats-jetstream.md (clustering/RAFT/persistence/consumer-groups); standard NOT YET
+  - name: temporal
+    role: orchestration
+    standard: orchestration.yaml    # default_by_language.rust: temporal (§VIII.2, B8O)
+  - name: postgres
+    role: event-store
+    standard: persistence.yaml      # postgres-17 (append-only event store + projections)
+  - name: connect-rpc
+    role: transport
+    standard: transport.yaml        # derived_outputs incl. asyncapi-3.1
+  - name: asyncapi
+    role: event-contracts
+    delivered_by: B.6.3             # global/asyncapi-contracts.md (AsyncAPI 3.1 versioning + validation); standard NOT YET
+  - name: event-patterns
+    role: saga-outbox-inbox
+    delivered_by: B.6.3             # global/event-driven.md (saga/process-manager/outbox/inbox/idempotency); standard NOT YET
+  - name: zitadel
+    role: identity
+    standard: identity.yaml
+  - name: observability
+    role: observability
+    standard: observability.yaml    # SigNoz/OBI/Coroot (B.8.8)
+
+# ─── Layers ───────────────────────────────────────────────────────
+# Required triple backend/frontend/infra (b8-3b validator). This archetype is
+# backend-centric (event stack); the frontend layer carries a single DEFERRED
+# ops-console surface so the required-triple invariant holds without pretending a
+# full web app ships in the first cut (ADR-B6-1-004).
+layers:
+  - id: backend
+    path: backend/
+    fr_id_prefix: FR-BE-
+    primary_agent: Vulcan
+    standards_scope: [rust, all]
+  - id: frontend
+    path: frontend/
+    fr_id_prefix: FR-FE-
+    primary_agent: Hera
+    standards_scope: [flutter, all]
+    surfaces:
+      - id: ops-console
+        path: ops-console/
+        stack: qwik
+        status: deferred
+        note: optional ops UI — NOT in the B.6.2 first cut; a later change may add it
+  - id: infra
+    path: infra/
+    fr_id_prefix: FR-IN-
+    primary_agent: Atlas
+    standards_scope: [infra, all]
+
+fr_id_prefix_cross_layer: FR-GL-
+
+# ─── Cross-layer orchestration ───────────────────────────────────
+cross_layer:
+  agent: Janus
+  triggers:
+    - layers_count_ge: 2
+
+# ─── Phases (INLINED — ADR-B6-1-001) ─────────────────────────────
+# tdd-rust flow materialised from tdd-rust/schema.yaml, extended with the two
+# B.6.1 phases: event-design (AsyncAPI 3.1 event contracts specified BEFORE
+# design) and saga-orchestration (Temporal saga/workflow design review gate,
+# wiring Article VIII.2 — no ad-hoc saga in application code).
+phases:
+  - id: proposal
+    artifact: proposal.md
+    gate: constitution_compliance
+    next: specs
+  - id: specs
+    artifact: specs.md
+    agent: Clio
+    gate: anti_hallucination_check
+    next: event-design
+  - id: event-design                 # B.6.1 addition (§6.1) — AsyncAPI 3.1 contracts before design
+    artifact: "shared/asyncapi/*.yaml"
+    gate: asyncapi_contracts_defined
+    next: features
+  - id: features
+    artifact: "features/*.feature"
+    agent: Centurion
+    gate: scenarios_cover_all_fr
+    next: design
+  - id: design
+    artifact: design.md
+    agent: Ferris
+    gate: constitution_compliance_rust
+    next: saga-orchestration
+  - id: saga-orchestration           # B.6.1 addition (§6.1) — Temporal saga design gate (VIII.2)
+    artifact: saga-design.md
+    gate: temporal_saga_design_reviewed
+    next: tasks
+  - id: tasks
+    artifact: tasks.md
+    tdd_order_enforced: true
+    next: implementation
+  - id: implementation
+    protocol: tdd_cycle
+    agent: Vulcan
+    team: [Centurion, Ferris, Sentinel]
+    next: review
+  - id: review
+    agents: [Tribune, Aegis]
+    checks:
+      - cargo_test
+      - coverage_rust
+      - clippy_clean
+      - cargo_audit
+      - event_versioning_verified
+      - saga_compensation_verified
+    next: archive
+  - id: archive
+    merges: specs.md into .forge/specs/
+
+# ─── Event specifics (event-driven patterns — VIII.2; B.6.3 standards materialise) ──
+event_specifics:
+  event_versioning: required
+  idempotency_keys: required
+  saga_compensation: required
+  outbox_inbox_pattern: recommended
+  exactly_once: via_temporal_and_idempotency_keys
+  eu_sovereignty:
+    no_kafka_saas_us: true          # Confluent Cloud forbidden (the enforcement rule list is B.6.10)
+    acceptable: [nats-jetstream, redpanda]
+
+# ─── Rust specifics (carried from tdd-rust; Temporal activity-only bias) ─────────
+rust_specifics:
+  architecture: hexagonal
+  async_runtime: tokio
+  grpc: tonic + prost
+  transport: connect-rpc
+  error_handling: thiserror + anyhow
+  temporal_sdk:
+    crate_family: temporalio-sdk    # official native Rust SDK; concrete version verify-then-pin at B.6.2
+    stability: public-preview       # infra/temporal.md — API evolves; prefer activity-only workers
+    worker_bias: activity-only

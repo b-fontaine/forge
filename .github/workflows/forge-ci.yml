@@ -73,6 +73,7 @@ jobs:
             "g1.test.sh"
             "c1.test.sh"
             "b7-7.test.sh"
+            "b6-8.test.sh"
             "a7.test.sh"
             "b5.test.sh"
             "d5.test.sh"
@@ -296,6 +297,30 @@ jobs:
                    + glob.glob('examples/forge-rag-example/shared/protos/*.yaml'))
           if not paths:
               print('no rag example YAML found', file=sys.stderr); sys.exit(1)
+          for p in paths:
+              try:
+                  yaml.safe_load(open(p).read())
+              except Exception as e:
+                  print(f'parse failed: {p}: {e}', file=sys.stderr); sys.exit(1)
+              print(f'parsed: {p}')
+          PY
+      # ── EDA example gate (b6-8, MODIFIED FR-CI-012) — third tree under the
+      #    same examples/** filter; parse-only / own-gates-only (ADR-B6-8-004).
+      - name: eda-example gates
+        if: steps.examples-filter.outputs.examples == 'true'
+        run: |
+          cd examples/forge-eda-example
+          bash .forge/scripts/verify.sh
+          bash .forge/scripts/constitution-linter.sh
+      - name: parse eda example yaml (yaml.safe_load)
+        if: steps.examples-filter.outputs.examples == 'true'
+        run: |
+          python3 - <<'PY'
+          import glob, sys, yaml
+          paths = (glob.glob('examples/forge-eda-example/shared/asyncapi/*.yaml')
+                   + glob.glob('examples/forge-eda-example/infra/**/*.yaml', recursive=True))
+          if not paths:
+              print('no eda example YAML found', file=sys.stderr); sys.exit(1)
           for p in paths:
               try:
                   yaml.safe_load(open(p).read())

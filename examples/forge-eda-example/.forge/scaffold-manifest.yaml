@@ -1,0 +1,9 @@
+archetype: event-driven-eu
+archetype_version: 1.0.0
+project_name: forge-eda-example
+reverse_domain: io.forge.example
+root_module: forge_eda_example
+scaffold_date: '2026-07-12T14:42:22.559653+00:00'
+scaffold_plan_sha: 36496778c5f5e180fea7c49341da0da55ac3ef744259c79951955e2f9dabb818
+template_set_sha: 234090c3d5b4baa60c6dbb7bfacd7c45e92de4556b06b937a95705bbe288091d
+tools: {}

@@ -1,0 +1,11 @@
+# <!-- Audit: B.6.2 (b6-2-scaffolder) — buf module config -->
+# buf module for forge-eda-example's Connect/gRPC contracts (transport.yaml SSoT).
+version: v2
+modules:
+  - path: .
+lint:
+  use:
+    - STANDARD
+breaking:
+  use:
+    - FILE

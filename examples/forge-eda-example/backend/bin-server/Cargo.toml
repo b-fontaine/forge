@@ -1,0 +1,22 @@
+# <!-- Audit: B.6.2 (b6-2-scaffolder) — bin-server crate (axum entrypoint + DI) -->
+[package]
+name = "bin-server"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "bin-server"
+path = "src/main.rs"
+
+[dependencies]
+events = { workspace = true }
+eventstore = { workspace = true }
+saga = { workspace = true }
+axum = { workspace = true }
+tokio = { workspace = true }
+tower-http = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow = { workspace = true }
+serde_json = { workspace = true }

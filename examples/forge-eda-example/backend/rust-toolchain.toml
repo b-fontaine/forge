@@ -1,0 +1,4 @@
+# <!-- Audit: B.6.2 (b6-2-scaffolder) — pinned Rust toolchain -->
+[toolchain]
+channel = "stable"
+components = ["rustfmt", "clippy"]
