@@ -57,6 +57,29 @@ minor bump and will be called out under a `### BREAKING` subsection.
   registered in `forge-ci.yml`. Additive — the archetype schema stays
   candidate/`scaffoldable:false` (promotion rides B.6.7).
 
+- **Production Helm charts for the `event-driven-eu` Temporal + NATS clusters (B.6.6, `b6-6-helm`)** —
+  the production Kubernetes deployment the B.6.2 scaffolder backbone
+  forward-referenced, authored under
+  `.forge/templates/archetypes/event-driven-eu/1.0.0/infra/k8s/` as Forge Helm
+  **values overlays** on upstream charts (the B.8.7 Zitadel / B.8.4 Envoy
+  chart-referenced-hybrid convention — no vendored `Chart.yaml`). **(a)**
+  `temporal-cluster/` deploys the four Temporal server roles
+  (**history / matching / frontend / worker**) on a **Postgres-backed**
+  persistence + visibility store (`server.config.persistence.datastores.*.sql`,
+  `pluginName: postgres12`; no removed Cassandra sub-chart), with the schema-setup
+  Job wired via Helm hooks; **(b)** `nats-jetstream/` deploys a **3-node
+  clustered** NATS with **JetStream** (RAFT quorum, file-store PVCs) + monitoring,
+  documenting runtime durable-consumer / queue-group provisioning; **(c)** each
+  chart carries a **T1 / T2 / T3 self-host EU** compliance posture citing
+  `compliance-tiers.md`, plus an `infra/k8s/README.md` index. Chart pins are
+  verify-then-pin LIVE (`temporal/temporal` `1.5.0`/server `1.31.1`; `nats/nats`
+  `2.14.2`) and both overlays are `helm template`-validated. The `temporalio-sdk`
+  **client** crate pin in `backend/Cargo.toml` (`0.5.0`) is untouched (orthogonal
+  to the **server** cluster version — no re-pin). Additive: the dev backbone is
+  byte-unchanged. Gated by `.forge/scripts/tests/b6-6.test.sh` (13 L1 + 1 L2
+  helm-render), registered in `forge-ci.yml`; the schema stays `candidate`
+  (promotion is B.6.7).
+
 - **Iris-Web frontend web specialist agent (K.4, `k4-iris-web`)** — a new
   `.claude/agents/iris-web.md` persona that maintains the Qwik / SvelteKit
   web-frontend conventions for the `full-stack-monorepo` `frontend/web-public/`

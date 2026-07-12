@@ -1,13 +1,16 @@
 # infra/ — <project-name> (Atlas)
 
-Local-dev infrastructure for the event-driven-eu backend. Everything here is
-**dev-scoped**; production runs on Kubernetes (Helm charts — B.6.6).
+Infrastructure for the event-driven-eu backend. `nats/`, `postgres/`, and
+`temporal/` are **dev-scoped**; production runs on Kubernetes via the `k8s/` Helm
+values overlays (B.6.6).
 
 | Path | What |
 |------|------|
-| `nats/jetstream.conf` | Minimal single-node NATS JetStream (event backbone) |
-| `postgres/init-eventstore.sql` | Append-only event-store schema + inbox table |
+| `nats/jetstream.conf` | Minimal single-node NATS JetStream (event backbone, dev) |
+| `postgres/init-eventstore.sql` | Append-only event-store schema + inbox table (dev) |
 | `temporal/docker-compose.temporal.yml` | OPTIONAL local Temporal dev server + UI |
+| `k8s/temporal-cluster/` | PRODUCTION Temporal cluster (history/matching/frontend/worker + Postgres backing) — Helm values overlay |
+| `k8s/nats-jetstream/` | PRODUCTION NATS JetStream cluster (3-node RAFT + JetStream PVCs) — Helm values overlay |
 
 Reused BY REFERENCE from the B.8 substrate (not re-declared here): Zitadel OIDC
 (identity.yaml), Envoy Gateway (§VIII.1), SigNoz/OBI/Coroot observability

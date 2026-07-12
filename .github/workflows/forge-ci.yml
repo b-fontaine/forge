@@ -148,6 +148,9 @@ jobs:
             "b6-3.test.sh --level 1"
             "b6-4.test.sh --level 1,2"
             "b6-5.test.sh --level 1,2"
+            # b6-6 Helm charts (Temporal+NATS). L1 hermetic; L2 helm-render is
+            # toolchain-gated (needs helm + upstream repos), local/opt-in.
+            "b6-6.test.sh --level 1"
             "k4.test.sh --level 1,2"
           )
           fail=0

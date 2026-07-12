@@ -1,0 +1,27 @@
+<!-- Audit: B.6.6 (b6-6-helm, FR-B6-HELM-041) -->
+# infra/k8s — production Helm charts for `<project-name>`
+
+Production **Kubernetes** deployment for the `event-driven-eu` backend, shipped as
+Forge **Helm values overlays** on upstream charts (the B.8.7 Zitadel /
+B.8.4 Envoy chart-referenced-hybrid convention — upstream chart + `values-forge.yaml`
+overlay + docs; no vendored `Chart.yaml`).
+
+> **Production, not dev.** The everyday local loop is `docker-compose.dev.yml`
+> (`task dev:up`: single-node NATS + Postgres) and the optional
+> `infra/temporal/docker-compose.temporal.yml` dev server. Those are dev-scoped.
+> **This directory is what you deploy to an EU K8s cluster.**
+
+| Chart | What | Doc |
+|-------|------|-----|
+| `temporal-cluster/` | Temporal server cluster (history/matching/frontend/worker) on a Postgres-backed store | [`temporal-cluster/README.md`](temporal-cluster/README.md) |
+| `nats-jetstream/` | 3-node clustered NATS + JetStream (RAFT, file-store PVCs) — the event backbone | [`nats-jetstream/README.md`](nats-jetstream/README.md) |
+
+Each chart carries its own **T1 / T2 / T3** self-host EU compliance posture
+(citing `.forge/standards/global/compliance-tiers.md`). Both self-host cleanly on
+EU K8s for **T2** and on SecNumCloud-qualified EU clusters for **T3** — no
+US-jurisdiction SaaS dependency. See [`docs/COMPLIANCE.md`](../../../../../../docs/COMPLIANCE.md)
+for tier selection (declare yours in `.forge/.forge-tier`).
+
+The Postgres event store the backend uses (`infra/postgres/`) is deployed
+separately; production Temporal SHOULD use a **dedicated** Postgres instance for
+its `temporal` + `temporal_visibility` databases (see `temporal-cluster/README.md`).
