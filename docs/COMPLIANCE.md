@@ -166,10 +166,11 @@ member. The full content schema, determinism recipe, consumption
 protocol, and forward-compatibility rules live in
 [`compliance-artefacts-bundle.md`](../.forge/standards/global/compliance-artefacts-bundle.md).
 
-When the project carries the `ai-native-rag` archetype's regulatory
-artefacts (below), the bundle additionally collects them under
-`regulatory/ai-act/*` + `regulatory/dora/*` (bundle contract v1.1.0,
-`b7-5-ai-act`). They ride the bundle automatically — no extra step.
+When the project carries an archetype's regulatory artefacts (below),
+the bundle additionally collects them under `regulatory/ai-act/*` +
+`regulatory/dora/*` (bundle contract v1.1.0, `b7-5-ai-act`,
+`ai-native-rag`) and `regulatory/nis2/*` (v1.2.0, `b6-9-compliance`,
+`event-driven-eu`). They ride the bundle automatically — no extra step.
 
 ---
 
@@ -209,7 +210,47 @@ risk-category mapping, finance high-risk determination, dataset-bias legal
 trigger, DORA notification windows, authoritative RoI schema) are carried as
 `[NEEDS CLARIFICATION]` markers — **Themis (K.5, T7+) Phase-B work items**, not
 framework defects. Forge does not invent legal specifics (Article III.4). The
-NIS2 / CRA siblings remain reserved.
+NIS2 event-driven artefacts ship separately (see § Regulatory artefacts (NIS2 +
+DORA event-driven) below, `b6-9-compliance`); the CRA sibling remains reserved.
+
+---
+
+## Regulatory artefacts (NIS2 + DORA event-driven)
+
+> **Audit**: B.6.9 (`b6-9-compliance`, 2026-07-10).
+
+The `event-driven-eu` archetype carries EU **NIS2** + **DORA** regulatory
+artefacts. Its grounded compliance profile is "NIS2 + DORA (si finance) + CRA"
+(`ARCHITECTURE-TARGET.md` §10.3). The NIS2 artefacts live under
+[`.forge/compliance/nis2/`](../.forge/compliance/nis2/); the DORA Register-of-
+Information submission helper is
+[`.forge/scripts/compliance/dora-roi-helper.sh`](../.forge/scripts/compliance/dora-roi-helper.sh).
+
+| Artefact | Regulation | Purpose |
+|---|---|---|
+| `nis2/incident-reporting.md`          | NIS2 | Grounded incident-reporting obligation (24h/72h) scoped to NATS/Temporal/Postgres → evidence surfaces |
+| `nis2/incident-report.template.yaml`  | NIS2 | Adopter-fillable incident-notification skeleton (24h/72h) |
+| `nis2/obligations-index.yaml`         | NIS2 | Machine-readable obligation → evidence map (incident-reporting + supply-chain SBOM) |
+| `dora-roi-helper.sh`                  | DORA | RoI submission helper — emits the ICT third-party register (NATS/Temporal/Postgres) driving the b7-5 RoI base |
+
+**SBOM CycloneDX auto-generation** for `event-driven-eu` (a Rust backend) rides
+the existing [`bin/forge-sbom.sh`](../bin/forge-sbom.sh) (Rust `Cargo.lock` →
+CycloneDX 1.5) + the I.6 bundle's `sbom/sbom.cdx.json` member — the same
+mechanism every archetype uses (no new generator). It is the NIS2 supply-chain
+transparency evidence surface.
+
+The content schema + SBOM-wiring posture + Phase A/B governance are documented in
+the standard
+[`nis2-dora-eda-artefacts.md`](../.forge/standards/global/nis2-dora-eda-artefacts.md).
+The NIS2 artefacts reach an auditor via the I.6 hand-off bundle's
+`regulatory/nis2/` subdirectory (bundle contract v1.2.0).
+
+**Themis-Phase-B governance**: the artefacts are content-frozen at v1.0.0 under
+BDFL (Phase A). The precise legal determinations the repo cannot ground (the
+named NIS2 reporting stages, the authoritative CSIRT notification schema, the
+authoritative DORA RoI field schema) are carried as `[NEEDS CLARIFICATION]`
+markers — **Themis (K.5) Phase-B work items**, not framework defects. The CRA
+sibling remains reserved.
 
 ---
 

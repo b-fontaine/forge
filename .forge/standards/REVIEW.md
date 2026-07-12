@@ -1010,3 +1010,36 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   (VIII.2) for the Temporal API rather than restating it. These standards ship as
   Markdown, so `bin/validate-standards-yaml.sh` (J.7) does not gate them; the
   header blocks are narrative.
+
+## 2026-07-10 — Initial ratification (b6-9-compliance, B.6.9)
+
+  | Standard                              | Version       | Decision | Next review due | Notes                                                                                                          |
+  |---------------------------------------|---------------|----------|-----------------|----------------------------------------------------------------------------------------------------------------|
+  | global/nis2-dora-eda-artefacts.md     | 1.0.0         | KEEP     | 2027-07-10      | Birth: governs the EU NIS2 + DORA regulatory-artefact content schema + the SBOM-wiring posture + Phase A (BDFL, frozen) → Phase B (Themis K.5) governance for the `.forge/compliance/nis2/` members + the DORA RoI helper shipped by the `event-driven-eu` archetype. |
+  | global/compliance-artefacts-bundle.md | 1.1.0 → 1.2.0 | AMEND    | 2027-07-10      | Additive minor bump: the I.6 hand-off bundle now also collects the B.6.9 `event-driven-eu` NIS2 artefacts under `regulatory/nis2/*` (graceful absence). Six base + v1.1.0 AI-Act/DORA members unchanged; determinism recipe untouched; NIS2 moves reserved → shipped, CRA still reserved. `last_reviewed`/`expires_at` refreshed 2026-07-10 / 2027-07-10. |
+
+- **Decision**: KEEP (new `global/nis2-dora-eda-artefacts.md` v1.0.0) +
+  AMEND (`global/compliance-artefacts-bundle.md` `1.1.0 → 1.2.0`).
+- **Next review due**: 2027-07-10 (12-month cycle).
+- **Notes**: B.6.9 (`event-driven-eu` compliance hooks — SBOM CycloneDX
+  auto-generation, NIS2 incident-reporting template, DORA RoI submission helper)
+  ships the NIS2 regulatory artefacts under `.forge/compliance/nis2/`
+  (`incident-reporting.md`, `incident-report.template.yaml`,
+  `obligations-index.yaml`) + the `dora-roi-helper.sh` submission helper, wired
+  into the I.6 bundle (`bundle.sh` directory-walk, additive — `"nis2"` added to
+  the walk tuple). Every regulatory specific is **grounded-or-deferred** per
+  Article III.4: the NIS2 "24h/72h" reporting windows + "< 24h" charter figure
+  (`ARCHITECTURE-TARGET.md` §10.4 / §9.2), the DORA RoI "30 avr 2026" ESA
+  deadline (§10.4), the event-stack operational surface
+  (`event-driven-eu/1.0.0.yaml` components). The precise NIS2 reporting stages,
+  the authoritative CSIRT notification schema, and the authoritative DORA RoI
+  field schema are carried as `[NEEDS CLARIFICATION]` markers (Themis Phase-B
+  work items). SBOM rides the existing `bin/forge-sbom.sh` (Rust `Cargo.lock`) —
+  no new generator. **Lock-step amendments** (shared-reservation discipline):
+  `b7-5.test.sh::_test_b75_001` dropped its `nis2/`-reserved assertion (B.6.9
+  now ships nis2/ ; cra/ still reserved) and its `_test_b75_051` version pin was
+  relaxed to a semver-validity check (Option B precedent) ;
+  `i6.test.sh::_test_i6_021` frontmatter pins updated to `1.2.0` / 2026-07-10.
+  `ai-act-dora-artefacts.md` + `docs/COMPLIANCE.md` stale "NIS2 reserved" prose
+  updated to "NIS2 shipped (B.6.9), CRA reserved". This standard ships as
+  Markdown, so `bin/validate-standards-yaml.sh` (J.7) does not gate it.

@@ -80,6 +80,40 @@ minor bump and will be called out under a `### BREAKING` subsection.
   helm-render), registered in `forge-ci.yml`; the schema stays `candidate`
   (promotion is B.6.7).
 
+- **event-driven-eu compliance hooks — NIS2 + DORA (B.6.9, `b6-9-compliance`)** —
+  the regulatory layer of the `event-driven-eu` archetype (profile "NIS2 + DORA
+  (si finance) + CRA", `ARCHITECTURE-TARGET.md` §10.3), the B.6 sibling of the
+  B.7.5/B.7.8 AI-Act work. Ships **(B.6.9.a)** NIS2 artefacts under
+  `.forge/compliance/nis2/` (`incident-reporting.md` — the significant-incident
+  reporting obligation with the grounded **24h/72h** windows verbatim, scoped to
+  the NATS JetStream / Temporal / Postgres event-store operational surface, →
+  the I.6 audit-ledger + IX.4 Rust OTel evidence surfaces ;
+  `incident-report.template.yaml` — an adopter-fillable 24h/72h notification
+  skeleton ; `obligations-index.yaml` — the machine-readable obligation→evidence
+  map: `incident-reporting` + `supply-chain-security` satisfied, ungrounded
+  pillars flagged `needs-clarification`/`themis_owner: K.5`) ; **(B.6.9.b)** the
+  DORA Register-of-Information submission helper
+  `.forge/scripts/compliance/dora-roi-helper.sh` (drives, never forks, the b7-5
+  `dora/roi-register.template.yaml` base and specialises it for the archetype's
+  ICT third-party stack — NATS/Temporal/Postgres) ; **(B.6.9.c)** SBOM CycloneDX
+  auto-generation wiring documentation — event-driven-eu's SBOM rides the
+  existing `bin/forge-sbom.sh` (Rust `Cargo.lock` → CycloneDX 1.5) + the I.6
+  bundle `sbom/sbom.cdx.json` member (no new generator) ; **(B.6.9.d)** the I.6
+  bundle wired additively — `bundle.sh` walk tuple gains `"nis2"`, the bundle
+  contract `global/compliance-artefacts-bundle.md` bumped **1.1.0 → 1.2.0**
+  (NIS2 members ride `regulatory/nis2/*`; NIS2 moves reserved → shipped, CRA
+  still reserved) ; **(B.6.9.e)** a new standard
+  `global/nis2-dora-eda-artefacts.md` v1.0.0 (6 H2 + 5 MUST NOT, Phase A/B
+  BDFL→Themis governance) + `index.yml` + `REVIEW.md` entries ; **(B.6.9.f)** a
+  new harness `.forge/scripts/tests/b6-9.test.sh` (17 L1 + 3 L2), registered in
+  `forge-ci.yml`. Every regulatory specific is **grounded-or-deferred** (Article
+  III.4; `_test_b69_030` negative-grep backstop). **Lock-step** (shared-
+  reservation discipline): `b7-5.test.sh` dropped its `nis2/`-reserved assertion
+  and relaxed its I.6-version pin to semver-validity; `i6.test.sh` frontmatter
+  pins updated to 1.2.0 / 2026-07-10; `ai-act-dora-artefacts.md` +
+  `docs/COMPLIANCE.md` stale "NIS2 reserved" prose corrected. `forge-compliance.yml`
+  unchanged (the artefacts ride the existing `bundle` step).
+
 - **Iris-Web frontend web specialist agent (K.4, `k4-iris-web`)** — a new
   `.claude/agents/iris-web.md` persona that maintains the Qwik / SvelteKit
   web-frontend conventions for the `full-stack-monorepo` `frontend/web-public/`

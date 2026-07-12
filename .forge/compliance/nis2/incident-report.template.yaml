@@ -1,0 +1,44 @@
+# Audit: B.6.9 (b6-9-compliance)
+# NIS2 incident-notification — adopter-fillable template (event-driven-eu).
+#
+# Scoped to the archetype's operational surface (NATS JetStream / Temporal /
+# Postgres event store). This is a STRUCTURE skeleton only; the authoritative
+# CSIRT / competent-authority field schema is a Themis (K.5) Phase-B
+# determination.
+#
+# needs_clarification: >-
+#   [NEEDS CLARIFICATION: the authoritative NIS2 incident-notification field
+#   schema (the mandatory fields / CSIRT routing the competent authority
+#   requires, and the named early-warning / notification / final-report stages)
+#   — Themis (K.5) to supply from the official NIS2 text; the fields below are an
+#   adopter-fillable starting structure grounded in the repo's "24h/72h" +
+#   "< 24h" figures only, NOT the legally authoritative field list.]
+#
+# Fill the placeholders, remove the <FILL: ...> tokens, and submit per your
+# competent authority's process. Grounded windows: reporting 24h/72h
+# (docs/ARCHITECTURE-TARGET.md §10.4); "< 24h" charter (§9.2). See
+# incident-reporting.md for the obligation + Forge evidence surfaces.
+schema_version: "1.0.0"
+incident_notification:
+  reporting_entity:
+    name: "<FILL: reporting entity name>"
+    competent_authority: "<FILL: your national CSIRT / competent authority>"
+  # Grounded window: within 24h of becoming aware (see §10.4 "24h/72h", §9.2 "< 24h").
+  early_warning_24h:
+    detected_at: "<FILL: ISO-8601 timestamp the incident was detected>"
+    summary: "<FILL: short description of the significant incident>"
+    suspected_cause: "<FILL: e.g. malicious / operational failure / unknown>"
+  # Grounded window: fuller notification within 72h (see §10.4 "24h/72h").
+  incident_notification_72h:
+    severity: "<FILL: impact severity + affected service scope>"
+    cross_border_impact: "<FILL: yes/no + affected member states>"
+  affected_components:
+    - component: "<FILL: e.g. NATS JetStream event-backbone>"
+      impact: "<FILL: availability | integrity | confidentiality>"
+    - component: "<FILL: e.g. Temporal orchestration>"
+      impact: "<FILL: availability | integrity | confidentiality>"
+    - component: "<FILL: e.g. Postgres event-store>"
+      impact: "<FILL: availability | integrity | confidentiality>"
+  forge_evidence:
+    audit_ledger: "<FILL: path to the I.6 audit-ledger snapshot for the window>"
+    otel_traces: "<FILL: SigNoz/OBI/Coroot trace reference for the incident>"

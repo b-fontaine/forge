@@ -1,0 +1,30 @@
+name: b6-9-compliance
+status: archived
+created: 2026-07-10
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.6.9  # docs/new-archetypes-plan.md §6.1 line 2565-2566 — compliance hooks for event-driven-eu (SBOM CycloneDX auto-generation, NIS2 incident reporting template, DORA RoI submission helper)
+depends_on:
+  - b6-1-schema               # .forge/schemas/event-driven-eu/1.0.0.yaml — components (nats-jetstream/temporal/postgres) + event_specifics the compliance hooks align with
+  - i6-compliance-artefacts   # .forge/scripts/compliance/bundle.sh + forward-stable regulatory/ layout (ADR-I6-CA-002) + the I.6 standard this brick bumps 1.1.0→1.2.0
+  - b7-5-ai-act               # sibling compliance brick (ai-native-rag AI-Act + DORA) — the structural template this brick mirrors; its b7-5.test.sh nis2-reserved assertion is amended in lock-step
+  - k5-themis                 # Themis (K.5) shipped 2026-07-10 — this brick ships the frozen v1.0.0 NIS2/DORA-EDA artefacts Themis Phase B maintains + the regulatory-deadline calendar it already carries verbatim
+archived_to:
+  - .forge/specs/event-driven-eu.md  # B.6.9 ADDED block (FR-B69-* / NFR-B69-* / ADR-B69-*) appended at archive
+# Unblocks / lock-step notes (change.schema.json forbids extra top-level fields,
+# so this lives in a comment, same convention as sibling b7-5-ai-act):
+#   NIS2 sibling ships: .forge/compliance/nis2/ is CREATED here (the I.6-reserved
+#   layout). b7-5.test.sh::_test_b75_001 asserted nis2/ was NOT created — that
+#   sibling-harness assertion is amended in lock-step (ADR-B69-006), keeping the
+#   cra/ reservation intact.
+#   I.6 contract bump: this brick amends global/compliance-artefacts-bundle.md
+#   1.1.0 → 1.2.0 (additive bundle members regulatory/nis2/*). The amendment +
+#   REVIEW.md entry land in the SAME change.
+timeline:
+  proposed: 2026-07-10
+  specified: 2026-07-10
+  designed: 2026-07-10
+  planned: 2026-07-10
+  implemented: 2026-07-10
+  archived: 2026-07-10

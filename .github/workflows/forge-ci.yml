@@ -96,10 +96,10 @@ jobs:
             "i6.test.sh --level 1,2"
             "i3.test.sh --level 1,2"
             "i5.test.sh --level 1"
-            # b7-5 lives in the i-block by SUBSTANCE (compliance family: fills the
-            # I.6-reserved .forge/compliance/ layout + bumps the I.6 bundle
-            # contract), not by its b7 NUMBER (ADR-B75-004).
+            # b7-5/b6-9 live here by SUBSTANCE (compliance family), not by
+            # their b7/b6 NUMBER (ADR-B75-004/ADR-B69-005).
             "b7-5.test.sh --level 1,2"
+            "b6-9.test.sh --level 1,2"
             "f3.test.sh --level 1"
             "t5-1.test.sh --level 1"
             "t5-cargo.test.sh --level 1"

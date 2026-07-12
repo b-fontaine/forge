@@ -497,3 +497,11 @@ standards:
     triggers: [nats, jetstream, nats-jetstream, raft, clustering, consumer-group, durable-consumer, stream, persistence, redpanda, event-backbone, event-driven-eu]
     scope: infra
     priority: high
+
+  # ─── B.6.9 — NIS2 + DORA event-driven regulatory artefacts (b6-9-compliance) ───
+
+  - id: global/nis2-dora-eda-artefacts
+    path: standards/global/nis2-dora-eda-artefacts.md
+    triggers: [nis2, dora, event-driven-eu, compliance, regulatory, incident-reporting, roi, sbom, supply-chain, themis]
+    scope: all
+    priority: high

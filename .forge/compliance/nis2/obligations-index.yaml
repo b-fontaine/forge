@@ -1,0 +1,32 @@
+# Audit: B.6.9 (b6-9-compliance)
+# NIS2 obligation → Forge-evidence-surface index for the event-driven-eu
+# archetype. Grounded obligations carry concrete satisfied_by surfaces;
+# ungrounded NIS2 pillars are flagged needs-clarification with a themis_owner
+# (K.5) — NOT asserted satisfied (Article III.4).
+schema_version: "1.0.0"
+regulation: nis2
+obligations:
+  - id: incident-reporting
+    title: "Significant incident reported within the 24h/72h windows"
+    status: satisfied
+    satisfied_by:
+      - "I.6 audit-ledger snapshot"
+      - "IX.4 Rust OTel tracing spans (SigNoz/OBI/Coroot)"
+    source: "docs/ARCHITECTURE-TARGET.md §10.4 (24h/72h) ; §9.2 (< 24h) ; nis2/incident-reporting.md"
+  - id: supply-chain-security
+    title: "Supply-chain transparency via SBOM"
+    status: satisfied
+    satisfied_by:
+      - "CycloneDX SBOM (bin/forge-sbom.sh over the Rust Cargo.lock)"
+      - "I.6 bundle sbom/sbom.cdx.json member"
+    source: "global/compliance-artefacts-bundle.md § Purpose (NIS2 supply-chain transparency)"
+  - id: risk-management-measures
+    title: "Detailed NIS2 risk-management measures"
+    status: needs-clarification
+    themis_owner: K.5
+    satisfied_by: []
+  - id: governance-oversight
+    title: "Management-body governance / accountability (NIS2 pillar)"
+    status: needs-clarification
+    themis_owner: K.5
+    satisfied_by: []
