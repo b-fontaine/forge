@@ -1,0 +1,70 @@
+// <!-- Audit: B.6.2 (b6-2-scaffolder) — seed event-service proto -->
+//
+// Seed proto for the event-driven-eu command/query surface. Intentionally minimal
+// — just enough to exercise `buf lint`, `buf breaking`, and the Rust + TS Connect
+// codegen. The event CONTRACTS themselves (channels/messages carried over NATS
+// JetStream) live in shared/asyncapi/ (AsyncAPI is the event SSoT); this proto is
+// the synchronous Connect API a caller uses to submit a command / read a
+// projection.
+//
+// The namespace `events.v1` is project-agnostic so regenerating the archetype does
+// not leak project identity here.
+
+syntax = "proto3";
+
+package events.v1;
+
+// EventService — the synchronous Connect surface in front of the event backbone.
+service EventService {
+  // Publish submits a command that the backend wraps in an idempotent, versioned
+  // envelope and publishes to NATS JetStream (Nats-Msg-Id dedup). Idempotent on
+  // `idempotency_key` (event_specifics.idempotency_keys).
+  rpc Publish(PublishRequest) returns (PublishResponse);
+
+  // ReadStream reads the persisted events for a stream from the Postgres event
+  // store, in sequence order (projection/audit).
+  rpc ReadStream(ReadStreamRequest) returns (ReadStreamResponse);
+}
+
+message PublishRequest {
+  // stream_id — the logical stream (e.g. an aggregate id).
+  string stream_id = 1;
+  // event_type — the event type name (e.g. `OrderPlaced`).
+  string event_type = 2;
+  // event_version — schema version of `payload` for this `event_type`.
+  uint32 event_version = 3;
+  // idempotency_key — stable across retries; drives publish + append dedup.
+  string idempotency_key = 4;
+  // payload_json — the event body as a JSON string.
+  string payload_json = 5;
+}
+
+message PublishResponse {
+  // event_id — the assigned event id.
+  string event_id = 1;
+  // deduplicated — true when an event with this idempotency_key already existed.
+  bool deduplicated = 2;
+}
+
+message ReadStreamRequest {
+  // stream_id — the stream to read.
+  string stream_id = 1;
+}
+
+message StoredEvent {
+  // seq — the global monotonic sequence assigned on append.
+  int64 seq = 1;
+  // event_id — the event id.
+  string event_id = 2;
+  // event_type — the event type name.
+  string event_type = 3;
+  // event_version — schema version of the payload.
+  uint32 event_version = 4;
+  // payload_json — the event body as a JSON string.
+  string payload_json = 5;
+}
+
+message ReadStreamResponse {
+  // events — the stream's events in ascending sequence order.
+  repeated StoredEvent events = 1;
+}

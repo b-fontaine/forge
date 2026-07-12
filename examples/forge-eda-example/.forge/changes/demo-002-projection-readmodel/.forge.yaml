@@ -1,0 +1,18 @@
+name: demo-002-projection-readmodel
+status: archived
+created: 2026-07-12
+schema: event-driven-eu
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.6.8  # Illustrative single-layer backend demo (eventstore/ projection → read model) of the EDA reference project
+depends_on:
+  - demo-001-ingestion-http-nats  # consumes the events demo-001 publishes/appends
+layers:
+  - backend
+timeline:
+  proposed: 2026-07-12
+  specified: 2026-07-12
+  designed: 2026-07-12
+  planned: 2026-07-12
+  implemented: 2026-07-12
+  archived: 2026-07-12

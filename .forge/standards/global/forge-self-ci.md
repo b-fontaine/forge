@@ -42,7 +42,7 @@ Shape constraints :
 - No `continue-on-error: true` anywhere.
 - Every `uses:` reference pinned to a tag (no `@main` / `@master`
   / `@HEAD` / `:latest`).
-- Workflow file ≤ 400 lines (NFR-CI-002 ; bumped 250→300 on 2026-05-12, 300→340 on 2026-06-23 for b7-7-example's second example-tree RAG gate, 340→380 on 2026-06-23 for b7-6-harness's `harness-rust` live codegen/build job, then 380→400 on 2026-07-12 for b6-7-harness's event-driven-eu promotion gate `harness-rust` L2 step, to accommodate the linear growth of harness entries across T5/B.7/B.6). The budget is asserted in four harnesses (c1, g1, t5-1, t5-otel-live-run) — bump them in lock-step.
+- Workflow file ≤ 420 lines (NFR-CI-002 ; bumped 250→300 on 2026-05-12, 300→340 on 2026-06-23 for b7-7-example's second example-tree RAG gate, 340→380 on 2026-06-23 for b7-6-harness's `harness-rust` live codegen/build job, 380→400 on 2026-07-12 for b6-7-harness's event-driven-eu promotion gate `harness-rust` L2 step, then 400→420 on 2026-07-12 for b6-8-example's third example-tree EDA gate + the `b6-8.test.sh` harness-loop entry, to accommodate the linear growth of harness entries across T5/B.7/B.6). The budget is asserted in four harnesses (c1, g1, t5-1, t5-otel-live-run) — bump them in lock-step.
 
 ## What's intentionally different from infra/ci-workflows.md
 

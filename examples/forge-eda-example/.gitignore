@@ -1,0 +1,19 @@
+# Rust
+/backend/target
+**/*.rs.bk
+Cargo.lock
+
+# Env / secrets — NEVER commit
+.env
+*.local
+
+# Node (proto codegen / tooling)
+node_modules/
+
+# Generated proto stubs (regenerate with `task proto`)
+backend/**/generated/
+shared/protos/gen/
+
+# OS / editor
+.DS_Store
+*.swp

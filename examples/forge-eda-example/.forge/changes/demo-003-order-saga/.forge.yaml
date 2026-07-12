@@ -1,0 +1,30 @@
+name: demo-003-order-saga
+status: archived
+created: 2026-07-12
+schema: event-driven-eu
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.6.8  # Multi-layer (Janus) Temporal activity-only saga demo of the EDA reference project
+depends_on:
+  - demo-001-ingestion-http-nats   # publishes the events the saga steps emit
+  - demo-002-projection-readmodel  # the read model the saga's effects land in
+# Multi-layer change (>= 2 layers) → routed by Janus (FR-GL-015); per-layer
+# designs + tasks (FR-GL-016). The archetype's frontend layer is deferred
+# (ADR-B6-1-004), so the multi-layer axis here is [backend, infra]: the saga
+# crate (backend) + the Temporal cluster substrate it runs on (infra).
+layers:
+  - backend
+  - infra
+designs_per_layer:
+  backend: designs/design-backend.md
+  infra: designs/design-infra.md
+tasks_per_layer:
+  backend: tasks/tasks-backend.md
+  infra: tasks/tasks-infra.md
+timeline:
+  proposed: 2026-07-12
+  specified: 2026-07-12
+  designed: 2026-07-12
+  planned: 2026-07-12
+  implemented: 2026-07-12
+  archived: 2026-07-12

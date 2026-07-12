@@ -1,0 +1,30 @@
+# <!-- Audit: B.6.8 (b6-8-example) — forge-eda-example root configuration -->
+# Forge Root Configuration for forge-eda-example
+# This file configures the Forge framework for the event-driven reference project.
+# See .forge/schemas/event-driven-eu/1.0.0.yaml for the archetype contract.
+#
+# NOTE (stable / scaffoldable:true): the event-driven-eu archetype was PROMOTED to
+# stable/scaffoldable by b6-7-harness, so this tree was rendered by the real
+# `forge init --archetype event-driven-eu` CLI, then committed verbatim
+# (ADR-B6-8-001 — the divergence from forge-rag-example's overlay.sh workaround).
+# See README.md "How this example was built".
+
+schema: event-driven-eu
+schema_version: "1.0.0"
+constitution_version: "2.0.0"
+
+# Layers declared by the archetype (inherited from the schema, repeated here for
+# transparency and for tools that don't load the full schema). The `frontend`
+# layer is a single DEFERRED ops-console surface (ADR-B6-1-004) — this archetype
+# is backend-centric, so the multi-layer demo (demo-003) spans [backend, infra].
+layers:
+  - id: backend
+    path: backend/
+  - id: frontend
+    path: frontend/
+  - id: infra
+    path: infra/
+
+# Versioning model — release-train by default (see the framework's
+# docs/VERSIONING.md "Monorepo Versioning Models").
+versioning_model: release-train

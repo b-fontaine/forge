@@ -1,0 +1,151 @@
+# <!-- Audit: B.6.6 (b6-6-helm, FR-B6-HELM-001..005) — production Temporal cluster Helm values overlay -->
+#
+# Forge Helm values OVERLAY for the upstream Temporal chart, installed by Atlas:
+#
+#   helm repo add temporal https://go.temporal.io/helm-charts
+#   helm install forge-eda-example-temporal temporal/temporal \
+#     --version 1.5.0 -f values-forge.yaml
+#
+# This is the PRODUCTION Temporal cluster for the event-driven-eu backend — the
+# four server roles (history / matching / frontend / worker) on a POSTGRES-backed
+# persistence + visibility store. It supersedes the dev-only
+# infra/temporal/docker-compose.temporal.yml overlay (temporalio/auto-setup,
+# ephemeral SQLite) for real EU K8s deployment. Standard: infra/temporal.md.
+#
+# Pins (verify-then-pin LIVE 2026-07-10 — `helm show chart temporal/temporal`):
+#   chart  temporal/temporal   --version 1.5.0   (chart-tested pair)
+#   server temporalio/server   1.31.1            (chart appVersion)
+#
+# The backend `saga` crate talks to this cluster via the CLIENT SDK
+# `temporalio-sdk`/`temporalio-client` pinned in backend/Cargo.toml (0.5.0). That
+# CLIENT pin is orthogonal to the SERVER version pinned here — do NOT re-pin the
+# crate in this file (single source of truth = backend/Cargo.toml).
+#
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║  NEVER PUT SECRETS HERE. The Postgres password is a K8s Secret referenced ║
+# ║  by NAME via `existingSecret` — no password VALUE is committed. Create it ║
+# ║  at deploy time (see README.md).                                          ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+
+# ── Forge provenance on every rendered resource (chart top-level keys) ──
+additionalLabels:
+  app.kubernetes.io/part-of: forge-eda-example
+additionalAnnotations:
+  forge.dev/standard: "infra/temporal.md"
+  forge.dev/aegis-audit: "required"
+
+server:
+  enabled: true
+  image:
+    repository: temporalio/server
+    tag: "1.31.1"          # verify-then-pin — chart 1.5.0 appVersion
+  # Global default replica count; overridden per role below (HA quorum).
+  replicaCount: 3
+
+  # ── The four Temporal server roles (plan §6.1 B.6.6) ──
+  # Each role runs as its own Deployment and is independently scalable.
+  frontend:
+    enabled: true
+    replicaCount: 2        # stateless gRPC entrypoint — scale with client load
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: "1"
+        memory: 512Mi
+  history:
+    enabled: true
+    replicaCount: 3        # shard owner — keep >= (numHistoryShards / shards-per-pod)
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: "2"
+        memory: 1Gi
+  matching:
+    enabled: true
+    replicaCount: 2        # task-queue matching engine
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: "1"
+        memory: 512Mi
+  worker:
+    enabled: true
+    replicaCount: 2        # internal system workflows (archival, scavenger, ...)
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: "1"
+        memory: 512Mi
+
+  config:
+    logLevel: "info"
+    # IMPORTANT: numHistoryShards CANNOT be changed after the initial deployment
+    # (upstream constraint). Pick the production value up front.
+    numHistoryShards: 512
+
+    # ── Postgres-backed persistence (chart >= 1.0.0-rc.2 shape) ──
+    # The Cassandra sub-chart was removed upstream; there is NO top-level
+    # `cassandra:` key and NO `server.config.persistence.default` path — stores
+    # live under `datastores.<name>` (ADR-B6-HELM-002).
+    persistence:
+      defaultStore: default
+      visibilityStore: visibility
+      datastores:
+        # Main store — Temporal mutable + immutable state.
+        default:
+          sql:
+            pluginName: postgres12
+            databaseName: temporal
+            connectAddr: "forge-eda-example-temporal-db:5432"
+            connectProtocol: "tcp"
+            user: temporal_user
+            # DB password by K8s Secret reference — NEVER inlined (NFR-B6-HELM-003).
+            existingSecret: forge-eda-example-temporal-db
+            secretKey: password
+            maxConns: 20
+            maxIdleConns: 20
+            maxConnLifetime: "1h"
+            tls:
+              enabled: false   # set true + supply caFile for TLS to Postgres (T3)
+        # Visibility store — list/search of workflow executions.
+        visibility:
+          sql:
+            pluginName: postgres12
+            databaseName: temporal_visibility
+            connectAddr: "forge-eda-example-temporal-db:5432"
+            connectProtocol: "tcp"
+            user: temporal_user
+            existingSecret: forge-eda-example-temporal-db
+            secretKey: password
+            maxConns: 10
+            maxIdleConns: 10
+            maxConnLifetime: "1h"
+            tls:
+              enabled: false
+
+# ── Schema management: run the schema-setup Job via Helm hooks BEFORE server
+#    pods start, so the `temporal` + `temporal_visibility` Postgres schemas exist
+#    (FR-B6-HELM-005). Set useHelmHooks:false only for Flux/ArgoCD/Terraform.
+schema:
+  useHelmHooks: true
+
+# admintools (tctl / temporal CLI + schema tooling) — keep for ops + schema setup.
+admintools:
+  enabled: true
+
+# Temporal Web UI — ClusterIP (internal). Expose via the Envoy/ingress layer only.
+web:
+  enabled: true
+  service:
+    type: ClusterIP
+
+# Prometheus metrics annotations already on by default (server.metrics.annotations);
+# OTel scraping is wired by the observability layer, not here.

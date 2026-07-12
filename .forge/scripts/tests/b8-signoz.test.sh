@@ -401,17 +401,24 @@ _test_b8sig_l1_017_mirror_count() {
   # `examples/forge-rag-example/` (+ its cli/assets mirror) ships its OWN
   # docker-compose.dev.yml (postgres-17+pgvector RAG datastore) — a different
   # archetype, NOT a SigNoz mirror copy; same rationale as the versioned subtrees.
+  # ALSO EXCLUDED (b6-8-example, 2026-07-12): the event-driven-eu reference example
+  # `examples/forge-eda-example/` (+ its cli/assets mirror) ships its OWN
+  # docker-compose.dev.yml (NATS JetStream + Postgres event-store) AND an
+  # infra/temporal/docker-compose.temporal.yml overlay — a different archetype's
+  # datastore, NOT a SigNoz mirror copy; same rationale as forge-rag-example.
   local count
   count=$(find "$FORGE_ROOT_REAL" -name 'docker-compose*.yml*' \
             -not -path '*/node_modules/*' -not -path '*/.git/*' \
             -not -path '*/[0-9]*.[0-9]*.[0-9]*/*' \
-            -not -path '*forge-rag-example*' 2>/dev/null | wc -l | tr -d ' ')
+            -not -path '*forge-rag-example*' \
+            -not -path '*forge-eda-example*' 2>/dev/null | wc -l | tr -d ' ')
   if [ "$count" != "6" ]; then
     echo "    expected exactly 6 docker-compose copies, found $count (FR-B8-SIG-G-005)" >&2
     find "$FORGE_ROOT_REAL" -name 'docker-compose*.yml*' \
       -not -path '*/node_modules/*' -not -path '*/.git/*' \
       -not -path '*/[0-9]*.[0-9]*.[0-9]*/*' \
-      -not -path '*forge-rag-example*' 2>/dev/null >&2
+      -not -path '*forge-rag-example*' \
+      -not -path '*forge-eda-example*' 2>/dev/null >&2
     return 1
   fi
 

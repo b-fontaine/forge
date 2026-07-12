@@ -23,6 +23,7 @@ The full standard governing this spec is
 |---|---|---|---|
 | [`g1-forge-ci`](../changes/g1-forge-ci/) | 2026-04-29 | Forge's own CI workflow | FR-CI-001..011 + NFR-CI-001..006 |
 | [`c1-reference-project`](../changes/c1-reference-project/) | 2026-04-30 | Reference project — example tree CI | ADDED FR-CI-012..013 ; MODIFIED FR-CI-001 (5 → 6 jobs, adds `example`) ; MODIFIED FR-CI-006 (4 → 5 needs, treats `example=skipped` as success) |
+| [`b6-8-example`](../changes/b6-8-example/) | 2026-07-12 | Third example tree (`event-driven-eu`) — EDA gate | MODIFIED FR-CI-012 (`example` job gates **three** trees; +`b6-8.test.sh` loop entry) ; MODIFIED FR-CI-013 / NFR-CI-002 (line budget 400→420, lockstep across c1/g1/t5-1/t5-otel-live-run + `forge-self-ci.md`) |
 | [`b7-6-harness`](../changes/b7-6-harness/) | 2026-06-23 | ai-native-rag promotion gate — live codegen/build CI job | MODIFIED FR-CI-001 (6 → 7 jobs, adds `harness-rust`) ; MODIFIED FR-CI-006 (5 → 6 needs, adds `harness-rust`) ; MODIFIED NFR-CI-002 (340 → 380 line budget) |
 | [`b6-7-harness`](../changes/b6-7-harness/) | 2026-07-12 | event-driven-eu promotion gate — reuses `harness-rust` for a `b6-7 --level 1,2` live-build step (NO new job) | MODIFIED NFR-CI-002 (380 → 400 line budget) ; registers `b6-7.test.sh` in the harness array (job count unchanged at 7) |
 
@@ -296,6 +297,19 @@ Article X. **Testable:** yes —
   summary aggregation (`needs: […example]`, skip-as-success) is unchanged.
   Testable: `test_forge_ci_example_job_gates_rag_tree` +
   `test_forge_ci_example_job_fsm_block_preserved` (b7-7.test.sh).
+- **MODIFIED (b6-8-example, 2026-07-12)** — the `example` job now gates
+  **three** example trees under the same `examples/**` paths-filter. After the
+  `forge-rag-example` steps (byte-preserved), it gains a third per-tree gate
+  block: `cd examples/forge-eda-example && bash .forge/scripts/verify.sh +
+  constitution-linter.sh` + a `yaml.safe_load` parse of the EDA tree's
+  `shared/asyncapi/*.yaml` + `infra/**/*.yaml`. Parse-only / own-gates-only (no
+  `cargo build` / `buf generate` / network — ADR-B6-8-004). The summary
+  aggregation (`needs: […example]`, skip-as-success) is unchanged. The
+  `forge-ci.yml` line budget is bumped 400→420 in lockstep (FR-CI-013 /
+  NFR-CI-002). Testable: `test_forge_ci_example_job_gates_eda_tree` +
+  `test_forge_ci_example_job_fsm_rag_blocks_preserved` +
+  `test_forge_ci_harness_loop_has_b6_8` + `test_forge_ci_line_budget_holds`
+  (b6-8.test.sh).
 
 **Constitution reference:** Articles V, X. **Testable:** yes —
 `test_forge_ci_example_job_present`,
@@ -307,11 +321,13 @@ Article X. **Testable:** yes —
 <!-- From change: c1-reference-project (2026-04-30) -->
 
 - **SHOULD** — adding the `example` job MUST keep `forge-ci.yml`
-  ≤ 400 lines (the size budget from `NFR-CI-002`; bumped 250→300 on
+  ≤ 420 lines (the size budget from `NFR-CI-002`; bumped 250→300 on
   2026-05-12, 300→340 on 2026-06-23 by `b7-7-example` for the MODIFIED
   FR-CI-012 second-tree RAG gate, 340→380 on 2026-06-23 by `b7-6-harness`
-  for the new `harness-rust` job, then 380→400 on 2026-07-12 by `b6-7-harness`
-  for the event-driven-eu promotion gate's `harness-rust` L2 step). Beyond that, the job MUST be
+  for the new `harness-rust` job, 380→400 on 2026-07-12 by `b6-7-harness`
+  for the event-driven-eu promotion gate's `harness-rust` L2 step, then
+  400→420 on 2026-07-12 by `b6-8-example` for the MODIFIED FR-CI-012
+  third-tree EDA gate + the `b6-8.test.sh` harness-loop entry). Beyond that, the job MUST be
   extracted into a composite action under
   `.github/actions/forge-ci-example/action.yml`. The budget is enforced by
   matching assertions in `c1.test.sh` **and** `g1.test.sh` (+ `t5-1.test.sh` +
@@ -334,11 +350,12 @@ time of c1, `forge-ci.yml` is well under the 250-line cap.
 
 ### NFR-CI-002: Workflow file size
 
-- **SHOULD** — `forge-ci.yml` MUST be ≤ 400 lines (bumped 250→300 on
+- **SHOULD** — `forge-ci.yml` MUST be ≤ 420 lines (bumped 250→300 on
   2026-05-12, 300→340 on 2026-06-23 for b7-7-example's second-tree RAG
   gate, 340→380 on 2026-06-23 for b7-6-harness's `harness-rust` live
-  codegen/build job, then 380→400 on 2026-07-12 for b6-7-harness's event-driven-eu
-  `harness-rust` L2 step). Beyond that, refactor into composite actions or matrix strategies.
+  codegen/build job, 380→400 on 2026-07-12 for b6-7-harness's event-driven-eu
+  `harness-rust` L2 step, then 400→420 on 2026-07-12 for b6-8-example's
+  third-tree EDA gate + the `b6-8.test.sh` harness-loop entry). Beyond that, refactor into composite actions or matrix strategies.
   Enforced by `test_forge_ci_under_size_budget` (c1.test.sh + g1.test.sh) and
   the sibling NFR-CI-002 assertions in t5-1.test.sh + t5-otel-live-run.test.sh —
   all four kept in lock-step. As of 2026-05-31 the `harness` job

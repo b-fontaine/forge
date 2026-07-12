@@ -1,0 +1,13 @@
+# infra — forge-eda-example
+
+Dev infrastructure overlays. Bring up the base stack (NATS JetStream + Postgres)
+with `task dev:up`; the optional Temporal dev server with `task temporal:up`.
+
+- `nats/` — JetStream config + docs (dev)
+- `postgres/` — event-store schema + docs (dev)
+- `temporal/` — optional local Temporal overlay + docs (dev)
+- `k8s/` — **production** Helm charts (clustered NATS JetStream + Temporal cluster)
+
+Production topology (clustered NATS JetStream, Temporal history/matching/frontend/
+worker, Postgres backing) ships as Helm values overlays under `k8s/` (B.6.6) —
+deploy those to an EU K8s cluster; the overlays above are dev-scoped.

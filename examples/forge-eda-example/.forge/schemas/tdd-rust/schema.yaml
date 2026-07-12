@@ -1,0 +1,71 @@
+# Forge TDD-Rust Schema
+name: tdd-rust
+version: "1.0.0"
+description: Rust development with enforced TDD, BDD, and hexagonal architecture
+extends: default
+
+tdd_enforced: true
+bdd_required: true
+coverage_threshold: 80
+test_command: cargo test --all-features
+coverage_command: cargo tarpaulin --out Lcov
+clippy_enforced: true  # -D warnings
+fmt_enforced: true
+
+phases:
+  - id: proposal
+    artifact: proposal.md
+    gate: constitution_compliance
+
+  - id: specs
+    artifact: specs.md
+    agent: Clio
+
+  - id: features  # BDD feature files before implementation
+    artifact: "features/*.feature"
+    description: Gherkin feature files for cucumber-rs
+    agent: Centurion
+    gate: scenarios_cover_all_fr
+
+  - id: design
+    artifact: design.md
+    agent: Ferris
+    gate: constitution_compliance_rust
+
+  - id: tasks
+    artifact: tasks.md
+    tdd_order_enforced: true
+
+  - id: implementation
+    protocol: tdd_cycle
+    agent: Vulcan
+    team:
+      - Centurion  # Tests
+      - Ferris     # Architecture
+      - Sentinel   # Observability
+
+  - id: review
+    agents: [Tribune, Aegis]
+    checks:
+      - cargo_test
+      - coverage_rust
+      - clippy_clean
+      - cargo_audit
+      - zero_unwrap
+      - zero_unsafe_undocumented
+
+  - id: archive
+    merges: specs.md into .forge/specs/
+
+rust_specifics:
+  architecture: hexagonal
+  async_runtime: tokio
+  grpc: tonic + prost
+  error_handling: thiserror + anyhow
+  testing:
+    unit: built-in (#[cfg(test)])
+    integration: tests/ directory
+    bdd: cucumber-rs
+    property: proptest
+    mocking: mockall
+  observability: tracing + opentelemetry-otlp

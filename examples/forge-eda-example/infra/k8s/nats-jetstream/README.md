@@ -1,0 +1,106 @@
+<!-- Audit: B.6.6 (b6-6-helm, FR-B6-HELM-020, FR-B6-HELM-024, FR-B6-HELM-040) -->
+# NATS JetStream cluster (production Helm) for `forge-eda-example`
+
+This directory is the **production** event backbone: a **3-node clustered** NATS
+with **JetStream** enabled (RAFT quorum, file-store persistent volume claims),
+deployed on Kubernetes via the upstream NATS Helm chart.
+
+It is the K8s counterpart to the **dev-only** single-node
+`infra/nats/jetstream.conf` (`docker-compose.dev.yml`). EU-sovereignty
+(`event_specifics.eu_sovereignty`): NATS JetStream (CNCF, EU self-hostable) —
+**no Kafka SaaS US (Confluent Cloud)**; Redpanda is the acceptable alternative
+(B.6.10). Related standard: `infra/nats-jetstream.md` (B.6.3, clustering / RAFT /
+persistence / consumer groups).
+
+## Delivery model — chart-referenced hybrid (ADR-B6-HELM-001)
+
+NATS is **Atlas-installed from the upstream chart**; this tree vendors only the
+Forge **values overlay** (`values-forge.yaml`) + this doc. The chart owns the
+StatefulSet, headless Service, JetStream ConfigMap, and PVC templates.
+
+| Plane | What | How |
+|-------|------|-----|
+| **Control + data plane** | 3-pod StatefulSet, RAFT routes, JetStream ConfigMap, per-pod PVC | Upstream Helm chart `nats/nats` (Atlas-provided install — below) |
+| **Forge overlay** | cluster replicas, JetStream file-store PVC size, monitor, resources, provenance labels | `values-forge.yaml.tmpl` (this dir) |
+
+## Resource (verify-then-pin LIVE 2026-07-10)
+
+| Resource | Pin | Provenance |
+|----------|-----|------------|
+| Helm chart `nats/nats` | `2.14.2` | `helm show chart nats/nats` |
+| Server image `nats` | `2.14.2-alpine` | chart `2.14.2` appVersion |
+
+## Control-plane install (Atlas-provided)
+
+```sh
+helm repo add nats https://nats-io.github.io/k8s/helm/charts/
+helm repo update
+helm install forge-eda-example-nats nats/nats \
+  --version 2.14.2 \
+  -f values-forge.yaml \
+  --namespace forge-eda-example --create-namespace
+```
+
+Clients connect at `nats://forge-eda-example-nats.forge-eda-example.svc:4222`; the
+StatefulSet peers form the RAFT cluster over `:6222`
+(`forge-eda-example-nats-{0,1,2}.forge-eda-example-nats-headless`).
+
+## Clustering, RAFT & persistence
+
+- `config.cluster.replicas: 3` — a fault-tolerant RAFT quorum (survives one node
+  loss). Must be ≥ 2 whenever JetStream is enabled.
+- `config.jetstream.fileStore.pvc` — each pod gets a 20Gi PVC (`/data`); JetStream
+  R3 streams replicate across the three PVCs, so stream + consumer state survives
+  pod restarts and rescheduling. Set `storageClassName` to an EU-jurisdiction CSI
+  class for T2/T3.
+- `config.monitor` (`:8222`) — `/healthz` for probes, `/jsz` for JetStream stats.
+
+## Streams & consumers — durable consumers and queue groups (FR-B6-HELM-024)
+
+JetStream **streams** and **consumers** are provisioned at **runtime**, not as
+static chart values — there is no Helm key for them. Provision them from the
+backend or the `nats` CLI:
+
+- **Streams**: create the event stream(s) (e.g. subjects `forge-eda-example.events.>`,
+  storage `file`, replicas `3` to match the RAFT quorum) once at bootstrap.
+- **Durable consumers**: the backend consumes with a **durable** name so
+  redelivery survives restarts (`backend/events/src/consumer.rs`), acking with the
+  `Nats-Msg-Id` idempotency key (`backend/events/src/publisher.rs`) so
+  re-delivery/re-publish is deduplicated.
+- **Queue (work-queue) groups**: to scale consumers horizontally, multiple backend
+  replicas share a **queue group** on the same durable consumer — JetStream
+  load-balances delivery across the group, giving at-least-once, competing-consumer
+  semantics. This is the "consumer group" mechanism (plan §6.1 B.6.3/B.6.6).
+
+```sh
+# Example bootstrap (run once, from a nats-box or a Job):
+nats stream add forge-eda-example-events \
+  --subjects 'forge-eda-example.events.>' --storage file --replicas 3
+nats consumer add forge-eda-example-events forge-eda-example-worker \
+  --deliver all --ack explicit --pull
+```
+
+## Compliance posture — T1 / T2 / T3 (FR-B6-HELM-040)
+
+Per `.forge/standards/global/compliance-tiers.md` (NATS JetStream row, verbatim):
+
+| Tier | Posture | Verdict |
+|------|---------|---------|
+| **T1** | NATS JetStream self-hosted | ✅ |
+| **T2** | NATS JetStream self-hosted on EU K8s (this chart) | ✅ self-host T2 |
+| **T3** | NATS JetStream self-hosted on EU + SecNumCloud | ✅ self-host T3 |
+
+> `compliance-tiers.md:153` — *"NATS JetStream | ✅ | ✅ | ✅ | self-host T2/T3"*
+
+NATS JetStream is a CNCF project with no US-jurisdiction SaaS dependency, so it
+clears all three tiers when self-hosted. For T3, run on a SecNumCloud-qualified
+cluster, set an EU `storageClassName`, and enable TLS
+(`config.nats.tls.enabled` + `config.cluster.tls.enabled` with your PKI). See
+`docs/COMPLIANCE.md`.
+
+## Scope out (this brick)
+- **Auth** (accounts / NKEYs / operator JWT) — commented via the chart's
+  `config.merge`; wire secrets by K8s Secret at deploy (never committed).
+- **TLS between clients / cluster peers** — enable per your PKI (T3).
+- **Prometheus exporter wiring** — enable `promExporter` + route to the
+  observability layer (SigNoz/OTel), not pinned here.
