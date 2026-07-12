@@ -144,6 +144,12 @@
       "type": "file"
     },
     {
+      "path": "CHANGELOG.md",
+      "accessCount": 13,
+      "lastAccessed": 1783682713820,
+      "type": "file"
+    },
+    {
       "path": "docs/ARCHITECTURE-TARGET.md",
       "accessCount": 12,
       "lastAccessed": 1780642705271,
@@ -159,12 +165,6 @@
       "path": "cli/src/cli.ts",
       "accessCount": 12,
       "lastAccessed": 1780664278565,
-      "type": "file"
-    },
-    {
-      "path": "CHANGELOG.md",
-      "accessCount": 11,
-      "lastAccessed": 1780757305571,
       "type": "file"
     },
     {

@@ -14,6 +14,26 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ### Added
 
+- **Hermes-Async event-driven messenger agent (K.1, `b6-4-hermes-async`)** — a new
+  `.claude/agents/hermes-async.md` persona that maintains the AsyncAPI 3.1 event
+  contracts, generates NATS/Kafka protocol bindings, and enforces idempotency keys +
+  event versioning for the `event-driven-eu` archetype (the B.6 sibling of the K.2
+  Sibyl brick). Advisory specialist in the Sibyl/Panoptes mould — **NO scanner, NO
+  data file, NO new standard** (consumes the B.6.3 standards `global/event-driven.md`,
+  `global/asyncapi-contracts.md`, `infra/nats-jetstream.md` by reference). Ships four
+  greppable checklists (AsyncAPI Contract Maintenance / NATS/Kafka Binding Generation
+  / Idempotency-Key Enforcement / Event Versioning & Compatibility) grounded in the
+  real scaffolded code shapes (`EventEnvelope`, the `Nats-Msg-Id` publish-dedup header,
+  `InboxDedup`, the `Saga` compensator), an **Event Contract Readiness Report**
+  template, a `K1-RULE-001..006` recommendation catalogue (advisory ladder `Advisory`
+  < `Concern` < `Blocking`, the one Blocking rule being end-to-end idempotency /
+  exactly-once per Article VIII.2), and an anti-hallucination protocol requiring LIVE
+  verification (Context7) of AsyncAPI/NATS/Temporal API details. Registered in
+  `CLAUDE.md` + `docs/GUIDE.md` agent tables (disambiguated from **Hermes** (Flutter
+  perf) and **Hermes-API** (Connect codegen)). Gated by a new
+  `.forge/scripts/tests/b6-4.test.sh` (19 tests: 18 L1 + 1 L2 anchor-integrity),
+  registered in `forge-ci.yml`. This brick edits no Janus file and no standards index
+  (task-scoped divergence from the b7-pythia precedent).
 - **Per-layer CI templates for the `event-driven-eu` archetype (B.6.5, `b6-5-ci-templates`)** —
   three GitHub Actions workflow templates scaffolded into an adopter's
   `.github/workflows/`, mirroring the `full-stack-monorepo` per-layer convention
