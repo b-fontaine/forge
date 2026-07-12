@@ -7,7 +7,8 @@
 <!-- B.6.3 (standards), B.6.4 (Hermes-Async), etc. APPEND to this file as they    -->
 <!-- archive.                                                                     -->
 
-**Namespace** : `FR-B6-1-*` / `NFR-B6-1-*` / `ADR-B6-1-*` (+ `FR-B6-2-*` from B.6.2).
+**Namespace** : `FR-B6-1-*` / `NFR-B6-1-*` / `ADR-B6-1-*` (+ `FR-B6-2-*` from B.6.2,
+`FR-B6-CI-*` from B.6.5).
 
 **Constitution** : v2.0.0 (no bump — additive; consumes §VIII.1 Envoy/Connect +
 §VIII.2 Temporal as-is; the `saga-orchestration` phase materialises §VIII.2's "no
@@ -131,3 +132,42 @@ and no standards index — task-scoped divergence from b7-pythia).
 `b6-2`, `b7-pythia`, `k3`, `k5`) unchanged. Q-001 (Hermes-* name-adjacency) + Q-002
 (rule seed size) + Q-003 (advisory vs scanner) all NON-BLOCKING, answered via
 ADR-K1-001..003.
+
+## B.6.5 — per-layer CI templates (archived 2026-07-10)
+
+Ships three GitHub Actions workflow templates under
+`.forge/templates/archetypes/event-driven-eu/1.0.0/.github/workflows/`, scaffolded
+into an adopter's `.github/workflows/` and registered in `scaffold-plan.yaml`
+(`substitute: true`; FR-B6-CI-050). Mirrors the `full-stack-monorepo` per-layer
+convention, adapted to the event-driven layer decomposition.
+
+- **`forge-events.yml`** (FR-B6-CI-010): gates the `events` + `eventstore` crates.
+  `dorny/paths-filter@v3` on `backend/events/**` / `backend/eventstore/**` /
+  `backend/Cargo.*` / `shared/protos/**` → `task backend:lint` (workspace clippy
+  `-D warnings` + `fmt --check`) → crate-scoped `cargo build/test -p events -p
+  eventstore` → Forge gates.
+- **`forge-workflows.yml`** (FR-B6-CI-020/021): gates the `saga` crate. Blocking
+  job runs `task backend:lint` + `cargo build/test -p saga` with **default
+  features** (the pre-alpha `temporal-sdk` stays OFF). A separate
+  `saga-temporal-sdk` job runs `cargo test -p saga --features temporal-sdk` ONLY
+  on `workflow_dispatch` — clearly NON-BLOCKING, no `continue-on-error`
+  (ADR-B6-CI-002; honours ADR-B6-2-004 + §VIII.2).
+- **`forge-infra.yml`** (FR-B6-CI-030/031/032): NATS JetStream config lint
+  (`nats-server -c infra/nats/jetstream.conf -t`), AsyncAPI 3.1 validation
+  (`task asyncapi:validate` → official schema), Postgres migration check
+  (`init-eventstore.sql` applied twice against `postgres:17-alpine` — validity +
+  idempotency) → Forge gates.
+- **Cross-cutting** (FR-B6-CI-002/040/041, NFR-B6-CI-003): each workflow has
+  `concurrency` + `permissions: contents: read`, ends in `verify.sh` →
+  `constitution-linter.sh`, uses no `continue-on-error`/`if: always()`, and pins
+  all actions + the archetype's `nats:2.10-alpine` / `postgres:17-alpine` images.
+
+**ADRs**: ADR-B6-CI-001 (crate-scoped tests + workspace lint) · ADR-B6-CI-002
+(non-blocking temporal-sdk via `workflow_dispatch`) · ADR-B6-CI-003 (Postgres
+migration applied twice) · ADR-B6-CI-004 (no `forge-integration` analogue this cut).
+
+**Verification (archived state)**: `b6-5.test.sh` L1 9/9, L1,2 10/10 (render-clean
+via `overlay.sh`, valid YAML); `b6-2.test.sh` L1,2 13/13 (plan↔tree coverage stays
+green after the three new `.tmpl` entries); `b6-1.test.sh` 19/19; `verify.sh`
+518/0 PASS; `constitution-linter.sh` OVERALL PASS. Additive — the schema stays
+candidate/`scaffoldable:false` (promotion → B.6.7).

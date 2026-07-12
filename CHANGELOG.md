@@ -34,6 +34,29 @@ minor bump and will be called out under a `### BREAKING` subsection.
   `.forge/scripts/tests/b6-4.test.sh` (19 tests: 18 L1 + 1 L2 anchor-integrity),
   registered in `forge-ci.yml`. This brick edits no Janus file and no standards index
   (task-scoped divergence from the b7-pythia precedent).
+- **Per-layer CI templates for the `event-driven-eu` archetype (B.6.5, `b6-5-ci-templates`)** —
+  three GitHub Actions workflow templates scaffolded into an adopter's
+  `.github/workflows/`, mirroring the `full-stack-monorepo` per-layer convention
+  and adapted to the event-driven layer decomposition: **`forge-events.yml`**
+  (gates the `events` + `eventstore` crates — `task backend:lint` then
+  crate-scoped `cargo build/test -p events -p eventstore`), **`forge-workflows.yml`**
+  (gates the `saga` crate with default features — the pre-alpha `temporal-sdk`
+  feature stays OFF; a separate `saga-temporal-sdk` job runs
+  `--features temporal-sdk` only on manual `workflow_dispatch`, clearly
+  non-blocking per ADR-B6-2-004), and **`forge-infra.yml`** (NATS JetStream
+  config lint via `nats-server -c … -t`, AsyncAPI 3.1 validation via
+  `task asyncapi:validate` against the official schema, and a Postgres migration
+  check that applies `init-eventstore.sql` twice against an ephemeral
+  `postgres:17-alpine` for validity + idempotency). Each workflow uses
+  `dorny/paths-filter@v3`, invokes the archetype's own Taskfile targets, ends in
+  the Forge gates (`verify.sh` → `constitution-linter.sh`), pins all actions and
+  the archetype's `nats:2.10-alpine` / `postgres:17-alpine` images, and uses no
+  `continue-on-error`. Registered in
+  `.forge/templates/archetypes/event-driven-eu/scaffold-plan.yaml` and gated by a
+  new `.forge/scripts/tests/b6-5.test.sh` (10 tests: 9 L1 + 1 L2 render-clean),
+  registered in `forge-ci.yml`. Additive — the archetype schema stays
+  candidate/`scaffoldable:false` (promotion rides B.6.7).
+
 - **Iris-Web frontend web specialist agent (K.4, `k4-iris-web`)** — a new
   `.claude/agents/iris-web.md` persona that maintains the Qwik / SvelteKit
   web-frontend conventions for the `full-stack-monorepo` `frontend/web-public/`

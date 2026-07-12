@@ -1,0 +1,99 @@
+# <!-- Audit: B.6.5 (b6-5-ci-templates, FR-B6-CI-010) -->
+# Per-layer CI workflow — EVENTS layer (event-driven-eu archetype).
+#
+# Change surface: the `events` + `eventstore` Rust crates (NATS JetStream
+# publisher/consumer + append-only Postgres event store) and the protos they
+# consume. Structural sibling of full-stack-monorepo/forge-backend.yml, adapted
+# to a single Cargo workspace split by crate.
+#
+# Uses dorny/paths-filter@v3 so the workflow ALWAYS runs (a required status for
+# branch protection) but the build job skips with SUCCESS when nothing in scope
+# changed. Steps invoke the archetype's Taskfile (`task backend:lint`) so CI and
+# local dev stay in lock-step, then a crate-scoped build/test, then the Forge
+# gates (verify.sh → constitution-linter.sh) last.
+
+name: forge-events
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: forge-events-<project-name>-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  filter:
+    name: Detect events changes
+    runs-on: ubuntu-latest
+    outputs:
+      events: ${{ steps.changes.outputs.events }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            events:
+              - 'backend/events/**'
+              - 'backend/eventstore/**'
+              - 'backend/Cargo.toml'
+              - 'backend/Cargo.lock'
+              - 'backend/rust-toolchain.toml'
+              - 'shared/protos/**'
+
+  build:
+    name: Events build + gates
+    needs: filter
+    if: needs.filter.outputs.events == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache cargo registry + git + target
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            backend/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('backend/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Install go-task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Workspace clippy (-D warnings) + rustfmt --check — the Tribune gate.
+      # Workspace-scoped on purpose: a change in events/eventstore must not
+      # silently break another crate's lint.
+      - name: task backend:lint
+        run: task backend:lint
+
+      # Crate-scoped build/test — this workflow owns events + eventstore only.
+      - name: cargo build -p events -p eventstore
+        working-directory: backend
+        run: cargo build -p events -p eventstore
+
+      - name: cargo test -p events -p eventstore
+        working-directory: backend
+        run: cargo test -p events -p eventstore
+
+      - name: verify.sh
+        run: bash .forge/scripts/verify.sh
+
+      - name: constitution-linter.sh
+        run: bash .forge/scripts/constitution-linter.sh

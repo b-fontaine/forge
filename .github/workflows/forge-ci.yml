@@ -138,15 +138,16 @@ jobs:
             # (buf generate / cargo build / Qwik tsc) run in the harness-rust job.
             "b7-6.test.sh --level 1"
             # B.6 event-driven-eu chain (b6-1 schema, b6-2 scaffolder, b6-3
-            # standards). L1 is the CI level; b6-2's L2 (cargo check on the rendered
-            # backend) is toolchain-gated and stays local/opt-in (the harness job has
-            # no rust).
+            # standards, b6-4 Hermes-Async agent, b6-5 CI templates). L1 is the CI
+            # level; b6-2's L2 (cargo check on the rendered backend) is
+            # toolchain-gated and stays local/opt-in (the harness job has no rust).
+            # b6-4 is grep-only (no cargo/no network). b6-5's L2 is overlay+PyYAML
+            # only (no rust), so it runs here and skip-passes if PyYAML is absent.
             "b6-1.test.sh --level 1,2"
             "b6-2.test.sh --level 1"
             "b6-3.test.sh --level 1"
-            # b6-4 (Hermes-Async K.1 agent) — advisory persona + CLAUDE.md/GUIDE.md
-            # rows; grep-only L1 + 1 L2 anchor-integrity fixture (no cargo/no network).
             "b6-4.test.sh --level 1,2"
+            "b6-5.test.sh --level 1,2"
             "k4.test.sh --level 1,2"
           )
           fail=0
