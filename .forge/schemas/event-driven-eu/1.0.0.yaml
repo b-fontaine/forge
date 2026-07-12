@@ -1,5 +1,6 @@
-# Forge Schema — event-driven-eu 1.0.0 (CANDIDATE / NOT SCAFFOLDABLE)
+# Forge Schema — event-driven-eu 1.0.0 (STABLE / SCAFFOLDABLE)
 # <!-- Audit: B.6.1 (b6-1-schema) — event-driven EU archetype scaffold schema -->
+# <!-- Promoted: B.6.7 (b6-7-harness) — candidate→stable / scaffoldable:false→true -->
 #
 # The EU-sovereign event-driven archetype (plan §6.1 B.6): a Rust backend (NATS
 # JetStream producers/consumers + Postgres event store + Temporal activity-only
@@ -9,18 +10,17 @@
 # example) validates against.
 #
 # Stage semantics (THIS file):
-#   - stage: candidate / scaffoldable: false — NO templates exist yet (they land
-#     in B.6.2). The CLI `selectScaffoldableVersion` returns null for a
-#     candidate-only archetype, so `forge init --archetype event-driven-eu`
-#     REFUSES cleanly (exit 2 "unknown archetype" until B.6.2 registers it in the
-#     dispatch table; exit 3 "no scaffoldable version" thereafter) — it never
-#     emits a broken scaffold. The b8-3b validator enforces
-#     candidate ⇒ scaffoldable:false.
-#   - PROMOTION to stage: stable / scaffoldable: true happens in the B.6.7
-#     snapshot/harness brick, gated on a green b6.test.sh (>=35 tests) proving a
-#     real end-to-end scaffold — mirroring the B.7.6 (ai-native-rag) and
-#     B.8.14-C2 (full-stack-monorepo) flips (ADR-B6-1-002).
-#   - ADDITIVE: no existing archetype is affected by this file landing.
+#   - stable + scaffoldable:true : the full template tree shipped (B.6.2, 48
+#     templates) and the assembled archetype was proven end-to-end by the b6-7
+#     promotion suite (≥35 tests) + the harness-rust CI job (`buf build` proto
+#     contract + `cargo test --workspace` of the rendered backend). The CLI
+#     `selectScaffoldableVersion` now returns 1.0.0, so `forge init --archetype
+#     event-driven-eu` renders the tree (it no longer refuses exit 3). The promotion
+#     (candidate→stable, scaffoldable false→true) happened in B.6.7, gated on a green
+#     b6-7 harness (ADR-B6-1-002, mirroring the B.7.6 (ai-native-rag) and B.8.14-C2
+#     (full-stack-monorepo) flips). Additive: no existing archetype is affected; the
+#     b8-3b validator's candidate⇒scaffoldable:false clause no longer applies and
+#     1.0.0 (no prerelease) clears the stable version floor.
 #
 # `extends: tdd-rust` below is DOCUMENTARY PROVENANCE ONLY. No scaffold-schema
 # loader resolves `extends` (parseSchemaMeta + check_versioned_schema_siblings
@@ -38,8 +38,8 @@
 
 name: event-driven-eu
 version: "1.0.0"
-stage: candidate
-scaffoldable: false
+stage: stable
+scaffoldable: true
 extends: tdd-rust            # documentary provenance only — NOT loader-resolved (ADR-B6-1-001)
 
 description: >
@@ -49,7 +49,7 @@ description: >
   AsyncAPI as the event/API single source of truth. TDD + BDD enforced per layer;
   multi-layer changes routed by Janus. Event versioning + idempotency keys + saga
   compensation are mandatory; no ad-hoc saga in application code (Article VIII.2 —
-  Temporal). Not scaffoldable until B.6.2; promoted to stable in B.6.7.
+  Temporal). Scaffoldable since B.6.7 (promoted candidate→stable).
 
 tdd_enforced: true
 bdd_required_for_user_facing: true

@@ -337,18 +337,20 @@ test_forge_ci_no_unpinned_uses() {
   fi
 }
 
-# NFR-CI-002 — workflow ≤ 380 lines (bumped 250→300 2026-05-12; 300→340
+# NFR-CI-002 — workflow ≤ 400 lines (bumped 250→300 2026-05-12; 300→340
 # 2026-06-23 by b7-7-example for the MODIFIED FR-CI-012 second-tree RAG gate;
 # 340→380 2026-06-23 by b7-6-harness for the new harness-rust job — the
-# ai-native-rag live codegen/build gate (ADR-B7-6-005). Kept in sync with the
-# sibling assertions in c1 / t5-1 / t5-otel-live-run.
+# ai-native-rag live codegen/build gate (ADR-B7-6-005); 380→400 2026-07-12 by
+# b6-7-harness for the event-driven-eu promotion gate's harness-rust L2 step
+# (ADR-B6-7-005/007). Kept in sync with the sibling assertions in
+# c1 / t5-1 / t5-otel-live-run.
 test_forge_ci_under_size_budget() {
   if [ ! -f "$WORKFLOW_FILE" ]; then
     echo "    workflow file missing" >&2; return 1
   fi
   local lines; lines=$(wc -l < "$WORKFLOW_FILE")
-  if [ "$lines" -gt 380 ]; then
-    echo "    workflow $lines lines > 380 (NFR-CI-002)" >&2; return 1
+  if [ "$lines" -gt 400 ]; then
+    echo "    workflow $lines lines > 400 (NFR-CI-002)" >&2; return 1
   fi
 }
 

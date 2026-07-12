@@ -8,8 +8,8 @@
 #   T-002  file parses as valid YAML mapping root (FR-B6-1-001)
 #   T-003  name == 'event-driven-eu' (FR-B6-1-002 + b8-3b name==dir invariant)
 #   T-004  version == '1.0.0' (FR-B6-1-002 + b8-3b filename<->version invariant)
-#   T-005  stage == 'candidate' (FR-B6-1-002)
-#   T-006  scaffoldable is False (FR-B6-1-003 + b8-3b candidate=>scaffoldable:false)
+#   T-005  stage == 'stable' (FR-B6-1-002 ; promoted candidate→stable in B.6.7)
+#   T-006  scaffoldable is True (FR-B6-1-003 ; promoted false→true in B.6.7)
 #   T-007  tdd_enforced/bdd_required_for_user_facing/coverage_threshold (FR-B6-1-004)
 #   T-008  layers[] ids ⊇ {backend, frontend, infra} (FR-B6-1-010)
 #   T-009  every layer has id/path/fr_id_prefix/primary_agent (FR-B6-1-010, b8-3b)
@@ -217,15 +217,19 @@ _test_b61_l1_004_version() {
 }
 
 _test_b61_l1_005_stage() {
+  # Promoted candidate→stable in B.6.7 (b6-7-harness flip, gated on a green b6-7 suite).
   _ensure_py_cache || return 1
   local v; v=$(_get stage)
-  [ "$v" = "candidate" ] || { echo "    FAIL T-005: stage='$v' != 'candidate' (FR-B6-1-002)" >&2; return 1; }
+  [ "$v" = "stable" ] || { echo "    FAIL T-005: stage='$v' != 'stable' (FR-B6-1-002 — promoted B.6.7)" >&2; return 1; }
 }
 
 _test_b61_l1_006_scaffoldable_false() {
+  # Promoted scaffoldable:false→true in B.6.7 (the candidate⇒scaffoldable:false clause
+  # no longer applies; stable + 1.0.0 clears the validator's version floor). Function
+  # name kept for the T-006 manifest; the assertion is inverted by the b6-7 flip.
   _ensure_py_cache || return 1
   local v; v=$(_get scaffoldable)
-  [ "$v" = "False" ] || { echo "    FAIL T-006: scaffoldable=$v != False (FR-B6-1-003 + b8-3b candidate=>scaffoldable:false)" >&2; return 1; }
+  [ "$v" = "True" ] || { echo "    FAIL T-006: scaffoldable=$v != True (FR-B6-1-003 — promoted B.6.7)" >&2; return 1; }
 }
 
 _test_b61_l1_007_tdd_bdd_coverage() {
@@ -327,25 +331,26 @@ _test_b61_l1_018_header_block() {
 # ─── L2 tests (opt-in live) ───────────────────────────────────────────────────
 
 _test_b61_l2_001_init_refuses() {
-  # `forge init <name> --archetype event-driven-eu --org <rd>` MUST refuse cleanly
-  # (rc != 0) and write NO scaffold (NFR-B6-1-002). Exit 3 once B.6.2 registers the
-  # archetype in dispatch-table.yml; exit 2 (unknown archetype) if run before that.
-  # This test asserts the clean-refusal contract robustly (rc != 0 + no dir), not a
-  # specific code. Opt-in (FORGE_B6_1_LIVE=1) + a built CLI; skip-pass otherwise.
+  # POST-PROMOTION (B.6.7 flip): the 1.0.0 schema is now stage:stable /
+  # scaffoldable:true, so `forge init <name> --archetype event-driven-eu --org <rd>`
+  # NO LONGER refuses with exit 3 — selectScaffoldableVersion now returns 1.0.0 and
+  # the wrapper renders the tree. Inverted from the pre-flip refusal contract by
+  # b6-7-harness (function name kept for the T-L2-001 manifest). Requires the built
+  # CLI with the flipped schema bundled into cli/assets (npm run bundle). Opt-in
+  # (FORGE_B6_1_LIVE=1) + cli/dist/index.js; skip-pass otherwise.
   local cli="$FORGE_ROOT/cli/dist/index.js"
   if [ "${FORGE_B6_1_LIVE:-0}" != "1" ] || [ ! -f "$cli" ]; then
-    echo "    SKIP T-L2-001: set FORGE_B6_1_LIVE=1 with a built CLI (cli/dist/index.js) to run the live init-refusal check" >&2
+    echo "    SKIP T-L2-001: set FORGE_B6_1_LIVE=1 with a built+bundled CLI (cli/dist/index.js) to run the live post-promotion init check" >&2
     return 0
   fi
   local tmp; tmp=$(mk_tmpdir_with_trap b6-1-init)
   trap "rm -rf '$tmp'" RETURN
-  local proj="$tmp/edeproj"
   ( cd "$tmp" && node "$cli" init edeproj --archetype event-driven-eu --org com.example.test >/dev/null 2>&1 )
   local rc=$?
-  local ok=1
-  [ "$rc" != "0" ] || { echo "    FAIL T-L2-001: forge init --archetype event-driven-eu exit 0 — expected a clean refusal (NFR-B6-1-002)" >&2; ok=0; }
-  [ ! -d "$proj" ] || { echo "    FAIL T-L2-001: refused init still created a scaffold dir (NFR-B6-1-002)" >&2; ok=0; }
-  [ "$ok" = "1" ]
+  if [ "$rc" = "3" ]; then
+    echo "    FAIL T-L2-001: forge init --archetype event-driven-eu exit=3 — still refusing AFTER the B.6.7 promotion (expected the scaffold to render; schema stable/scaffoldable:true)" >&2
+    return 1
+  fi
 }
 
 # ─── Main ─────────────────────────────────────────────────────────────────────

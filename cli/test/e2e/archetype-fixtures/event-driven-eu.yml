@@ -1,0 +1,47 @@
+# Audit: T5.1 (cli-trust-harness) — fixture for archetype event-driven-eu
+#
+# Added by B.6.7 (b6-7-harness) when event-driven-eu was promoted to
+# stable/scaffoldable (FR-T51-055). File matrix asserted by
+# cli/test/e2e/archetypes-smoke.test.ts after
+# `forge init <slug> --archetype event-driven-eu --org dev.forge.test --target <tmp>`.
+#
+# has_rust_backend ⇒ the smoke run is toolchain-gated on cargo + buf; CI runners
+# (and the buf-less dev sandbox) skip-pass the actual scaffold, but the fixture
+# MUST exist + be well-formed (the dispatch-table cross-reference, FR-T51-055).
+# event-driven-eu has NO Flutter/frontend surface (the ops-console Qwik surface is
+# schema status:deferred and ships no template tree), so `frontend` is forbidden.
+#
+# required_paths / forbidden_paths were VERIFIED against a real
+# `forge init --archetype event-driven-eu` render (buf 1.70.0 + cargo 1.97.0 on the
+# b6-7 dev host, 2026-07-12): the archetype scaffolder renders the project tree only
+# (framework assets like .forge/constitution.md / .mcp.json are NOT copied by the
+# per-archetype scaffolders — .forge/ carries only scaffold-manifest.yaml), so this
+# fixture lists ONLY paths the render actually produces.
+
+archetype: event-driven-eu
+
+has_rust_backend: true
+has_flutter_frontend: false
+
+required_paths:
+  - .env.example
+  - .gitignore
+  - CLAUDE.md
+  - README.md
+  - Taskfile.yml
+  - docker-compose.dev.yml
+  - backend/Cargo.toml
+  - backend/events/Cargo.toml
+  - backend/eventstore/Cargo.toml
+  - backend/saga/Cargo.toml
+  - backend/bin-server/src/main.rs
+  - shared/protos/buf.gen.yaml
+  - shared/protos/v1/events/events.proto
+  - shared/asyncapi/asyncapi.yaml
+  - infra/nats/jetstream.conf
+  - .github/workflows/forge-events.yml
+
+forbidden_paths:
+  - cli
+  - frontend
+  - .claude/settings.local.json

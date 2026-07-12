@@ -285,13 +285,15 @@ _test_olr_030_ci_matrix_entry() {
     echo "    t5-otel-live-run.test.sh MUST appear after t5-otel-traceparent-e2e.test.sh (tpe=$line_tpe olr=$line_olr)" >&2
     return 1
   fi
-  # NFR-T5-OLR-005 / NFR-CI-002 — forge-ci.yml ≤ 380 lines (bumped 300→340
+  # NFR-T5-OLR-005 / NFR-CI-002 — forge-ci.yml ≤ 400 lines (bumped 300→340
   # 2026-06-23 by b7-7-example's second-tree RAG gate; 340→380 2026-06-23 by
-  # b7-6-harness for the new harness-rust job; in sync with c1/g1/t5-1).
+  # b7-6-harness for the new harness-rust job; 380→400 2026-07-12 by b6-7-harness
+  # for the event-driven-eu promotion gate's harness-rust L2 step; in sync with
+  # c1/g1/t5-1).
   local total
   total=$(wc -l < "$CI_YML" | tr -d ' ')
-  if [ "$total" -gt 380 ]; then
-    echo "    forge-ci.yml is $total lines, exceeds NFR-CI-002 budget of 380" >&2
+  if [ "$total" -gt 400 ]; then
+    echo "    forge-ci.yml is $total lines, exceeds NFR-CI-002 budget of 400" >&2
     return 1
   fi
 }

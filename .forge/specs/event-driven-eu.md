@@ -228,3 +228,67 @@ reserved).
 --level 1,2` 16/16 GREEN; `verify.sh` 514 PASS / 0 FAIL / 1 WARN (pre-existing) →
 RESULT PASS; `constitution-linter.sh` OVERALL PASS (0 FAIL); `validate-standards-yaml.sh`
 STD-PASS (new standard is MD, out of J.7 scope); `forge-ci.yml` 375 lines (< 400).
+
+## B.6.7 — promotion gate (candidate → stable/scaffoldable) (archived 2026-07-12)
+
+<!-- Source change: `.forge/changes/b6-7-harness/` — namespace FR-B6-7-* / NFR-B6-7-* / ADR-B6-7-*. -->
+
+**THE PROMOTION GATE** for event-driven-eu/1.0.0 (ADR-B6-1-002; structural clone of
+B.7.6 ai-native-rag). Ships a ≥35-test promotion suite that proves the assembled
+archetype end-to-end BEFORE flipping the schema to `stage: stable` /
+`scaffoldable: true`, then performs the suite-gated flip.
+
+**ADDED**:
+- **FR-B6-7-001** — `.forge/scripts/tests/b6-7.test.sh`, **36** `run_test`s
+  (`--level` + `_helpers.sh` + `run_test`/`print_summary`, mirroring b6-2/b7-6),
+  registered in `forge-ci.yml`'s harness array at `--level 1`.
+- **FR-B6-7-002** — Tier B (net-new L1 e2e, 22 tests): EventService Publish/ReadStream
+  proto + events.v1 versioning/idempotency; buf.gen Rust (tonic+prost → backend/gen/rust)
+  + TS (bufbuild/es → gen/ts) targets; buf.yaml STANDARD/FILE governance; AsyncAPI 3.1
+  channels/operations/messages; scaffold-plan↔tree coverage; NATS-idempotency / inbox /
+  append-only-eventstore / Temporal-activity-only / saga-compensation / event_version
+  conformance; pin discipline; gated wrapper + dispatch entry; bin-server axum surface +
+  DI wiring.
+- **FR-B6-7-003** — Tier A (aggregation, 8 tests): re-run b6-1/2/3/4/5/6/9/10 at their CI
+  level, assert exit 0; absent sibling → clean SKIP.
+- **FR-B6-7-004/005** — Tier C (L2 live-build, 3 tests, toolchain-gated SKIP): overlay
+  render + byte-stable re-render; `buf build` (proto contract compiles); `cargo build`/
+  `cargo test --workspace` on the rendered backend. VERIFIED LIVE 2026-07-12 (buf 1.70.0,
+  cargo 1.97.0): `buf build` PASS + `cargo test --workspace` PASS (the real build proof;
+  the workspace does not compile the generated stubs). No verify-then-pin fix required —
+  async-nats 0.49.1 / sqlx 0.9 / temporalio-sdk+client 0.5.0 all resolve+build.
+- **FR-B6-7-010** — committed deterministic snapshot
+  `.forge/scaffold-snapshots/event-driven-eu/1.0.0.tar.gz` (480 files, ~1.0 MB, ≤ 2 MB;
+  `bin/forge-snapshot.sh` SOURCE_DATE_EPOCH determinism) for `forge upgrade` BASE recovery.
+
+**MODIFIED (the promotion — final, suite-gated, one commit)**:
+- **FR-B6-7-020** — `event-driven-eu/1.0.0.yaml` `stage: candidate → stable`,
+  `scaffoldable: false → true`, header reworded (kept candidate/promotion/additive for
+  b6-1 T-018); validate-foundations stays GREEN.
+- **FR-B6-7-021** — dispatch-table `status: candidate → stable` + refusal-comment reword.
+- **FR-B6-7-022** — sibling held-guards inverted in lockstep: b6-1 T-005/T-006/T-L2-001;
+  b6-2 T-006/T-009/T-010; **b6-6 T-013** (the silent-scan catch — reads the schema
+  stage/scaffoldable without an event-driven-eu literal).
+- **FR-B6-7-023** — `cli/test/e2e/archetype-fixtures/event-driven-eu.yml` (scaffold-matrix
+  fixture; required_paths VERIFIED against a real render; `frontend` forbidden — deferred
+  ops-console ships no tree).
+- **FR-B6-7-024** — `npm run bundle` regen (gitignored `cli/assets/`; CI-fresh).
+- **FR-B6-7-030** — forge-ci line budget 380 → 400 in lockstep (g1/c1/t5-1/t5-otel-live-run
+  + forge-ci.md + forge-self-ci.md). NO job-count cascade — the b6-7 L2 legs reuse the
+  existing `harness-rust` job (job count stays 7).
+
+**ADRs**: ADR-B6-7-001 (single change) · ADR-B6-7-002 (aggregate 8 siblings + net-new) ·
+ADR-B6-7-004 (committed snapshot) · ADR-B6-7-005 (reuse `harness-rust`, no new job) ·
+ADR-B6-7-006 (flip is last, suite-gated) · ADR-B6-7-007 (budget 380→400 lockstep) ·
+ADR-B6-7-008 (proto-codegen scope: full `buf generate` NOT a gate — the neoeinstein-tonic
+remote plugin can't read prost's sibling output in buf's sandbox, systemic + shared with
+the flagship/ai-native-rag; the honest live gates are `buf build` + `cargo test`).
+
+**Verification (archived state)**: `b6-7.test.sh --level 1,2` 36/36 GREEN (Tier C `buf
+build` + `cargo test` LIVE); `b6-1 --level 1,2` 19/19, `b6-2 --level 1` 10/10,
+`b6-6 --level 1` 13/13, `g1`/`c1`/`t5-1`/`t5-otel-live-run` GREEN (budget 400); live
+`forge init --archetype event-driven-eu` rc=0 (no exit 3, renders); vitest
+archetypes-smoke `scaffolds event-driven-eu + file matrix + task --list-all` GREEN;
+`verify.sh` 556 PASS / 0 FAIL / 1 WARN (pre-existing) → PASS; `constitution-linter.sh`
+OVERALL PASS (0 FAIL); `validate-foundations.sh` PASS (schema stage=stable);
+`forge-ci.yml` 384 lines (< 400).

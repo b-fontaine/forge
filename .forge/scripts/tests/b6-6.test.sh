@@ -16,7 +16,7 @@
 #   T-010  scaffold-plan registers all 5 new sources                             (FR-B6-HELM-050)
 #   T-011  secrets never committed (no inline password:/token: in overlays)      (NFR-B6-HELM-003)
 #   T-012  each substituted values-forge.yaml.tmpl is valid YAML                 (NFR-B6-HELM-004)
-#   T-013  schema stays candidate/scaffoldable:false + b6-2 stays GREEN          (NFR-B6-HELM-005)
+#   T-013  schema is stable/scaffoldable:true (promoted B.6.7) + b6-2 stays GREEN (NFR-B6-HELM-005)
 #   T-L2-001  helm template each overlay against the upstream chart (skip-pass)  (NFR-B6-HELM-001)
 #
 # 13 L1 + 1 L2. Budget L1 <= 5 s, zero net/Docker. T-L2-001 helm render is skip-pass.
@@ -222,10 +222,14 @@ PYEOF
 }
 
 _test_b66_l1_013_schema_candidate_and_coupling() {
+  # POST-PROMOTION (B.6.7 flip): the schema is now stage:stable / scaffoldable:true
+  # (B.6.6 did not promote it — B.6.7 did). Inverted from the pre-flip candidate
+  # assertion by b6-7-harness (function name kept for the T-013 manifest). The
+  # coupling guard below (b6-2 stays GREEN) is unaffected by the promotion.
   local ok=1
   [ -f "$SCHEMA" ] || { echo "    FAIL T-013: schema missing: $SCHEMA (NFR-B6-HELM-005)" >&2; return 1; }
-  grep -qE '^\s*stage:\s*candidate' "$SCHEMA" || { echo "    FAIL T-013: schema stage != candidate (B.6.6 must not promote) (NFR-B6-HELM-005)" >&2; ok=0; }
-  grep -qE '^\s*scaffoldable:\s*false' "$SCHEMA" || { echo "    FAIL T-013: schema scaffoldable != false (NFR-B6-HELM-005)" >&2; ok=0; }
+  grep -qE '^\s*stage:\s*stable' "$SCHEMA" || { echo "    FAIL T-013: schema stage != stable (expected the B.6.7 promotion) (NFR-B6-HELM-005)" >&2; ok=0; }
+  grep -qE '^\s*scaffoldable:\s*true' "$SCHEMA" || { echo "    FAIL T-013: schema scaffoldable != true (expected the B.6.7 promotion) (NFR-B6-HELM-005)" >&2; ok=0; }
   # Coupling guard (exit-code only): the B.6.2 scaffold-plan/tree bijection stays GREEN.
   bash "$HARNESS_DIR/b6-2.test.sh" --level 1 >/dev/null 2>&1 \
     || { echo "    FAIL T-013: b6-2.test.sh --level 1 is RED under the B.6.6 edit (tree<->plan bijection regression)" >&2; ok=0; }

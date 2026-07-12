@@ -149,6 +149,10 @@ jobs:
             # hermetic grep+fixture, no toolchain needed.
             "b6-6.test.sh --level 1"
             "b6-10.test.sh --level 1,2"
+            # b6-7 (event-driven-eu promotion gate) at --level 1 here: L1 +
+            # aggregation + post-flip guards run buf-less/cargo-less. Its L2 live legs
+            # (`buf build` + `cargo test`) run in the harness-rust job.
+            "b6-7.test.sh --level 1"
             "k4.test.sh --level 1,2"
           )
           fail=0
@@ -300,16 +304,17 @@ jobs:
               print(f'parsed: {p}')
           PY
 
-  # ─── harness-rust ── b7-6 live codegen/build gate (buf + Rust + node) ─
-  # The ai-native-rag promotion gate (B.7.6, ADR-B7-6-005 / Q-B option b). The
-  # main `harness` job runs b7-6 at --level 1 (buf-less L1 + aggregation + held
-  # guards); THIS job installs buf + a Rust toolchain + node and runs b7-6 at
-  # --level 1,2 so the LIVE legs run: `buf generate` (proto → Rust + TS stubs),
-  # `cargo build`/`test` of the rendered backend workspace, and the Qwik tsc
-  # ride-along. This is the permanent per-PR gate that justifies the
+  # ─── harness-rust ── live codegen/build gate (buf + Rust + node) ─
+  # The Rust-archetype promotion gates (B.7.6 ai-native-rag + B.6.7 event-driven-eu;
+  # ADR-B7-6-005 / ADR-B6-7-005). The main `harness` job runs each suite at --level 1
+  # (buf-less L1 + aggregation + guards); THIS job installs buf + a Rust toolchain +
+  # node and runs them at --level 1,2 so the LIVE legs run — for b7-6: `buf generate`
+  # + `cargo build`/`test` + Qwik tsc; for b6-7: `buf build` (the EventService proto
+  # contract compiles) + `cargo test --workspace` of the rendered event-driven-eu
+  # backend. This is the permanent per-PR gate that justifies each
   # candidate→stable/scaffoldable:true flip — the live path proven on every PR.
   harness-rust:
-    name: ai-native-rag live codegen+build (b7-6 L2)
+    name: Rust archetypes live codegen+build (b7-6 + b6-7 L2)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -321,9 +326,8 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version-file: cli/.nvmrc
-      # Install the buf CLI only (setup_only) — b7-6's L2 legs call `buf generate`
-      # directly against the rendered proto (the remote BSR es/tonic plugins are
-      # pinned in buf.gen.yaml.tmpl). Pinned CLI version for reproducible codegen.
+      # Install the buf CLI only (setup_only) — the L2 legs call buf directly against
+      # the rendered proto. Pinned CLI version for reproducible codegen.
       - uses: bufbuild/buf-action@v1
         with:
           setup_only: true
@@ -331,6 +335,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: b7-6 live codegen + build (--level 1,2)
         run: bash .forge/scripts/tests/b7-6.test.sh --level 1,2
+      - name: b6-7 live build (--level 1,2)
+        run: bash .forge/scripts/tests/b6-7.test.sh --level 1,2
 
   # ─── summary ── aggregator → single required status ───────────
   summary:
