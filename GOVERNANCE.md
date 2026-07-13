@@ -12,9 +12,9 @@ It is referenced by **Article XII — Governance** of the Constitution.
 ## Maintainers
 
 The Forge project follows a **BDFL-with-fallback** model. While the project
-remains in **Phase actuelle** (Constitution `1.x` and fewer than 5 regular
+remains in the **Current Phase** (Constitution `1.x` and fewer than 5 regular
 contributors), a single Benevolent Dictator For Life (BDFL) makes final
-decisions. A future amendment may transition the project to **Phase mature**
+decisions. A future amendment may transition the project to the **Mature Phase**
 (maintainer committee).
 
 ### Current BDFL
@@ -49,8 +49,8 @@ The roles below are exhaustive: anything not listed defaults to the BDFL.
 - **Publish a release** (npm + GitHub Releases) — the BDFL or a co-maintainer
   explicitly authorised for releases. The full process is in
   [Release Process](#release-process).
-- **Ratify a Constitution amendment** — the BDFL alone in the current phase; a
-  majority vote of the maintainer committee in Phase mature, with the BDFL
+- **Ratify a Constitution amendment** — the BDFL alone in the Current Phase; a
+  majority vote of the maintainer committee in the Mature Phase, with the BDFL
   retaining a veto on amendments only.
 - **Moderate the Code of Conduct** — the BDFL via the email listed in
   [Contact](#contact). Reports are confidential.
@@ -61,7 +61,7 @@ The roles below are exhaustive: anything not listed defaults to the BDFL.
 
 ## Decision Making
 
-### Phase actuelle (current phase)
+### Current Phase
 
 While the Constitution is at version `1.x` AND the project has fewer than
 five regular contributors, the BDFL takes all final decisions. Discussion
@@ -72,9 +72,9 @@ A "regular contributor" is, for the purposes of this document, anyone with at
 least three merged PRs in the last six months. The BDFL counts the threshold
 honestly; this is a discipline, not an automated check.
 
-### Phase mature
+### Mature Phase
 
-Activation of **Phase mature** is itself a Constitution amendment. Once
+Activation of the **Mature Phase** is itself a Constitution amendment. Once
 ratified, the project is governed by a maintainer committee:
 
 - **Size** — 3 to 7 members. The BDFL becomes one of them.
@@ -86,11 +86,11 @@ ratified, the project is governed by a maintainer committee:
   motion is deferred for re-discussion.
 
 The exact election / co-option mechanism is left to the amendment that
-activates Phase mature; this document records only the principle.
+activates the Mature Phase; this document records only the principle.
 
 ### Conditions for transition
 
-Transition from Phase actuelle to Phase mature is **not automatic**. It
+Transition from the Current Phase to the Mature Phase is **not automatic**. It
 requires an explicit Constitution amendment (per [Amendment Process](#amendment-process))
 that:
 
@@ -105,18 +105,18 @@ Until that amendment is ratified, the BDFL model holds.
 ## Amendment Process
 
 To modify the Forge Constitution (`.forge/constitution.md`) — including
-adding, modifying, or removing an article, or transitioning to Phase mature —
+adding, modifying, or removing an article, or transitioning to the Mature Phase —
 follow these steps in order:
 
 1. **Open a Forge change** with `/forge:propose <name>`. The proposal MUST
    target `.forge/constitution.md` and explain the motivation, the proposed
    text, and the impact on existing articles.
-2. **Open a public discussion** lasting at least **7 jours** (7 days). This
+2. **Open a public discussion** lasting at least **7 days**. This
    can be a GitHub Discussion or the PR review thread itself, but it MUST
    be publicly visible. Closed-door amendments are not allowed.
-3. **Ratification** by the BDFL in Phase actuelle, or by majority vote of
-   the committee in Phase mature. The BDFL veto applies only in Phase
-   mature and only to amendments.
+3. **Ratification** by the BDFL in the Current Phase, or by majority vote of
+   the committee in the Mature Phase. The BDFL veto applies only in the
+   Mature Phase and only to amendments.
 4. **Apply the amendment** by:
    - Adding a row to the `## Amendments` table at the bottom of
      `.forge/constitution.md`.

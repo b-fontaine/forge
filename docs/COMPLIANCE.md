@@ -356,7 +356,7 @@ Optional flags : `--window <days>` (default 30), `--format json|md`,
 regulatory-deadline summary), `--strict` (opt-in : an expired standard
 forces a blocking exit 3). The default posture is **WARN-only** — a
 review debt never freezes the pipeline
-(`standards-lifecycle.md` : "WARN n'est jamais bloquant").
+(`standards-lifecycle.md`: "WARN is never blocking").
 
 ### Regulatory-deadline calendar
 

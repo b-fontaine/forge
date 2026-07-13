@@ -29,9 +29,9 @@ The Forge trade-off:
 Every `.forge/standards/*.yaml` opens with a uniform frontmatter:
 
 ```yaml
-version: "1.0.0"                  # version propre du standard
-last_reviewed: 2026-05-04          # date de revue la plus récente
-expires_at: 2027-05-04             # ou "never" si exception_constitutional
+version: "1.0.0"                  # the standard's own version
+last_reviewed: 2026-05-04          # most recent review date
+expires_at: 2027-05-04             # or "never" if exception_constitutional
 exception_constitutional: false    # true => structural (Article XII only)
 linter_rule: <id-or-null>          # rule that enforces this standard
 enforcement:
