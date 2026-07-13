@@ -8,25 +8,25 @@
 
 ## Why a lifecycle ?
 
-Forge consacre certains choix techniques (state management, transport,
-persistence, identity, observability, orchestration) sous forme de
-**standards versionnés** dans `.forge/standards/*.yaml`. Le risque sans
-gouvernance : un standard qui survit à sa pertinence technique et fossilise
-le framework, ou un standard amendé sans contrainte qui érode la cohérence.
+Forge enshrines certain technical choices (state management, transport,
+persistence, identity, observability, orchestration) as
+**versioned standards** in `.forge/standards/*.yaml`. The risk without
+governance: a standard that outlives its technical relevance and fossilises
+the framework, or a standard amended without constraint that erodes consistency.
 
-Le compromis Forge :
+The Forge trade-off:
 
-- **Cycle de revue par défaut : 12 mois.** Tout standard porte un
-  `expires_at` ISO-8601 ; à expiration, un WARN apparaît dans `verify.sh`.
-- **Exception structurelle.** Deux standards sont consacrés comme
-  **structurels** par décision constitutionnelle (Article XII) et
-  échappent au cycle 12 mois : `transport.yaml` (proto + Connect) et
-  `state-management.yaml` (flutter_bloc). Les amender exige une procédure
-  d'amendement de Constitution.
+- **Default review cycle: 12 months.** Every standard carries an
+  `expires_at` ISO-8601 ; at expiry, a WARN appears in `verify.sh`.
+- **Structural exception.** Two standards are enshrined as
+  **structural** by constitutional decision (Article XII) and
+  are exempt from the 12-month cycle: `transport.yaml` (proto + Connect) and
+  `state-management.yaml` (flutter_bloc). Amending them requires a Constitution
+  amendment procedure.
 
-## Comment lire un standard
+## How to read a standard
 
-Tout `.forge/standards/*.yaml` ouvre par un frontmatter uniforme :
+Every `.forge/standards/*.yaml` opens with a uniform frontmatter:
 
 ```yaml
 version: "1.0.0"                  # version propre du standard
@@ -42,9 +42,9 @@ rationale: |
   Why this standard exists.
 ```
 
-## Les 6 standards consacrés (2026-05-04)
+## The 6 enshrined standards (2026-05-04)
 
-| Standard               | Version | Expires_at         | Exception structurelle | Source                                                |
+| Standard               | Version | Expires_at         | Structural exception | Source                                                |
 |------------------------|---------|--------------------|------------------------|-------------------------------------------------------|
 | `transport.yaml`        | 1.0.0   | never              | YES (ADR-003 + ADR-009)| `docs/ARCHITECTURE-TARGET.md` §4.2 / §4.7             |
 | `state-management.yaml` | 1.0.0   | never              | YES (ADR-006)          | `docs/ARCHITECTURE-TARGET.md` §4.1 ADR-006            |
@@ -53,47 +53,46 @@ rationale: |
 | `identity.yaml`         | 1.0.0   | 2027-05-04         | no                     | `docs/ARCHITECTURE-TARGET.md` §4.9 ADR-007            |
 | `persistence.yaml`      | 1.0.0   | 2027-05-04         | no                     | `docs/ARCHITECTURE-TARGET.md` §4.5 ADR-010            |
 
-## Cycle de revue
+## Review cycle
 
-1. À expiration (`expires_at < today`), `verify.sh` émet un WARN. Le WARN
-   n'est PAS bloquant ; il signale une dette de revue.
-2. Le mainteneur revoit le standard, met à jour `last_reviewed` /
-   `expires_at`, et ajoute une entrée dans `.forge/standards/REVIEW.md`.
-3. Si la revue conclut REPLACE / DEPRECATE, un nouveau Forge change est
-   ouvert (proposal → specs → design → tasks → implement) qui amende le
+1. At expiry (`expires_at < today`), `verify.sh` emits a WARN. The WARN
+   is NOT blocking ; it signals a review debt.
+2. The maintainer reviews the standard, updates `last_reviewed` /
+   `expires_at`, and adds an entry to `.forge/standards/REVIEW.md`.
+3. If the review concludes REPLACE / DEPRECATE, a new Forge change is
+   opened (proposal → specs → design → tasks → implement) that amends the
    standard.
-4. À partir de T7, l'agent **Themis** (compliance officer) automatise
-   ce cycle via le hook `forge review-standards`.
+4. Starting with T7, the **Themis** agent (compliance officer) automates
+   this cycle via the `forge review-standards` hook.
 
-## Exception structurelle : pourquoi ?
+## Structural exception: why ?
 
-`transport.yaml` et `state-management.yaml` définissent **l'identité de
-Forge**, pas un choix technique amendable :
+`transport.yaml` and `state-management.yaml` define **Forge's identity**,
+not an amendable technical choice:
 
-- **transport.yaml** — proto + Connect = source unique des contrats
-  Spec→Code. Changer ce standard reviendrait à redéfinir le pipeline SDD
-  de Forge.
-- **state-management.yaml** — flutter_bloc consacré comme cadre unique
-  pour cohérence cross-project + alignement event-driven SDD. Changer
-  ce standard casserait l'identité « un seul cadre canonique » assumée
-  par Forge.
+- **transport.yaml** — proto + Connect = single source of the
+  Spec→Code contracts. Changing this standard would amount to redefining
+  Forge's SDD pipeline.
+- **state-management.yaml** — flutter_bloc enshrined as the single framework
+  for cross-project consistency + event-driven SDD alignment. Changing
+  this standard would break the "single canonical framework" identity assumed
+  by Forge.
 
-Pour les amender :
+To amend them:
 
-1. Discussion publique ≥ 7 jours via GitHub Discussions.
-2. Forge change avec rationale + analyse d'impact sur les archétypes.
-3. Vote BDFL (phase actuelle) ou comité (phase mature).
-4. Bump Constitution version (mineure si extension, majeure si breaking).
-5. Mise à jour synchronisée du standard.
+1. Public discussion ≥ 7 days via GitHub Discussions.
+2. Forge change with rationale + impact analysis on the archetypes.
+3. BDFL vote (current phase) or committee (mature phase).
+4. Bump Constitution version (minor if extension, major if breaking).
+5. Synchronised update of the standard.
 
-## Document de référence
+## Reference documents
 
-- `docs/ARCHITECTURE-TARGET.md` — audit architectural cible Forge 2026
-  (10 ADRs ratifiés par `t4-adr-ratification`, sha256 pinné, drift gate
-  actif via `t4.test.sh`).
-- `docs/new-archetypes-plan.md` — plan post-v0.3.0 (taxonomie 5
-  archétypes, modules B.6/B.7/B.8/B.9, compliance T1/T2/T3).
-- `.forge/standards/REVIEW.md` — ledger append-only des événements de
-  revue.
-- `.forge/standards/global/standards-lifecycle.md` — version canonique
-  interne, source de vérité.
+- `docs/ARCHITECTURE-TARGET.md` — Forge 2026 target architecture audit
+  (10 ADRs ratified by `t4-adr-ratification`, sha256 pinned, drift gate
+  active via `t4.test.sh`).
+- `docs/new-archetypes-plan.md` — post-v0.3.0 plan (taxonomy of 5
+  archetypes, modules B.6/B.7/B.8/B.9, compliance T1/T2/T3).
+- `.forge/standards/REVIEW.md` — append-only ledger of review events.
+- `.forge/standards/global/standards-lifecycle.md` — internal canonical
+  version, source of truth.

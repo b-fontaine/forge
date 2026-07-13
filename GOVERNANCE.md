@@ -49,7 +49,7 @@ The roles below are exhaustive: anything not listed defaults to the BDFL.
 - **Publish a release** (npm + GitHub Releases) — the BDFL or a co-maintainer
   explicitly authorised for releases. The full process is in
   [Release Process](#release-process).
-- **Ratify a Constitution amendment** — the BDFL alone in Phase actuelle; a
+- **Ratify a Constitution amendment** — the BDFL alone in the current phase; a
   majority vote of the maintainer committee in Phase mature, with the BDFL
   retaining a veto on amendments only.
 - **Moderate the Code of Conduct** — the BDFL via the email listed in
@@ -207,7 +207,7 @@ communication surface. The matrix below documents the convention :
 |------------------------------------------------------------------|----------------------|--------------------------------|
 | **Patch** (`v0.X.y` → `v0.X.y+1`)                                 | **Required** — CHANGELOG section auto-extracted | **Skip** — too frequent ; signal-to-noise ratio low |
 | **Pre-GA minor** (`v0.X.0` → `v0.X+1.0` while on `0.y.z` track)   | **Required**          | **Required** — surface what adopters see (new archetypes, schema bumps, breaking templates) |
-| **Major / point-of-no-return** (B.8 flagship 2.0.0, v1.0, …)     | **Required**          | **Required** + soigneusement rédigé (migration guide link, breaking changes, appel à feedback) |
+| **Major / point-of-no-return** (B.8 flagship 2.0.0, v1.0, …)     | **Required**          | **Required** + carefully written (migration guide link, breaking changes, call for feedback) |
 | **Structural decision** (Constitution amendment, archetype taxonomy change, ADR retiré, …) | optional (if no release) | **Required** even without a release tag |
 
 Rationale :
