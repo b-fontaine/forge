@@ -1,86 +1,86 @@
-# Guide Utilisateur — Forge
+# User Guide — Forge
 
 ---
 
-## Qu'est-ce que Forge ?
+## What is Forge?
 
-Forge est un framework de développement spec-driven qui transforme Claude Code en une équipe de développement structurée
-et multi-agents. Il fusionne sept approches complémentaires en un système cohérent :
+Forge is a spec-driven development framework that turns Claude Code into a structured, multi-agent
+development team. It merges seven complementary approaches into a coherent system:
 
 | Source               | Contribution                                           |
 |----------------------|--------------------------------------------------------|
-| **BMAD Method**      | Agents-personas avec noms, rôles et styles persistants |
-| **GitHub SpecKit**   | Gates bloquants et vérification de conformité          |
-| **OpenSpec**         | Deltas sémantiques (ADDED/MODIFIED/REMOVED)            |
-| **Agent OS v3**      | Injection de standards à la demande via `index.yml`    |
-| **Superpowers**      | TDD non-négociable, table anti-rationalisation         |
-| **oh-my-claudecode** | Keywords naturels, orchestration multi-agents          |
-| **Context7**         | Résolution de documentation d'API en temps réel        |
+| **BMAD Method**      | Persona-agents with persistent names, roles, and styles |
+| **GitHub SpecKit**   | Blocking gates and conformance verification            |
+| **OpenSpec**         | Semantic deltas (ADDED/MODIFIED/REMOVED)               |
+| **Agent OS v3**      | On-demand standards injection via `index.yml`          |
+| **Superpowers**      | Non-negotiable TDD, anti-rationalization table         |
+| **oh-my-claudecode** | Natural keywords, multi-agent orchestration            |
+| **Context7**         | Real-time API documentation resolution                 |
 
-Le principe fondamental : **les specs sont le code source de l'intention**. Avant d'écrire une ligne de code, Forge vous
-guide pour documenter le problème, la solution, les décisions d'architecture et les tâches TDD. Le code devient alors
-une conséquence naturelle de la spec, pas une improvisation.
+The core principle: **specs are the source code of intent**. Before writing a single line of code, Forge
+guides you through documenting the problem, the solution, the architecture decisions, and the TDD tasks. The
+code then becomes a natural consequence of the spec, not an improvisation.
 
 ---
 
 ## Installation
 
-### Nouveau projet
+### New project
 
-1. Copier les fichiers Forge à la racine du projet :
+1. Copy the Forge files to the project root:
    ```bash
-   cp -r forge/ /chemin/vers/votre/projet/
+   cp -r forge/ /path/to/your/project/
    ```
 
-2. Ouvrir Claude Code et lancer :
+2. Open Claude Code and run:
    ```
    /forge
    ```
 
-3. Suivre le flux auto-détecté — Forge détecte qu'aucun état n'existe et lance `/forge:init` puis `/forge:vision`.
+3. Follow the auto-detected flow — Forge detects that no state exists and runs `/forge:init` then `/forge:vision`.
 
-### Projet existant
+### Existing project
 
-1. Copier Forge à la racine du projet comme ci-dessus.
+1. Copy Forge to the project root as above.
 
-2. Lancer l'initialisation :
+2. Run the initialization:
    ```
    /forge:init
    ```
 
-3. Capturer les conventions existantes :
+3. Capture the existing conventions:
    ```
    /forge:discover
    ```
-   Forge analyse votre codebase et extrait les patterns, conventions et standards déjà en place, puis les documente dans
-   `.forge/standards/`.
+   Forge analyzes your codebase and extracts the patterns, conventions, and standards already in place, then
+   documents them in `.forge/standards/`.
 
 ---
 
-## La Commande Maîtresse `/forge`
+## The `/forge` Master Command
 
-`/forge` est le point d'entrée unique. Elle lit l'état du projet et vous route automatiquement vers la bonne phase.
+`/forge` is the single entry point. It reads the project state and automatically routes you to the right phase.
 
 ```
 /forge
    |
    v
-[.forge/ existe ?]
+[.forge/ exists?]
    |          |
-  Non         Oui
+   No         Yes
    |           |
    v           v
-/forge:init  [vision.md existe ?]
+/forge:init  [vision.md exists?]
               |              |
-             Non             Oui
+              No             Yes
               |               |
               v               v
-         /forge:vision   [changes/ contient des dossiers ?]
+         /forge:vision   [changes/ contains folders?]
                               |                    |
-                             Non                   Oui
+                              No                   Yes
                               |                    |
                               v                    v
-                       /forge:explore    [quel état par dossier ?]
+                       /forge:explore    [which state per folder?]
                                               |
                               +--------------+---------------+
                               |              |               |
@@ -93,229 +93,229 @@ une conséquence naturelle de la spec, pas une improvisation.
                           (→ impl)       (→ review)      (→ archive)
 ```
 
-La détection d'état est déterministe : Forge lit les fichiers présents dans `.forge/changes/<nom>/` pour identifier où
-vous en êtes dans le cycle.
+State detection is deterministic: Forge reads the files present in `.forge/changes/<name>/` to identify where
+you are in the cycle.
 
 ---
 
-## Le Cycle de Développement
+## The Development Cycle
 
-### Étape 1 — Vision (`/forge:vision`)
+### Step 1 — Vision (`/forge:vision`)
 
-Définir la mission et la proposition de valeur du produit. Forge guide Oracle (agent AI-First) et vous pour produire :
+Define the product's mission and value proposition. Forge guides Oracle (the AI-First agent) and you to produce:
 
-- Mission statement (une phrase)
-- Proposition de valeur (3 bullets)
-- Utilisateurs cibles
-- Problèmes résolus
-- Résultat : `.forge/product/mission.md`
+- Mission statement (one sentence)
+- Value proposition (3 bullets)
+- Target users
+- Problems solved
+- Output: `.forge/product/mission.md`
 
-### Étape 2 — Exploration (`/forge:explore`)
+### Step 2 — Exploration (`/forge:explore`)
 
-Séance de brainstorming libre avec Oracle. Forge ne bloque pas — c'est la phase d'idéation. Oracle facilite une
-évaluation AI-First : est-ce que cette fonctionnalité bénéficie de l'IA ? Si oui, comment ? Cette phase produit des
-notes non-structurées dans `.forge/product/exploration/`.
+Free brainstorming session with Oracle. Forge does not block — this is the ideation phase. Oracle facilitates an
+AI-First assessment: does this feature benefit from AI? If so, how? This phase produces unstructured
+notes in `.forge/product/exploration/`.
 
-### Étape 3 — Proposition (`/forge:propose <nom>`)
+### Step 3 — Proposal (`/forge:propose <name>`)
 
-Documenter formellement le problème et la solution proposée. Clio (Spec Writer) vous guide pour rédiger :
+Formally document the problem and the proposed solution. Clio (Spec Writer) guides you to write:
 
-- Contexte et motivation
-- Description du problème
-- Solution proposée
-- Alternatives considérées
-- Critères d'acceptation (haut niveau)
-- Résultat : `.forge/changes/<nom>/proposal.md`
+- Context and motivation
+- Problem description
+- Proposed solution
+- Alternatives considered
+- Acceptance criteria (high level)
+- Output: `.forge/changes/<name>/proposal.md`
 
-### Étape 4 — Spécification (`/forge:specify <nom>`)
+### Step 4 — Specification (`/forge:specify <name>`)
 
-Clio rédige les specs delta avec le langage RFC 2119 (MUST, SHOULD, MAY). Format delta : seuls les changements par
-rapport à l'état actuel sont documentés (ADDED, MODIFIED, REMOVED). Résultat : `.forge/changes/<nom>/specs.md`
+Clio writes the delta specs using RFC 2119 language (MUST, SHOULD, MAY). Delta format: only the changes relative
+to the current state are documented (ADDED, MODIFIED, REMOVED). Output: `.forge/changes/<name>/specs.md`
 
-### Étape 5 — Design (`/forge:design <nom>`)
+### Step 5 — Design (`/forge:design <name>`)
 
-Athena (Flutter) ou Ferris (Rust) — ou Socrates pour le domaine métier — produisent :
+Athena (Flutter) or Ferris (Rust) — or Socrates for the business domain — produce:
 
 - Architecture Decision Records (ADRs)
-- Diagrammes de composants
-- Contrats d'interface
-- Décisions techniques documentées avec justification
-- Résultat : `.forge/changes/<nom>/design.md`
+- Component diagrams
+- Interface contracts
+- Technical decisions documented with justification
+- Output: `.forge/changes/<name>/design.md`
 
-### Étape 6 — Planification (`/forge:plan <nom>`)
+### Step 6 — Planning (`/forge:plan <name>`)
 
-Génération d'une liste de tâches ordonnées pour TDD. Chaque tâche suit le format :
+Generation of an ordered task list for TDD. Each task follows the format:
 
 ```
 TASK-001: [Description]
-  Test: [Quel test écrire en premier — RED]
-  Implementation: [Ce qu'il faut implémenter — GREEN]
-  Refactor: [Ce qu'il faut nettoyer — REFACTOR]
+  Test: [Which test to write first — RED]
+  Implementation: [What to implement — GREEN]
+  Refactor: [What to clean up — REFACTOR]
 ```
 
-L'ordre des tâches est conçu pour que chaque tâche s'appuie sur la précédente.
+The task order is designed so that each task builds on the previous one.
 
-### Étape 7 — Implémentation (`/forge:implement <nom>`)
+### Step 7 — Implementation (`/forge:implement <name>`)
 
-Exécution de la prochaine tâche non-complétée du plan. Le cycle est strict :
+Execution of the next uncompleted task in the plan. The cycle is strict:
 
-1. **RED** — Écrire le test. Le voir échouer.
-2. **GREEN** — Écrire le minimum de code pour faire passer le test.
-3. **REFACTOR** — Nettoyer sans casser les tests.
+1. **RED** — Write the test. Watch it fail.
+2. **GREEN** — Write the minimum code to make the test pass.
+3. **REFACTOR** — Clean up without breaking the tests.
 
-Spartan (Flutter) ou Centurion (Rust) enforce ce cycle sans exception. Aucune rationalisation n'est acceptée.
+Spartan (Flutter) or Centurion (Rust) enforces this cycle without exception. No rationalization is accepted.
 
-### Étape 8 — Review + Archive (`/forge:review` + `/forge:archive`)
+### Step 8 — Review + Archive (`/forge:review` + `/forge:archive`)
 
-**Review** : Nemesis (Flutter) ou Tribune (Rust) appliquent les quality gates :
+**Review**: Nemesis (Flutter) or Tribune (Rust) apply the quality gates:
 
-- Couverture de tests suffisante ?
-- Constitution respectée ?
-- Standards techniques validés ?
-- Design implémenté fidèlement ?
+- Sufficient test coverage?
+- Constitution respected?
+- Technical standards validated?
+- Design implemented faithfully?
 
-**Archive** : Une fois la review passée, les specs delta sont fusionnées dans `.forge/specs/`, le dossier de changement
-est marqué `DONE`, et un résumé est ajouté au journal du projet.
+**Archive**: Once the review passes, the delta specs are merged into `.forge/specs/`, the change folder
+is marked `DONE`, and a summary is added to the project log.
 
 ---
 
-## Les Agents
+## The Agents
 
-### Flutter Team (dirigée par Hera)
+### Flutter Team (led by Hera)
 
-| Agent                | Nom        | Spécialité                                 |
+| Agent                | Name       | Specialty                                  |
 |----------------------|------------|--------------------------------------------|
-| Flutter Orchestrator | Hera       | Coordination d'équipe, workflow de feature |
+| Flutter Orchestrator | Hera       | Team coordination, feature workflow        |
 | Flutter Architect    | Athena     | Clean Architecture, FSD, DI                |
-| Flutter TDD-BDD      | Spartan    | Enforcement des tests, tolérance zéro      |
-| Flutter UX/UI        | Apollo     | Design multi-plateforme, Material 3        |
-| Flutter Widgets      | Hephaestus | Widgets custom, animations                 |
-| Flutter Performance  | Hermes     | Profiling, optimisation                    |
-| Flutter A11y & i18n  | Iris       | Accessibilité, internationalisation        |
-| Flutter OTel         | Argus      | Instrumentation côté client                |
+| Flutter TDD-BDD      | Spartan    | Test enforcement, zero tolerance           |
+| Flutter UX/UI        | Apollo     | Cross-platform design, Material 3          |
+| Flutter Widgets      | Hephaestus | Custom widgets, animations                 |
+| Flutter Performance  | Hermes     | Profiling, optimization                    |
+| Flutter A11y & i18n  | Iris       | Accessibility, internationalization        |
+| Flutter OTel         | Argus      | Client-side instrumentation                |
 | Flutter AI           | Prometheus | Voice, GenUI, agents                       |
-| Flutter Quality      | Nemesis    | Gate final, délégation                     |
+| Flutter Quality      | Nemesis    | Final gate, delegation                     |
 
-### Rust Team (dirigée par Vulcan)
+### Rust Team (led by Vulcan)
 
-| Agent             | Nom       | Spécialité                    |
+| Agent             | Name      | Specialty                     |
 |-------------------|-----------|-------------------------------|
-| Rust Orchestrator | Vulcan    | Coordination d'équipe         |
-| Rust Architect    | Ferris    | Architecture hexagonale, gRPC |
-| Rust TDD-BDD      | Centurion | Enforcement des tests         |
-| Rust TUI          | Terminal  | ratatui, architecture Elm     |
-| Rust OTel         | Sentinel  | Instrumentation côté serveur  |
-| Rust Quality      | Tribune   | Gate final                    |
+| Rust Orchestrator | Vulcan    | Team coordination             |
+| Rust Architect    | Ferris    | Hexagonal architecture, gRPC  |
+| Rust TDD-BDD      | Centurion | Test enforcement              |
+| Rust TUI          | Terminal  | ratatui, Elm architecture     |
+| Rust OTel         | Sentinel  | Server-side instrumentation   |
+| Rust Quality      | Tribune   | Final gate                    |
 
-### Agents Transversaux
+### Cross-Cutting Agents
 
-| Agent               | Nom      | Spécialité                           |
+| Agent               | Name     | Specialty                            |
 |---------------------|----------|--------------------------------------|
 | Forge Master        | Forge    | Orchestration, routing               |
-| Spec Writer         | Clio     | Exigences, RFC 2119                  |
-| DDD Strategist      | Socrates | Modélisation domaine, Event Storming |
-| AI-First Brainstorm | Oracle   | Atelier AI, architecture d'agents    |
+| Spec Writer         | Clio     | Requirements, RFC 2119               |
+| DDD Strategist      | Socrates | Domain modeling, Event Storming      |
+| AI-First Brainstorm | Oracle   | AI workshop, agent architecture      |
+| AI/RAG Specialist   | Sibyl    | RAG, embeddings, retrieval tuning    |
 | Infra Architect     | Atlas    | Docker, K8s, Kong, Temporal          |
 | Observability       | Panoptes | OTel, SigNoz, ELK, Prometheus        |
-| Security Auditor    | Aegis    | Audit de sécurité, OWASP             |
+| Security Auditor    | Aegis    | Security audit, OWASP                |
 | Data Steward EU     | Demeter  | Tier classification, DPA, CLOUD Act  |
-| Frontend Web Specialist | Iris-Web | Qwik / SvelteKit web-public conventions, distinct de Hera (Flutter) |
-| Compliance Officer EU | Themis | NIS2/DORA/CRA, cycle review-standards |
-| Event-Driven Messenger | Hermes-Async | AsyncAPI 3.1, bindings NATS/Kafka, idempotency keys, distinct de Hermes (Flutter perf) |
-| DevOps Engineer     | Heracles | CI/CD, déploiement                   |
+| Frontend Web Specialist | Iris-Web | Qwik / SvelteKit public-web conventions, distinct from Hera (Flutter) |
+| Compliance Officer EU | Themis | NIS2/DORA/CRA, standards-review cycle |
+| Event-Driven Messenger | Hermes-Async | AsyncAPI 3.1, NATS/Kafka bindings, idempotency keys, distinct from Hermes (Flutter perf) |
+| DevOps Engineer     | Heracles | CI/CD, deployment                    |
 
 ---
 
-## Compatibilité
+## Compatibility
 
 ### Superpowers
 
-La délégation TDD fonctionne comme suit : quand `/forge:implement` est invoqué, Forge détermine le contexte (Flutter ou
-Rust), puis délègue à l'agent TDD approprié (Spartan ou Centurion). Cet agent dispose d'une table anti-rationalisation
-de 12 excuses communes avec leurs réfutations, et refuse tout argument pour sauter RED ou aller directement au code.
+TDD delegation works as follows: when `/forge:implement` is invoked, Forge determines the context (Flutter or
+Rust), then delegates to the appropriate TDD agent (Spartan or Centurion). This agent has an anti-rationalization
+table of 12 common excuses with their rebuttals, and refuses any argument for skipping RED or going straight to code.
 
 ### oh-my-claudecode
 
-Forge s'intègre avec les keyword triggers d'OMC :
+Forge integrates with OMC's keyword triggers:
 
-| Keyword     | Comportement                                               |
+| Keyword     | Behavior                                                   |
 |-------------|------------------------------------------------------------|
-| `autopilot` | Exécution complète du pipeline depuis l'état actuel        |
-| `ulw`       | Ultrawork mode — implémentation profonde sans interruption |
-| `team`      | Délégation explicite à l'équipe multi-agents               |
+| `autopilot` | Full pipeline execution from the current state             |
+| `ulw`       | Ultrawork mode — deep implementation without interruption  |
+| `team`      | Explicit delegation to the multi-agent team                |
 
 ### Context7
 
-La résolution de documentation se fait en deux temps via le serveur MCP :
+Documentation resolution happens in two steps via the MCP server:
 
-1. `resolve-library-id` — identifier la bibliothèque dans le catalogue Context7
-2. `query-docs` — récupérer la documentation à jour pour les APIs concernées
+1. `resolve-library-id` — identify the library in the Context7 catalog
+2. `query-docs` — retrieve up-to-date documentation for the relevant APIs
 
-Cela garantit que Forge travaille toujours avec la documentation courante, pas avec les données d'entraînement
-potentiellement obsolètes.
-
----
-
-## Intégration AI Modeling
-
-### L'atelier facilité par Oracle
-
-Oracle (agent AI-First) facilite un atelier structuré en 5 phases pour toute fonctionnalité potentiellement IA :
-
-1. **Discovery** — Identifier le besoin réel. Est-ce vraiment un problème d'IA ?
-2. **Capability mapping** — Quelles capacités IA sont pertinentes ? (LLM, vision, speech, embeddings...)
-3. **Architecture** — Comment intégrer sans coupler ? Ports & Adapters.
-4. **Non-determinism strategy** — Comment tester quelque chose de non-déterministe ?
-5. **Fallback design** — Que se passe-t-il si l'IA échoue ou est indisponible ?
-
-### Les 3 AImigos
-
-Le concept des 3 AImigos transpose le modèle des 3 Amigos au contexte IA :
-
-- **Product** (besoin réel ?) — Est-ce que l'IA apporte une vraie valeur ici, ou est-ce du feature-isme ?
-- **Dev** (faisable ?) — Quelles sont les contraintes techniques ? Latence, coût, modèles disponibles ?
-- **Test** (comment tester le non-déterminisme ?) — Contrats de comportement, snapshots sémantiques, évaluation par
-  LLM ?
+This ensures that Forge always works with current documentation, not with potentially outdated training data.
 
 ---
 
-## Schemas Personnalisés
+## AI Modeling Integration
 
-Forge supporte 5 schemas prédéfinis qui adaptent le pipeline au contexte du projet :
+### The workshop facilitated by Oracle
 
-| Schema        | Cas d'usage         | Particularités                                      |
+Oracle (the AI-First agent) facilitates a structured 5-phase workshop for any potentially AI feature:
+
+1. **Discovery** — Identify the real need. Is this really an AI problem?
+2. **Capability mapping** — Which AI capabilities are relevant? (LLM, vision, speech, embeddings...)
+3. **Architecture** — How to integrate without coupling? Ports & Adapters.
+4. **Non-determinism strategy** — How to test something non-deterministic?
+5. **Fallback design** — What happens if the AI fails or is unavailable?
+
+### The 3 AImigos
+
+The 3 AImigos concept transposes the 3 Amigos model to the AI context:
+
+- **Product** (real need?) — Does AI bring real value here, or is it feature-ism?
+- **Dev** (feasible?) — What are the technical constraints? Latency, cost, available models?
+- **Test** (how to test non-determinism?) — Behavior contracts, semantic snapshots, LLM-based
+  evaluation?
+
+---
+
+## Custom Schemas
+
+Forge supports 5 predefined schemas that adapt the pipeline to the project context:
+
+| Schema        | Use case            | Specifics                                           |
 |---------------|---------------------|-----------------------------------------------------|
-| `default`     | Flux standard       | Toutes les phases, équilibré                        |
-| `tdd-flutter` | Application Flutter | + Golden tests, phase BDD explicite                 |
-| `tdd-rust`    | Application Rust    | + Architecture hexagonale, clippy enforcement       |
-| `rapid`       | Prototype rapide    | 4 phases minimales (TDD toujours obligatoire)       |
-| `ai-first`    | Produit IA natif    | + Phase atelier Oracle, évaluation non-déterminisme |
+| `default`     | Standard flow       | All phases, balanced                                |
+| `tdd-flutter` | Flutter application | + Golden tests, explicit BDD phase                  |
+| `tdd-rust`    | Rust application    | + Hexagonal architecture, clippy enforcement        |
+| `rapid`       | Rapid prototype     | 4 minimal phases (TDD still mandatory)              |
+| `ai-first`    | AI-native product   | + Oracle workshop phase, non-determinism evaluation |
 
-Pour appliquer un schema, ajouter dans `.forge.yaml` :
+To apply a schema, add to `.forge.yaml`:
 
 ```yaml
 schema: tdd-flutter
 ```
 
-Le schema `rapid` ne supprime pas le TDD — il compresse les phases de documentation. La constitution reste applicable.
+The `rapid` schema does not remove TDD — it compresses the documentation phases. The constitution still applies.
 
 ---
 
-## Philosophie
+## Philosophy
 
-**Conviction 1 : Les specs sont le code source de l'intention**
+**Belief 1: Specs are the source code of intent**
 
-Le code est éphémère — il sera refactorisé, réécrit, supprimé. Les specs sont le registre durable de ce qui a été décidé
-et pourquoi. Un projet sans specs est un projet dont l'intention est perdue à chaque rotation d'équipe.
+Code is ephemeral — it will be refactored, rewritten, deleted. Specs are the durable record of what was decided
+and why. A project without specs is a project whose intent is lost with every team rotation.
 
-**Conviction 2 : Le TDD est non-négociable, jamais optionnel**
+**Belief 2: TDD is non-negotiable, never optional**
 
-TDD n'est pas une bonne pratique parmi d'autres. C'est la méthode de travail. Chaque tâche, sans exception, commence par
-un test qui échoue. "On manque de temps" et "c'est trop simple pour un test" sont des rationalisations cataloguées —
-Spartan et Centurion les connaissent toutes.
+TDD is not one best practice among others. It is the way of working. Every task, without exception, begins with
+a failing test. "We're short on time" and "it's too simple to test" are catalogued rationalizations —
+Spartan and Centurion know them all.
 
-**Conviction 3 : La qualité est structurelle, pas une question de volonté**
+**Belief 3: Quality is structural, not a matter of willpower**
 
-Les quality gates, la constitution, les agents dédiés à la review — tout cela est là pour rendre la qualité inévitable.
-On ne compte pas sur la discipline individuelle dans un projet d'équipe. On construit des systèmes où faire les choses
-correctement est le chemin de moindre résistance.
+The quality gates, the constitution, the agents dedicated to review — all of this is there to make quality
+inevitable. In a team project, we don't rely on individual discipline. We build systems where doing things
+correctly is the path of least resistance.

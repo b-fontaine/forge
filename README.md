@@ -111,6 +111,31 @@ Installation guarantees (shared by A and B):
 | API Designer        | Hermes-API | OpenAPI, AsyncAPI, gRPC contracts               |
 | Test Architect      | Eris       | Test pyramid, mutation testing, flaky detection |
 
+### EU Compliance & Archetype Specialists
+
+| Agent                   | Name         | Specialty                                                                        |
+|-------------------------|--------------|-----------------------------------------------------------------------------------|
+| Event-Driven Messenger  | Hermes-Async | AsyncAPI 3.1 contracts, NATS/Kafka bindings, idempotency keys (`event-driven-eu`) |
+| AI/RAG Specialist       | Sibyl        | Embeddings pipeline, pgvector/HNSW tuning, MCP servers, prompt audit (`ai-native-rag`) |
+| Data Steward EU         | Demeter      | Compliance-tier classification, DPA posture, CLOUD Act exposure                   |
+| Frontend Web Specialist | Iris-Web     | Qwik/SvelteKit conventions for `frontend/web-public/`                              |
+| Compliance Officer EU   | Themis       | NIS2/DORA/CRA/AI Act deadline tracking, standards review cadence                   |
+
+---
+
+## Archetypes
+
+Five archetypes are available via `forge init --archetype <name>` — see the
+[full decision matrix](docs/ARCHETYPES.md) for stack details and selection rules.
+
+| Archetype             | Status | Focus                                                              |
+|-----------------------|--------|---------------------------------------------------------------------|
+| `default`             | Active | Minimal Forge install, no language-specific scaffold                |
+| `full-stack-monorepo` | Active | Flutter client + Rust backend + shared protos                       |
+| `mobile-only`         | Active | Flutter iOS/Android + OIDC auth, no BaaS                             |
+| `ai-native-rag`       | Active | pgvector RAG + LLM gateway + MCP servers, Rust + Qwik streaming UI   |
+| `event-driven-eu`     | Active | NATS JetStream + Temporal saga + AsyncAPI 3.1, EU-sovereign          |
+
 ---
 
 ## Compatibility

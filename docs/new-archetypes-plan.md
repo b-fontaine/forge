@@ -2045,7 +2045,7 @@ crates.io LIVE 1.7.0, ADR-B7-3-003) → `cargo add` LIVE obligatoire au pin, dan
 
 ---
 
-## 0.13 Status update — 2026-07-12 (T7 — K.4/K.5 livrés ; B.6 8/10 briques archivées)
+## 0.13 Status update — 2026-07-12 (T7 — K.4/K.5 livrés ; B.6 10/10 briques archivées, COMPLET)
 
 > **Resync majeure.** §0.12 s'arrêtait au 2026-06-23 (T6 + B.7 complets). Neuf
 > PR ont mergé depuis (#36–#44) sur trois lots parallèles (worktrees isolés,
@@ -2071,7 +2071,7 @@ mensuel séparé `forge-standards-review.yml` (`on: schedule:` + `workflow_call:
 `continue-on-error: true` — ne bloque jamais une PR). Drive (jamais fork)
 `bundle.sh` (I.6). 27/27 tests `k5.test.sh --level 1,2`.
 
-### B.6 `event-driven-eu` — 8/10 briques archivées (PR #38–#44)
+### B.6 `event-driven-eu` — 10/10 briques archivées, COMPLET (PR #38–#47)
 
 Deux lots lancés en parallèle après B.6.2 (mêmes discipline TDD/Forge-pipeline/
 verify-then-pin que B.7) :
@@ -2086,14 +2086,17 @@ verify-then-pin que B.7) :
 | 6 | `b6-6-helm` — charts Helm production Temporal (history/matching/frontend/worker + Postgres) + NATS JetStream cluster, posture T1/T2/T3 EU self-host | ✅ archivé 2026-07-12 (PR #41) |
 | 7 | `b6-9-compliance` — NIS2 (incident-reporting 24h/72h) + DORA RoI helper + SBOM CycloneDX wiring ; bundle I.6 `1.1.0→1.2.0` (NIS2 shipped, CRA reserved) | ✅ archivé 2026-07-12 (PR #44) |
 | 8 | `b6-10-janus-rule` — `J8-RULE-007/008` (refus Confluent Cloud tout tier ; refus Kafka SaaS US générique à T3), review-time `T3-RULE-005` coupling | ✅ archivé 2026-07-12 (PR #43) |
-| 9 | `b6-7-harness` — gate de promotion candidate→stable (≥35 tests, mirroring `b7-6-harness`) | ⏸️ Pending |
+| 9 | `b6-7-harness` — gate de promotion candidate→stable (36 tests, mirroring `b7-6-harness`) | ✅ archivé 2026-07-12 (PR #46) — flip `stage: candidate→stable` / `scaffoldable: false→true` ; budget `forge-ci.yml` 380→400 en lockstep |
 | 10 | `b6-8-example` — `examples/forge-eda-example/` (3 demos) | ✅ archivé 2026-07-12 (`b6-8-example`, branch `b6-8-example`, PR #47) — rendu via le **vrai** `forge init --archetype event-driven-eu` (l'archétype est stable/scaffoldable depuis B.6.7), pas via `overlay.sh` (divergence de b7-7, ADR-B6-8-001) ; 3 demos archivées (ingestion HTTP→NATS, projection event-store→read-model, saga Temporal 3-steps `[backend, infra]`) ; `b6-8.test.sh` (23 checks) ; gate CI 3ᵉ arbre + budget `forge-ci.yml` 400→420 en lockstep |
 
 Dépendances dures : `1→2` puis fan-out large (3/4/5/6/9/10 parallélisables,
-confirmé en pratique) ; 8 (example) après scaffolder+demos prêts ; 7
-(harness) en dernier — même patron que B.7. L'archétype reste
-`candidate`/`scaffoldable:false` ; `forge init --archetype event-driven-eu`
-refuse toujours exit 3 (attendu, la promotion est le rôle de B.6.7).
+confirmé en pratique) ; **7 (harness) avant 8 (example)** — patron réel
+confirmé sur B.7 (`b7-6-harness` avant `b7-7-example`, PAS l'inverse comme
+noté par erreur dans une résync antérieure de ce document). L'archétype est
+désormais `stage: stable` / `scaffoldable: true` (PR #46) ;
+`forge init --archetype event-driven-eu` **rend l'arbre** (ne refuse plus
+exit 3) — prouvé end-to-end par B.6.8 (PR #47) qui scaffolde l'exemple via
+ce même CLI réel.
 
 **Leçon opérationnelle** (worktrees parallèles) : chaque nouvelle PR mergée sur
 `main` rend les PR sœurs encore ouvertes `CONFLICTING` sur les fichiers

@@ -1,72 +1,72 @@
-# Quatre frameworks de Spec-Driven Development à l'épreuve de Claude Code : ce que dit la mécanique, ce que disent les utilisateurs, ce que disent les chiffres
+# Four Spec-Driven Development frameworks put to the test with Claude Code: what the mechanics say, what users say, what the numbers say
 
-*Comparaison rigoureuse de BMAD-METHOD v6, GitHub SpecKit, OpenSpec et Agent OS v3, dans un workflow de production avec Claude Code. Observations datées au 5 mai 2026.*
-
----
-
-## Avertissement préalable sur la baseline temporelle
-
-Toutes les données chiffrées de cet article — versions, étoiles GitHub, numéros d'issues ouvertes, cadence de release — sont arrêtées au **5 mai 2026**. Le marché des frameworks de Spec-Driven Development (SDD) évolue à une vitesse anormale : entre la conception de cet article et sa lecture, plusieurs colonnes de comparaison auront probablement bougé. Le Technology Radar Vol. 34 de ThoughtWorks (avril 2026) a explicitement formalisé un mécanisme baptisé *too young to blip* — des outils si récents qu'aucune évaluation stable n'est possible. Le présent article n'échappe pas à cette contrainte : utilisez-le comme un instantané méthodologique, pas comme une recommandation produit.
-
-Je distinguerai systématiquement trois registres : (a) ce que les frameworks **prétendent** faire dans leur documentation officielle ; (b) ce que leurs **utilisateurs rapportent** dans les issues, retours de terrain et blogs d'ingénieurs ; (c) ce qui est **mesurable objectivement** — étoiles, cadence de release, modules effectivement livrés. Le lecteur attentif notera que ces trois registres divergent souvent.
+*A rigorous comparison of BMAD-METHOD v6, GitHub SpecKit, OpenSpec and Agent OS v3, within a production workflow with Claude Code. Observations dated May 5, 2026.*
 
 ---
 
-## Pourquoi cette comparaison, et pourquoi maintenant
+## Preliminary disclaimer on the temporal baseline
 
-Depuis la keynote de Sean Grove à l'AI Engineer World's Fair en mai 2025 (« The New Code »), une thèse circule dans la communauté : la spécification, et non plus le code, deviendrait l'artefact primaire du génie logiciel à l'ère des modèles capables. Andrej Karpathy et Tobi Lütke ont popularisé en juin 2025 l'expression *context engineering*, qui déplaçait le centre de gravité du *prompt* vers l'architecture du contexte fourni au modèle. Le Radar Vol. 33 de ThoughtWorks (novembre 2025) a ensuite classé le spec-driven development en *Assess*, en notant deux camps émergents : ceux qui font confiance aux capacités natives des agents, et ceux qui imposent des workflows structurés.
+All the quantified data in this article — versions, GitHub stars, open-issue numbers, release cadence — are frozen as of **May 5, 2026**. The market for Spec-Driven Development (SDD) frameworks is evolving at an abnormal pace: between the writing of this article and its reading, several comparison columns will probably have moved. ThoughtWorks' Technology Radar Vol. 34 (April 2026) explicitly formalized a mechanism dubbed *too young to blip* — tools so recent that no stable assessment is possible. The present article does not escape this constraint: use it as a methodological snapshot, not as a product recommendation.
 
-Sur ce terrain idéologique, quatre frameworks ont émergé comme références opérationnelles pour les équipes utilisant Claude Code en production :
+I will systematically distinguish three registers: (a) what the frameworks **claim** to do in their official documentation; (b) what their **users report** in issues, field feedback and engineering blogs; (c) what is **objectively measurable** — stars, release cadence, modules actually delivered. The attentive reader will note that these three registers often diverge.
 
-- **BMAD-METHOD v6** (bmad-code-org), centré sur des agents-personas couvrant tout le SDLC ;
-- **GitHub SpecKit** (github/spec-kit), centré sur la *constitution* et les marqueurs `[NEEDS CLARIFICATION]` ;
-- **OpenSpec** (Fission-AI), centré sur les *deltas* de spécification et le brownfield ;
-- **Agent OS v3** (buildermethods), centré sur l'injection de standards.
+---
 
-Avant de comparer, il faut arrêter une grille. Et avant de proposer une grille, il faut un ancrage anti-hype.
+## Why this comparison, and why now
 
-## Ancrage anti-hype : ce que mesure la METR
+Since Sean Grove's keynote at the AI Engineer World's Fair in May 2025 ("The New Code"), a thesis has been circulating in the community: the specification, and no longer the code, would become the primary artifact of software engineering in the era of capable models. Andrej Karpathy and Tobi Lütke popularized in June 2025 the expression *context engineering*, which shifted the center of gravity from the *prompt* to the architecture of the context supplied to the model. ThoughtWorks' Radar Vol. 33 (November 2025) then classified spec-driven development as *Assess*, noting two emerging camps: those who trust the native capabilities of agents, and those who impose structured workflows.
 
-La randomized controlled trial publiée par METR en juillet 2025 (arXiv:2507.09089) reste, au 5 mai 2026, la seule étude empirique sérieuse sur l'impact des outils d'IA sur la productivité de développeurs expérimentés. Sur 246 tâches confiées à 16 contributeurs open-source experts de leurs propres dépôts (~5 ans d'ancienneté en moyenne), l'autorisation d'utiliser Cursor Pro avec Claude 3.5/3.7 Sonnet a **augmenté** le temps de complétion de 19 %. Avant de commencer, les développeurs estimaient un gain de 24 % ; après l'expérience, ils estimaient un gain de 20 %. L'écart entre la perception et la mesure est le résultat le plus instructif. METR a publié en février 2026 une note (`metr.org/blog/2026-02-24-uplift-update`) reconnaissant que la suite de l'expérience souffrait d'un biais de sélection — les développeurs les plus enthousiastes se retiraient des tâches sans IA — et que le design devait être révisé.
+On this ideological terrain, four frameworks have emerged as operational references for teams using Claude Code in production:
 
-Conclusion provisoire : aucun framework SDD ne peut, à ce jour, prétendre démontrer qu'il accélère les développeurs expérimentés sur des codebases matures. Toute évaluation des frameworks comparés ici doit donc commencer par une question : *quel problème suis-je vraiment en train de résoudre ?* — avant celle, plus glamour : *quel framework adopter ?*
+- **BMAD-METHOD v6** (bmad-code-org), centered on persona-agents covering the entire SDLC;
+- **GitHub SpecKit** (github/spec-kit), centered on the *constitution* and the `[NEEDS CLARIFICATION]` markers;
+- **OpenSpec** (Fission-AI), centered on specification *deltas* and brownfield;
+- **Agent OS v3** (buildermethods), centered on standards injection.
 
-## La grille de comparaison, posée avant la comparaison
+Before comparing, one must settle on a grid. And before proposing a grid, one needs an anti-hype anchor.
 
-Pour éviter l'écueil du tableau ad hoc qui flatte le framework qu'on préfère déjà, voici les huit axes que j'utilise, choisis avant tout examen approfondi des frameworks :
+## Anti-hype anchor: what METR measures
 
-1. **Couverture du cycle de vie** : de la vision produit à la maintenance.
-2. **Mécanismes anti-hallucination et anti-dérive** : constitution, marqueurs d'ambiguïté, deltas, RFC 2119.
-3. **Modèle de spec** : centralisée, en deltas, standards injectables, ou personas.
+The randomized controlled trial published by METR in July 2025 (arXiv:2507.09089) remains, as of May 5, 2026, the only serious empirical study on the impact of AI tools on the productivity of experienced developers. Across 246 tasks assigned to 16 expert open-source contributors working on their own repositories (~5 years of seniority on average), being allowed to use Cursor Pro with Claude 3.5/3.7 Sonnet **increased** completion time by 19%. Before starting, the developers estimated a 24% gain; after the experiment, they estimated a 20% gain. The gap between perception and measurement is the most instructive result. METR published in February 2026 a note (`metr.org/blog/2026-02-24-uplift-update`) acknowledging that the continuation of the experiment suffered from a selection bias — the most enthusiastic developers withdrew from the non-AI tasks — and that the design needed to be revised.
+
+Provisional conclusion: no SDD framework can, to date, claim to demonstrate that it speeds up experienced developers on mature codebases. Any assessment of the frameworks compared here must therefore begin with a question: *what problem am I really solving?* — before the more glamorous one: *which framework should I adopt?*
+
+## The comparison grid, laid out before the comparison
+
+To avoid the pitfall of the ad hoc table that flatters the framework one already prefers, here are the eight axes I use, chosen before any in-depth examination of the frameworks:
+
+1. **Lifecycle coverage**: from product vision to maintenance.
+2. **Anti-hallucination and anti-drift mechanisms**: constitution, ambiguity markers, deltas, RFC 2119.
+3. **Spec model**: centralized, delta-based, injectable standards, or personas.
 4. **Brownfield vs greenfield**.
-5. **Intégration native Claude Code** : `.claude/`, slash commands, skills, subagents, MCP.
-6. **Friction ergonomique réelle** : surcharge pour un bug fix mineur, courbe d'apprentissage, stabilité de l'API du framework.
-7. **Maturité communautaire** : issues critiques, cadence de release, écosystème d'extensions.
-8. **TDD/BDD natif vs délégué**.
+5. **Native Claude Code integration**: `.claude/`, slash commands, skills, subagents, MCP.
+6. **Real ergonomic friction**: overhead for a minor bug fix, learning curve, stability of the framework's API.
+7. **Community maturity**: critical issues, release cadence, extension ecosystem.
+8. **Native vs delegated TDD/BDD**.
 
-Aucune pondération n'est donnée ici : la pondération dépend du contexte du lecteur (taille d'équipe, ratio greenfield/brownfield, exigence réglementaire). Cette grille n'est pas neutre — elle reflète mes propres priorités d'ingénierie. Elle est explicite, donc contestable.
+No weighting is given here: the weighting depends on the reader's context (team size, greenfield/brownfield ratio, regulatory requirements). This grid is not neutral — it reflects my own engineering priorities. It is explicit, and therefore contestable.
 
 ---
 
-## BMAD-METHOD v6 : l'agile-AI maximaliste
+## BMAD-METHOD v6: maximalist agile-AI
 
-**État au 5 mai 2026** : version stable v6.0.4 sortie début mars 2026 (« End of Beta »), version récente v6.2.2 du 26 mars 2026, environ 45 800 étoiles GitHub, MIT License, créé par Brian Madison.
+**Status as of May 5, 2026**: stable version v6.0.4 released in early March 2026 ("End of Beta"), recent version v6.2.2 of March 26, 2026, around 45,800 GitHub stars, MIT License, created by Brian Madison.
 
-BMAD revendique être un framework agile-AI complet (« Breakthrough Method for Agile AI-Driven Development ») couvrant le SDLC entier via des agents-personas spécialisés : Analyst, PM, Architect, UX, Scrum Master, Dev, QA (TEA — Test Architect), Tech Writer. La v6 introduit cinq modules (BMM, BMB, CIS, GDS, TEA), une architecture de *skills* compatible avec le format SKILL.md de Claude Code, et un mode d'installation `npx bmad-method install` qui scaffolde l'arborescence `_bmad/` dans le projet.
+BMAD claims to be a complete agile-AI framework ("Breakthrough Method for Agile AI-Driven Development") covering the entire SDLC via specialized persona-agents: Analyst, PM, Architect, UX, Scrum Master, Dev, QA (TEA — Test Architect), Tech Writer. v6 introduces five modules (BMM, BMB, CIS, GDS, TEA), a *skills* architecture compatible with Claude Code's SKILL.md format, and an `npx bmad-method install` installation mode that scaffolds the `_bmad/` tree in the project.
 
-### Intégration technique avec Claude Code
+### Technical integration with Claude Code
 
-L'installeur de BMAD détecte les outils présents (`.claude/`, `.cursor/`, etc.) et génère 27 agents et 74 workflows par défaut, configurables via un système TOML d'overrides dans `_bmad/custom/` (introduit avec la v6.2.x via les PR #2284-2289). Un fichier `_bmad/config.toml` centralise les choix de modules. Les workflows historiques (format `workflow.yaml` propriétaire) sont en migration vers le format SKILL.md natif de Claude Code, ce qui rend pour l'instant l'intégration partiellement double : un plugin tiers comme `aj-geddes/claude-code-bmad-skills` ou `PabloLION/bmad-plugin` agrège les modules pour Claude Code en attendant que la migration upstream soit complète.
+BMAD's installer detects the tools present (`.claude/`, `.cursor/`, etc.) and generates 27 agents and 74 workflows by default, configurable via a TOML overrides system in `_bmad/custom/` (introduced with v6.2.x via PRs #2284-2289). A `_bmad/config.toml` file centralizes the module choices. The legacy workflows (proprietary `workflow.yaml` format) are being migrated to Claude Code's native SKILL.md format, which for now makes the integration partially dual: a third-party plugin such as `aj-geddes/claude-code-bmad-skills` or `PabloLION/bmad-plugin` aggregates the modules for Claude Code while waiting for the upstream migration to be complete.
 
-Concrètement, après installation, un développeur dispose de slash commands organisés autour des phases (analyse → planning → solutioning → implementation), avec un agent `bmad-help` qui sert de routeur conversationnel : « j'ai fini l'architecture, je fais quoi ? ». Les subagents Claude Code sont utilisés pour les revues de code et certains workflows TEA (test architect).
+Concretely, after installation, a developer has slash commands organized around the phases (analysis → planning → solutioning → implementation), with a `bmad-help` agent that acts as a conversational router: "I've finished the architecture, what do I do?". Claude Code subagents are used for code reviews and certain TEA (test architect) workflows.
 
-### Friction ergonomique
+### Ergonomic friction
 
-C'est ici que le décalage entre revendication et expérience terrain devient marqué. L'issue #2003 (« Structural Gaps and Contradictions of the BMAD Method V.6 Stable »), ouverte par un utilisateur déclarant être un fan du framework, expose une critique structurelle : pour un projet petit ou moyen, le processus impose un overhead disproportionné, mêle agents, *party mode* et orchestrations multiples qui rendraient l'exécution pratique plus complexe qu'un simple `CLAUDE.md` couplé à un plan structuré. L'auteur conclut que BMAD est précieux en phase d'idéation, brainstorming, recherche multi-domaine, mais devient « unnecessarily complex even for extremely small projects » en phase d'exécution.
+This is where the gap between claim and field experience becomes marked. Issue #2003 ("Structural Gaps and Contradictions of the BMAD Method V.6 Stable"), opened by a user declaring themselves a fan of the framework, exposes a structural critique: for a small or medium project, the process imposes disproportionate overhead, mixing agents, *party mode* and multiple orchestrations that would make practical execution more complex than a simple `CLAUDE.md` coupled with a structured plan. The author concludes that BMAD is valuable in the ideation, brainstorming and multi-domain research phase, but becomes "unnecessarily complex even for extremely small projects" in the execution phase.
 
-L'issue #1332 illustre un autre travers : le workflow de code review imposait un minimum de 3 issues à trouver par revue, forçant des nitpicks sur du code propre — un anti-pattern reconnu et corrigé depuis, mais révélateur d'une tendance à la sur-prescription dans les prompts internes du framework. L'issue #2274, plus récente, montre une amélioration : `bmad-create-story` lit désormais les fichiers marqués `UPDATE` avant de générer ses dev notes, pour éviter d'improviser sur des comportements existants — autrement dit, BMAD ajoute progressivement des garde-fous brownfield qui manquaient initialement.
+Issue #1332 illustrates another flaw: the code review workflow imposed a minimum of 3 issues to find per review, forcing nitpicks on clean code — an anti-pattern that has been recognized and fixed since, but revealing a tendency toward over-prescription in the framework's internal prompts. Issue #2274, more recent, shows an improvement: `bmad-create-story` now reads files marked `UPDATE` before generating its dev notes, to avoid improvising on existing behaviors — in other words, BMAD is progressively adding brownfield guardrails that were initially missing.
 
-Exemple de ligne de configuration dans la nouvelle architecture TOML :
+Example of a configuration line in the new TOML architecture:
 
 ```toml
 [modules.bmm]
@@ -77,27 +77,27 @@ user_skill_level = "expert"
 project_name = "my-project"
 ```
 
-Verdict honnête : la cadence de release est élevée (plusieurs versions par mois en avril 2026), l'API change vite. Pour un lead d'AI-First Transformation gérant 9 BUs et 500+ devs, cette instabilité est un coût caché.
+Honest verdict: the release cadence is high (several versions per month in April 2026), the API changes fast. For a lead of AI-First Transformation managing 9 BUs and 500+ devs, this instability is a hidden cost.
 
 ---
 
-## GitHub SpecKit : la constitution comme discipline
+## GitHub SpecKit: the constitution as discipline
 
-**État au 5 mai 2026** : version 0.8.1 récente, environ 89 000-91 000 étoiles GitHub (forks ~7 700-7 900), MIT License, lancé par GitHub le 2 septembre 2025.
+**Status as of May 5, 2026**: recent version 0.8.1, around 89,000-91,000 GitHub stars (forks ~7,700-7,900), MIT License, launched by GitHub on September 2, 2025.
 
-SpecKit est sans doute le framework le plus visible en raison de la marque GitHub qui le porte. Le billet de Den Delimarsky sur le GitHub Blog en septembre 2025 a posé le cadre : on traite les agents de codage comme des *pair programmers literal-minded*, pas comme des moteurs de recherche. Le workflow est un pipeline strict : `/speckit.constitution` → `/speckit.specify` → `/speckit.clarify` (optionnel) → `/speckit.plan` → `/speckit.tasks` → `/speckit.analyze` → `/speckit.implement`.
+SpecKit is arguably the most visible framework because of the GitHub brand that carries it. Den Delimarsky's post on the GitHub Blog in September 2025 set the frame: coding agents are treated as *literal-minded pair programmers*, not as search engines. The workflow is a strict pipeline: `/speckit.constitution` → `/speckit.specify` → `/speckit.clarify` (optional) → `/speckit.plan` → `/speckit.tasks` → `/speckit.analyze` → `/speckit.implement`.
 
-### Intégration technique avec Claude Code
+### Technical integration with Claude Code
 
-L'installation se fait via `uv tool install specify-cli --from git+https://github.com/github/spec-kit.git` puis `specify init`. SpecKit pose deux dossiers : `.specify/` (templates, scripts, mémoire) et `.claude/commands/` (les slash commands `speckit.*` pour Claude Code). La documentation liste 17+ agents pris en charge : Claude Code, GitHub Copilot, Cursor, Gemini CLI, Windsurf, Qwen, Codex CLI, OpenCode, etc. Cette agnosticité multi-agent est un argument fort vis-à-vis d'équipes hétérogènes.
+Installation is done via `uv tool install specify-cli --from git+https://github.com/github/spec-kit.git` then `specify init`. SpecKit lays down two folders: `.specify/` (templates, scripts, memory) and `.claude/commands/` (the `speckit.*` slash commands for Claude Code). The documentation lists 17+ supported agents: Claude Code, GitHub Copilot, Cursor, Gemini CLI, Windsurf, Qwen, Codex CLI, OpenCode, etc. This multi-agent agnosticism is a strong argument vis-à-vis heterogeneous teams.
 
-Le mécanisme anti-hallucination central est double :
-- la **constitution** (`.specify/memory/constitution.md`) — un document de principes non négociables que la commande `/speckit.plan` consulte explicitement comme un *compliance officer* simulé ;
-- les marqueurs **`[NEEDS CLARIFICATION: question précise]`** — instruction interne aux templates pour que les LLM, plutôt que de combler les ambiguïtés, les signalent.
+The central anti-hallucination mechanism is twofold:
+- the **constitution** (`.specify/memory/constitution.md`) — a document of non-negotiable principles that the `/speckit.plan` command consults explicitly like a simulated *compliance officer*;
+- the **`[NEEDS CLARIFICATION: specific question]`** markers — an internal instruction to the templates so that LLMs, rather than filling in ambiguities, flag them.
 
-L'écosystème d'extensions communautaires (`specify extension add`) est en train de devenir un différenciateur : adversarial review, security audit, code review post-implémentation, side-effect analysis, intégration Jira/Linear, etc.
+The community extension ecosystem (`specify extension add`) is becoming a differentiator: adversarial review, security audit, post-implementation code review, side-effect analysis, Jira/Linear integration, etc.
 
-Exemple de marqueur dans un template :
+Example of a marker in a template:
 
 ```markdown
 When creating this spec from a user prompt:
@@ -105,37 +105,37 @@ When creating this spec from a user prompt:
 2. Don't guess: If the prompt doesn't specify something, mark it
 ```
 
-### Friction ergonomique
+### Ergonomic friction
 
-Le retour de terrain le plus crédible vient du Radar Vol. 33 de ThoughtWorks et du blog d'EPAM (novembre 2025). EPAM a documenté en détail l'usage de SpecKit sur un projet brownfield Java : la constitution doit énoncer non seulement les principes mais aussi les **anti-patterns** explicites (« No try-catch blocks in route handlers »), faute de quoi l'agent les ré-introduit. Le team-lead reste un *technical lead reviewing a junior developer's implementation* — autrement dit, SpecKit ne supprime pas la revue critique, il la déplace.
+The most credible field feedback comes from ThoughtWorks' Radar Vol. 33 and EPAM's blog (November 2025). EPAM documented in detail the use of SpecKit on a brownfield Java project: the constitution must state not only the principles but also the explicit **anti-patterns** ("No try-catch blocks in route handlers"), failing which the agent re-introduces them. The team-lead remains a *technical lead reviewing a junior developer's implementation* — in other words, SpecKit does not remove the critical review, it displaces it.
 
-Les issues GitHub critiques soulignent cette tension : #806 (« brownfield project requires more iterating »), #540 (la section Source Tree du `plan-template.md` produit parfois des arborescences corrompues), #1173 et #1285 (manque documentaire sur le brownfield), discussion #331 et #746 (les utilisateurs cherchent comment importer un codebase existant). Le Radar Vol. 33 reconnaît ces difficultés tout en notant que SpecKit produit le plus de valeur entre des mains d'ingénieurs déjà expérimentés en clean code.
+The critical GitHub issues underline this tension: #806 ("brownfield project requires more iterating"), #540 (the Source Tree section of `plan-template.md` sometimes produces corrupted trees), #1173 and #1285 (documentary gaps on brownfield), discussion #331 and #746 (users looking for how to import an existing codebase). Radar Vol. 33 acknowledges these difficulties while noting that SpecKit produces the most value in the hands of engineers already experienced in clean code.
 
-Le risque d'*instruction bloat* — l'accumulation de contexte projet dans la constitution jusqu'à provoquer du *context rot* — est explicitement mentionné par les équipes ThoughtWorks. La discipline requise est non triviale.
+The risk of *instruction bloat* — the accumulation of project context in the constitution until it triggers *context rot* — is explicitly mentioned by the ThoughtWorks teams. The required discipline is non-trivial.
 
 ---
 
-## OpenSpec : les deltas comme primitive
+## OpenSpec: deltas as a primitive
 
-**État au 5 mai 2026** : version 0.22.0 (avril 2026), environ 45 200-45 300 étoiles GitHub (forks ~3 100), MIT License, maintenu par Fission-AI (Tabish, *@0xTab*).
+**Status as of May 5, 2026**: version 0.22.0 (April 2026), around 45,200-45,300 GitHub stars (forks ~3,100), MIT License, maintained by Fission-AI (Tabish, *@0xTab*).
 
-OpenSpec se positionne explicitement comme une alternative *lightweight* aux frameworks plus prescriptifs. Sa philosophie : « fluid not rigid, iterative not waterfall, built for brownfield not just greenfield ». Le ThoughtWorks Radar Vol. 34 (avril 2026) a placé OpenSpec en *Assess* avec une note explicite : sa focalisation sur les *spec deltas* plutôt que sur une spécification complète en amont en fait un meilleur candidat que SpecKit pour les systèmes existants.
+OpenSpec positions itself explicitly as a *lightweight* alternative to the more prescriptive frameworks. Its philosophy: "fluid not rigid, iterative not waterfall, built for brownfield not just greenfield". The ThoughtWorks Radar Vol. 34 (April 2026) placed OpenSpec in *Assess* with an explicit note: its focus on *spec deltas* rather than on a complete upfront specification makes it a better candidate than SpecKit for existing systems.
 
-### Intégration technique avec Claude Code
+### Technical integration with Claude Code
 
-L'installation est légère : `npm install -g @fission-ai/openspec` puis `openspec init`. La structure produite :
+Installation is lightweight: `npm install -g @fission-ai/openspec` then `openspec init`. The structure produced:
 
 ```
 openspec/
-├── specs/        # source de vérité (état courant)
-├── changes/      # propositions actives
-│   └── archive/  # historique
+├── specs/        # source of truth (current state)
+├── changes/      # active proposals
+│   └── archive/  # history
 └── config.yaml
 ```
 
-Le workflow par défaut (profil *core*) repose sur quatre slash commands : `/opsx:propose`, `/opsx:explore`, `/opsx:apply`, `/opsx:archive`. Le profil étendu (11 commandes : `/opsx:new`, `/opsx:continue`, `/opsx:ff`, `/opsx:verify`, `/opsx:sync`, `/opsx:bulk-archive`, `/opsx:onboard`) couvre des cas plus avancés. Côté Claude Code, OpenSpec génère `.claude/skills/` et `.claude/commands/opsx/` ; un *CommandAdapterRegistry* gère 23+ adaptateurs spécifiques (Cursor, Windsurf, Codex, Copilot, Antigravity, Kiro, Junie, etc.).
+The default workflow (*core* profile) relies on four slash commands: `/opsx:propose`, `/opsx:explore`, `/opsx:apply`, `/opsx:archive`. The extended profile (11 commands: `/opsx:new`, `/opsx:continue`, `/opsx:ff`, `/opsx:verify`, `/opsx:sync`, `/opsx:bulk-archive`, `/opsx:onboard`) covers more advanced cases. On the Claude Code side, OpenSpec generates `.claude/skills/` and `.claude/commands/opsx/`; a *CommandAdapterRegistry* manages 23+ specific adapters (Cursor, Windsurf, Codex, Copilot, Antigravity, Kiro, Junie, etc.).
 
-Le mécanisme anti-dérive d'OpenSpec est le **delta** : chaque change propose un fichier de spec partiel structuré par les sections `## ADDED Requirements`, `## MODIFIED Requirements`, `## REMOVED Requirements`. Les requirements eux-mêmes utilisent les mots-clés RFC 2119 (`MUST`, `SHALL`, `SHOULD`) avec scénarios `GIVEN/WHEN/THEN` :
+OpenSpec's anti-drift mechanism is the **delta**: each change proposes a partial spec file structured by the sections `## ADDED Requirements`, `## MODIFIED Requirements`, `## REMOVED Requirements`. The requirements themselves use the RFC 2119 keywords (`MUST`, `SHALL`, `SHOULD`) with `GIVEN/WHEN/THEN` scenarios:
 
 ```markdown
 ## MODIFIED Requirements
@@ -149,29 +149,29 @@ The system SHALL expire sessions after 30 minutes of inactivity.
 - THEN the session is invalidated
 ```
 
-À l'archivage, le delta est fusionné dans la spec courante, et le change est déplacé dans `changes/archive/` avec un timestamp. La séparation physique entre *source of truth* et *proposed updates* fournit un audit-trail propre.
+At archiving, the delta is merged into the current spec, and the change is moved to `changes/archive/` with a timestamp. The physical separation between *source of truth* and *proposed updates* provides a clean audit trail.
 
-### Friction ergonomique
+### Ergonomic friction
 
-Le retour terrain le plus instructif vient de l'article de Mathivanan Mani comparant SpecKit, OpenSpec et BMAD sur un projet brownfield Java/Spring Boot : OpenSpec a produit le design le plus propre et les meilleurs standards de code pour une feature de taille moyenne. La courbe d'apprentissage est notablement plus douce que celle de BMAD, et le poids de méta-instructions est plus faible que celui de SpecKit.
+The most instructive field feedback comes from Mathivanan Mani's article comparing SpecKit, OpenSpec and BMAD on a brownfield Java/Spring Boot project: OpenSpec produced the cleanest design and the best code standards for a medium-sized feature. The learning curve is notably gentler than BMAD's, and the weight of meta-instructions is lower than SpecKit's.
 
-Côté limites : pas de personas multi-agents, pas d'orchestration cross-repo native, et l'écosystème d'extensions reste plus modeste que celui de SpecKit. L'auteur d'OpenSpec lui-même indique que la génération automatique de specs pour codebases existants est un sujet exploré mais non résolu — la philosophie reste « créer les specs au fil des features, pas en bloc rétrospectif ». Pour un dépôt legacy de 500K LOC, c'est une honnêteté épistémique appréciable, mais aussi un trou fonctionnel.
+On the limits side: no multi-agent personas, no native cross-repo orchestration, and the extension ecosystem remains more modest than SpecKit's. OpenSpec's author himself indicates that automatic spec generation for existing codebases is a subject explored but not solved — the philosophy remains "create specs along with features, not as a retrospective block". For a legacy repo of 500K LOC, this is an appreciable epistemic honesty, but also a functional gap.
 
-La cadence de release est élevée mais semble plus ciblée que BMAD : chaque release résout un problème nommé (workflow, profile, schémas custom, support de nouveaux outils). Le repo affiche au 5 mai 2026 environ 226 issues ouvertes, en majorité des demandes d'évolution plutôt que des bugs structurels.
+The release cadence is high but seems more targeted than BMAD: each release solves a named problem (workflow, profile, custom schemas, support for new tools). The repo shows, as of May 5, 2026, around 226 open issues, mostly evolution requests rather than structural bugs.
 
 ---
 
-## Agent OS v3 : la rétractation comme méthodologie
+## Agent OS v3: retraction as a methodology
 
-**État au 5 mai 2026** : version 3.0 publiée en avril 2026, environ 4 400 étoiles GitHub, MIT License, créé par Brian Casel (Builder Methods).
+**Status as of May 5, 2026**: version 3.0 published in April 2026, around 4,400 GitHub stars, MIT License, created by Brian Casel (Builder Methods).
 
-Agent OS est l'outsider de cette comparaison — non par défaut de qualité, mais par positionnement délibéré. La v3 a explicitement supprimé environ 70 % du framework v2. Brian Casel justifie ce choix dans la note de release de la v3 : les modes Plan de Claude Code et l'extended thinking gèrent désormais correctement la rédaction de specs et le découpage de tâches ; il n'est plus pertinent qu'un framework tiers ré-implémente ces fonctions. Agent OS v3 se recentre sur trois primitives : `/discover-standards`, `/inject-standards`, `/shape-spec`.
+Agent OS is the outsider of this comparison — not by lack of quality, but by deliberate positioning. v3 explicitly removed around 70% of the v2 framework. Brian Casel justifies this choice in the v3 release note: Claude Code's Plan modes and extended thinking now handle correctly the writing of specs and the breakdown of tasks; it is no longer relevant for a third-party framework to re-implement these functions. Agent OS v3 refocuses on three primitives: `/discover-standards`, `/inject-standards`, `/shape-spec`.
 
-### Intégration technique avec Claude Code
+### Technical integration with Claude Code
 
-L'installation passe par un script shell : `curl -sSL https://raw.githubusercontent.com/buildermethods/agent-os/main/setup/base.sh | bash -s -- --claude-code`. La structure pose un dossier `.agent-os/` au niveau projet contenant standards, specs, et product docs, plus des slash commands dans `.claude/commands/`. Un fichier `index.yml` permet la détection automatique de quels standards injecter dans quel contexte.
+Installation goes through a shell script: `curl -sSL https://raw.githubusercontent.com/buildermethods/agent-os/main/setup/base.sh | bash -s -- --claude-code`. The structure lays down an `.agent-os/` folder at the project level containing standards, specs, and product docs, plus slash commands in `.claude/commands/`. An `index.yml` file enables the automatic detection of which standards to inject in which context.
 
-Exemple de standard typique (Markdown injectable) :
+Example of a typical standard (injectable Markdown):
 
 ```markdown
 ---
@@ -186,123 +186,123 @@ applies_to: [backend, api]
 - Simple logic stays in router; complex logic in data clients
 ```
 
-L'intégration native avec les *skills* de Claude Code est centrale : `/inject-standards` peut bake les standards dans n'importe quel subagent, skill ou prompt custom — un pattern compatible avec la doc officielle Anthropic sur les skills (`.claude/skills/<skill-name>/SKILL.md`). La v3 retire les phases d'implémentation et d'orchestration de la v2 : le framework délègue à Claude Code les responsabilités que Claude Code remplit déjà bien.
+The native integration with Claude Code's *skills* is central: `/inject-standards` can bake the standards into any subagent, skill or custom prompt — a pattern compatible with the official Anthropic doc on skills (`.claude/skills/<skill-name>/SKILL.md`). v3 removes the implementation and orchestration phases of v2: the framework delegates to Claude Code the responsibilities that Claude Code already fulfills well.
 
-### Friction ergonomique
+### Ergonomic friction
 
-C'est, paradoxalement, la friction la plus faible des quatre. La courbe d'apprentissage se limite à trois commandes, et la philosophie « fais peu, fais-le proprement » réduit la dette de migration. La rançon est évidente : Agent OS v3 ne couvre pas le cycle de vie complet ; il est conçu pour s'enchâsser dans un workflow Claude Code natif (Plan Mode + skills + subagents), pas pour être autosuffisant.
+This is, paradoxically, the lowest friction of the four. The learning curve is limited to three commands, and the "do little, do it cleanly" philosophy reduces the migration debt. The price is obvious: Agent OS v3 does not cover the full lifecycle; it is designed to nest into a native Claude Code workflow (Plan Mode + skills + subagents), not to be self-sufficient.
 
-Le risque épistémique est ici inverse de celui de BMAD : un lead transformation pourrait sous-estimer la valeur d'Agent OS parce qu'il ne ressemble pas à un « framework ». C'est précisément l'argument du créateur — la valeur est dans la discipline d'extraction et d'injection de standards, pas dans le ruban autour. La taille modeste de la communauté (4,4k étoiles vs 45-90k pour les autres) reflète moins une faiblesse intrinsèque qu'un positionnement de niche assumé.
+The epistemic risk here is the inverse of BMAD's: a transformation lead could underestimate the value of Agent OS because it does not look like a "framework". This is precisely the creator's argument — the value is in the discipline of extracting and injecting standards, not in the ribbon around it. The modest size of the community (4.4k stars vs 45-90k for the others) reflects less an intrinsic weakness than an assumed niche positioning.
 
 ---
 
-## Tableau comparatif synthétique
+## Synthetic comparison table
 
-Codes : ✅ couverture native solide ; ⚠️ couverture partielle ou friction documentée ; ❌ couverture absente ou explicitement déléguée.
+Codes: ✅ solid native coverage; ⚠️ partial coverage or documented friction; ❌ absent coverage or explicitly delegated.
 
-| Axe | BMAD-METHOD v6 | GitHub SpecKit | OpenSpec | Agent OS v3 |
+| Axis | BMAD-METHOD v6 | GitHub SpecKit | OpenSpec | Agent OS v3 |
 |---|---|---|---|---|
-| **1. Cycle de vie** | ✅ Vision → maintenance via 5 modules | ⚠️ Spec → implementation, pas de vision/produit | ⚠️ Change-driven, pas de phase produit native | ❌ Standards uniquement, délègue le reste à Claude Code |
-| **2. Anti-hallucination / dérive** | ⚠️ Validations multiples mais sur-prescription documentée (#1332) | ✅ Constitution + `[NEEDS CLARIFICATION]` + `/analyze` | ✅ Deltas ADDED/MODIFIED/REMOVED + RFC 2119 | ⚠️ Standards explicites mais pas de gate formel |
-| **3. Modèle de spec** | Personas-driven (12+ agents) | Centralisée (constitution + spec/plan/tasks) | Deltas séparés specs/changes/archive | Standards injectables à la demande |
-| **4. Brownfield vs Greenfield** | ⚠️ Brownfield supporté via document-project + Test Architect, complexité élevée | ⚠️ Greenfield-first, brownfield documenté comme gap (issues #806, #540, #1173) | ✅ Brownfield-first revendiqué et reconnu (Radar Vol. 34) | ✅ `/discover-standards` extrait de l'existant |
-| **5. Intégration Claude Code** | ⚠️ Migration en cours vers SKILL.md, plugins tiers requis | ✅ Slash commands `.claude/commands/` natifs, multi-agent | ✅ Skills + commands pour 23+ outils | ✅ Pensée pour Plan Mode + Skills + Subagents Claude Code |
-| **6. Friction pour bug fix mineur** | ❌ Overhead jugé disproportionné par utilisateurs (#2003) | ⚠️ Constitution + 4 phases lourdes pour un changement isolé | ✅ `/opsx:propose` léger, profil *core* à 4 commandes | ✅ Skills à la demande, pas de pipeline imposé |
-| **7. Maturité communautaire** | ✅ ~45,8k stars, cadence très élevée mais API instable | ✅ ~89-91k stars, écosystème d'extensions riche | ✅ ~45,2k stars, releases ciblées | ⚠️ ~4,4k stars, communauté plus modeste |
-| **8. TDD/BDD natif** | ✅ Module TEA dédié (Test Architect) | ⚠️ Possible via constitution mais non natif | ⚠️ Scénarios GIVEN/WHEN/THEN dans deltas mais pas d'exécution | ❌ Délégué à Claude Code et standards |
+| **1. Lifecycle** | ✅ Vision → maintenance via 5 modules | ⚠️ Spec → implementation, no vision/product | ⚠️ Change-driven, no native product phase | ❌ Standards only, delegates the rest to Claude Code |
+| **2. Anti-hallucination / drift** | ⚠️ Multiple validations but documented over-prescription (#1332) | ✅ Constitution + `[NEEDS CLARIFICATION]` + `/analyze` | ✅ Deltas ADDED/MODIFIED/REMOVED + RFC 2119 | ⚠️ Explicit standards but no formal gate |
+| **3. Spec model** | Personas-driven (12+ agents) | Centralized (constitution + spec/plan/tasks) | Deltas separated specs/changes/archive | Injectable standards on demand |
+| **4. Brownfield vs Greenfield** | ⚠️ Brownfield supported via document-project + Test Architect, high complexity | ⚠️ Greenfield-first, brownfield documented as a gap (issues #806, #540, #1173) | ✅ Brownfield-first claimed and recognized (Radar Vol. 34) | ✅ `/discover-standards` extracts from the existing |
+| **5. Claude Code integration** | ⚠️ Migration in progress toward SKILL.md, third-party plugins required | ✅ Native `.claude/commands/` slash commands, multi-agent | ✅ Skills + commands for 23+ tools | ✅ Designed for Plan Mode + Skills + Subagents Claude Code |
+| **6. Friction for a minor bug fix** | ❌ Overhead judged disproportionate by users (#2003) | ⚠️ Constitution + 4 heavy phases for an isolated change | ✅ Lightweight `/opsx:propose`, *core* profile at 4 commands | ✅ Skills on demand, no imposed pipeline |
+| **7. Community maturity** | ✅ ~45.8k stars, very high cadence but unstable API | ✅ ~89-91k stars, rich extension ecosystem | ✅ ~45.2k stars, targeted releases | ⚠️ ~4.4k stars, more modest community |
+| **8. Native TDD/BDD** | ✅ Dedicated TEA module (Test Architect) | ⚠️ Possible via constitution but not native | ⚠️ GIVEN/WHEN/THEN scenarios in deltas but no execution | ❌ Delegated to Claude Code and standards |
 
-Aucune ligne ne donne un gagnant absolu. La grille montre quatre profils différents qui répondent à des contraintes différentes.
-
----
-
-## Ce que les frameworks ne disent pas
-
-Quatre angles morts récurrents méritent d'être nommés :
-
-**1. La cadence de release est une dette de maintenance déguisée.** BMAD a publié plusieurs versions par mois entre janvier et avril 2026, parfois avec des changements de format de configuration (passage YAML → TOML, abandon de YAML après une introduction brève — PR #2284, #2283). SpecKit a des releases v0.4.5 et v0.5.0 publiées sans assets de templates, cassant `specify init` (issue #2092). Pour une équipe de 500+ devs, chaque migration coûte des dizaines d'heures de support interne non comptabilisées.
-
-**2. Les chiffres d'étoiles ne mesurent pas la qualité.** OpenCode a gagné environ 47k étoiles GitHub en deux mois début 2026 d'après MightyBot. Une étoile témoigne d'une intention, pas d'un usage en production. Le Radar Vol. 34 nomme cet effet *too young to blip* : le marché est saturé de projets maintenus par un seul contributeur travaillant avec un agent de codage.
-
-**3. Aucune RCT publique n'évalue les frameworks SDD.** La METR a mesuré l'impact d'outils d'IA généraux (Cursor + Claude 3.5/3.7 Sonnet), pas l'impact différentiel d'un framework de spec. Les retours d'expérience publiés (EPAM, Mathivanan Mani, Scott Logic, etc.) sont des n=1 méthodologiquement honnêtes mais non généralisables. Les chiffres d'adoption sont auto-sélectionnés.
-
-**4. La *semantic diffusion* contamine les comparatifs.** Le Radar Vol. 34 nomme explicitement le problème : *spec-driven development*, *harness engineering*, *context engineering* sont utilisés de manière interchangeable, parfois pour désigner des choses différentes. Quand un blog présente un framework comme « spec-driven », il faut interroger : qu'est-ce que cela signifie ici, opérationnellement ?
+No line gives an absolute winner. The grid shows four different profiles that respond to different constraints.
 
 ---
 
-## L'hybridation : thèse, objections, conditions de validité
+## What the frameworks don't say
 
-### Thèse
+Four recurring blind spots deserve to be named:
 
-Les angles morts structurels de chaque framework justifient, dans certaines configurations d'équipe, d'envisager une hybridation plutôt qu'un choix exclusif. Concrètement : un standard d'injection (Agent OS) pour les conventions transverses, un mécanisme de delta (OpenSpec) pour les évolutions brownfield, une discipline de constitution (SpecKit) pour les phases greenfield, des personas (BMAD) pour les domaines complexes nécessitant des perspectives multiples.
+**1. Release cadence is disguised maintenance debt.** BMAD published several versions per month between January and April 2026, sometimes with changes of configuration format (YAML → TOML transition, abandonment of YAML after a brief introduction — PR #2284, #2283). SpecKit has releases v0.4.5 and v0.5.0 published without template assets, breaking `specify init` (issue #2092). For a team of 500+ devs, each migration costs dozens of hours of unaccounted internal support.
+
+**2. Star counts don't measure quality.** OpenCode gained around 47k GitHub stars in two months in early 2026 according to MightyBot. A star testifies to an intention, not to production use. Radar Vol. 34 names this effect *too young to blip*: the market is saturated with projects maintained by a single contributor working with a coding agent.
+
+**3. No public RCT evaluates SDD frameworks.** METR measured the impact of general AI tools (Cursor + Claude 3.5/3.7 Sonnet), not the differential impact of a spec framework. The published experience reports (EPAM, Mathivanan Mani, Scott Logic, etc.) are methodologically honest n=1 cases but not generalizable. The adoption figures are self-selected.
+
+**4. *Semantic diffusion* contaminates the comparisons.** Radar Vol. 34 names the problem explicitly: *spec-driven development*, *harness engineering*, *context engineering* are used interchangeably, sometimes to designate different things. When a blog presents a framework as "spec-driven", one must question: what does that mean here, operationally?
+
+---
+
+## Hybridization: thesis, objections, conditions of validity
+
+### Thesis
+
+The structural blind spots of each framework justify, in certain team configurations, considering a hybridization rather than an exclusive choice. Concretely: an injection standard (Agent OS) for cross-cutting conventions, a delta mechanism (OpenSpec) for brownfield evolutions, a constitution discipline (SpecKit) for greenfield phases, personas (BMAD) for complex domains requiring multiple perspectives.
 
 ### Objections
 
-L'hybridation porte cinq risques sérieux qu'il faut nommer.
+Hybridization carries five serious risks that must be named.
 
-**Coût d'intégration.** Quatre frameworks signifient quatre `.claude/commands/`, quatre conventions de fichiers, quatre cadences de release. Le risque de collisions de nommage de slash commands (`/spec*`, `/opsx:*`, `/inject-standards`, `/bmad-help`) augmente, et chaque mise à jour devient un événement coordonné.
+**Integration cost.** Four frameworks means four `.claude/commands/`, four file conventions, four release cadences. The risk of slash-command naming collisions (`/spec*`, `/opsx:*`, `/inject-standards`, `/bmad-help`) increases, and each update becomes a coordinated event.
 
-**Conflit de conventions.** SpecKit pousse une constitution centrale, OpenSpec une séparation specs/changes, BMAD une orchestration multi-agents, Agent OS une diffusion contextuelle de standards. Ces philosophies ne sont pas mutuellement exclusives en théorie, mais peuvent produire en pratique de la spec dupliquée ou contradictoire.
+**Convention conflict.** SpecKit pushes a central constitution, OpenSpec a specs/changes separation, BMAD a multi-agent orchestration, Agent OS a contextual diffusion of standards. These philosophies are not mutually exclusive in theory, but can produce in practice duplicated or contradictory specs.
 
-**Dette de maintenance.** À l'échelle de 9 BUs, multiplier les frameworks signifie multiplier les responsabilités d'évangélisation, de formation, de support interne. Le coût de coordination peut excéder le gain marginal.
+**Maintenance debt.** At the scale of 9 BUs, multiplying frameworks means multiplying responsibilities of evangelization, training, internal support. The coordination cost can exceed the marginal gain.
 
-**Risque d'over-engineering.** L'issue BMAD #2003 vaut comme avertissement général : une méthode élaborée appliquée à un bug fix mineur produit du bruit, pas du signal. La sur-spécification est un anti-pattern reconnu par le Radar Vol. 33, qui parle de *yak shaving* : on descend dans des couches plus complexes que le problème initial.
+**Over-engineering risk.** BMAD issue #2003 stands as a general warning: an elaborate method applied to a minor bug fix produces noise, not signal. Over-specification is an anti-pattern recognized by Radar Vol. 33, which speaks of *yak shaving*: one descends into layers more complex than the initial problem.
 
-**Semantic diffusion.** Combiner des frameworks dont les vocabulaires recoupent partiellement (constitution vs standards vs project.md vs CLAUDE.md) augmente le risque qu'une équipe pense parler de la même chose alors que ce n'est pas le cas — précisément le problème nommé par ThoughtWorks Vol. 34.
+**Semantic diffusion.** Combining frameworks whose vocabularies partially overlap (constitution vs standards vs project.md vs CLAUDE.md) increases the risk that a team thinks it is talking about the same thing when it is not — precisely the problem named by ThoughtWorks Vol. 34.
 
-### Réfutations argumentées et conditions de validité
+### Argued refutations and conditions of validity
 
-L'hybridation n'est défendable que sous certaines conditions explicites :
+Hybridization is only defensible under certain explicit conditions:
 
-- **Périmètre d'application délimité** : par exemple, BMAD réservé à des projets greenfield à fort enjeu produit, OpenSpec utilisé pour toutes les évolutions de systèmes existants, Agent OS comme couche transversale d'injection de standards. Sans cette délimitation, les frameworks se marchent dessus.
-- **Owner unique par BU** : un référent technique dédié pour chaque framework adopté, capable d'absorber les changements de release et de protéger l'équipe des migrations bruyantes.
-- **Métrique de friction surveillée** : suivre le temps moyen pour exécuter un bug fix mineur sous le framework, et abandonner si ce temps dépasse un seuil convenu (par exemple, le temps non-framework + 50 %).
+- **Delimited scope of application**: for example, BMAD reserved for high-stakes greenfield product projects, OpenSpec used for all evolutions of existing systems, Agent OS as a cross-cutting standards-injection layer. Without this delimitation, the frameworks step on each other.
+- **Single owner per BU**: a dedicated technical referent for each adopted framework, able to absorb release changes and protect the team from noisy migrations.
+- **Monitored friction metric**: track the average time to execute a minor bug fix under the framework, and abandon if that time exceeds an agreed threshold (for example, the non-framework time + 50%).
 
-Plusieurs *patterns d'hybridation* sont documentés en pratique par la communauté en mai 2026, sans qu'aucun ne s'impose comme canonique :
+Several *hybridization patterns* are documented in practice by the community in May 2026, without any of them establishing itself as canonical:
 
-- **SpecKit + Agent OS** : la constitution de SpecKit absorbe les standards d'Agent OS via `/inject-standards`. Reporté par plusieurs développeurs sur le repo SpecKit comme une combinaison stable, mais avec un risque de redondance.
-- **OpenSpec + BMAD-TEA** : OpenSpec gère les deltas de spec, le module TEA de BMAD est isolé pour la stratégie de tests. Documenté par Mathivanan Mani comme un compromis pour des codebases brownfield d'envergure.
-- **Agent OS seul, en tant que couche minimaliste** : reflète la posture de Brian Casel — déléguer au maximum à Claude Code natif et n'ajouter qu'une discipline d'injection de standards.
+- **SpecKit + Agent OS**: SpecKit's constitution absorbs Agent OS's standards via `/inject-standards`. Reported by several developers on the SpecKit repo as a stable combination, but with a risk of redundancy.
+- **OpenSpec + BMAD-TEA**: OpenSpec handles the spec deltas, BMAD's TEA module is isolated for the test strategy. Documented by Mathivanan Mani as a compromise for large-scale brownfield codebases.
+- **Agent OS alone, as a minimalist layer**: reflects Brian Casel's stance — delegate as much as possible to native Claude Code and add only a standards-injection discipline.
 
-Aucun de ces patterns n'est mesuré expérimentalement. Ils sont des heuristiques d'équipes, pas des résultats.
-
----
-
-## Limites épistémiques de cette comparaison
-
-Trois limites structurelles méritent d'être tenues présentes à l'esprit.
-
-**Aucune RCT publique sur les frameworks SDD.** L'étude METR mesure des outils d'IA, pas des frameworks de spec. La différence est cruciale : un framework SDD pourrait ralentir encore davantage des développeurs experts (overhead méthodologique sur codebase familière) ou les accélérer (réduction des allers-retours de re-spec). Nous ne savons pas. Toute comparaison fonctionne donc sur des principes plausibles, pas sur des effets mesurés.
-
-**Échantillons d'adoption auto-sélectionnés.** Les retours publiés viennent de praticiens enthousiastes. Les équipes qui ont essayé puis abandonné rarement bloguent. L'observation des étoiles GitHub est encore plus biaisée : un *star* peut signifier « j'aime l'idée », pas « j'utilise en production ».
-
-**Semantic diffusion identifiée par le Radar Vol. 34.** Quand quatre frameworks utilisent le terme *spec-driven development*, mais que SpecKit produit des artefacts Markdown séquentiels, OpenSpec des deltas RFC 2119, BMAD des handoffs entre personas et Agent OS des standards injectables, le terme commun masque des designs très différents. La comparaison axe par axe est une tentative de désambiguïser cette confusion, pas un outil de classement absolu.
-
-À ces limites s'ajoute le fait que **Claude Code lui-même évolue rapidement** : le post-mortem d'avril 2026 d'Anthropic sur des régressions de qualité de Claude Code (effort par défaut, perte d'historique de raisonnement dans des sessions stale, prompt verbosity) montre que la couche sous-jacente n'est pas stable. Toute conclusion sur l'intégration native d'un framework avec Claude Code peut basculer avec un changement de comportement de l'outil hôte.
+None of these patterns is measured experimentally. They are team heuristics, not results.
 
 ---
 
-## Conclusion : trois conditions de révision, et une posture méthodologique
+## Epistemic limits of this comparison
 
-Ce que cet article peut défendre méthodologiquement : pour une organisation gérant un parc de 500+ devs sur 9 BUs, le bon raisonnement n'est pas « quel framework adopter », mais **« sous quelles conditions empiriques mon analyse devrait-elle être révisée »**. C'est l'inverse de la posture marketing.
+Three structural limits deserve to be kept in mind.
 
-Au moins trois conditions falsifiables justifieraient une révision de cette comparaison :
+**No public RCT on SDD frameworks.** The METR study measures AI tools, not spec frameworks. The difference is crucial: an SDD framework could slow down expert developers even further (methodological overhead on a familiar codebase) or speed them up (reduction of re-spec back-and-forth). We do not know. Any comparison therefore operates on plausible principles, not on measured effects.
 
-1. **Publication d'une RCT comparative** entre deux ou plusieurs de ces frameworks, sur des tâches brownfield réelles, mesurant non seulement le temps de complétion (à la METR) mais aussi la qualité du code livré (revue indépendante) et la qualité des specs produites. Si une telle étude montrait qu'un framework produit un gain mesurable et soutenable, l'analyse axe par axe ci-dessus deviendrait secondaire.
+**Self-selected adoption samples.** The published feedback comes from enthusiastic practitioners. The teams that tried and then abandoned rarely blog. The observation of GitHub stars is even more biased: a *star* can mean "I like the idea", not "I use it in production".
 
-2. **Convergence des frameworks sur un format de spec partagé.** Si SpecKit, OpenSpec, BMAD et Agent OS adoptaient un sous-ensemble commun (par exemple un format de delta RFC 2119 standardisé, ou un schéma SKILL.md unifié), la comparaison perdrait sa pertinence en tant que comparaison entre produits, et basculerait vers une comparaison entre dialectes d'un même standard. La migration en cours des modules BMAD vers SKILL.md, et l'absorption croissante de skills dans les workflows Agent OS et OpenSpec, suggèrent un mouvement dans cette direction sans le confirmer.
+**Semantic diffusion identified by Radar Vol. 34.** When four frameworks use the term *spec-driven development*, but SpecKit produces sequential Markdown artifacts, OpenSpec RFC 2119 deltas, BMAD handoffs between personas and Agent OS injectable standards, the common term masks very different designs. The axis-by-axis comparison is an attempt to disambiguate this confusion, not an absolute ranking tool.
 
-3. **Effondrement ou consolidation d'un framework majeur.** Si l'un des quatre frameworks cesse d'être maintenu (par exemple, une fragmentation forte de la communauté BMAD autour des forks v6, ou une stagnation prolongée des releases d'Agent OS), la comparaison perd un de ses pôles. Inversement, si un acteur majeur (Anthropic, GitHub, AWS Kiro) absorbe ou rend redondant l'un des frameworks via une fonctionnalité native, le rapport de force change. Les indicateurs à surveiller sont la cadence de release sur 90 jours glissants, le nombre d'issues critiques ouvertes vs fermées, et le ratio de PR communautaires acceptées.
-
-Ces conditions sont descriptives, non prescriptives. Elles ne suggèrent pas de protocole expérimental — elles indiquent ce qu'il faudrait observer pour considérer cette analyse comme dépassée.
-
-Le cadre que je défends est donc strictement méthodologique : exiger des frameworks qu'ils énoncent les trois registres distincts (revendications officielles, retours d'utilisateurs, faits mesurables) ; arrêter une grille avant de comparer ; nommer ses limites épistémiques ; refuser le rôle d'oracle. Le choix d'un framework — ou la décision de ne pas en adopter — relève d'un arbitrage local que je ne peux pas faire pour le lecteur, et que personne ne devrait prétendre faire à sa place.
-
-Reste la question pratique : à compter du 5 mai 2026, dans une organisation distribuée, sur des codebases hétérogènes brownfield/greenfield, avec Claude Code comme outil de référence, je n'ai pas vu d'évidence forte qu'un framework domine. J'ai vu, en revanche, beaucoup d'équipes adopter trop vite et abandonner trop tard. L'hypothèse opérationnelle la plus défendable — testable, falsifiable, modeste — est probablement la suivante : commencer avec le plus léger des candidats compatibles avec le profil de l'équipe, mesurer la friction sur trois mois, et n'ajouter de la mécanique que lorsqu'un problème spécifique le justifie.
-
-Le reste est de la prose.
+To these limits is added the fact that **Claude Code itself is evolving rapidly**: Anthropic's April 2026 post-mortem on quality regressions of Claude Code (default effort, loss of reasoning history in stale sessions, prompt verbosity) shows that the underlying layer is not stable. Any conclusion about a framework's native integration with Claude Code can flip with a behavior change of the host tool.
 
 ---
 
-*Sources principales utilisées (paraphrasées, non citées en quotes) : repositories GitHub bmad-code-org/BMAD-METHOD, github/spec-kit, Fission-AI/OpenSpec, buildermethods/agent-os ; ThoughtWorks Technology Radar Vol. 33 (novembre 2025) et Vol. 34 (avril 2026, thoughtworks.com/radar) ; METR « Measuring the Impact of Early-2025 AI on Experienced Open-Source Developer Productivity » (arXiv:2507.09089, juillet 2025) et « We are Changing our Developer Productivity Experiment Design » (metr.org/blog/2026-02-24-uplift-update) ; GitHub Blog « Spec-driven development with AI » (Den Delimarsky, septembre 2025) ; Sean Grove, « The New Code », AI Engineer World's Fair (mai 2025) ; Andrej Karpathy et Tobi Lütke sur context engineering (juin 2025) ; documentation Claude Code (code.claude.com/docs/en/sub-agents) ; EPAM Insights sur SpecKit en brownfield ; Mathivanan Mani, comparatif OpenSpec/SpecKit/BMAD (Medium) ; Scott Logic, « Putting Spec Kit Through Its Paces » (novembre 2025).*
+## Conclusion: three conditions of revision, and a methodological stance
 
-*Toutes les observations chiffrées sont datées au 5 mai 2026. Cette baseline périmera rapidement ; le lecteur est invité à recouper systématiquement.*
+What this article can defend methodologically: for an organization managing a fleet of 500+ devs across 9 BUs, the right reasoning is not "which framework to adopt", but **"under which empirical conditions should my analysis be revised"**. This is the inverse of the marketing stance.
+
+At least three falsifiable conditions would justify a revision of this comparison:
+
+1. **Publication of a comparative RCT** between two or more of these frameworks, on real brownfield tasks, measuring not only completion time (à la METR) but also the quality of the code delivered (independent review) and the quality of the specs produced. If such a study showed that a framework produces a measurable and sustainable gain, the axis-by-axis analysis above would become secondary.
+
+2. **Convergence of the frameworks on a shared spec format.** If SpecKit, OpenSpec, BMAD and Agent OS adopted a common subset (for example a standardized RFC 2119 delta format, or a unified SKILL.md schema), the comparison would lose its relevance as a comparison between products, and would shift toward a comparison between dialects of a single standard. The ongoing migration of BMAD modules toward SKILL.md, and the growing absorption of skills into the Agent OS and OpenSpec workflows, suggest a movement in this direction without confirming it.
+
+3. **Collapse or consolidation of a major framework.** If one of the four frameworks ceases to be maintained (for example, a strong fragmentation of the BMAD community around the v6 forks, or a prolonged stagnation of Agent OS releases), the comparison loses one of its poles. Conversely, if a major player (Anthropic, GitHub, AWS Kiro) absorbs or renders redundant one of the frameworks via a native feature, the balance of power changes. The indicators to watch are release cadence over a rolling 90 days, the number of critical issues opened vs closed, and the ratio of accepted community PRs.
+
+These conditions are descriptive, not prescriptive. They do not suggest an experimental protocol — they indicate what would need to be observed to consider this analysis outdated.
+
+The frame I defend is therefore strictly methodological: require of frameworks that they state the three distinct registers (official claims, user feedback, measurable facts); settle on a grid before comparing; name one's epistemic limits; refuse the role of oracle. The choice of a framework — or the decision not to adopt one — falls under a local trade-off that I cannot make for the reader, and that no one should claim to make in their place.
+
+Remains the practical question: as of May 5, 2026, in a distributed organization, on heterogeneous brownfield/greenfield codebases, with Claude Code as the reference tool, I have not seen strong evidence that a framework dominates. I have seen, on the other hand, many teams adopt too fast and abandon too late. The most defensible operational hypothesis — testable, falsifiable, modest — is probably the following: start with the lightest of the candidates compatible with the team's profile, measure the friction over three months, and add mechanics only when a specific problem justifies it.
+
+The rest is prose.
+
+---
+
+*Main sources used (paraphrased, not cited as quotes): GitHub repositories bmad-code-org/BMAD-METHOD, github/spec-kit, Fission-AI/OpenSpec, buildermethods/agent-os; ThoughtWorks Technology Radar Vol. 33 (November 2025) and Vol. 34 (April 2026, thoughtworks.com/radar); METR "Measuring the Impact of Early-2025 AI on Experienced Open-Source Developer Productivity" (arXiv:2507.09089, July 2025) and "We are Changing our Developer Productivity Experiment Design" (metr.org/blog/2026-02-24-uplift-update); GitHub Blog "Spec-driven development with AI" (Den Delimarsky, September 2025); Sean Grove, "The New Code", AI Engineer World's Fair (May 2025); Andrej Karpathy and Tobi Lütke on context engineering (June 2025); Claude Code documentation (code.claude.com/docs/en/sub-agents); EPAM Insights on SpecKit in brownfield; Mathivanan Mani, OpenSpec/SpecKit/BMAD comparison (Medium); Scott Logic, "Putting Spec Kit Through Its Paces" (November 2025).*
+
+*All quantified observations are dated May 5, 2026. This baseline will expire quickly; the reader is invited to cross-check systematically.*

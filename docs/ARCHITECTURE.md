@@ -2,77 +2,77 @@
 
 ---
 
-## Vue d'Ensemble
+## Overview
 
-Forge est une collection de fichiers Markdown exécutés par un LLM. Il n'y a pas de runtime, pas de binaire, pas de
-package à installer. Le "runtime" est Claude Code + le LLM Claude.
+Forge is a collection of Markdown files executed by an LLM. There is no runtime, no binary, no
+package to install. The "runtime" is Claude Code + the Claude LLM.
 
-**L'insight fondamental : le Markdown EST le code.**
+**The fundamental insight: the Markdown IS the code.**
 
-Les définitions d'agents, les commandes slash, les standards techniques et les skills sont tous des fichiers Markdown
-qui façonnent le comportement du LLM. Quand Claude Code charge `.claude/agents/flutter/hera.md`, Hera existe. Quand le
-fichier n'est pas chargé, Hera n'existe pas. Il n'y a pas de magie — juste du contexte injecté de façon contrôlée.
+Agent definitions, slash commands, technical standards, and skills are all Markdown files that
+shape the LLM's behavior. When Claude Code loads `.claude/agents/flutter/hera.md`, Hera exists. When
+the file is not loaded, Hera does not exist. There is no magic — just context injected in a controlled way.
 
-Ce modèle a une implication importante : **la qualité du Markdown détermine la qualité du comportement**. Un agent mal
-défini produit un comportement imprévisible. Une commande ambiguë produit des résultats incohérents. Forge traite ses
-fichiers Markdown avec le même soin qu'un codebase de production.
+This model has an important implication: **the quality of the Markdown determines the quality of the
+behavior**. A poorly defined agent produces unpredictable behavior. An ambiguous command produces
+inconsistent results. Forge treats its Markdown files with the same care as a production codebase.
 
 ---
 
-## Structure Annotée
+## Annotated Structure
 
 ```
 forge/
-├── CLAUDE.md                    # Point d'entrée — lu automatiquement par Claude Code
-│                                # Charge les instructions globales, référence les agents,
-│                                # définit les comportements de base
+├── CLAUDE.md                    # Entry point — read automatically by Claude Code
+│                                # Loads global instructions, references agents,
+│                                # defines base behaviors
 │
-├── .mcp.json                    # Configuration MCP (Context7)
-│                                # Déclare le serveur MCP pour la résolution de docs
+├── .mcp.json                    # MCP configuration (Context7)
+│                                # Declares the MCP server for doc resolution
 │
 ├── .forge/
-│   ├── constitution.md          # La loi suprême — 11 articles, aucune violation tolérée
-│   │                            # Tout agent, toute commande, tout output doit s'y conformer
+│   ├── constitution.md          # The supreme law — 11 articles, no violation tolerated
+│   │                            # Every agent, every command, every output must comply with it
 │   │
-│   ├── standards/               # Règles techniques injectées dynamiquement
-│   │   ├── index.yml            # Catalogue avec triggers — orchestration de l'injection
-│   │   │                        # Chaque entrée : id, path, triggers, scope, priority
-│   │   ├── global/              # Standards transversaux (TDD, BDD, DDD, SOLID, naming...)
-│   │   ├── flutter/             # Standards Flutter (architecture, tests, UI...)
-│   │   ├── rust/                # Standards Rust (architecture, error handling, async...)
-│   │   ├── infra/               # Standards infrastructure (Docker, K8s, Kong, Temporal...)
-│   │   └── observability/       # Standards observabilité (OTel, SigNoz, ELK, Prometheus)
+│   ├── standards/               # Technical rules injected dynamically
+│   │   ├── index.yml            # Catalog with triggers — orchestration of injection
+│   │   │                        # Each entry: id, path, triggers, scope, priority
+│   │   ├── global/              # Cross-cutting standards (TDD, BDD, DDD, SOLID, naming...)
+│   │   ├── flutter/             # Flutter standards (architecture, tests, UI...)
+│   │   ├── rust/                # Rust standards (architecture, error handling, async...)
+│   │   ├── infra/               # Infrastructure standards (Docker, K8s, Kong, Temporal...)
+│   │   └── observability/       # Observability standards (OTel, SigNoz, ELK, Prometheus)
 │   │
-│   ├── schemas/                 # Workflows personnalisables par type de projet
-│   │   ├── default/             # Pipeline standard
+│   ├── schemas/                 # Customizable workflows per project type
+│   │   ├── default/             # Standard pipeline
 │   │   ├── tdd-flutter/         # Flutter + golden tests + BDD
 │   │   ├── tdd-rust/            # Rust + hexagonal + clippy
-│   │   ├── rapid/               # 4 phases minimales
-│   │   └── ai-first/            # Avec phase atelier Oracle
+│   │   ├── rapid/               # 4 minimal phases
+│   │   └── ai-first/            # With Oracle workshop phase
 │   │
-│   ├── product/                 # Vision et contexte produit
-│   │   ├── vision.md            # Mission, proposition de valeur, utilisateurs cibles
-│   │   └── exploration/         # Notes de brainstorming (non-structurées)
+│   ├── product/                 # Product vision and context
+│   │   ├── vision.md            # Mission, value proposition, target users
+│   │   └── exploration/         # Brainstorming notes (unstructured)
 │   │
-│   ├── changes/                 # Changements en cours (un dossier par feature/fix)
-│   │   └── <nom>/
-│   │       ├── proposal.md      # Problème + solution proposée
-│   │       ├── specs.md         # Specs delta RFC 2119
-│   │       ├── design.md        # ADRs + décisions techniques
-│   │       └── tasks.md         # Plan TDD ordonné
+│   ├── changes/                 # In-progress changes (one folder per feature/fix)
+│   │   └── <name>/
+│   │       ├── proposal.md      # Problem + proposed solution
+│   │       ├── specs.md         # RFC 2119 delta specs
+│   │       ├── design.md        # ADRs + technical decisions
+│   │       └── tasks.md         # Ordered TDD plan
 │   │
-│   ├── specs/                   # Specs accumulées (résultat des archives)
-│   │                            # Base de connaissance du projet — croît dans le temps
+│   ├── specs/                   # Accumulated specs (result of archives)
+│   │                            # Project knowledge base — grows over time
 │   │
-│   └── templates/               # Templates pour chaque artifact
-│       ├── proposal.md          # Template proposal
-│       ├── specs.md             # Template specs delta
-│       ├── design.md            # Template design / ADR
-│       └── tasks.md             # Template plan de tâches
+│   └── templates/               # Templates for each artifact
+│       ├── proposal.md          # Proposal template
+│       ├── specs.md             # Delta specs template
+│       ├── design.md            # Design / ADR template
+│       └── tasks.md             # Task plan template
 │
 ├── .claude/
-│   ├── commands/forge/          # Commandes slash Claude Code
-│   │   ├── forge.md             # /forge — master command avec détection d'état
+│   ├── commands/forge/          # Claude Code slash commands
+│   │   ├── forge.md             # /forge — master command with state detection
 │   │   ├── init.md              # /forge:init
 │   │   ├── discover.md          # /forge:discover
 │   │   ├── vision.md            # /forge:vision
@@ -87,8 +87,8 @@ forge/
 │   │   ├── explore.md           # /forge:explore
 │   │   └── status.md            # /forge:status
 │   │
-│   ├── agents/                  # Définitions des agents (personas + règles)
-│   │   │   ├── forge-master.md      # Agent principal (Forge)
+│   ├── agents/                  # Agent definitions (personas + rules)
+│   │   │   ├── forge-master.md      # Main agent (Forge)
 │   │   ├── spec-writer.md       # Clio
 │   │   ├── ddd-strategist.md    # Socrates
 │   │   ├── ai-first-brainstorm.md # Oracle
@@ -100,15 +100,15 @@ forge/
 │   │   ├── technical-writer.md  # Calliope (docs, changelogs)
 │   │   ├── api-designer.md      # Hermes-API (OpenAPI, gRPC)
 │   │   ├── test-architect.md    # Eris (test strategy, mutation testing)
-│   │   ├── flutter/             # Équipe Flutter (Hera, Athena, Spartan...)
-│   │   └── rust/                # Équipe Rust (Vulcan, Ferris, Centurion...)
+│   │   ├── flutter/             # Flutter team (Hera, Athena, Spartan...)
+│   │   └── rust/                # Rust team (Vulcan, Ferris, Centurion...)
 │   │
-│   ├── skills/                  # Skills auto-injectées par Claude Code
-│   │   ├── forge-tdd/SKILL.md   # Enforcement TDD + anti-rationalisation
-│   │   ├── forge-bdd/SKILL.md   # Enforcement BDD + Given/When/Then
-│   │   └── forge-docs/SKILL.md  # Context7 — résolution docs API
+│   ├── skills/                  # Skills auto-injected by Claude Code
+│   │   ├── forge-tdd/SKILL.md   # TDD enforcement + anti-rationalization
+│   │   ├── forge-bdd/SKILL.md   # BDD enforcement + Given/When/Then
+│   │   └── forge-docs/SKILL.md  # Context7 — API doc resolution
 │   │
-│   └── commands/forge/          # Commandes slash (19 total)
+│   └── commands/forge/          # Slash commands (19 total)
 │       ├── forge.md             # Master command + state detection
 │       ├── init.md, discover.md, vision.md
 │       ├── new.md, propose.md, specify.md, design.md, plan.md
@@ -120,7 +120,7 @@ forge/
 │       ├── diff.md              # Semantic spec diffing (NEW)
 │       └── metrics.md           # Velocity metrics (NEW)
 │
-└── docs/                        # Documentation humaine (vous êtes ici)
+└── docs/                        # Human documentation (you are here)
     ├── GUIDE.md
     ├── ARCHITECTURE.md
     └── CONTRIBUTING.md
@@ -128,30 +128,30 @@ forge/
 
 ---
 
-## Flux de Données
+## Data Flow
 
 ```
-Idée utilisateur
+User idea
       |
       v
-/forge (détection d'état)
+/forge (state detection)
       |
-      +---> Lit .forge/changes/ pour détecter l'état courant
+      +---> Reads .forge/changes/ to detect the current state
       |
       v
 Proposal (Clio)
       |
       v
-Specs delta — RFC 2119 (Clio)
-      |                         <--- Constitution check (à chaque phase)
+Delta specs — RFC 2119 (Clio)
+      |                         <--- Constitution check (at each phase)
       v
 Design / ADRs (Athena | Ferris | Socrates)
       |
       v
-Plan TDD (tâches ordonnées)
+TDD plan (ordered tasks)
       |                         <--- Standards injection (index.yml, JIT)
       v
-Implémentation TDD             <--- Context7 (APIs externes, docs temps réel)
+TDD implementation             <--- Context7 (external APIs, real-time docs)
   RED → GREEN → REFACTOR
   (Spartan | Centurion)
       |
@@ -160,40 +160,40 @@ Review (Nemesis | Tribune)
       |
       v
 Archive → .forge/specs/
-  (specs delta fusionnées, état = DONE)
+  (delta specs merged, state = DONE)
 ```
 
-La Constitution est vérifiée à chaque transition de phase. Un agent ne peut pas produire un design qui viole l'Article
-I (tests obligatoires) ou continuer une implémentation qui ne respecte pas les standards injectés. Le gate est bloquant,
-pas advisory.
+The Constitution is checked at each phase transition. An agent cannot produce a design that violates
+Article I (mandatory tests) or continue an implementation that does not respect the injected
+standards. The gate is blocking, not advisory.
 
 ---
 
-## Patterns Empruntés
+## Borrowed Patterns
 
-| Pattern                    | Source           | Usage dans Forge                               |
+| Pattern                    | Source           | Usage in Forge                                 |
 |----------------------------|------------------|------------------------------------------------|
-| Agents-personas            | BMAD Method      | Chaque agent a un nom, rôle, style persistant  |
-| Gates bloquants            | GitHub SpecKit   | Constitution check bloque si violation         |
-| Deltas sémantiques         | OpenSpec         | ADDED/MODIFIED/REMOVED au lieu de réécriture   |
-| Standards injection        | Agent OS v3      | index.yml avec triggers pour injection JIT     |
-| Table anti-rationalisation | Superpowers      | 12 excuses TDD avec réfutations                |
-| Keywords naturels          | oh-my-claudecode | autopilot, ulw, team déclenchent comportements |
-| Docs temps réel            | Context7         | MCP server pour APIs externes à jour           |
+| Agent-personas             | BMAD Method      | Each agent has a persistent name, role, style  |
+| Blocking gates             | GitHub SpecKit   | Constitution check blocks on violation         |
+| Semantic deltas            | OpenSpec         | ADDED/MODIFIED/REMOVED instead of rewrite      |
+| Standards injection        | Agent OS v3      | index.yml with triggers for JIT injection      |
+| Anti-rationalization table | Superpowers      | 12 TDD excuses with rebuttals                  |
+| Natural keywords           | oh-my-claudecode | autopilot, ulw, team trigger behaviors         |
+| Real-time docs             | Context7         | MCP server for up-to-date external APIs        |
 
 ---
 
-## Gestion du Contexte
+## Context Management
 
-La fenêtre de contexte d'un LLM est une ressource limitée. Forge adopte 4 stratégies pour l'utiliser efficacement.
+An LLM's context window is a limited resource. Forge adopts 4 strategies to use it efficiently.
 
-### 1. index.yml — Injection JIT des Standards
+### 1. index.yml — JIT Injection of Standards
 
-Les standards ne sont PAS tous chargés en même temps. `index.yml` définit des triggers (mots-clés, patterns de fichiers,
-phases) qui déclenchent le chargement d'un standard précis. Si vous travaillez sur un composant Flutter, seuls les
-standards Flutter pertinents sont injectés — pas les standards Rust, pas les standards infra.
+Standards are NOT all loaded at the same time. `index.yml` defines triggers (keywords, file patterns,
+phases) that trigger the loading of a specific standard. If you are working on a Flutter component, only the
+relevant Flutter standards are injected — not the Rust standards, not the infra standards.
 
-Exemple d'entrée dans `index.yml` :
+Example entry in `index.yml`:
 
 ```yaml
 - id: flutter-clean-architecture
@@ -207,67 +207,67 @@ Exemple d'entrée dans `index.yml` :
   priority: high
 ```
 
-Cela évite la saturation de la fenêtre de contexte par des règles non-pertinentes.
+This avoids saturating the context window with irrelevant rules.
 
-### 2. Micro-fichiers
+### 2. Micro-files
 
-Chaque agent, commande et standard est un fichier séparé. Seul ce qui est nécessaire pour la tâche en cours est chargé.
-Un fichier monolithique de 50 000 tokens serait chargé en entier à chaque invocation — les micro-fichiers permettent une
-sélection chirurgicale.
+Each agent, command, and standard is a separate file. Only what is necessary for the current task is loaded.
+A monolithic 50,000-token file would be loaded in full on every invocation — micro-files allow a
+surgical selection.
 
-### 3. Subagents Isolés
+### 3. Isolated Subagents
 
-Déléguer à un sous-agent (Spartan, Athena, etc.) crée un contexte isolé pour ce spécialiste. Spartan n'a pas besoin de
-connaître l'historique de la vision produit pour enforcer TDD. Cette isolation évite la contamination croisée et permet
-à chaque agent de rester concentré sur sa mission.
+Delegating to a subagent (Spartan, Athena, etc.) creates an isolated context for that specialist. Spartan
+does not need to know the history of the product vision to enforce TDD. This isolation avoids cross-contamination
+and allows each agent to stay focused on its mission.
 
-### 4. Context7 Séparé
+### 4. Separate Context7
 
-La documentation des bibliothèques externes est récupérée à la demande via le serveur MCP, pas stockée dans le
-framework. Stocker la doc de Flutter SDK dans Forge serait : (a) volumineux, (b) obsolète rapidement, (c) chargé même
-quand non-nécessaire. Context7 résout les trois problèmes.
-
----
-
-## Extensibilité
-
-### Axe 1 — Nouveaux Standards
-
-1. Créer `.forge/standards/<domaine>/<nom>.md` avec le format requis (Scope, Rules, Anti-patterns)
-2. Ajouter une entrée dans `.forge/standards/index.yml` avec des triggers précis
-
-Les triggers doivent être suffisamment spécifiques pour ne pas déclencher le standard dans des contextes non-pertinents.
-Préférer des termes techniques précis à des mots généraux.
-
-### Axe 2 — Nouveaux Agents
-
-1. Créer `.claude/agents/<équipe>/<nom>.md` avec : Persona (Name, Role, Style), Purpose, Expertise, Workflow, Rules
-2. Référencer le nouvel agent depuis l'orchestrateur approprié : Hera pour Flutter, Vulcan pour Rust, Forge pour
-   transversal
-
-Convention de nommage : mythologie grecque pour Flutter, latin/romain pour Rust, mixte pour transversal.
-
-### Axe 3 — Nouveaux Schemas
-
-1. Créer `.forge/schemas/<nom>/schema.yaml` avec la définition des phases, conditions de gate, et configurations
-   d'outils
-2. Tester le schema avec un projet réel du début à la fin
-
-Un schema peut supprimer des phases optionnelles (exploration, design détaillé) mais ne peut jamais rendre le TDD
-optionnel — c'est une violation de la constitution.
+The documentation for external libraries is fetched on demand via the MCP server, not stored in the
+framework. Storing the Flutter SDK docs in Forge would be: (a) bulky, (b) quickly outdated, (c) loaded even
+when unnecessary. Context7 solves all three problems.
 
 ---
 
-## Limitations Connues
+## Extensibility
 
-**Fenêtre de contexte** — Charger trop de standards simultanément peut saturer la fenêtre de contexte de Claude. Les
-triggers dans `index.yml` doivent être calibrés avec soin. Pour les projets complexes avec beaucoup de standards,
-surveiller les signes de dégradation de qualité qui indiqueraient une saturation.
+### Axis 1 — New Standards
 
-**Non-déterminisme** — Des exécutions différentes peuvent produire des outputs différents. Les standards et la
-constitution réduisent la variance mais ne l'éliminent pas. Pour les décisions architecturales critiques, une revue
-humaine est recommandée en plus de la review par Nemesis/Tribune.
+1. Create `.forge/standards/<domain>/<name>.md` with the required format (Scope, Rules, Anti-patterns)
+2. Add an entry in `.forge/standards/index.yml` with precise triggers
 
-**Pas de CI réel** — Les quality gates sont évalués par le LLM, pas par des outils automatisés. "La constitution est
-respectée" est un jugement de l'agent, pas un test unitaire qui passe ou échoue. Pour les projets critiques, combiner
-les gates Forge avec une vraie CI (GitHub Actions, etc.) qui exécute les vrais tests.
+The triggers must be specific enough not to trigger the standard in irrelevant contexts.
+Prefer precise technical terms over general words.
+
+### Axis 2 — New Agents
+
+1. Create `.claude/agents/<team>/<name>.md` with: Persona (Name, Role, Style), Purpose, Expertise, Workflow, Rules
+2. Reference the new agent from the appropriate orchestrator: Hera for Flutter, Vulcan for Rust, Forge for
+   cross-cutting
+
+Naming convention: Greek mythology for Flutter, Latin/Roman for Rust, mixed for cross-cutting.
+
+### Axis 3 — New Schemas
+
+1. Create `.forge/schemas/<name>/schema.yaml` with the definition of phases, gate conditions, and tool
+   configurations
+2. Test the schema with a real project from start to finish
+
+A schema can remove optional phases (exploration, detailed design) but can never make TDD
+optional — that is a violation of the constitution.
+
+---
+
+## Known Limitations
+
+**Context window** — Loading too many standards simultaneously can saturate Claude's context window. The
+triggers in `index.yml` must be calibrated carefully. For complex projects with many standards,
+watch for signs of quality degradation that would indicate saturation.
+
+**Non-determinism** — Different executions can produce different outputs. The standards and the
+constitution reduce variance but do not eliminate it. For critical architectural decisions, a human
+review is recommended in addition to the review by Nemesis/Tribune.
+
+**No real CI** — The quality gates are evaluated by the LLM, not by automated tools. "The constitution is
+respected" is a judgment made by the agent, not a unit test that passes or fails. For critical projects, combine
+the Forge gates with a real CI (GitHub Actions, etc.) that runs the real tests.

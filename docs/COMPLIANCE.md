@@ -356,7 +356,7 @@ Optional flags : `--window <days>` (default 30), `--format json|md`,
 regulatory-deadline summary), `--strict` (opt-in : an expired standard
 forces a blocking exit 3). The default posture is **WARN-only** — a
 review debt never freezes the pipeline
-(`standards-lifecycle.md` : "WARN n'est jamais bloquant").
+(`standards-lifecycle.md`: "WARN is never blocking").
 
 ### Regulatory-deadline calendar
 
@@ -364,9 +364,9 @@ Themis carries the NIS2 / DORA / CRA / AI Act deadlines **verbatim**
 from `docs/new-archetypes-plan.md` §7.1's I.6 bullet :
 
 - NIS2 reporting 24h/72h
-- DORA RoI ESA submission 30 avr 2026
-- CRA reporting 11 sept 2026, full requirements 11 déc 2027
-- AI Act phases 2025–2027 par catégorie de risque
+- DORA RoI ESA submission Apr 30 2026
+- CRA reporting Sept 11 2026, full requirements Dec 11 2027
+- AI Act phases 2025–2027 by risk category
 
 ### CI cadence
 
