@@ -1,0 +1,37 @@
+name: b9-1-schema
+status: implemented
+created: 2026-07-27
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.9.1  # docs/new-archetypes-plan.md §5.2 — .forge/schemas/mobile-pwa-first/2.0.0.yaml (mobile-only/1.0.0 stays as legacy alias)
+depends_on:
+  - B.8.3.b  # check_versioned_schema_siblings (validate-foundations.sh:397-458) — the generic versioned-schema validator this file must satisfy ON LANDING. Its hard {backend,frontend,infra} layer invariant is the load-bearing conflict of this change (Q-001 / ADR-B9-1-001).
+  - B.8.14   # cli/src/domain/schema-version.ts selectScaffoldableVersion — candidate/scaffoldable:false ⇒ no scaffoldable version; versioned scaffolder routing is what B.9.8/B.9.11 need for the promotion flip
+  - T.4      # archetype.schema.json v2 already accepts `mobile-pwa-first` and keeps `mobile-only` as deprecated legacy alias; dispatch-table.yml already carries status/target/migration. B.9.1 lands into a reserved slot — no taxonomy edit needed.
+timeline:
+  proposed: 2026-07-27
+  specified: 2026-07-27
+  designed: 2026-07-27
+  planned: 2026-07-27
+  implemented: 2026-07-27
+# NOTE (Article V): Q-001 was escalated to the maintainer and answered 2026-07-27
+# (option b — `layer_profile` discriminator, default `multi-layer`), NOT self-approved.
+# Q-002..Q-005 resolved at design as ADR-B9-1-002..005.
+# Impl evidence 2026-07-27: b9-1.test.sh 23/23 L1 GREEN (RED verified first, 17 failing);
+# siblings GREEN — b8-3b 12/12, foundations 22/22, b6-1 18/18, b7-1 18/18, b8-3 17/17;
+# verify.sh 571 PASS / 0 FAIL; constitution-linter OVERALL PASS.
+# The design's "sync 7 validate-foundations.sh copies" was WRONG and was corrected at
+# impl: 1 committed file changes; cli/assets/ is gitignored bundle output; the 5
+# examples/ copies are B.1-baseline artefacts lacking the function entirely.
+# T6.5 independent review DONE 2026-07-27 — verdict CHANGES REQUIRED, 2 blocking
+# (F1 exit-3-is-really-2, asserted as observed and never run; F2 stale roadmap row)
+# + 5 non-blocking. All applied. Harness now 24/24 with the L2 leg actually executed
+# (FORGE_B9_1_LIVE=1). T6.6 re-review DONE — found R1 (ADR-B9-1-002 still asserted
+# "exits **3**" and denied exit 2; missed because the sweep grepped `exit 3`) + R2
+# (harness header still said "7 copies"). Both fixed, plus an FR-B9-1-032 recorded-gap row.
+# SIGN-OFF 2026-07-27: APPROVE-WITH-NITS. Nit N1 ("the only exit-3 path" — false, there
+# are three) fixed without a further round. Article V satisfied; ARCHIVABLE.
+# Evidence: 23 mutation tests across two review passes, zero vacuous passes; RED
+# reproduced at 6 passed / 17 failed; all 9 findings were in the written record, never
+# in the code or the tests.

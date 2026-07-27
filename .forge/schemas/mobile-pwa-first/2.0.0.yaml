@@ -1,0 +1,198 @@
+# Forge archetype scaffold schema — mobile-pwa-first / 2.0.0
+# <!-- Audit: B.9.1 (b9-1-schema) — docs/new-archetypes-plan.md §5.2, ARCH §6.3 -->
+#
+# CANDIDATE SEMANTICS. This schema is `stage: candidate` / `scaffoldable: false`
+# because no `web-pwa/` templates exist yet — they arrive in B.9.2. While it stays
+# candidate, `forge init --archetype mobile-pwa-first` refuses cleanly and never
+# half-renders a tree. The refusal code is **exit 2** ("unknown archetype"), NOT 3:
+# `init.ts:210-217` gates on the dispatch table BEFORE reaching the B.8.14
+# selectScaffoldableVersion guard, and T.4 registered `mobile-pwa-first` only as the
+# `target:` of the `mobile-only` legacy alias — there is no `mobile-pwa-first:` key
+# of its own. It becomes exit 3 once a later brick adds that entry, exactly as
+# `b7-2a-dispatch-register` did for `ai-native-rag` after B.7.1 hit this same gate.
+#
+# PROMOTION. The candidate→stable + scaffoldable:true flip is owned by **B.9.11**
+# (the harness/promotion brick), after B.9.8 has produced the snapshot tarball —
+# mirroring B.6.7 and B.7.6. No other brick may perform the flip.
+#
+# ADDITIVE. This file affects no existing archetype. `mobile-only / 1.0.0` remains
+# untouched and keeps scaffolding a byte-equivalent tree for v0.3.0 adopters; it is
+# the deprecated legacy alias whose `target:` already points here (T.4).
+#
+# CLIENT-ONLY LAYER PROFILE (ADR-B9-1-001). This archetype has no backend and no
+# infra surface. Rather than declare empty `backend`/`infra` stub layers to satisfy
+# the versioned-schema validator — which would be fabrication under Article III.4 and
+# would leak dead layer ids into every downstream B.9 brick — the validator gained an
+# explicit `layer_profile` discriminator. `multi-layer` remains the default, so every
+# pre-B.9.1 schema keeps its exact prior meaning with no edit.
+#
+# NO `extends:` KEY (ADR-B9-1-003, deliberate divergence from the b6-1 precedent).
+# No scaffold-schema loader resolves `extends` — `parseSchemaMeta` reads only
+# version/stage/scaffoldable, and check_versioned_schema_siblings reads `phases`
+# straight from this file. A documentary `extends:` would be a trap for the next
+# author, so the tdd-flutter phases below are materialised inline instead.
+#
+# NO VERSION PINS. Every component is declared by reference to its owning standard.
+# Pins are resolved verify-then-pin at B.9.2's implement phase, never here.
+
+name: mobile-pwa-first
+version: "2.0.0"
+stage: candidate
+scaffoldable: false
+
+description: >
+  PWA-first public-app archetype — an installable Qwik City PWA as the default
+  channel (Android + desktop + web), with the existing Flutter native app kept as
+  the iOS fallback when push delivery is critical. Successor to `mobile-only / 1.0.0`
+  (OIDC via flutter_appauth, Keychain/Keystore, biometric lock, App Attest / Play
+  Integrity, Fastlane), which stays available as a deprecated legacy alias.
+
+tdd_enforced: true
+bdd_required_for_user_facing: true
+coverage_threshold: 80
+golden_tests_required: true
+
+# ── Layer model (ADR-B9-1-004) ───────────────────────────────────────────────
+# Exactly two layers, both real. `app` is inherited 1:1 from mobile-only's single
+# `- id: app / path: .` — same id, same path — which is what makes B.9.9's migration
+# purely additive: it creates web-pwa/ and rewrites nothing in the native tree.
+layer_profile: client-only
+
+layers:
+  - id: app
+    path: .
+    fr_id_prefix: FR-APP-
+    primary_agent: Hera
+    standards_scope:
+      - flutter
+      - all
+    note: >
+      Flutter iOS + Android surface, inherited verbatim from mobile-only/1.0.0.
+      Stays at the repo root so existing adopters see no path churn.
+  - id: web-pwa
+    path: web-pwa/
+    fr_id_prefix: FR-PWA-
+    primary_agent: Iris-Web
+    standards_scope:
+      - web
+      - all
+    note: >
+      Qwik City PWA channel — scaffolded by B.9.2. Iris-Web (K.4) owns this surface;
+      the agent shipped forward-stable for this archetype, so no agent rework is due.
+
+fr_id_prefix_cross_layer: FR-GL-
+cross_layer:
+  agent: Janus
+  note: >
+    A change may span both surfaces — B.9.3's shared OIDC work (Flutter AuthGateway
+    plus a TypeScript Connect-ES client against the same provider) is the first such
+    case. Janus arbitrates; Hera and Iris-Web own their respective sides.
+
+# ── Components — reference-only, ZERO inline pins (ADR-B9-1-005) ─────────────
+components:
+  - name: qwik-city
+    role: web-framework
+    standard: web-frontend.yaml
+  - name: flutter-bloc
+    role: state-management
+    standard: state-management.yaml
+    note: >
+      Article VI.3 exclusivity; already CI-blocking since B.8.11 activated the
+      no-state-management-alternatives linter rule repo-wide.
+  - name: oidc
+    role: identity
+    standard: identity.yaml
+    note: authorization_code + PKCE on both surfaces; provider-agnostic.
+  - name: opentelemetry
+    role: observability
+    standard: observability.yaml
+  # Deferred — no standard governs these yet. Recorded as a gap, never fabricated.
+  # web-frontend.yaml (B.8.9) covers the Qwik City surface but is silent on all four.
+  - name: service-worker
+    role: offline-runtime
+    delivered_by: B.9.2
+  - name: web-push
+    role: push-delivery
+    delivered_by: B.9.2
+    note: VAPID key handling is a B.9.2 decision made with live evidence.
+  - name: offline-shell
+    role: offline-ux
+    delivered_by: B.9.2
+  - name: manifest
+    role: installability
+    delivered_by: B.9.2
+
+# ── Phases — tdd-flutter materialised inline + the channel-decision gate ─────
+# `channel-decision` sits between `specs` and `features` (ADR-B9-1-003) because BDD
+# scenarios differ by channel: a PWA install-prompt scenario has nothing in common
+# with a native push-permission scenario. Deciding at `design` would force `features`
+# to guess. The prose decision tree itself is B.9.4's deliverable in docs/ARCHETYPES.md;
+# this phase only forces the choice to be recorded per change.
+phases:
+  - id: proposal
+    artifact: proposal.md
+    gate: constitution_compliance
+    next: specs
+  - id: specs
+    artifact: specs.md
+    agent: Clio
+    gate: anti_hallucination_check
+    next: channel-decision
+  - id: channel-decision
+    artifact: specs.md#channel
+    gate: channel_recorded
+    next: features
+    note: >
+      Record the target channel per ARCH §6.3 — PWA for Web|Android|desktop; native
+      iOS fallback when push delivery is critical. Both surfaces is a valid answer
+      and triggers the cross-layer Janus path.
+  - id: features
+    artifact: integration_test/features/*.feature
+    agent: Spartan
+    gate: scenarios_cover_all_fr
+    next: design
+  - id: design
+    artifact: design.md
+    agent: Athena
+    gate: architecture_review
+    next: tasks
+  - id: tasks
+    artifact: tasks.md
+    agent: Athena
+    gate: tdd_order_enforced
+    next: implementation
+  - id: implementation
+    artifact: src
+    agent: Hera
+    team:
+      - Spartan
+      - Apollo
+      - Iris-Web
+    gate: red_green_refactor
+    next: review
+  - id: review
+    artifact: review.md
+    agent: Nemesis
+    gate: quality_gate
+    next: archive
+  - id: archive
+    artifact: .forge/changes/<name>/
+    gate: all_questions_resolved
+
+# ── PWA channel invariants — contract text, not pins (FR-B9-1-023) ───────────
+pwa_specifics:
+  channel_default: qwik-pwa
+  installability: >
+    The web-pwa surface MUST ship a web app manifest and meet installability
+    criteria on Android and desktop. Concrete manifest fields are B.9.2's.
+  offline_shell: >
+    A navigable offline shell is required; the app MUST NOT present a browser error
+    page when the network is unavailable.
+  web_push: >
+    Web Push (VAPID) is the default notification transport for the PWA channel.
+  ios_fallback_rule: >
+    When push delivery is critical on iOS, the native Flutter `app` surface is the
+    prescribed fallback rather than the PWA channel (ARCH §6.3).
+  state_management: >
+    flutter_bloc on the `app` surface (Article VI.3, Flutter-scoped). The web-pwa
+    surface follows web-frontend.yaml.

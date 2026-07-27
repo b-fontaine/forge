@@ -433,9 +433,20 @@ layers = data.get('layers')
 if not isinstance(layers, list) or not layers:
     print("KO: layers missing or empty"); sys.exit(0)
 layer_ids = {l.get('id') for l in layers if isinstance(l, dict)}
-required = {'backend', 'frontend', 'infra'}
-if not required.issubset(layer_ids):
-    print(f"KO: layers must include backend, frontend, infra (missing: {sorted(required - layer_ids)})"); sys.exit(0)
+# B.9.1 (ADR-B9-1-001) — the required-triple invariant is multi-layer-ONLY.
+# `layer_profile` defaults to 'multi-layer', so every schema authored before
+# B.9.1 keeps its exact prior meaning with NO edit (FR-B9-1-014). The
+# 'client-only' profile exists for archetypes that genuinely have no backend
+# and no infra surface (mobile-pwa-first): declaring empty stub layers to
+# appease this check would be fabrication (Article III.4). The per-layer field
+# contract below is unchanged and still applies to BOTH profiles.
+layer_profile = data.get('layer_profile', 'multi-layer')
+if layer_profile not in ('multi-layer', 'client-only'):
+    print(f"KO: layer_profile must be one of multi-layer/client-only (got {layer_profile!r})"); sys.exit(0)
+if layer_profile == 'multi-layer':
+    required = {'backend', 'frontend', 'infra'}
+    if not required.issubset(layer_ids):
+        print(f"KO: layers must include backend, frontend, infra (missing: {sorted(required - layer_ids)})"); sys.exit(0)
 for layer in layers:
     if not isinstance(layer, dict):
         print("KO: a layer entry is not a mapping"); sys.exit(0)
@@ -455,7 +466,7 @@ if stage == 'candidate' and data.get('scaffoldable') is not False:
 phases = data.get('phases')
 if not isinstance(phases, list) or not phases:
     print("KO: phases missing or empty"); sys.exit(0)
-print(f"OK: versioned schema {version} stage={stage} layers={sorted(layer_ids)}")
+print(f"OK: versioned schema {version} stage={stage} profile={layer_profile} layers={sorted(layer_ids)}")
 PY
 )
       fr_tag="FR-GL-001-versioned:${archetype}/${basename_file}"

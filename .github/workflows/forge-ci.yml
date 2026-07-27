@@ -155,6 +155,9 @@ jobs:
             # (`buf build` + `cargo test`) run in the harness-rust job.
             "b6-7.test.sh --level 1"
             "k4.test.sh --level 1,2"
+            # B.9.1: L1 hermetic (schema + validator layer_profile backward-compat).
+            # Its L2 needs a built+bundled CLI, so it stays opt-in (FORGE_B9_1_LIVE).
+            "b9-1.test.sh --level 1"
           )
           fail=0
           for entry in "${harnesses[@]}"; do
