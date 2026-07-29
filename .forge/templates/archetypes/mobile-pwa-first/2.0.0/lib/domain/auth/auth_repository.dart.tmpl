@@ -1,0 +1,24 @@
+// <!-- Audit: B.4 (b4-mobile-only, FR-MO-019) -->
+// Domain interface for authentication. Implemented in
+// lib/data/auth/auth_repository_impl.dart by an AppAuth-backed adapter.
+
+import 'auth_token.dart';
+
+abstract class AuthRepository {
+  /// Initiate the OIDC PKCE flow. Opens external browser, returns the
+  /// resulting tokens on success. Throws on user cancellation or
+  /// network error.
+  Future<AuthToken> login();
+
+  /// Exchange the persisted refresh_token for a fresh access_token.
+  /// Returns the new token pair, or throws if refresh fails.
+  Future<AuthToken> refresh(String refreshToken);
+
+  /// Clear all persisted tokens. Idempotent.
+  Future<void> logout();
+
+  /// Read the persisted access token. Returns null if no session,
+  /// or if the persisted token is expired AND refresh failed.
+  /// Implementations SHOULD attempt transparent refresh before returning null.
+  Future<AuthToken?> getCurrentToken();
+}

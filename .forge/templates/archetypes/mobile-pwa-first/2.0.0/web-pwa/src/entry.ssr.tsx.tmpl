@@ -1,0 +1,18 @@
+// Audit: B.9.2 (b9-2-web-pwa, FR-B9-2-010)
+// Standard: .forge/standards/web-frontend.yaml
+// Qwik City canonical SSR entry point, ported unchanged from B.8.9.
+import {
+  renderToStream,
+  type RenderToStreamOptions,
+} from "@builder.io/qwik/server";
+import Root from "./root";
+
+export default function (opts: RenderToStreamOptions) {
+  return renderToStream(<Root />, {
+    ...opts,
+    containerAttributes: {
+      lang: "en-us",
+      ...opts.containerAttributes,
+    },
+  });
+}

@@ -1,0 +1,40 @@
+name: b9-2-web-pwa
+status: implemented
+created: 2026-07-27
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.9.2  # docs/new-archetypes-plan.md §5.2 — web-pwa/ Qwik City + Service Worker + Web Push (VAPID) + manifest + offline shell
+  - B.9.3  # partially — the TS Connect-ES/OIDC client half is deferred; see Scope Out
+depends_on:
+  - B.9.1  # .forge/schemas/mobile-pwa-first/2.0.0.yaml (candidate) — the layer contract this brick renders; `web-pwa` layer path is fixed there
+  - B.8.9  # b8-9-qwik-web-public — the Qwik City skeleton shape + web-frontend.yaml, this brick's pin source
+  - K.4    # Iris-Web owns the web-pwa surface per the B.9.1 layer model
+timeline:
+  proposed: 2026-07-27
+  specified: 2026-07-28
+  designed: 2026-07-28
+  planned: 2026-07-28
+  implemented: 2026-07-28
+# Maintainer decision 2026-07-27: the `mobile-pwa-first:` dispatch key IS added by
+# this brick (not a separate b9-2a mirroring b7-2a). Consequence: the init refusal
+# moves exit 2 → exit 3, so b9-1.test.sh T-022 and T-L2-001 MUST be flipped in this
+# same change — they are coupled and b9-1 documented that coupling.
+# Design 2026-07-28: ADR-B9-2-001..006 all resolved; Q-001..Q-006 answered.
+# ADR-004 REVERSES the proposal's lean (extend web-frontend.yaml -> new pwa.yaml):
+# web-frontend.yaml is a framework-SELECTION standard and PWA capability is
+# orthogonal to framework choice. ADR-006 is forced by FR-B9-2-004 byte-equivalence,
+# not preferred. No pin resolved at design (verify-then-pin at implement, ADR-003).
+# NOT DONE — independent review. Authored end-to-end in one context; do not archive
+# until a separate lane ratifies (the B.9.1 precedent, which caught 9 real findings).
+# Implement 2026-07-28. Four couplings surfaced that the plan named only two of
+# (b9-1 T-020 pointer flip; dispatch `status: candidate` required by t5-1 FR-T51-055),
+# plus two contract defects (pwa.yaml `forbidden:` must be string[]; REVIEW.md row
+# must match | <basename> | <version> |) and one real template bug caught ONLY by the
+# L2 tsc leg (Uint8Array<ArrayBufferLike> vs BufferSource, TS 5.7 generics).
+# T7.5 independent review DONE 2026-07-29 — two rounds, verdict APPROVE-WITH-NITS.
+# Round 1 CHANGES REQUIRED: B1 (web-frontend.yaml told the reader to pin 7.3.5 while
+# pinning 7.3.6) + B2 (T-016 vacuous — satisfied by a comment saying the SW is NOT
+# registered that way). Round 2 signed off B1/B2/N1 and caught NIT-1: my reported N2
+# fix had silently never landed. All applied and probe-proven (T-014 on 4 import
+# forms; T-016 on 7 mutations). ARCHIVABLE.

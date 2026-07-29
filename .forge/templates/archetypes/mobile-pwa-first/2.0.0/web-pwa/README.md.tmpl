@@ -1,0 +1,57 @@
+# <project-name> — web-pwa
+
+<!-- Audit: B.9.2 (b9-2-web-pwa) -->
+
+The installable **Qwik City PWA** surface of `<project-name>`, the default channel
+for Web, Android and desktop. On iOS, when push delivery is critical, the native
+Flutter `app` surface at the repository root is the prescribed fallback
+(`docs/ARCHITECTURE-TARGET.md` §6.3).
+
+Governed by `.forge/standards/web-frontend.yaml` (framework choice) and
+`.forge/standards/pwa.yaml` (installability, offline behaviour, push delivery).
+
+## Commands
+
+```bash
+npm install
+npm run dev        # vite --mode ssr
+npm run build      # qwik build
+npm run preview    # production preview (required to exercise the Service Worker)
+```
+
+## ⚠️ PITFALL — do not upgrade Vite past 7.x
+
+`vite` is pinned **exactly**. Vite 8.x is the npm `latest` (8.1.5 at 2026-07-28) but
+is **excluded** by `@builder.io/qwik` `peerDependencies` `">=5 <8"`, re-confirmed
+live on 2026-07-28. Installing the default `vite` yields an incompatible peer and a
+broken build. Re-check the peer range before changing this pin.
+
+## ⚠️ Push notifications do not work out of the box — this is by design
+
+This archetype is `layer_profile: client-only`: it has **no backend layer**. The
+scaffold therefore ships only the **client half** of Web Push — subscription and
+notification display. It contains no push server, no VAPID key generation and no
+key storage, because all three are backend concerns (ADR-B9-2-005).
+
+To make push actually deliver you must:
+
+1. Generate a VAPID key pair yourself, and keep the private key **out of this repo**.
+2. Expose the public key to the build as `PUBLIC_VAPID_KEY`.
+3. Run your own sender that receives the `PushSubscription` from
+   `src/lib/push.ts` and pushes to it.
+
+Until you do, `subscribeToPush()` succeeds and no notification ever arrives.
+
+## Offline behaviour
+
+`src/routes/service-worker.ts` precaches `/offline/` on install and serves it for
+any failed navigation, so the app never shows a browser network-error page. Keep
+the offline route dependency-free: anything it imports must be precached too, or
+the shell breaks exactly when it is needed.
+
+## No backend client here
+
+Unlike the flagship `frontend/web-public/` surface, this one ships **no**
+`@connectrpc/*` dependency and no `src/lib/connect-client.ts`. There is nothing to
+call. If a future change gives this archetype a backend, adding a Connect client is
+purely additive.

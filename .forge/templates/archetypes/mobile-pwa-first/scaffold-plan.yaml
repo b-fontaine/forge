@@ -1,0 +1,207 @@
+# Forge scaffold plan — mobile-pwa-first / 2.0.0
+# <!-- Audit: B.9.2 (b9-2-web-pwa) — ADR-B9-2-002: ONE plan, BOTH surfaces -->
+#
+# Rendered by .forge/scripts/scaffolder/overlay.sh via
+# bin/forge-init-mobile-pwa-first.sh. The wrapper absolutizes the `source:` paths
+# below before calling overlay.sh, because overlay.sh:128 hardcodes its ARCHETYPE_DIR
+# to full-stack-monorepo (the documented forge-init-ai-native-rag.sh:144-159 trick).
+# Paths here stay RELATIVE so the committed plan remains portable.
+#
+# NO VERSION PIN may appear in this file — pins live in the standards
+# (web-frontend.yaml, pwa.yaml) and are resolved verify-then-pin at implement.
+#
+# The android/app/src/main/kotlin/{{reverse_domain_path}} directory is rendered
+# under its literal placeholder name; the WRAPPER relocates it to the real package
+# path afterwards (ADR-B9-2-006 — overlay.sh cannot relocate a directory, and
+# byte-equivalence with the mobile-only render forbids restructuring the template).
+archetype: mobile-pwa-first
+version: 2.0.0
+official_scaffolders:
+- bin/forge-init-mobile-pwa-first.sh
+templates:
+- source: 2.0.0/.envrc.example
+  target: .envrc.example
+  substitute: false
+- source: 2.0.0/.forge.yaml.tmpl
+  target: .forge.yaml
+  substitute: true
+- source: 2.0.0/.forge/framework-owned-paths.yml.tmpl
+  target: .forge/framework-owned-paths.yml
+  substitute: true
+- source: 2.0.0/.github/workflows/mobile-ci.yml.tmpl
+  target: .github/workflows/mobile-ci.yml
+  substitute: true
+- source: 2.0.0/.gitignore
+  target: .gitignore
+  substitute: false
+- source: 2.0.0/CLAUDE.md.tmpl
+  target: CLAUDE.md
+  substitute: true
+- source: 2.0.0/README.md.tmpl
+  target: README.md
+  substitute: true
+- source: 2.0.0/analysis_options.yaml
+  target: analysis_options.yaml
+  substitute: false
+- source: 2.0.0/android/app/build.gradle.kts.tmpl
+  target: android/app/build.gradle.kts
+  substitute: true
+- source: 2.0.0/android/app/src/main/AndroidManifest.xml.tmpl
+  target: android/app/src/main/AndroidManifest.xml
+  substitute: true
+- source: 2.0.0/android/app/src/main/kotlin/{{reverse_domain_path}}/MainActivity.kt.tmpl
+  target: android/app/src/main/kotlin/{{reverse_domain_path}}/MainActivity.kt
+  substitute: true
+- source: 2.0.0/android/app/src/main/kotlin/{{reverse_domain_path}}/PlayIntegrityService.kt.tmpl
+  target: android/app/src/main/kotlin/{{reverse_domain_path}}/PlayIntegrityService.kt
+  substitute: true
+- source: 2.0.0/android/build.gradle.kts.tmpl
+  target: android/build.gradle.kts
+  substitute: true
+- source: 2.0.0/android/fastlane/Appfile.tmpl
+  target: android/fastlane/Appfile
+  substitute: true
+- source: 2.0.0/android/fastlane/Fastfile.tmpl
+  target: android/fastlane/Fastfile
+  substitute: true
+- source: 2.0.0/android/gradle.properties.tmpl
+  target: android/gradle.properties
+  substitute: true
+- source: 2.0.0/android/settings.gradle.kts.tmpl
+  target: android/settings.gradle.kts
+  substitute: true
+- source: 2.0.0/integration_test/app_test.dart.tmpl
+  target: integration_test/app_test.dart
+  substitute: true
+- source: 2.0.0/integration_test/features/login.feature.tmpl
+  target: integration_test/features/login.feature
+  substitute: true
+- source: 2.0.0/ios/Podfile.tmpl
+  target: ios/Podfile
+  substitute: true
+- source: 2.0.0/ios/Runner/AppAttestService.swift.tmpl
+  target: ios/Runner/AppAttestService.swift
+  substitute: true
+- source: 2.0.0/ios/Runner/AppDelegate.swift.tmpl
+  target: ios/Runner/AppDelegate.swift
+  substitute: true
+- source: 2.0.0/ios/Runner/Info.plist.tmpl
+  target: ios/Runner/Info.plist
+  substitute: true
+- source: 2.0.0/ios/fastlane/Appfile.tmpl
+  target: ios/fastlane/Appfile
+  substitute: true
+- source: 2.0.0/ios/fastlane/Fastfile.tmpl
+  target: ios/fastlane/Fastfile
+  substitute: true
+- source: 2.0.0/ios/fastlane/Matchfile.tmpl
+  target: ios/fastlane/Matchfile
+  substitute: true
+- source: 2.0.0/lib/app.dart.tmpl
+  target: lib/app.dart
+  substitute: true
+- source: 2.0.0/lib/data/.gitkeep
+  target: lib/data/.gitkeep
+  substitute: false
+- source: 2.0.0/lib/data/auth/auth_repository_impl.dart.tmpl
+  target: lib/data/auth/auth_repository_impl.dart
+  substitute: true
+- source: 2.0.0/lib/domain/.gitkeep
+  target: lib/domain/.gitkeep
+  substitute: false
+- source: 2.0.0/lib/domain/attestation/device_attestor.dart.tmpl
+  target: lib/domain/attestation/device_attestor.dart
+  substitute: true
+- source: 2.0.0/lib/domain/auth/auth_repository.dart.tmpl
+  target: lib/domain/auth/auth_repository.dart
+  substitute: true
+- source: 2.0.0/lib/domain/auth/auth_token.dart.tmpl
+  target: lib/domain/auth/auth_token.dart
+  substitute: true
+- source: 2.0.0/lib/infrastructure/.gitkeep
+  target: lib/infrastructure/.gitkeep
+  substitute: false
+- source: 2.0.0/lib/infrastructure/attestation/android_play_integrity_attestor.dart.tmpl
+  target: lib/infrastructure/attestation/android_play_integrity_attestor.dart
+  substitute: true
+- source: 2.0.0/lib/infrastructure/attestation/fake_attestor.dart.tmpl
+  target: lib/infrastructure/attestation/fake_attestor.dart
+  substitute: true
+- source: 2.0.0/lib/infrastructure/attestation/ios_app_attest_attestor.dart.tmpl
+  target: lib/infrastructure/attestation/ios_app_attest_attestor.dart
+  substitute: true
+- source: 2.0.0/lib/infrastructure/auth/oidc_config.dart.tmpl
+  target: lib/infrastructure/auth/oidc_config.dart
+  substitute: true
+- source: 2.0.0/lib/infrastructure/biometric/biometric_service.dart.tmpl
+  target: lib/infrastructure/biometric/biometric_service.dart
+  substitute: true
+- source: 2.0.0/lib/infrastructure/storage/secure_storage_adapter.dart.tmpl
+  target: lib/infrastructure/storage/secure_storage_adapter.dart
+  substitute: true
+- source: 2.0.0/lib/main.dart.tmpl
+  target: lib/main.dart
+  substitute: true
+- source: 2.0.0/lib/observability/.gitkeep
+  target: lib/observability/.gitkeep
+  substitute: false
+- source: 2.0.0/lib/observability/otel_init.dart.tmpl
+  target: lib/observability/otel_init.dart
+  substitute: true
+- source: 2.0.0/lib/presentation/.gitkeep
+  target: lib/presentation/.gitkeep
+  substitute: false
+- source: 2.0.0/lib/presentation/auth/auth_bloc.dart.tmpl
+  target: lib/presentation/auth/auth_bloc.dart
+  substitute: true
+- source: 2.0.0/lib/presentation/biometric/biometric_lock_widget.dart.tmpl
+  target: lib/presentation/biometric/biometric_lock_widget.dart
+  substitute: true
+- source: 2.0.0/pubspec.yaml.tmpl
+  target: pubspec.yaml
+  substitute: true
+- source: 2.0.0/test/widget_test.dart.tmpl
+  target: test/widget_test.dart
+  substitute: true
+- source: 2.0.0/web-pwa/.nvmrc.tmpl
+  target: web-pwa/.nvmrc
+  substitute: true
+- source: 2.0.0/web-pwa/README.md.tmpl
+  target: web-pwa/README.md
+  substitute: true
+- source: 2.0.0/web-pwa/package.json.tmpl
+  target: web-pwa/package.json
+  substitute: true
+- source: 2.0.0/web-pwa/public/manifest.json.tmpl
+  target: web-pwa/public/manifest.json
+  substitute: true
+- source: 2.0.0/web-pwa/qwik.env.d.ts.tmpl
+  target: web-pwa/qwik.env.d.ts
+  substitute: true
+- source: 2.0.0/web-pwa/src/entry.ssr.tsx.tmpl
+  target: web-pwa/src/entry.ssr.tsx
+  substitute: true
+- source: 2.0.0/web-pwa/src/lib/push.ts.tmpl
+  target: web-pwa/src/lib/push.ts
+  substitute: true
+- source: 2.0.0/web-pwa/src/root.tsx.tmpl
+  target: web-pwa/src/root.tsx
+  substitute: true
+- source: 2.0.0/web-pwa/src/routes/index.tsx.tmpl
+  target: web-pwa/src/routes/index.tsx
+  substitute: true
+- source: 2.0.0/web-pwa/src/routes/offline/index.tsx.tmpl
+  target: web-pwa/src/routes/offline/index.tsx
+  substitute: true
+- source: 2.0.0/web-pwa/src/routes/service-worker.ts.tmpl
+  target: web-pwa/src/routes/service-worker.ts
+  substitute: true
+- source: 2.0.0/web-pwa/tsconfig.json.tmpl
+  target: web-pwa/tsconfig.json
+  substitute: true
+- source: 2.0.0/web-pwa/vite.config.ts.tmpl
+  target: web-pwa/vite.config.ts
+  substitute: true
+post_steps:
+- action: write_scaffold_manifest
+  target: .forge/scaffold-manifest.yaml

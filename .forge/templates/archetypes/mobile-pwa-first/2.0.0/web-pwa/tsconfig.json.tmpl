@@ -1,0 +1,31 @@
+// Audit: B.9.2 (b9-2-web-pwa, FR-B9-2-010)
+// Standard: .forge/standards/web-frontend.yaml
+// Qwik City canonical tsconfig shape, ported from B.8.9. tsconfig is JSONC.
+// The `~/*` alias maps to ./src/*. NOTE: no generated Connect descriptors exist in
+// this archetype — it is client-only with no backend layer (ADR-B9-2-001).
+// WebWorker lib is required for the Service Worker (FR-B9-2-012).
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "target": "ES2020",
+    "module": "ES2022",
+    "lib": ["es2022", "DOM", "WebWorker", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "jsxImportSource": "@builder.io/qwik",
+    "strict": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "outDir": "tmp",
+    "noEmit": true,
+    "types": ["node", "vite/client"],
+    "moduleResolution": "Bundler",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "incremental": true,
+    "resolveJsonModule": true,
+    "paths": {
+      "~/*": ["./src/*"]
+    }
+  },
+  "include": ["src", "./*.d.ts", "./*.config.ts"]
+}

@@ -1,0 +1,59 @@
+// Audit: B.9.2 (b9-2-web-pwa, FR-B9-2-013)
+// Standard: .forge/standards/pwa.yaml
+//
+// CLIENT SIDE ONLY (ADR-B9-2-005). This module subscribes the browser to Web Push
+// and hands the subscription to the adopter's own sender. It deliberately contains:
+//   - NO push server
+//   - NO VAPID key generation
+//   - NO key storage
+// A push server is a backend, and mobile-pwa-first is `layer_profile: client-only`
+// (ADR-B9-1-001). Scaffolding one would recreate at the template level the fiction
+// the schema refuses.
+//
+// The public VAPID key is supplied by the adopter at build time via
+// PUBLIC_VAPID_KEY. Until a sender exists, subscription succeeds but no
+// notification will ever arrive — that is the honest state, see README.
+export type PushResult =
+  | { ok: true; subscription: PushSubscription }
+  | { ok: false; reason: string };
+
+// Returns Uint8Array<ArrayBuffer>, NOT the default Uint8Array<ArrayBufferLike>.
+// `applicationServerKey` expects a BufferSource, and since the TS 5.7 typed-array
+// generics change an ArrayBufferLike-backed view is rejected because it could be
+// backed by a SharedArrayBuffer. Allocating the ArrayBuffer explicitly pins the
+// type parameter. Caught by the b9-2 L2 `tsc --noEmit` leg — the L1 static asserts
+// could not have seen it.
+function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
+  const padding = "=".repeat((4 - (base64.length % 4)) % 4);
+  const normalised = (base64 + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = atob(normalised);
+  const view = new Uint8Array(new ArrayBuffer(raw.length));
+  for (let i = 0; i < raw.length; i += 1) {
+    view[i] = raw.charCodeAt(i);
+  }
+  return view;
+}
+
+export async function subscribeToPush(): Promise<PushResult> {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+    return { ok: false, reason: "push unsupported in this browser" };
+  }
+
+  const key = import.meta.env.PUBLIC_VAPID_KEY as string | undefined;
+  if (!key) {
+    return { ok: false, reason: "PUBLIC_VAPID_KEY not configured" };
+  }
+
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") {
+    return { ok: false, reason: `permission ${permission}` };
+  }
+
+  const registration = await navigator.serviceWorker.ready;
+  const subscription = await registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(key),
+  });
+
+  return { ok: true, subscription };
+}

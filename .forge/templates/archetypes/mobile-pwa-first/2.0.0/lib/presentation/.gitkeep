@@ -1,0 +1,2 @@
+# Presentation layer — pages, widgets, blocs.
+# Phase B will populate auth/auth_bloc.dart and biometric/biometric_lock_widget.dart.

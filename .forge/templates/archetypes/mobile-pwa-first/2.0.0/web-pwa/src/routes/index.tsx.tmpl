@@ -1,0 +1,54 @@
+// Audit: B.9.2 (b9-2-web-pwa, FR-B9-2-010/013)
+// Standards: web-frontend.yaml + pwa.yaml
+//
+// REWRITTEN vs the B.8.9 landing route (ADR-B9-2-001). The original imported
+// `sayHello` from ../lib/connect-client and fired a unary Connect call at the
+// backend. mobile-pwa-first is `layer_profile: client-only` and has NO backend
+// layer, so that route could not survive: the import, the client module and the
+// two @connectrpc/* dependencies are all gone.
+//
+// This route exercises what the archetype actually owns — the PWA channel:
+// install state and push subscription, both client-side only.
+import { component$, useSignal, $ } from "@builder.io/qwik";
+import type { DocumentHead } from "@builder.io/qwik-city";
+import { subscribeToPush } from "~/lib/push";
+
+export default component$(() => {
+  const pushState = useSignal<string>("idle");
+
+  const onSubscribe = $(async () => {
+    pushState.value = "requesting";
+    const result = await subscribeToPush();
+    pushState.value = result.ok
+      ? "subscribed"
+      : `unavailable: ${result.reason}`;
+  });
+
+  return (
+    <main>
+      <h1><project-name></h1>
+      <p>
+        Installable Qwik City PWA — the default channel for Web, Android and
+        desktop. On iOS, when push delivery is critical, the native Flutter app
+        surface is the prescribed fallback.
+      </p>
+      <button type="button" onClick$={onSubscribe}>
+        Enable notifications
+      </button>
+      <p>Push: {pushState.value}</p>
+      <p>
+        <a href="/offline/">Offline shell</a>
+      </p>
+    </main>
+  );
+});
+
+export const head: DocumentHead = {
+  title: "<project-name>",
+  meta: [
+    {
+      name: "description",
+      content: "Installable PWA surface for <project-name> (Qwik City).",
+    },
+  ],
+};

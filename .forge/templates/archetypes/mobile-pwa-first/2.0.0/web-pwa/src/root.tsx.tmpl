@@ -1,0 +1,30 @@
+// Audit: B.9.2 (b9-2-web-pwa, FR-B9-2-010/011/012)
+// Standards: web-frontend.yaml (framework) + pwa.yaml (PWA capability)
+// Ported from the B.8.9 root, which carried a forward-pointer to this brick
+// ("Adopters add a RouterHead, ServiceWorkerRegister (PWA -> B.9.2)"). Both are
+// wired here: the manifest link makes the app installable (FR-B9-2-011) and
+// ServiceWorkerRegister is Qwik City's canonical SW registration (FR-B9-2-012).
+import { component$ } from "@builder.io/qwik";
+import {
+  QwikCityProvider,
+  RouterOutlet,
+  ServiceWorkerRegister,
+} from "@builder.io/qwik-city";
+
+export default component$(() => {
+  return (
+    <QwikCityProvider>
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#0f172a" />
+        <link rel="manifest" href="/manifest.json" />
+        <title><project-name></title>
+        <ServiceWorkerRegister />
+      </head>
+      <body lang="en-us">
+        <RouterOutlet />
+      </body>
+    </QwikCityProvider>
+  );
+});

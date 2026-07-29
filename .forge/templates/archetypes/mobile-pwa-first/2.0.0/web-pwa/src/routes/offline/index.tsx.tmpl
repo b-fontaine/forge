@@ -1,0 +1,25 @@
+// Audit: B.9.2 (b9-2-web-pwa, FR-B9-2-012)
+// Standard: .forge/standards/pwa.yaml
+//
+// OFFLINE SHELL. Precached by the Service Worker so a navigation while the
+// network is unavailable renders this page instead of a browser network-error
+// page. Keep it dependency-free and static: anything it imports must also be
+// precached, or the shell fails exactly when it is needed.
+import { component$ } from "@builder.io/qwik";
+import type { DocumentHead } from "@builder.io/qwik-city";
+
+export default component$(() => {
+  return (
+    <main>
+      <h1>Offline</h1>
+      <p>
+        <project-name> is not connected right now. Content you already opened
+        stays available, and the app will reconnect on its own.
+      </p>
+    </main>
+  );
+});
+
+export const head: DocumentHead = {
+  title: "<project-name> — offline",
+};

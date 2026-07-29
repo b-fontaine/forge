@@ -1,0 +1,55 @@
+// Audit: B.9.2 (b9-2-web-pwa, FR-B9-2-012/013)
+// Standard: .forge/standards/pwa.yaml
+//
+// Qwik City resolves `src/routes/service-worker.ts` into the served Service Worker;
+// `<ServiceWorkerRegister />` in root.tsx registers it. This is the canonical Qwik
+// City mechanism — NOT a hand-rolled navigator.serviceWorker.register call.
+//
+// setupServiceWorker() installs Qwik's prefetch/caching strategy. The offline shell
+// is precached on install so a navigation with no network resolves to /offline/
+// rather than the browser error page (FR-B9-2-012).
+//
+// PUSH (FR-B9-2-013, ADR-B9-2-005): this worker DISPLAYS a received push. It does
+// not, and must not, send one — a push SERVER is a backend, and this archetype has
+// no backend layer. VAPID keys are an adopter responsibility (see README).
+import { setupServiceWorker } from "@builder.io/qwik-city/service-worker";
+
+setupServiceWorker();
+
+const OFFLINE_URL = "/offline/";
+const SHELL_CACHE = "<project-name>-shell-v1";
+
+addEventListener("install", (event: any) => {
+  event.waitUntil(
+    caches.open(SHELL_CACHE).then((cache) => cache.addAll([OFFLINE_URL])),
+  );
+  (self as any).skipWaiting();
+});
+
+addEventListener("activate", () => {
+  (self as any).clients.claim();
+});
+
+addEventListener("fetch", (event: any) => {
+  if (event.request.mode !== "navigate") {
+    return;
+  }
+  event.respondWith(
+    fetch(event.request).catch(async () => {
+      const cache = await caches.open(SHELL_CACHE);
+      const shell = await cache.match(OFFLINE_URL);
+      return shell ?? Response.error();
+    }),
+  );
+});
+
+addEventListener("push", (event: any) => {
+  const payload = event.data ? event.data.text() : "";
+  event.waitUntil(
+    (self as any).registration.showNotification("<project-name>", {
+      body: payload,
+    }),
+  );
+});
+
+declare const self: ServiceWorkerGlobalScope;
