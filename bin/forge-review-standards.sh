@@ -146,7 +146,11 @@ horizon = today + datetime.timedelta(days=365)
 window_end = today + datetime.timedelta(days=window_days)
 
 # ─── Regulatory-deadline calendar — VERBATIM from ────────────────
-# docs/new-archetypes-plan.md §7.1 I.6 bullet (lines 2629-2634).
+# docs/new-archetypes-plan.md §7.1, the `**I.6.**` bullet. Anchored on the
+# section + bullet label, NOT on line numbers: the previous form cited
+# "lines 2629-2634", which had already rotted to ~2704 (it pointed at B.6.6/B.6.7
+# content) before b9-3 shifted the file further. The DATES below still match the
+# bullet verbatim — only the locator was stale.
 # Dates copied byte-for-byte ; never invented (Article III.4 /
 # NFR-K5-THE-009). The `dates` ISO values transcribe the verbatim
 # French-abbreviated deadlines for the horizon check only.
