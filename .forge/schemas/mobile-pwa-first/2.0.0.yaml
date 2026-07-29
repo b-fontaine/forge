@@ -106,21 +106,26 @@ components:
   - name: opentelemetry
     role: observability
     standard: observability.yaml
-  # Deferred — no standard governs these yet. Recorded as a gap, never fabricated.
-  # web-frontend.yaml (B.8.9) covers the Qwik City surface but is silent on all four.
+  # RESOLVED by B.9.2 (b9-2-web-pwa): these four were `delivered_by: B.9.2` with no
+  # standard at B.9.1 time — a recorded gap, never a fabricated name. They now point at
+  # the role-named `pwa.yaml`, created SEPARATE from web-frontend.yaml because PWA
+  # capability is orthogonal to framework choice (ADR-B9-2-004).
   - name: service-worker
     role: offline-runtime
-    delivered_by: B.9.2
+    standard: pwa.yaml
   - name: web-push
     role: push-delivery
-    delivered_by: B.9.2
-    note: VAPID key handling is a B.9.2 decision made with live evidence.
+    standard: pwa.yaml
+    note: >
+      Client side only — PWA-RULE-001 forbids scaffolding a push server, VAPID
+      keygen or key storage into a client-only archetype. VAPID provenance is an
+      adopter responsibility (ADR-B9-2-005).
   - name: offline-shell
     role: offline-ux
-    delivered_by: B.9.2
+    standard: pwa.yaml
   - name: manifest
     role: installability
-    delivered_by: B.9.2
+    standard: pwa.yaml
 
 # ── Phases — tdd-flutter materialised inline + the channel-decision gate ─────
 # `channel-decision` sits between `specs` and `features` (ADR-B9-1-003) because BDD

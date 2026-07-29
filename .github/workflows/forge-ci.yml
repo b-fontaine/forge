@@ -158,6 +158,9 @@ jobs:
             # B.9.1: L1 hermetic (schema + validator layer_profile backward-compat).
             # Its L2 needs a built+bundled CLI, so it stays opt-in (FORGE_B9_1_LIVE).
             "b9-1.test.sh --level 1"
+            # B.9.2: L1 hermetic (port byte-equivalence + web-pwa surface). Its L2
+            # legs need a built CLI / npm, so both stay opt-in.
+            "b9-2.test.sh --level 1"
           )
           fail=0
           for entry in "${harnesses[@]}"; do

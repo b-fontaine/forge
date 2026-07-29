@@ -63,6 +63,38 @@ archetypes:
     target: mobile-pwa-first
     migration: "B.9 (T8) — bin/forge-migrate-mobile-pwa.sh"
 
+  mobile-pwa-first:
+    name: mobile-pwa-first
+    scaffolder: "bin/forge-init-mobile-pwa-first.sh"
+    description: "PWA-first public-app archetype — installable Qwik City PWA (Web/Android/desktop) + Flutter native iOS fallback when push is critical. Successor to mobile-only; OIDC, secure storage, biometric, App Attest / Play Integrity, Fastlane retained."
+    signals:
+      - pubspec.yaml
+      - web-pwa/package.json
+    since: "0.7.0"
+    status: candidate
+    # `status: candidate` is REQUIRED, not decorative. t5-1.test.sh FR-T51-055
+    # (_test_t51_l1_016_dispatch_xref) demands a CLI Trust Harness fixture at
+    # cli/test/e2e/archetype-fixtures/<name>.yml for every active archetype, and
+    # explicitly SKIPS `status: candidate` entries — a registered-but-not-scaffoldable
+    # archetype has nothing to scaffold into a fixture. Same shape b7-2a used for
+    # ai-native-rag, whose entry flipped candidate→stable in lockstep with its B.7.6
+    # promotion and gained a fixture then.
+    # ⇒ B.9.11 MUST flip this to `stable` AND add the fixture, in the same change.
+    #
+    # B.9.2 (b9-2-web-pwa) — REGISTRATION. Placed immediately after the `mobile-only`
+    # legacy alias so a reader landing on the alias sees its `target:` right below.
+    # `since: 0.7.0` per VERSIONING.md (new archetype ⇒ MINOR; next after the 0.6.0
+    # event-driven-eu registration).
+    #
+    # EFFECT ON `forge init`: registering this key moves the refusal from exit 2
+    # (unknown archetype, init.ts:210-217) to exit 3 (init.ts:238, no scaffoldable
+    # version) — the canonical "known archetype, nothing scaffoldable yet" state. The
+    # 2.0.0 schema stays stage:candidate / scaffoldable:false until B.9.11 promotes it,
+    # so nothing renders yet. Mirrors b7-2a-dispatch-register for ai-native-rag.
+    #
+    # The `signals:` pair distinguishes an --auto detection from `mobile-only`: both
+    # carry pubspec.yaml, only this one has the web-pwa/ surface.
+
   ai-native-rag:
     name: ai-native-rag
     scaffolder: "bin/forge-init-ai-native-rag.sh"

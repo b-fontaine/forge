@@ -26,14 +26,14 @@
 #   T-017  `channel-decision` present, between `specs` and `features` (FR-B9-1-022)
 #   T-018  pwa_specifics block present (FR-B9-1-023)
 #   T-019  zero inline pin: no forbidden key, no \d+\.\d+ scalar in components (FR-B9-1-030)
-#   T-020  SW / web-push / offline-shell / manifest carry delivered_by:B.9.2, no standard ref (FR-B9-1-031)
+#   T-020  the 4 PWA components carry standard:pwa.yaml (flipped by B.9.2; FR-B9-1-031 AMENDED — now serves FR-B9-2-030)
 #   T-021  mobile-only schema + wrapper + templates untouched (FR-B9-1-040)
-#   T-022  dispatch-table.yml untouched — no mobile-pwa-first entry (FR-B9-1-041)
+#   T-022  dispatch-table.yml HAS a mobile-pwa-first key (flipped by B.9.2) (FR-B9-1-041)
 #   T-023  bundled cli/assets mirror matches canonical WHEN PRESENT (it is gitignored);
 #          the 5 example artefacts stay free of the versioned-schema function (ADR-B9-1-001)
-#   T-L2-001 (opt-in) forge init --archetype mobile-pwa-first refuses with exit 2 at the
-#            dispatch gate and renders nothing (NFR-B9-1-002). Becomes exit 3 only once a
-#            brick registers a `mobile-pwa-first:` dispatch key — flip T-022 with it.
+#   T-L2-001 (opt-in) forge init --archetype mobile-pwa-first refuses with exit 3 and
+#            renders nothing (NFR-B9-1-002). Was exit 2 (dispatch gate) until B.9.2
+#            registered the dispatch key; T-022 flipped in the same change.
 #
 # 23 L1 + 1 L2. Performance budget: L1 <= 5 s, zero net/Docker. Structural invariants
 # (name==dir, version==file, candidate⇒scaffoldable:false, phases non-empty) are ALSO
@@ -152,7 +152,13 @@ for c in components:
             val_viol.append(f"{c.get('name','?')}.{k}={v!r}")
 r['val_violations'] = ';'.join(val_viol) if val_viol else 'OK'
 
-# deferred components carry delivered_by: B.9.2 and NO standard ref
+# The four PWA components. FLIPPED BY B.9.2 (b9-2-web-pwa, coupled edit):
+# at B.9.1 time they carried `delivered_by: B.9.2` with NO standard ref, because no
+# standard governed them yet — a recorded gap, never a fabricated name. B.9.2 created
+# the role-named `pwa.yaml` (ADR-B9-2-004) and repointed all four, so the assertion
+# inverts: each MUST now carry `standard: pwa.yaml` and MUST NOT carry `delivered_by`.
+# This is the third b9-1 assertion coupled to B.9.2 (with T-022 and T-L2-001) — the
+# b9-2 plan named only the first two; this one surfaced at implement.
 deferred = {'service-worker', 'web-push', 'offline-shell', 'manifest'}
 bad_def, seen_def = [], set()
 for c in components:
@@ -160,10 +166,10 @@ for c in components:
     nm = c.get('name')
     if nm in deferred:
         seen_def.add(nm)
-        if c.get('delivered_by') != 'B.9.2':
-            bad_def.append(f"{nm}:delivered_by={c.get('delivered_by')!r}")
-        if 'standard' in c:
-            bad_def.append(f"{nm}:has-standard-ref")
+        if c.get('standard') != 'pwa.yaml':
+            bad_def.append(f"{nm}:standard={c.get('standard')!r}")
+        if 'delivered_by' in c:
+            bad_def.append(f"{nm}:still-deferred")
 missing_def = deferred - seen_def
 if missing_def:
     bad_def.append("missing:" + ','.join(sorted(missing_def)))
@@ -424,7 +430,7 @@ _test_b91_l1_019_no_inline_pin() {
 
 _test_b91_l1_020_deferred_components() {
   _ensure_py_cache || return 1
-  [ "$(_get deferred_check)" = "OK" ] || { echo "    FAIL T-020: deferred components wrong: $(_get deferred_check) — expected delivered_by:B.9.2 and no standard ref (FR-B9-1-031)" >&2; return 1; }
+  [ "$(_get deferred_check)" = "OK" ] || { echo "    FAIL T-020: PWA components wrong: $(_get deferred_check) — expected standard:pwa.yaml and NO delivered_by (FR-B9-2-030, which amends FR-B9-1-031; do NOT restore the delivered_by forward-pointer — pwa.yaml shipped in B.9.2)" >&2; return 1; }
 }
 
 _test_b91_l1_021_mobile_only_untouched() {
@@ -438,11 +444,18 @@ _test_b91_l1_021_mobile_only_untouched() {
 }
 
 _test_b91_l1_022_dispatch_table_untouched() {
+  # FLIPPED BY B.9.2 (coupled edit). At B.9.1 time this asserted the ABSENCE of a
+  # `mobile-pwa-first:` key — registering one was explicitly B.9.2/B.9.11 territory.
+  # b9-2-web-pwa registered it (FR-B9-2-020), which is what moves the init refusal
+  # from exit 2 to exit 3, so the assertion inverts and T-L2-001 flips with it.
+  # Function name kept for the T-022 manifest.
   local dt="$FORGE_ROOT/.forge/scaffolding/dispatch-table.yml"
   grep -qE "^  mobile-pwa-first:" "$dt" \
-    && { echo "    FAIL T-022: dispatch-table.yml already registers mobile-pwa-first — that is B.9.2/B.9.11 territory (FR-B9-1-041)" >&2; return 1; }
+    || { echo "    FAIL T-022: no 'mobile-pwa-first:' key in dispatch-table.yml — B.9.2 registers it (FR-B9-1-041, flipped)" >&2; return 1; }
   grep -qE "^\s+target: mobile-pwa-first" "$dt" \
     || { echo "    FAIL T-022: the T.4 legacy-alias 'target: mobile-pwa-first' line is missing from dispatch-table.yml (FR-B9-1-041)" >&2; return 1; }
+  grep -qE "^  mobile-only:" "$dt" \
+    || { echo "    FAIL T-022: the mobile-only: legacy alias entry was removed (FR-B9-1-041)" >&2; return 1; }
   return 0
 }
 
@@ -483,13 +496,11 @@ _test_b91_l1_023_validator_mirrors_in_sync() {
 
 _test_b91_l2_001_init_refuses() {
   # NFR-B9-1-002 — the refusal MUST be clean (non-zero, no half-rendered tree).
-  # The code is **2** ("unknown archetype"): init.ts:210-217 gates on the dispatch
-  # table before reaching the B.8.14 selectScaffoldableVersion guard, and T.4
-  # registered `mobile-pwa-first` only as the `target:` of the `mobile-only` alias —
-  # there is no `mobile-pwa-first:` key. It flips to 3 when a later brick registers
-  # one (the b7-2a-dispatch-register precedent for ai-native-rag). Asserting 2 here
-  # is the honest contract; T-022 asserts the key is still absent, and the two must
-  # be flipped together by whichever brick adds the dispatch entry.
+  # FLIPPED BY B.9.2: the code is now **3**. b9-2-web-pwa registered a
+  # `mobile-pwa-first:` dispatch key, so init.ts:210-217 no longer short-circuits and
+  # execution reaches the B.8.14 guard at init.ts:238, which refuses because the 2.0.0
+  # schema is still stage:candidate / scaffoldable:false (promotion is B.9.11's).
+  # Coupled with T-022 — both flipped in the same change, by design.
   # Requires the built+bundled CLI. Opt-in via FORGE_B9_1_LIVE=1; skip-pass otherwise.
   local cli="$FORGE_ROOT/cli/dist/index.js"
   if [ "${FORGE_B9_1_LIVE:-0}" != "1" ] || [ ! -f "$cli" ]; then
@@ -500,7 +511,7 @@ _test_b91_l2_001_init_refuses() {
   trap "rm -rf '$tmp'" RETURN
   ( cd "$tmp" && node "$cli" init pwaproj --archetype mobile-pwa-first --org com.example.test >/dev/null 2>&1 )
   local rc=$?
-  [ "$rc" = "2" ] || { echo "    FAIL T-L2-001: forge init --archetype mobile-pwa-first exit=$rc, expected 2 (dispatch-table gate, init.ts:210-217 — no mobile-pwa-first key yet) (NFR-B9-1-002)" >&2; return 1; }
+  [ "$rc" = "3" ] || { echo "    FAIL T-L2-001: forge init --archetype mobile-pwa-first exit=$rc, expected 3 (init.ts:238, registered archetype with no scaffoldable version) (NFR-B9-1-002, flipped by B.9.2)" >&2; return 1; }
   [ ! -d "$tmp/pwaproj" ] || { echo "    FAIL T-L2-001: a 'pwaproj' tree was rendered despite the refusal — a clean refusal must leave nothing behind (NFR-B9-1-002)" >&2; return 1; }
 }
 
