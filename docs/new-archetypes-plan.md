@@ -2574,8 +2574,34 @@ fallback natif si push critique.
 - **B.9.2.** Sous-dossier `web-pwa/` ajouté à l'arborescence — Qwik City + Service
   Worker + Web Push (VAPID) + manifest.json + icons + offline shell. Effort : `M`.
 - **B.9.3.** Templates partagés OIDC : le `AuthGateway` actuel (Flutter) est doublé
-  d'un client TypeScript Connect-ES (Qwik) qui parle au même provider OIDC via
+  d'un client OIDC **navigateur** (Qwik) qui parle au même provider via
   `authorization_code + PKCE`. Effort : `M`.
+
+  > **CORRECTION 2026-07-29 (`b9-3-shared-oidc`, ADR-B9-3-001).** Cette puce disait
+  > « client TypeScript **Connect-ES** ». C'est une erreur de catégorie : Connect-ES est
+  > un transport **RPC** vers un backend Connect/gRPC, alors qu'OIDC
+  > `authorization_code + PKCE` consiste en redirections navigateur et appels au token
+  > endpoint — Connect-ES ne peut pas exécuter ce flux. Suivre la puce à la lettre
+  > **annulerait B.9.2**, qui a délibérément retiré `@connectrpc/connect` et
+  > `@connectrpc/connect-web` de `web-pwa/package.json` parce que `mobile-pwa-first`
+  > est `layer_profile: client-only` et n'a aucun backend à appeler (ADR-B9-2-001,
+  > ratifié en revue indépendante).
+  >
+  > Deux bornes que la puce d'origine laissait implicites, établies sur le code :
+  > **(a)** les deux surfaces ne partagent ni runtime, ni stockage, ni session — un
+  > token obtenu dans l'app native n'existe pas pour la PWA. Ce qui est partagé est une
+  > *forme de configuration* et un *contrat* (`OidcConfig` ↔ son pendant TS,
+  > `AuthRepository{login,refresh,logout,getCurrentToken}`), pas une implémentation, et
+  > surtout **pas un SSO**. **(b)** Les deux surfaces exigent normalement **deux
+  > enregistrements client** distincts chez le provider — redirect custom-scheme
+  > (`<reverse-domain>://callback`) côté natif, `https://` côté navigateur : « même
+  > provider » oui, « même client » non.
+  >
+  > Note connexe : `identity.yaml` est taillé pour un serveur (`default: zitadel`,
+  > pins de chart Helm et d'images, `compliance_tier_aware: true` / « T3 requires
+  > self-host »). Un archétype `client-only` n'a pas de couche infra et ne peut rien
+  > auto-héberger : l'obligation T3 retombe sur le provider opéré par l'adopteur
+  > (→ ADR-B9-3-004).
 - **B.9.4.** Décideur par défaut documenté : si plateforme `Web|Android` → PWA Qwik ;
   si plateforme `iOS` ET push critique → fallback Flutter natif iOS. Documenté dans
   `docs/ARCHETYPES.md` avec arbre de décision. Effort : `S`.
