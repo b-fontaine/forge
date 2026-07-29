@@ -1075,3 +1075,52 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   The archived `b7-9.test.sh::_test_b7_9_005` numbering guard was relaxed to
   permit 007/008 (ADR-B6-JR-006 — sibling-harness coupling, same discipline b7-9
   applied to i2/i3).
+
+---
+
+## 2026-07-28 — pwa.yaml birth + web-frontend.yaml pin re-verification (b9-2-web-pwa)
+
+- **Reviewer**: @bfontaine
+- **Reviewed standards**:
+
+  | Standard | Version | Decision | Next review due | Notes |
+  |----------|---------|----------|-----------------|-------|
+  | pwa.yaml | 1.0.0 | Created | 2027-07-28 | Birth: role-named PWA capability standard (installability / offline / push). SEPARATE from web-frontend.yaml per ADR-B9-2-004 — PWA capability is orthogonal to framework choice. Pins nothing (browser platform APIs). Four `forbidden:` entries, enforcement OFF (`ci_blocking: false`, `linter_rule: null`). |
+  | web-frontend.yaml | 1.1.0 | KEEP-WITH-CHANGES | 2027-06-03 | Pin re-verified LIVE 2026-07-28: qwik + qwik_city HELD at 1.20.0; `vite` DRIFTED 7.3.5 → 7.3.6 (max stable in the `<8` range). Vite-8 exclusion re-confirmed live (`peerDependencies` `>=5 <8`). `expires_at` unchanged. |
+
+- **Decision**: KEEP-WITH-CHANGES — both edits are additive (Article XII
+  "Extending the catalogue" protocol, NOT amendments; no forbidden-list change,
+  no refusal-semantics change).
+- **Next review due**: 2027-07-28 for `pwa.yaml` (12-month cycle);
+  `web-frontend.yaml` keeps its 2027-06-03 `expires_at` — this event refreshed
+  `last_reviewed` and the drifted pin, not the expiry.
+- **Notes**:
+
+  **`pwa.yaml` (birth).** Resolves the four `delivered_by: B.9.2` forward-pointers
+  B.9.1 left in `.forge/schemas/mobile-pwa-first/2.0.0.yaml` (service-worker,
+  web-push, offline-shell, manifest). Created as a SEPARATE role-named standard
+  rather than a section inside `web-frontend.yaml` (ADR-B9-2-004, which reverses
+  the b9-2 proposal's own lean): `web-frontend.yaml` is a framework-SELECTION
+  standard (`default: qwik-city`, `alternatives:`, `forbidden:`), while PWA
+  capability is orthogonal to framework choice — the same obligations apply
+  unchanged under SvelteKit. `pwa.yaml` pins nothing: the PWA surface rests on
+  browser platform APIs, and the framework pins that do exist stay single-sourced
+  in `web-frontend.yaml`. Three interdictions: `PWA-RULE-001` (no push server /
+  VAPID keygen / key storage in a `layer_profile: client-only` archetype),
+  `PWA-RULE-002` (no offline shell importing non-precached modules — it fails
+  exactly when needed while looking implemented), `PWA-RULE-003` (no committed
+  push secrets).
+
+  **`web-frontend.yaml` (pin re-verification).** Triggered by ADR-B9-2-003: the
+  `pin_review_cadence` of `P30D` for qwik / qwik_city / vite had lapsed by 25 days
+  at `last_reviewed: 2026-06-03`. Re-resolved LIVE against the npm registry on
+  2026-07-28 (`b9-2-web-pwa/evidence.md` P-1). Result — **qwik `^1.20.0` and
+  qwik_city `^1.20.0` HELD** (live latest 1.20.0, no drift); **vite DRIFTED**, the
+  max stable in the `<8` range having moved 7.3.5 → 7.3.6. The exact-pin
+  *rationale* was re-confirmed live and survives unchanged:
+  `npm view @builder.io/qwik@1.20.0 peerDependencies` still returns
+  `{ vite: '>=5 <8' }`, so Vite 8 (npm `latest` is now 8.1.5) would still produce
+  an incompatible peer. Only the pin's value was stale. Recorded per ADR-B9-2-003,
+  which required this ledger entry to state which branch was taken — drift, not
+  hold. `@builder.io/qwik-city@1.20.0` declares no `peerDependencies`; the vite
+  constraint comes from the core package alone.

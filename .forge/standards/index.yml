@@ -382,6 +382,14 @@ standards:
     scope: frontend
     priority: high
 
+  # ─── B.9.2 — PWA capability standard (b9-2-web-pwa) ──────────────
+
+  - id: standards/pwa
+    path: standards/pwa.yaml
+    triggers: [pwa, progressive web app, service worker, service-worker, manifest, webmanifest, installable, offline, offline shell, web push, web-push, vapid, push notification, mobile-pwa-first]
+    scope: frontend
+    priority: high
+
   - id: global/standards-lifecycle
     path: standards/global/standards-lifecycle.md
     triggers: [standards lifecycle, expires_at, last_reviewed, exception_constitutional, REVIEW.md, themis, 12-month review, structural exception]

@@ -15,8 +15,8 @@
 # Iris-Web agent ships (K.4, T7). Machine enforcement (ci_blocking / linter_rule)
 # stays OFF at birth — that is Iris-Web/K.4 territory.
 
-version: "1.0.0"
-last_reviewed: 2026-06-03
+version: "1.1.0"
+last_reviewed: 2026-07-28
 expires_at: 2027-06-03             # 12-month cycle (NOT structural — web framework pins drift fast)
 exception_constitutional: false    # dated expiry ⇒ exc:false (FR-J7-020 coupling)
 linter_rule: null                  # advisory standard; no constitution-linter.sh anchor
@@ -44,11 +44,18 @@ compliance_tier_aware: false       # no T1/T2/T3 framework gradient at birth
 versions:
   qwik: "^1.20.0"                  # @builder.io/qwik — stable 1.x line (P-01/P-16, latest 1.20.0)
   qwik_city: "^1.20.0"             # @builder.io/qwik-city — same co-released stable line (P-02/P-16)
-  vite: "7.3.5"                    # EXACT pin — vite 8.x EXCLUDED by Qwik 1.20.0 peer ">=5 <8" (P-06/P-18)
-  # PITFALL (Vite-8 trap): vite 8.0.x is the live npm `latest` (8.0.16, P-08/P-18)
-  # but is EXCLUDED by @builder.io/qwik 1.20.0 peerDependencies ">=5 <8". Pin to
-  # 7.3.5 exactly (max stable 7.x, P-09/P-18) — installing the default vite 8
-  # yields an incompatible peer / broken build. See evidence.md Finding 2.
+  vite: "7.3.6"                    # EXACT pin — vite 8.x EXCLUDED by Qwik 1.20.0 peer ">=5 <8"
+  # B.9.2 re-verification 2026-07-28 (b9-2-web-pwa/evidence.md P-1): qwik and
+  # qwik_city HELD at 1.20.0 (no drift). vite DRIFTED — max stable in the `<8`
+  # range moved 7.3.5 → 7.3.6. The Vite-8 exclusion itself was re-confirmed LIVE
+  # (`npm view @builder.io/qwik@1.20.0 peerDependencies` → `{ vite: '>=5 <8' }`),
+  # so the pin's rationale survives; only its value was stale. npm `latest` is now
+  # vite 8.1.5 and would still yield an incompatible peer.
+  # PITFALL (Vite-8 trap): vite 8.x is the live npm `latest` (8.1.5 at 2026-07-28,
+  # b9-2-web-pwa/evidence.md P-1; was 8.0.16 at the 2026-06-03 birth review) but is
+  # EXCLUDED by @builder.io/qwik 1.20.0 peerDependencies ">=5 <8". Pin to 7.3.6
+  # exactly (max stable in the `<8` range at 2026-07-28) — installing the default
+  # vite 8 yields an incompatible peer / broken build.
   # Cross-references (transport.yaml v1.3.0 owns these — NOT re-pinned here;
   # single source of truth per ADR-B8-3-002 reference-only annotation):
   # @connectrpc/connect: "^2.0.0"      → transport.yaml v1.3.0 codegen.versions_2_0_0

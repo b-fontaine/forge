@@ -1,0 +1,112 @@
+# Forge Standard — Progressive Web App capability (installability / offline / push)
+# Audit: B.9.2 (b9-2-web-pwa) — first PWA capability standard (born here)
+#
+# ROLE-NAMED, deliberately SEPARATE from web-frontend.yaml (ADR-B9-2-004).
+# web-frontend.yaml is a framework-SELECTION standard: its payload is
+# `default: qwik-city`, `alternatives:`, `forbidden:` and the chosen framework's
+# pins. PWA capability is ORTHOGONAL to that choice — the obligations below apply
+# unchanged under SvelteKit. Folding them into web-frontend.yaml would give that
+# file two responsibilities and make a SvelteKit adopter read Qwik-titled prose for
+# rules that are not Qwik's.
+#
+# NO FRAMEWORK PIN LIVES HERE. Qwik / Vite / Node versions are owned by
+# web-frontend.yaml (single source of truth). This standard pins nothing: the PWA
+# surface is built from web platform APIs (Web App Manifest, Service Worker,
+# Push API), which are browser capabilities, not dependencies.
+#
+# Consumed by the `web-pwa` layer of `mobile-pwa-first / 2.0.0` (B.9.1 schema
+# components service-worker / web-push / offline-shell / manifest).
+
+version: "1.0.0"
+last_reviewed: 2026-07-28
+expires_at: 2027-07-28             # 12-month cycle (NOT structural — web platform APIs evolve)
+exception_constitutional: false    # dated expiry ⇒ exc:false (FR-J7-020 coupling)
+linter_rule: null                  # advisory standard; no constitution-linter.sh anchor
+enforcement:
+  ci_blocking: false               # no scannable artefact today; b9-2.test.sh asserts the contract
+  pre_commit_hook: false
+forbidden:
+  - push-server-in-client-only-archetype
+  - vapid-key-generation
+  - vapid-private-key-in-repo
+  - offline-shell-with-uncached-imports
+
+# The `forbidden:` list above is a flat string list per the J.7 schema contract
+# (standard.schema.json: array of string). The reasoning for each entry lives here,
+# where it can be prose without breaking the machine contract.
+forbidden_rationale:
+  push-server-in-client-only-archetype: >
+    PWA-RULE-001. A push sender is a backend. An archetype declaring
+    `layer_profile: client-only` has no backend layer, so scaffolding one recreates at
+    the template level the fiction the schema refuses (ADR-B9-1-001 / ADR-B9-2-005).
+    Adopters supply their own sender; the scaffold ships the client half only.
+  vapid-key-generation: >
+    PWA-RULE-001 (same root). Key generation belongs to the adopter's sender, not to a
+    client-only scaffold.
+  vapid-private-key-in-repo: >
+    PWA-RULE-003. Secrets are supplied at deploy time — Article X.2 applied to the PWA
+    surface.
+  offline-shell-with-uncached-imports: >
+    PWA-RULE-002. The shell is served precisely when the network is unavailable. A
+    shell whose dependencies are fetched on demand fails exactly when it is needed,
+    which is worse than no shell because it looks implemented.
+
+rationale: |
+  B.9.2 introduces the PWA channel of `mobile-pwa-first`, prescribed by
+  docs/ARCHITECTURE-TARGET.md §6.3 as the default surface for Web, Android and
+  desktop, with the native Flutter app as the iOS fallback when push delivery is
+  critical. B.9.1 declared the four components (service-worker, web-push,
+  offline-shell, manifest) as `delivered_by: B.9.2` with no standard behind them;
+  this file resolves those forward-pointers.
+
+  Scope is deliberately narrow: three capability obligations (installability,
+  offline, push) and four interdictions. It pins nothing, because the PWA surface rests on browser
+  platform APIs rather than dependencies — the framework pins that DO exist live
+  in web-frontend.yaml and are not duplicated here (single source of truth, the
+  ADR-B8-3-002 reference-only convention).
+
+# ── Capability obligations ───────────────────────────────────────────────────
+
+installability:
+  manifest_required: true
+  required_fields: [name, short_name, start_url, display, theme_color, background_color, icons]
+  icon_minimum: 1
+  note: >
+    The manifest MUST be linked from the document head. Installability is asserted
+    on Android and desktop; iOS support for installed-PWA push is not assumed —
+    see channel_fallback below.
+
+offline:
+  shell_required: true
+  contract: >
+    A failed navigation MUST resolve to a precached offline shell, never a browser
+    network-error page. The shell is precached at Service Worker install time.
+  dependency_rule: offline-shell-with-uncached-imports
+
+push:
+  client_side_only: true
+  scaffolded:
+    - subscription (PushManager.subscribe)
+    - notification display (ServiceWorkerRegistration.showNotification)
+  not_scaffolded:
+    - push server
+    - VAPID key generation
+    - key storage
+  adopter_responsibility: >
+    The adopter generates the VAPID pair, keeps the private key out of the
+    repository, exposes the public key to the build, and runs their own sender.
+    Until they do, subscription succeeds and no notification arrives — scaffolds
+    MUST say so plainly rather than imply a working end-to-end path.
+  interdiction: push-server-in-client-only-archetype
+
+channel_fallback:
+  rule: >
+    PWA is the default channel for Web, Android and desktop. When push delivery is
+    critical on iOS, the native app surface is the prescribed fallback rather than
+    the PWA channel (ARCHITECTURE-TARGET §6.3). The choice is recorded per change by
+    the `channel-decision` phase of the mobile-pwa-first schema (ADR-B9-1-003).
+
+pin_review_cadence:
+  note: >
+    No pins to review. Framework pins are web-frontend.yaml's; this standard is
+    reviewed on its 12-month expires_at cycle for web-platform API drift only.
