@@ -202,5 +202,8 @@ wrong implementation has not been shown to work.
   which cannot persist a refresh token. FR-GL-B9-3-020 declares `scopes` ONCE, so the
   surfaces cannot diverge without a schema change. Documented at the config site
   (evidence P-9 F5); the decision itself is deferred.
+- **T-022 cannot see `.gitignore`d additions** — `git status --porcelain` omits them
+  without `--ignored`. Nothing in this archetype ignores files under the Flutter tree,
+  so it is recorded rather than fixed (`evidence.md` P-14).
 - A real browser-level BDD leg for the sign-in scenario — no brick provides a live
   provider today; recorded rather than implied covered.
