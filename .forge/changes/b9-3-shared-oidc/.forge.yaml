@@ -1,0 +1,81 @@
+name: b9-3-shared-oidc
+status: implemented
+created: 2026-07-29
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.9.3  # docs/new-archetypes-plan.md §5.2 — shared OIDC across the app and web-pwa surfaces
+depends_on:
+  - B.9.1  # the two-layer contract + cross_layer.agent Janus; this is the archetype's first real cross-layer change
+  - B.9.2  # the web-pwa surface this brick adds an auth client to
+timeline:
+  proposed: 2026-07-29
+  specified: 2026-07-29
+  designed: 2026-07-29
+  planned: 2026-07-29
+  implemented: 2026-07-31
+# The plan's wording for this brick ("un client TypeScript Connect-ES") does not
+# survive contact with the code — see proposal.md Problem. Connect-ES is an RPC
+# transport for a backend this archetype does not have, and B.9.2 deliberately pruned
+# @connectrpc/* from web-pwa (ADR-B9-2-001). Recorded, not silently reinterpreted.
+# Design 2026-07-29: ADR-B9-3-001..005 resolved, Q-001..Q-005 answered.
+# ADR-001/003 REVERSE the proposal's "hand-rolled" lean -> oauth4webapi (0 deps),
+# because a correct OIDC client must validate the ID token signature and that is not
+# code to hand-write. ADR-004 declines to edit identity.yaml (archetype-specific
+# qualification does not belong in a standard three other archetypes read).
+# ADR-002 constrained by a discovery: the Dart OidcConfig is byte-frozen by b9-2
+# T-007, so the shared artefact is additive and rewiring the Dart side is deferred.
+# No pin resolved at design (oauth4webapi 3.8.6 recorded as evidence only).
+# Design review DONE 2026-07-29 (PRE-implementation, deliberately) — CHANGES REQUIRED.
+# B1 (blocking): nothing required ID-token validation, and it was the entire stated
+# justification for the dependency; the nonce was sent but never verified on return.
+# Fixed pre-code: FR-B9-3-009 added, FR-B9-3-004 extended, T-009a/b/c added, Q-006
+# recorded. Five nits applied (T-008 was not falsifiable as written -> behavioural L2;
+# T-018 scoped before writing to avoid the b9-2 false-positive-on-own-docs trap;
+# T-006 gained a positive counterpart; baseline 580 -> 582; SECURITY.md quote was a
+# paraphrase and the file is not in the npm tarball). Reviewer found no siblings of
+# the self-caught oidc-client-ts claim. Re-review of B1 pending before implement.
+# Implemented 2026-07-31, phases 1-7 (T7.5 independent review is the one open gate).
+# Phase 2 (the B1 acceptance proof) ran BEFORE the real client existed and held: the
+# adversarial bare-fetch implementation failed six of seven rejection rows.
+# Two defects surfaced during GREEN and are recorded in evidence.md, not absorbed:
+#   P-4  `pipefail` + `printf | grep -q` returns 141 on a MATCH once the stream passes
+#        the 64 KiB pipe buffer. Four negatives here were silently dead; b9-2's VAPID
+#        negative was too, surfaced by this change growing the web-pwa corpus. Both
+#        suites fixed with here-strings / process substitution, every negative then
+#        mutation-probed. ~40 other harnesses share the shape but are latent.
+#   P-5  CORRECTS evidence P-1.b: the `bad-signature` row did NOT discriminate.
+#        oauth4webapi deliberately skips ID-token signature validation on the code
+#        path (OIDC Core §3.1.3.7 — TLS-secured direct channel), so a CORRECT client
+#        failed that row too. FR-B9-3-009 is met as written via
+#        validateApplicationLevelSignature rather than by relaxing the requirement.
+# T-018 narrowed deliberately (blanket .setItem ban -> localStorage forbidden
+# outright + no token material in sessionStorage), because the PKCE verifier must
+# survive a full-page redirect; T-L2-004 added as the behavioural proof.
+# T-L2-003 was documented in the header and had never been implemented; now it is.
+# Scope held: lib/ ios/ android/ test/, identity.yaml and overlay.sh byte-unchanged.
+# Status stays `implemented`: the schema enum is proposed/specified/designed/
+# planned/implemented/archived and `timeline` sets additionalProperties:false, so
+# there is no `reviewed` phase to record. The review outcome lives here instead.
+# T7.5 DONE 2026-08-03 — two independent lanes, neither self-approved (Article V).
+# Both returned CHANGES REQUIRED; every blocker fixed and re-probed (evidence P-9..P-13).
+# Implementation lane: F1 `server.fs.allow: [".."]` served the WHOLE project over the
+#   dev server (reproduced by fetching the Flutter pubspec.yaml through /@fs/) —
+#   narrowed to the single shared-config file, verified 200 route / 403 leak.
+#   F2 README + ADR-B9-3-005 + session.ts + open-questions + tasks all described a
+#   `prompt=none` silent re-authorization that is NOT implemented; all five corrected.
+#   Also: specs.md wrongly claimed the library enforces the ID-token signature (same
+#   misreading as P-5, still in the spec after the code was fixed); token_type parity;
+#   discoveryUrl https guard; offline_access documented as a stated trade-off.
+# Harness lane: F1 state-mismatch.mjs — the fixture written BECAUSE T-L2-003 never ran
+#   could not itself fail (renamed export and always-throwing body both scored 2/2).
+#   Rewritten with an export guard + a positive control. Plus T-023 matching any
+#   dispatch entry, skipped L2 rows counting as passes, and `git diff HEAD` being blind
+#   to added files.
+# Found between the lanes: T-011/T-012/T-016 were satisfied by substrings from
+#   unrelated files (`refresh` matched the `refreshToken` FIELD) and could not fail.
+# CORRECTED: the `[^\n]` bug was NOT CI-only. The grep shim is interactive-zsh only;
+#   the harness is bash and always got GNU grep, so the dead negatives were dead on
+#   every local run too.
+# Not fixed here, recorded: `npm run build` (qwik build) is broken in the rendered
+#   scaffold — pre-existing from B.9.2, needs a Qwik pin bump owned by web-frontend.yaml.
