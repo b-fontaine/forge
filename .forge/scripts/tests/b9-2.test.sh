@@ -43,6 +43,14 @@
 
 set -uo pipefail
 
+# Stream greps here use `grep -q ... < <(producer)`, NOT `producer | grep -q ...`.
+# In a pipeline, `grep -q` exits at the first match and the producer takes SIGPIPE
+# (141), which `pipefail` promotes to the pipeline's status. Once the web-pwa corpus
+# outgrew the 64 KiB pipe buffer this fired for real: T-017 reported a present
+# `PushManager` as absent, and T-018's VAPID negative — `if producer | grep -q X`
+# — stopped firing entirely, passing while detecting nothing. Process substitution
+# keeps the producer out of the pipeline's exit status. See b9-3.test.sh's header.
+
 LEVEL="1"
 prev=""
 for arg in "$@"; do
@@ -239,11 +247,29 @@ _test_b92_l1_007_byte_equivalence() {
   _render_legacy "$legacy" || { echo "    FAIL T-007: legacy render failed" >&2; return 1; }
   _render_ported "$ported" || { echo "    FAIL T-007: ported render failed (FR-B9-2-004)" >&2; return 1; }
 
-  # web-pwa/ and the scaffold manifest exist only on the ported side by design.
+  # web-pwa/, the scaffold manifest and the shared OIDC config exist only on the
+  # ported side by design.
+  #
+  # `oidc-provider.json` was added by B.9.3 (FR-GL-B9-3-020, ADR-B9-3-002): the
+  # issuer and scopes are declared ONCE at the project root and read by BOTH
+  # surfaces, so it cannot live inside web-pwa/. Excluding it does not weaken this
+  # gate in the direction the gate exists for — every Flutter file stays compared
+  # byte-for-byte, and B.9.3 adds no file and changes no byte under lib/, ios/,
+  # android/ or test/ (asserted independently by b9-3 T-022). What is excluded here
+  # is a NEW root-level file that the legacy mobile-only render has no counterpart
+  # for, which is the same reason web-pwa/ is excluded.
+  #
+  # MECHANISM, stated precisely because the intent above is narrower than the tool:
+  # `--exclude` matches a BASENAME at ANY depth, so a file called oidc-provider.json
+  # appearing anywhere under the ported tree is skipped too, not only the root one.
+  # Accepted, because the two sides come from two genuinely different wrappers and real
+  # Flutter drift is still caught byte-for-byte — but "every Flutter file is compared"
+  # holds only for files not carrying that exact basename.
   local out
   out=$(diff -r \
         --exclude=web-pwa \
         --exclude=scaffold-manifest.yaml \
+        --exclude=oidc-provider.json \
         "$legacy" "$ported" 2>&1)
   if [ -n "$out" ]; then
     echo "    FAIL T-007: app surface NOT byte-equivalent — the port is wrong (FR-B9-2-004)" >&2
@@ -296,7 +322,7 @@ _test_b92_l1_011_wrapper_gated_refusal() {
                    --reverse-domain "$PROBE_DOMAIN" 2>&1 >/dev/null)
   local rc=$?
   [ "$rc" = "3" ] || { echo "    FAIL T-011: gated wrapper exit=$rc, expected 3 while the schema is candidate (FR-B9-2-007)" >&2; return 1; }
-  printf '%s' "$err" | grep -q "REFUSAL" \
+  grep -q "REFUSAL" <<<"$err" \
     || { echo "    FAIL T-011: no structured [REFUSAL ...] on stderr (FR-B9-2-007)" >&2; return 1; }
   # ZERO filesystem writes: nothing may be created.
   [ ! -e "$out" ] || { echo "    FAIL T-011: the refusing wrapper created $out — must be zero filesystem writes (FR-B9-2-007)" >&2; return 1; }
@@ -384,14 +410,14 @@ _test_b92_l1_016_service_worker_and_offline_shell() {
   [ -f "$sw" ] || { echo "    FAIL T-016: no src/routes/service-worker.ts under web-pwa/ (FR-B9-2-012)" >&2; return 1; }
 
   # setupServiceWorker() is Qwik City's SW entry point — the thing that must survive.
-  _stripped_stream "$sw" | grep -q "setupServiceWorker(" \
+  grep -q "setupServiceWorker(" < <(_stripped_stream "$sw") \
     || { echo "    FAIL T-016: service-worker.ts never calls setupServiceWorker() — the Qwik City SW is not wired (FR-B9-2-012)" >&2; ok=0; }
 
   # <ServiceWorkerRegister /> in root.tsx is what registers it.
   # Require the JSX ELEMENT, not the bare identifier: the import line alone
   # (`ServiceWorkerRegister,`) would otherwise satisfy a substring match even after
   # the component is removed from the tree — proven by mutation D at review-fix time.
-  _stripped_stream "$root" | grep -qE "<[[:space:]]*ServiceWorkerRegister" \
+  grep -qE "<[[:space:]]*ServiceWorkerRegister" < <(_stripped_stream "$root") \
     || { echo "    FAIL T-016: root.tsx never RENDERS <ServiceWorkerRegister /> (importing it is not registering it) — the SW would never be registered (FR-B9-2-012)" >&2; ok=0; }
 
   # The offline shell must be a real route AND be precached by the worker.
@@ -400,7 +426,7 @@ _test_b92_l1_016_service_worker_and_offline_shell() {
   # Require addAll specifically. `caches.open` alone is NOT precaching — the fetch
   # handler opens the same cache to READ from it, so accepting `caches.open` let a
   # gutted install handler pass (mutation E at review-fix time).
-  _stripped_stream "$sw" | grep -qE "\.addAll\(" \
+  grep -qE "\.addAll\(" < <(_stripped_stream "$sw") \
     || { echo "    FAIL T-016: the Service Worker never calls cache.addAll() — nothing is precached, so the offline shell would be unavailable exactly when it is needed (FR-B9-2-012, PWA-RULE-002)" >&2; ok=0; }
 
   [ "$ok" = "1" ]
@@ -412,7 +438,7 @@ _test_b92_l1_017_push_client_side_only() {
   local -a pfiles=()
   local pf
   while IFS= read -r -d '' pf; do pfiles+=("$pf"); done < <(find "$WEBPWA" -type f -print0 2>/dev/null)
-  _stripped_stream "${pfiles[@]}" | grep -qE "pushManager\.subscribe|PushManager" \
+  grep -qE "pushManager\.subscribe|PushManager" < <(_stripped_stream "${pfiles[@]}") \
     || { echo "    FAIL T-017: no client-side push subscription (FR-B9-2-013)" >&2; ok=0; }
 
   # NEGATIVE — no push SERVER may be scaffolded. Assert on the declared DEPENDENCIES
@@ -433,7 +459,7 @@ if bad:
 PYEOF
   fi
   # And no key-generation call in real code.
-  if _stripped_stream "${pfiles[@]}" | grep -qE "generateVAPIDKeys\(|vapidKeys\("; then
+  if grep -qE "generateVAPIDKeys\(|vapidKeys\(" < <(_stripped_stream "${pfiles[@]}"); then
     echo "    FAIL T-017: VAPID key generation is scaffolded — adopter responsibility (FR-B9-2-013, ADR-B9-2-005)" >&2; ok=0
   fi
   [ "$ok" = "1" ]
