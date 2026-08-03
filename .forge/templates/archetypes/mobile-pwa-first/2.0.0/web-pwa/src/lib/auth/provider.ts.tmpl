@@ -1,0 +1,17 @@
+// Audit: B.9.3 (b9-3-shared-oidc, FR-GL-B9-3-020)
+//
+// The single read of the shared configuration artefact. It lives at the PROJECT
+// root — one file, edited once, consumed by both surfaces (ADR-B9-3-002) — which is
+// outside this package's Vite root, hence the `server.fs.allow` entry in
+// vite.config.ts.
+//
+// Nothing on the authorization path imports this module: `authorize()` and
+// `completeAuthorization()` take their configuration as an argument. Only the entry
+// points (the port and the callback route) resolve the real file.
+
+import type { OidcProviderConfig } from "./config";
+import providerConfig from "../../../../oidc-provider.json";
+
+export function loadOidcConfig(): OidcProviderConfig {
+  return providerConfig as OidcProviderConfig;
+}

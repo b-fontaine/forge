@@ -1,0 +1,67 @@
+// Audit: B.9.3 (b9-3-shared-oidc, FR-GL-B9-3-020/021, ADR-B9-3-002)
+//
+// The SHAPE of the shared provider configuration. Deliberately free of any import
+// of the JSON itself: the loader lives in ./provider.ts so that the modules on the
+// authorization path (authorize/callback) depend only on types and take their
+// configuration as an argument. That keeps them testable against a stub provider
+// without touching the adopter's real configuration file.
+
+export interface SurfaceConfig {
+  /** Client registration for this surface. The two surfaces are normally two entries. */
+  clientId: string;
+  /** Redirect target for this surface. Native uses a custom scheme, the PWA uses https. */
+  redirectUri: string;
+}
+
+export interface OidcProviderConfig {
+  issuer: string;
+  scopes: string[];
+  /** Optional override for providers that do not publish at the conventional path. */
+  discoveryUrl?: string | null;
+  surfaces: Record<string, SurfaceConfig>;
+}
+
+/** The surface this package is. The native app reads the `app` entry instead. */
+export const SURFACE = "web-pwa";
+
+export function surfaceOf(
+  config: OidcProviderConfig,
+  surface: string = SURFACE,
+): SurfaceConfig {
+  const entry = config.surfaces?.[surface];
+  if (!entry) {
+    throw new Error(
+      `oidc-provider.json declares no "${surface}" surface — see surfaces.${surface}.clientId`,
+    );
+  }
+  return entry;
+}
+
+/**
+ * Refuse to start a flow against the shipped placeholders.
+ *
+ * The Dart side documents the same contract in a comment ("the app will refuse to
+ * start the auth flow with these values"); here it is enforced rather than
+ * described, because a placeholder issuer produces a confusing network error
+ * several steps later instead of naming the actual problem.
+ */
+export function assertConfigured(config: OidcProviderConfig): void {
+  const unset: string[] = [];
+  if (!config.issuer || config.issuer.startsWith("TODO_REPLACE_")) {
+    unset.push("issuer");
+  }
+  for (const [name, surface] of Object.entries(config.surfaces ?? {})) {
+    if (!surface.clientId || surface.clientId.startsWith("TODO_REPLACE_")) {
+      unset.push(`surfaces.${name}.clientId`);
+    }
+    if (!surface.redirectUri || surface.redirectUri.includes("TODO_REPLACE_")) {
+      unset.push(`surfaces.${name}.redirectUri`);
+    }
+  }
+  if (unset.length > 0) {
+    throw new Error(
+      `oidc-provider.json still holds scaffold placeholders: ${unset.join(", ")}. ` +
+        `Replace them with your provider's values before signing in.`,
+    );
+  }
+}

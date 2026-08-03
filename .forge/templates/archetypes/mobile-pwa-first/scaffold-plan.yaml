@@ -157,6 +157,9 @@ templates:
 - source: 2.0.0/lib/presentation/biometric/biometric_lock_widget.dart.tmpl
   target: lib/presentation/biometric/biometric_lock_widget.dart
   substitute: true
+- source: 2.0.0/oidc-provider.json.tmpl
+  target: oidc-provider.json
+  substitute: true
 - source: 2.0.0/pubspec.yaml.tmpl
   target: pubspec.yaml
   substitute: true
@@ -181,11 +184,41 @@ templates:
 - source: 2.0.0/web-pwa/src/entry.ssr.tsx.tmpl
   target: web-pwa/src/entry.ssr.tsx
   substitute: true
+- source: 2.0.0/web-pwa/src/lib/auth/authorize.ts.tmpl
+  target: web-pwa/src/lib/auth/authorize.ts
+  substitute: true
+- source: 2.0.0/web-pwa/src/lib/auth/callback.ts.tmpl
+  target: web-pwa/src/lib/auth/callback.ts
+  substitute: true
+- source: 2.0.0/web-pwa/src/lib/auth/config.ts.tmpl
+  target: web-pwa/src/lib/auth/config.ts
+  substitute: true
+- source: 2.0.0/web-pwa/src/lib/auth/discovery.ts.tmpl
+  target: web-pwa/src/lib/auth/discovery.ts
+  substitute: true
+- source: 2.0.0/web-pwa/src/lib/auth/index.ts.tmpl
+  target: web-pwa/src/lib/auth/index.ts
+  substitute: true
+- source: 2.0.0/web-pwa/src/lib/auth/pending.ts.tmpl
+  target: web-pwa/src/lib/auth/pending.ts
+  substitute: true
+- source: 2.0.0/web-pwa/src/lib/auth/provider.ts.tmpl
+  target: web-pwa/src/lib/auth/provider.ts
+  substitute: true
+- source: 2.0.0/web-pwa/src/lib/auth/session.ts.tmpl
+  target: web-pwa/src/lib/auth/session.ts
+  substitute: true
+- source: 2.0.0/web-pwa/src/lib/auth/token.ts.tmpl
+  target: web-pwa/src/lib/auth/token.ts
+  substitute: true
 - source: 2.0.0/web-pwa/src/lib/push.ts.tmpl
   target: web-pwa/src/lib/push.ts
   substitute: true
 - source: 2.0.0/web-pwa/src/root.tsx.tmpl
   target: web-pwa/src/root.tsx
+  substitute: true
+- source: 2.0.0/web-pwa/src/routes/auth/callback/index.tsx.tmpl
+  target: web-pwa/src/routes/auth/callback/index.tsx
   substitute: true
 - source: 2.0.0/web-pwa/src/routes/index.tsx.tmpl
   target: web-pwa/src/routes/index.tsx

@@ -11,6 +11,25 @@ import tsconfigPaths from "vite-tsconfig-paths";
 export default defineConfig(() => {
   return {
     plugins: [qwikCity(), qwikVite(), tsconfigPaths({ root: "." })],
+    server: {
+      fs: {
+        // B.9.3 — src/lib/auth/provider.ts imports ../../../../oidc-provider.json,
+        // the shared OIDC configuration at the PROJECT root. It is declared ONCE
+        // and read by both surfaces (ADR-B9-3-002), which puts it one level above
+        // this package's Vite root; the dev server refuses /@fs/ reads outside the
+        // root unless the path is allowed here. Build is unaffected.
+        //
+        // THE ONE FILE, NOT `..`. Allowing the parent directory serves the WHOLE
+        // project over the dev server — `/@fs/<root>/pubspec.yaml`, `lib/**.dart`,
+        // `android/app/google-services.json`, keystores, `.env`. That is not
+        // theoretical for a MOBILE archetype: testing a PWA on a real handset means
+        // `npm run dev -- --host`, which exposes it to every device on the network.
+        // Verified both ways — with `[".."]` the dev server returned the Flutter
+        // pubspec.yaml over /@fs/; with the single path below the callback route
+        // still loads and that read is refused.
+        allow: ["../oidc-provider.json"],
+      },
+    },
     preview: {
       headers: {
         "Cache-Control": "public, max-age=600",

@@ -1,0 +1,60 @@
+// Audit: B.9.3 (b9-3-shared-oidc, FR-B9-3-003/004, FR-B9-3-030)
+//
+// The in-flight authorization transaction — and the one thing in this module that
+// DOES touch browser storage. Read the reasoning before changing it.
+//
+// WHAT IS STORED: `state`, `nonce`, `codeVerifier`. Nothing else, ever.
+//
+// WHY IT MUST BE STORED. Signing in is a full-page navigation to the provider and
+// back. The document that minted the verifier is destroyed by that navigation, so
+// in-memory state cannot survive it. Every redirect-flow browser client faces this;
+// none can avoid it. Holding the transaction in `sessionStorage` is the standard
+// resolution, and refusing it would not make the scaffold safer — it would make it
+// unable to complete a login at all, which is a worse fiction than the one
+// FR-B9-3-030 exists to prevent.
+//
+// WHY THIS IS NOT WHAT FR-B9-3-030 FORBIDS. That requirement is about TOKENS. The
+// three values here are not credentials: they are single-use, scoped to one tab,
+// deleted the moment they are consumed, and worthless without the authorization
+// code that arrives over a separate channel. An attacker who reads them gains
+// nothing they can present to a resource server. An access or refresh token is the
+// opposite on every one of those counts — which is why tokens live in memory only
+// (see ./session.ts) and are never written here.
+//
+// `sessionStorage`, not `localStorage`: the transaction dies with the tab, as it
+// should. Nothing in this package writes to `localStorage`.
+
+export interface PendingAuthorization {
+  state: string;
+  nonce: string;
+  codeVerifier: string;
+}
+
+const PENDING_KEY = "<project-name>.oidc.pending";
+
+export function savePending(pending: PendingAuthorization): void {
+  sessionStorage.setItem(PENDING_KEY, JSON.stringify(pending));
+}
+
+/**
+ * Read and immediately consume the pending transaction.
+ *
+ * Single-use by construction: a replayed callback URL finds nothing, so the state
+ * and nonce it carries cannot be matched a second time.
+ */
+export function takePending(): PendingAuthorization | null {
+  const raw = sessionStorage.getItem(PENDING_KEY);
+  if (raw === null) return null;
+  sessionStorage.removeItem(PENDING_KEY);
+  try {
+    const parsed = JSON.parse(raw) as Partial<PendingAuthorization>;
+    if (!parsed.state || !parsed.nonce || !parsed.codeVerifier) return null;
+    return { state: parsed.state, nonce: parsed.nonce, codeVerifier: parsed.codeVerifier };
+  } catch {
+    return null;
+  }
+}
+
+export function clearPending(): void {
+  sessionStorage.removeItem(PENDING_KEY);
+}

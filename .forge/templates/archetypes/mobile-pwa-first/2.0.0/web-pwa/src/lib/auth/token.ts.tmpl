@@ -1,0 +1,83 @@
+// Audit: B.9.3 (b9-3-shared-oidc, FR-B9-3-008/032, ADR-B9-3-005)
+//
+// The browser counterpart of lib/domain/auth/auth_token.dart. The two models are
+// kept deliberately parallel: the same fields, the same expiry rule, the same
+// refusal to render token material in a string.
+
+import type * as oauth from "oauth4webapi";
+
+/**
+ * Treat a token as expired this many seconds BEFORE its stated expiry.
+ *
+ * PARITY: auth_token.dart uses `const Duration(seconds: 30)`. A divergence here
+ * produces bugs that reproduce on one surface and not the other — the worst kind to
+ * chase — so this constant and that Duration move together or not at all.
+ */
+export const EXPIRY_SKEW_SECONDS = 30;
+
+export class TokenSet {
+  constructor(
+    readonly accessToken: string,
+    readonly refreshToken: string | null,
+    readonly expiresAt: Date,
+    readonly tokenType: string = "Bearer",
+    readonly subject: string | null = null,
+  ) {}
+
+  get isExpired(): boolean {
+    return Date.now() > this.expiresAt.getTime() - EXPIRY_SKEW_SECONDS * 1000;
+  }
+
+  /**
+   * Never renders token material. Mirrors `stringify => false` on the Dart model.
+   * A token that reaches a log, a breadcrumb or an error report is a token that has
+   * left the process boundary the rest of this module works to keep it inside.
+   */
+  toString(): string {
+    return `TokenSet(type=${this.tokenType}, expires=${this.expiresAt.toISOString()}, expired=${this.isExpired})`;
+  }
+
+  /** Same contract as above, for anything that reaches for JSON.stringify. */
+  toJSON(): Record<string, unknown> {
+    return {
+      type: this.tokenType,
+      expires: this.expiresAt.toISOString(),
+      expired: this.isExpired,
+      hasRefresh: this.refreshToken !== null,
+    };
+  }
+}
+
+/**
+ * Canonical RFC 6750 spelling of the token type.
+ *
+ * oauth4webapi lowercases `token_type` unconditionally, so it hands back `bearer`
+ * even when the provider sent `Bearer`. RFC 7235 makes the scheme case-insensitive
+ * and a compliant resource server accepts either — but the Dart model defaults to
+ * `'Bearer'`, and an adopter writing `Authorization: ${t.tokenType} ${t.accessToken}`
+ * would then send a different header from each surface. That is the same
+ * reproduces-on-one-surface-only class of bug the 30 s skew constant exists to
+ * prevent, so the one case with a canonical spelling is restored. Anything else
+ * (`dpop`, or a type this scaffold does not know) is passed through untouched.
+ */
+function canonicalTokenType(tokenType: string): string {
+  return tokenType === "bearer" ? "Bearer" : tokenType;
+}
+
+/** Build the model from a VALIDATED token endpoint response. */
+export function tokenSetFrom(
+  response: oauth.TokenEndpointResponse,
+  claims?: oauth.IDToken,
+): TokenSet {
+  const expiresIn = response.expires_in ?? 3600;
+  // No `?? "Bearer"` fallback: the library asserts `token_type` is present before
+  // this point, so a default here would be unreachable code implying a guarantee
+  // that comes from somewhere else.
+  return new TokenSet(
+    response.access_token,
+    response.refresh_token ?? null,
+    new Date(Date.now() + expiresIn * 1000),
+    canonicalTokenType(response.token_type),
+    claims?.sub ?? null,
+  );
+}

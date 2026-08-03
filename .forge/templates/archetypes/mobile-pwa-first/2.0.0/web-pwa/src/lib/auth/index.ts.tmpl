@@ -1,0 +1,119 @@
+// Audit: B.9.3 (b9-3-shared-oidc, FR-B9-3-007, FR-GL-B9-3-022)
+//
+// The port. Four operations, mirroring lib/domain/auth/auth_repository.dart so that
+// a feature written against one surface reads the same on the other:
+//
+//   Dart  Future<AuthToken>  login()                     ->  login()
+//   Dart  Future<AuthToken>  refresh(String)             ->  refresh(string)
+//   Dart  Future<void>       logout()                    ->  logout()
+//   Dart  Future<AuthToken?> getCurrentToken()           ->  getCurrentToken()
+//
+// One signature genuinely differs, and the difference is real rather than
+// cosmetic: `login()` on the native side RESOLVES with a token, because
+// flutter_appauth opens an external browser and returns to a still-running app. In
+// a browser the sign-in is a navigation — this document is destroyed and the
+// tokens arrive in a different one — so `login()` resolves with nothing and the
+// session appears at the callback route. Papering over that with a Promise that
+// never settles would misrepresent how the platform works.
+
+import * as oauth from "oauth4webapi";
+import { surfaceOf, assertConfigured } from "./config";
+import { loadOidcConfig } from "./provider";
+import { resolveAuthorizationServer } from "./discovery";
+import { beginAuthorization } from "./authorize";
+import { savePending, clearPending } from "./pending";
+import { TokenSet, tokenSetFrom } from "./token";
+import { getSession, setSession, clearSession } from "./session";
+
+export type { OidcProviderConfig, SurfaceConfig } from "./config";
+export type { PendingAuthorization } from "./pending";
+export { TokenSet, EXPIRY_SKEW_SECONDS } from "./token";
+export { completeAuthorization } from "./callback";
+export { getSession, setSession, clearSession } from "./session";
+export { takePending } from "./pending";
+export { loadOidcConfig } from "./provider";
+
+/**
+ * Start the flow. Navigates away; nothing after this call runs in this document.
+ */
+export async function login(): Promise<void> {
+  const config = loadOidcConfig();
+  assertConfigured(config);
+  const { url, pending } = await beginAuthorization(config);
+  savePending(pending);
+  window.location.assign(url);
+}
+
+/** Exchange a refresh token for a fresh session. */
+export async function refresh(refreshToken: string): Promise<TokenSet> {
+  const config = loadOidcConfig();
+  const as = await resolveAuthorizationServer(config);
+  const client: oauth.Client = { client_id: surfaceOf(config).clientId };
+
+  const response = await oauth.refreshTokenGrantRequest(
+    as,
+    client,
+    oauth.None(),
+    refreshToken,
+  );
+  // Validates any ID token the provider returns. `requireIdToken` is deliberately
+  // NOT passed: it is not part of this response type's options, because OIDC does
+  // not oblige a provider to reissue an ID token on refresh. Claiming otherwise
+  // here would break correct providers.
+  const result = await oauth.processRefreshTokenResponse(as, client, response);
+
+  // Same application-level signature check as the callback path, when there is
+  // something to check. Conditional because a provider is not obliged to reissue an
+  // ID token on refresh, and demanding one would break correct providers.
+  if (result.id_token) {
+    await oauth.validateApplicationLevelSignature(as, response);
+  }
+
+  const next = tokenSetFrom(result, oauth.getValidatedIdTokenClaims(result));
+  setSession(next);
+  return next;
+}
+
+/**
+ * End the session. Local state is dropped FIRST, so a failure to reach the
+ * provider still leaves this document without credentials.
+ *
+ * When the provider advertises `end_session_endpoint` the user agent is sent there
+ * as well; without it, the provider-side session survives and the next sign-in may
+ * complete without a prompt. That is a property of the provider, not a bug here.
+ */
+export async function logout(): Promise<void> {
+  const config = loadOidcConfig();
+  clearSession();
+  clearPending();
+
+  const as = await resolveAuthorizationServer(config);
+  if (as.end_session_endpoint) {
+    const url = new URL(as.end_session_endpoint);
+    url.searchParams.set("client_id", surfaceOf(config).clientId);
+    window.location.assign(url.toString());
+  }
+}
+
+/**
+ * The current token, refreshed transparently when it is within the expiry skew.
+ * Returns null when there is no session, or when refresh fails — matching the Dart
+ * contract ("implementations SHOULD attempt transparent refresh before returning
+ * null").
+ */
+export async function getCurrentToken(): Promise<TokenSet | null> {
+  const token = getSession();
+  if (!token) return null;
+  if (!token.isExpired) return token;
+
+  if (!token.refreshToken) {
+    clearSession();
+    return null;
+  }
+  try {
+    return await refresh(token.refreshToken);
+  } catch {
+    clearSession();
+    return null;
+  }
+}

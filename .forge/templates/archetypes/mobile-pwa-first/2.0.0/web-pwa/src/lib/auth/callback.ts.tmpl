@@ -1,0 +1,87 @@
+// Audit: B.9.3 (b9-3-shared-oidc, FR-B9-3-004/005/009)
+//
+// Completing the authorization. This is the module the whole dependency decision
+// was made for: an OIDC client that does not verify the ID token's signature,
+// issuer, audience, expiry and nonce is not an OIDC client, and hand-rolling those
+// five checks correctly against a JWKS is not a thing to do inside a scaffold.
+//
+// Two successive drafts of this brick's specification described tests that would
+// have scored a bare `fetch` of the token endpoint as compliant. The suite now
+// proves the property behaviourally instead: `.forge/scripts/tests/fixtures/b9-3/`
+// stands up a fake provider and drives this function with seven token responses
+// that differ in exactly one way each. Any implementation that skips validation
+// fails six of them. That table — not the presence of the call below — is what
+// establishes the requirement.
+
+import * as oauth from "oauth4webapi";
+import type { OidcProviderConfig } from "./config";
+import { surfaceOf } from "./config";
+import { resolveAuthorizationServer } from "./discovery";
+import type { PendingAuthorization } from "./pending";
+import type { TokenSet } from "./token";
+import { tokenSetFrom } from "./token";
+
+export interface CompleteAuthorizationInput {
+  /** The full callback URL, `code` and `state` included. */
+  currentUrl: string;
+  /** The transaction minted before the redirect. */
+  pending: PendingAuthorization;
+  config: OidcProviderConfig;
+}
+
+/**
+ * Turn a provider callback into a validated session, or throw.
+ *
+ * Rejects — never resolves with an unvalidated result — on a mismatched state, a
+ * bad signature, a wrong issuer or audience, an expired or absent ID token, or a
+ * nonce that does not match the one minted for this transaction.
+ */
+export async function completeAuthorization({
+  currentUrl,
+  pending,
+  config,
+}: CompleteAuthorizationInput): Promise<TokenSet> {
+  const as = await resolveAuthorizationServer(config);
+  const surface = surfaceOf(config);
+  const client: oauth.Client = { client_id: surface.clientId };
+
+  // The state check (FR-B9-3-004), given the pending value as a STRING. The two
+  // sentinel values this parameter also accepts each turn the call into a no-op
+  // while leaving it looking present; neither appears in this package.
+  const params = oauth.validateAuthResponse(as, client, new URL(currentUrl), pending.state);
+
+  // Only now is the code redeemed. A mismatched state throws above, so the token
+  // endpoint is never contacted for a callback that failed the binding check.
+  const response = await oauth.authorizationCodeGrantRequest(
+    as,
+    client,
+    oauth.None(), // public client, PKCE, no secret to present (Article X.2)
+    params,
+    surface.redirectUri,
+    pending.codeVerifier,
+  );
+
+  // FR-B9-3-009 — the validation itself. Both options are passed explicitly and
+  // deliberately: each one's DEFAULT silently disables a check that the requirement
+  // depends on, so omitting either would leave a client that looks correct, runs
+  // without error, and validates less than it appears to.
+  const result = await oauth.processAuthorizationCodeResponse(as, client, response, {
+    expectedNonce: pending.nonce,
+    requireIdToken: true,
+  });
+
+  // The ID token's SIGNATURE, verified against the provider's JWKS. This goes
+  // deliberately beyond the library's default, and the default is not a bug: the
+  // token arrived over a direct TLS channel, and OIDC Core §3.1.3.7 lets TLS server
+  // validation stand in for the signature check, so oauth4webapi treats this as
+  // opt-in ("for non-repudiation purposes").
+  //
+  // It is opted into here because TLS and the signature do not fail together. TLS
+  // authenticates the host that answered the token request; the signature
+  // authenticates the issuer that minted the token. A response tampered with
+  // anywhere those two differ — a proxy, a gateway, a misconfigured endpoint on a
+  // host that is not the issuer — passes the first check and fails this one.
+  await oauth.validateApplicationLevelSignature(as, response);
+
+  return tokenSetFrom(result, oauth.getValidatedIdTokenClaims(result));
+}

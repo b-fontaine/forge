@@ -1,0 +1,46 @@
+// Audit: B.9.3 (b9-3-shared-oidc, FR-B9-3-006)
+//
+// Provider metadata is DISCOVERED, never hard-coded. The archetype is
+// provider-neutral in exactly the way the Dart side is (oidc_config.dart lists
+// Auth0 / Keycloak / Okta / Cognito as equally valid): no endpoint of any specific
+// vendor appears anywhere in this package.
+
+import * as oauth from "oauth4webapi";
+import type { OidcProviderConfig } from "./config";
+
+/**
+ * Resolve the authorization server metadata.
+ *
+ * By default this is `<issuer>/.well-known/openid-configuration`. `discoveryUrl`
+ * overrides it for providers that publish their document elsewhere — the issuer is
+ * still the value the document is validated against, so an override cannot silently
+ * point the client at a different issuer.
+ */
+export async function resolveAuthorizationServer(
+  config: OidcProviderConfig,
+): Promise<oauth.AuthorizationServer> {
+  const issuer = new URL(config.issuer);
+
+  let response: Response;
+  if (config.discoveryUrl) {
+    // The override branch must enforce https itself. `discoveryRequest` calls the
+    // library's own protocol check; a bare `fetch` checks nothing, and this document
+    // decides where EVERY later request goes. An attacker who can substitute it over
+    // plaintext copies the real `issuer` (the only field validated below), repoints
+    // `authorization_endpoint` / `token_endpoint` / `jwks_uri` at hosts they control,
+    // and then mints an ID token that satisfies every check in callback.ts — because
+    // the JWKS it is verified against is theirs too.
+    const url = new URL(config.discoveryUrl);
+    if (url.protocol !== "https:") {
+      throw new Error(
+        `discoveryUrl must be https (got ${url.protocol}//) — provider metadata ` +
+          `decides every endpoint this client subsequently trusts`,
+      );
+    }
+    response = await fetch(url, { headers: { accept: "application/json" } });
+  } else {
+    response = await oauth.discoveryRequest(issuer, { algorithm: "oidc" });
+  }
+
+  return await oauth.processDiscoveryResponse(issuer, response);
+}

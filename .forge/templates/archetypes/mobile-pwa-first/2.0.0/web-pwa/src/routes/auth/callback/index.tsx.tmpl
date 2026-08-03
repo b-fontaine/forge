@@ -1,0 +1,70 @@
+// Audit: B.9.3 (b9-3-shared-oidc, FR-B9-3-005)
+// Standard: .forge/standards/web-frontend.yaml
+//
+// THE REDIRECT TARGET. This is the `surfaces.web-pwa.redirectUri` path from
+// oidc-provider.json; registering a different path at the provider without moving
+// this route produces a callback the app never sees.
+//
+// Runs browser-side only. The authorization code arrives in the URL of a document
+// that must already hold the matching transaction, so there is nothing here for the
+// server to do — and a server-side render would hand the code to the SSR process,
+// which is precisely where it does not belong.
+import { component$, useSignal, useVisibleTask$ } from "@builder.io/qwik";
+import type { DocumentHead } from "@builder.io/qwik-city";
+import { completeAuthorization } from "~/lib/auth/callback";
+import { loadOidcConfig } from "~/lib/auth/provider";
+import { takePending } from "~/lib/auth/pending";
+import { setSession } from "~/lib/auth/session";
+
+export default component$(() => {
+  const state = useSignal<"working" | "done" | "failed">("working");
+  const detail = useSignal("");
+
+  // eslint-disable-next-line qwik/no-use-visible-task
+  useVisibleTask$(async () => {
+    try {
+      const pending = takePending();
+      if (!pending) {
+        throw new Error(
+          "no authorization is pending in this tab — start the sign-in again",
+        );
+      }
+
+      const token = await completeAuthorization({
+        currentUrl: window.location.href,
+        pending,
+        config: loadOidcConfig(),
+      });
+      setSession(token);
+
+      // FR-B9-3-005 — take `code` and `state` out of the address bar. They are
+      // spent at this point, but a URL keeps travelling: into history, into a
+      // Referer header, into whatever the user pastes when asking for help.
+      window.history.replaceState({}, "", window.location.pathname);
+
+      state.value = "done";
+    } catch (error) {
+      // The message is shown, the tokens are not — nothing here has any.
+      state.value = "failed";
+      detail.value = error instanceof Error ? error.message : String(error);
+    }
+  });
+
+  return (
+    <main>
+      {state.value === "working" && <p>Finishing sign-in…</p>}
+      {state.value === "done" && <p>Signed in.</p>}
+      {state.value === "failed" && (
+        <>
+          <h1>Sign-in failed</h1>
+          <p>{detail.value}</p>
+        </>
+      )}
+    </main>
+  );
+});
+
+export const head: DocumentHead = {
+  title: "<project-name> — signing in",
+  meta: [{ name: "robots", content: "noindex" }],
+};

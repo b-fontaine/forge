@@ -4,6 +4,8 @@
     "Standards: .forge/standards/web-frontend.yaml (framework) + pwa.yaml (PWA capability)",
     "NEVER PUT SECRETS HERE. VAPID keys are an ADOPTER responsibility (see README).",
     "Pins verify-then-pin LIVE 2026-07-28 (evidence.md P-1/P-2).",
+    "oauth4webapi re-resolved LIVE 2026-07-31 (b9-3 evidence.md P-3): 3.8.6 is the",
+    "npm latest, MIT, and installs ZERO transitive packages ('added 1 package').",
     "vite is pinned EXACTLY: vite 8.x is the npm latest (8.1.5) but is EXCLUDED by",
     "@builder.io/qwik 1.20.0 peerDependencies '>=5 <8' — re-confirmed live 2026-07-28.",
     "NO @connectrpc/* dependency: mobile-pwa-first is layer_profile client-only and",
@@ -26,7 +28,8 @@
   },
   "dependencies": {
     "@builder.io/qwik": "^1.20.0",
-    "@builder.io/qwik-city": "^1.20.0"
+    "@builder.io/qwik-city": "^1.20.0",
+    "oauth4webapi": "^3.8.6"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

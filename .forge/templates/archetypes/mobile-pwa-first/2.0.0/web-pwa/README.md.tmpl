@@ -55,3 +55,84 @@ Unlike the flagship `frontend/web-public/` surface, this one ships **no**
 `@connectrpc/*` dependency and no `src/lib/connect-client.ts`. There is nothing to
 call. If a future change gives this archetype a backend, adding a Connect client is
 purely additive.
+
+## Sign-in — and the four things this scaffold deliberately does not do
+
+`src/lib/auth/` is a browser OIDC client: authorization code flow with PKCE (S256),
+`state` and `nonce` from the Web Crypto CSPRNG, discovery from the issuer, and full
+ID-token validation on the way back. It is built on [`oauth4webapi`][o4wa] — zero
+dependencies, WebCrypto only.
+
+Configuration lives in `../oidc-provider.json`, at the project root, shared with the
+Flutter app: the `issuer` and `scopes` are declared once and each surface carries its
+own `clientId` and `redirectUri`. Replace the `TODO_REPLACE_*` values before signing
+in; the client refuses to start a flow while they are still there.
+
+[o4wa]: https://github.com/panva/oauth4webapi
+
+### 1. The two surfaces hold independent sessions — this is not SSO
+
+The native app and this PWA are **separate clients with separate sessions**. Signing
+in on one does **not** sign you in on the other: a token minted by the app is held in
+the app, and nothing transports it here. They share an identity *provider*, not a
+session.
+
+In practice the second sign-in is often invisible — the provider still has its own
+cookie and returns immediately without a prompt — which is exactly what makes this
+worth stating. It looks like single sign-on right up until the provider session is
+gone, and then it is plainly not.
+
+If you need real cross-surface SSO, that is a provider-side and BFF-side design
+decision, not something a scaffold can grant.
+
+### 2. A reload ends the session
+
+Tokens live in a module variable in `src/lib/auth/session.ts` and **nowhere else**.
+Reload the page and the session is gone.
+
+That is deliberate. The native surface has Keychain and encrypted SharedPreferences;
+the browser has no equivalent. `localStorage` and `sessionStorage` are readable by
+any script running in this origin, so one XSS or one bad transitive dependency turns
+a stored refresh token into a durable credential an attacker can use offline, long
+after they have lost access to the page. This scaffold will not write one there.
+
+What a reload actually costs: `login()` again — a full redirect to the provider and
+back. **As long as the provider's own session cookie is still valid** that round-trip
+normally completes without showing the user anything, so it reads as a flicker rather
+than a login form. When that cookie is gone, they sign in properly.
+
+**No silent re-authorization is implemented.** `prompt=none` — the non-interactive
+check that renews a session in a hidden iframe without a visible navigation — is
+**not** wired up here: `beginAuthorization()` sends no `prompt` parameter, and nothing
+attempts a session restore on boot. The outcome above comes from an ordinary
+authorization request meeting a live provider cookie, not from a silent flow. If you
+want a true silent renewal, adding `prompt=none` plus `login_required` error handling
+is the thing to build, and it is a real feature rather than a configuration change.
+
+What to build if that is not enough: a **BFF** (backend-for-frontend) that holds the
+tokens server-side and gives the browser an `HttpOnly`, `Secure`, `SameSite` cookie.
+That is the standard answer, and it is a *backend* — outside a `client-only`
+archetype. Adding one is a deliberate architectural step, not a setting.
+
+The one thing that does touch browser storage is the in-flight transaction
+(`state`, `nonce`, `code_verifier`) in `sessionStorage`, because signing in is a
+full-page navigation and the document that minted those values is destroyed before
+the callback runs. They are single-use, tab-scoped, deleted the moment they are read,
+and useless without the authorization code. No token is ever written there.
+
+### 3. Compliance tier T3 — the self-host obligation is yours
+
+`.forge/standards/identity.yaml` is tier-aware and states that **T3 requires a
+self-hosted identity provider**. This archetype is `client-only`: it has no infra
+layer and can self-host nothing.
+
+The obligation does not disappear — it moves. If you operate at T3, the provider you
+point `oidc-provider.json` at must itself satisfy the self-host requirement, deployed
+and operated separately from this repository. The standard is correct; it is simply
+scoped to archetypes that can deploy a provider, and this one cannot.
+
+### 4. No client secret, ever
+
+Both surfaces are **public clients**. There is no secret to configure and none is
+shipped — a secret in a mobile binary or a JS bundle is readable by anyone who has
+either. PKCE is what protects the code exchange.

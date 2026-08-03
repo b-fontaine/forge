@@ -1,0 +1,52 @@
+{
+  "_audit": [
+    "Audit: B.9.3 (b9-3-shared-oidc, FR-GL-B9-3-020/021, ADR-B9-3-002)",
+    "",
+    "ONE issuer, TWO client registrations. `issuer`, `scopes` and `discoveryUrl` are",
+    "declared HERE, once. Each surface carries only what genuinely differs: its own",
+    "clientId and redirectUri. A native custom-scheme redirect and a browser https",
+    "redirect are normally two separate client entries at the provider — modelling",
+    "them as one tuple would be wrong for the common case.",
+    "",
+    "NO SECRET BELONGS IN THIS FILE. Both surfaces are PUBLIC clients using PKCE",
+    "(RFC 8252 for the app, RFC 6749 §2.1 for the browser). There is no client_secret",
+    "to configure, and a secret committed here would be readable by anyone who",
+    "installs the app or opens devtools (Article X.2).",
+    "",
+    "T3 GAP (FR-B9-3-040, ADR-B9-3-004). .forge/standards/identity.yaml is",
+    "compliance_tier_aware and states that tier T3 requires a SELF-HOSTED identity",
+    "provider. mobile-pwa-first is layer_profile client-only: it has no infra layer",
+    "and can self-host nothing. If you are operating at T3, that obligation does not",
+    "disappear — it transfers to the provider deployment you run separately from",
+    "this repository. The standard is not edited to accommodate this archetype.",
+    "",
+    "SESSIONS ARE INDEPENDENT, NOT SSO. A token minted in the native app is not",
+    "available to the PWA and vice versa: they are different clients holding",
+    "different sessions. See web-pwa/README.md.",
+    "",
+    "`offline_access` APPLIES TO BOTH SURFACES, AND THAT IS A TRADE-OFF WORTH A",
+    "DECISION. It is what makes the native app able to refresh silently, and it is",
+    "correct there: the token lands in Keychain / encryptedSharedPreferences. The PWA",
+    "receives one too, holds it in memory only, and loses it on reload. It buys the",
+    "browser a longer session (past access-token expiry, until reload) at the cost of",
+    "a long-lived credential sitting in the JS heap, where an XSS can read and replay",
+    "it offline. If you would rather the PWA session simply end at access-token",
+    "expiry, drop `offline_access` here and accept that the native surface loses",
+    "silent refresh too — `scopes` is deliberately declared ONCE",
+    "(FR-GL-B9-3-020), so today the two surfaces cannot diverge on it. Splitting",
+    "scopes per surface is a schema change, not a setting."
+  ],
+  "issuer": "TODO_REPLACE_ISSUER_URL",
+  "scopes": ["openid", "profile", "email", "offline_access"],
+  "discoveryUrl": null,
+  "surfaces": {
+    "app": {
+      "clientId": "TODO_REPLACE_APP_CLIENT_ID",
+      "redirectUri": "<reverse-domain>://callback"
+    },
+    "web-pwa": {
+      "clientId": "TODO_REPLACE_WEB_PWA_CLIENT_ID",
+      "redirectUri": "https://TODO_REPLACE_WEB_PWA_ORIGIN/auth/callback"
+    }
+  }
+}

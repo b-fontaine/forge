@@ -1,0 +1,34 @@
+// Audit: B.9.3 (b9-3-shared-oidc, FR-B9-3-030, ADR-B9-3-005)
+//
+// The session lives HERE, in a module-scoped variable, and nowhere else.
+//
+// The native surface persists tokens through
+// lib/infrastructure/storage/secure_storage_adapter.dart — Keychain
+// `first_unlock_this_device`, Android `encryptedSharedPreferences`. The browser has
+// no equivalent. `localStorage` and `sessionStorage` are readable by any script that
+// executes in this origin, so a single XSS or one compromised dependency turns a
+// stored refresh token into a durable, offline-usable credential.
+//
+// THE COST, STATED PLAINLY: a page reload ends the session. That is not an
+// oversight to be patched later — it is the price of not writing a long-lived
+// credential somewhere it can be read. Recovery is `login()` again: an ordinary
+// authorization redirect, which a live provider cookie usually satisfies without
+// showing the user anything. No silent (`prompt=none`) flow is implemented — see
+// web-pwa/README.md, which also names what an adopter adds if they need more (a BFF
+// holding the tokens server-side).
+
+import type { TokenSet } from "./token";
+
+let currentSession: TokenSet | null = null;
+
+export function setSession(token: TokenSet | null): void {
+  currentSession = token;
+}
+
+export function getSession(): TokenSet | null {
+  return currentSession;
+}
+
+export function clearSession(): void {
+  currentSession = null;
+}
