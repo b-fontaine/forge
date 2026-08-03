@@ -161,6 +161,9 @@ jobs:
             # B.9.2: L1 hermetic (port byte-equivalence + web-pwa surface). Its L2
             # legs need a built CLI / npm, so both stay opt-in.
             "b9-2.test.sh --level 1"
+            # B.9.3: L1 hermetic (browser OIDC client + shared provider config). Its
+            # L2 legs need npm + a render, so they stay opt-in (FORGE_B9_3_NPM).
+            "b9-3.test.sh --level 1"
           )
           fail=0
           for entry in "${harnesses[@]}"; do
