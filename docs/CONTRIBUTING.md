@@ -389,6 +389,15 @@ from there :
   round-trip on top — same code path the `prepublishOnly` hook
   exercises right before `npm publish`).
 
+**Release toolchain.** `pack-smoke` (and therefore `prepublishOnly`, and
+therefore `npm publish`) scaffolds `full-stack-monorepo` from the packed
+tarball, so the release machine needs **`buf` ≥ 1.30.0** on `PATH` —
+`brew install buf`, or `npm i -g @bufbuild/buf`. Without it `forge init`
+exits 5 and the publish aborts *after* the whole test suite has run. Unlike
+`task`, which the smoke skips when absent (ADR-T51-001), `buf` is a hard
+requirement of the flagship scaffolder and has no skip path. This bit the
+0.5.0 publish; it was undocumented until then.
+
 ---
 
 ## Continuous Integration

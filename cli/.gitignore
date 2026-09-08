@@ -4,3 +4,7 @@ assets/
 coverage/
 *.log
 .DS_Store
+# `npm pack` output. The pre-publish smoke removes its tarball on success,
+# but a failed run leaves a ~100 MB `sdd-forge-cli-<version>.tgz` behind —
+# untracked, and enough to fail release.sh's clean-tree pre-flight.
+*.tgz
