@@ -12,7 +12,33 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+## [0.5.1] — 2026-09-08
+
+Patch release carrying the release-process defects that `v0.5.0` uncovered on
+its way out. **`v0.5.0` was tagged and GitHub-released but never published to
+npm**: its own test suite failed at the publish gate, so `0.5.1` is the first
+cut of the 0.5 line to reach `@sdd-forge/cli`. Everything `0.5.0` describes is
+included here — the tag stays in place as the honest record of a cut that was
+caught before it shipped.
+
 ### Fixed
+
+- **`cli/test/e2e/archetype-fixtures/ai-native-rag.yml` required four paths its
+  scaffolder never produces** — `.forge/constitution.md`,
+  `.claude/settings.json`, `.mcp.json` and `.forge.yaml` are framework assets,
+  and per-archetype scaffolders do not copy framework assets; a rendered
+  `ai-native-rag` carries only `.forge/scaffold-manifest.yaml` under `.forge/`.
+  `event-driven-eu.yml` records the same finding from a real B.6.7 render
+  (2026-07-12) and `mobile-only.yml` never asserted those paths either — only
+  `full-stack-monorepo`, which the CLI copies directly rather than rendering
+  through an overlay wrapper, ships them. The fixture had been written by
+  analogy with the flagship at B.7.6 and never revisited. It survived five
+  weeks because it had **never run anywhere**: the matrix is toolchain-gated on
+  buf + cargo, CI's main job is deliberately buf-less, and the live legs sit in
+  the separate `harness-rust` job. The replacement matrix was re-derived path by
+  path from a real render, stat-ing every entry present and absent alike, then
+  probe-proven in both directions. The `cli/` suite now runs 90/90 with zero
+  toolchain-gated skips.
 
 - **`scripts/release.sh` created the tag before the CLI suite had run** — the
   pre-flight block gated on `verify.sh` + `constitution-linter.sh` only, while
@@ -33,6 +59,18 @@ minor bump and will be called out under a `### BREAKING` subsection.
   rather than a side effect. Covered by FR-F3-140 / FR-F3-141
   (`f3-release-script-fix` ADDENDUM), both verified RED before the fix and
   probe-proven against four mutations. `GOVERNANCE.md § Release Process` updated.
+
+### Documentation
+
+- **`buf` was an undocumented release prerequisite** — `prepublishOnly` runs the
+  T5.1 smoke, which packs the tarball and scaffolds `full-stack-monorepo` from
+  it, and that scaffolder needs `buf` ≥ 1.30.0. Without it `forge init` exits 5
+  and the publish aborts *after* lint, the full vitest suite and two bundle runs.
+  Unlike `task`, which the smoke skips when absent (ADR-T51-001), `buf` has no
+  skip path. Now named in `docs/CONTRIBUTING.md § Recommended cadence`, next to
+  the `pack-smoke` line that depends on it. Also ignores `cli/*.tgz`: the smoke
+  removes its tarball on success, but a failed run left a ~100 MB artefact
+  behind — by itself enough to fail the next release's clean-tree pre-flight.
 
 ## [0.5.0] — 2026-09-08
 
@@ -3862,7 +3900,8 @@ Initial framework drop. Constitution v1.0.0 ratified, 19 commands, 28
 agents, 39 standards, 5 schemas, 4 templates, 3 skills, 2 deterministic
 scripts. Private license at the time.
 
-[Unreleased]: https://github.com/b-fontaine/forge/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/b-fontaine/forge/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/b-fontaine/forge/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/b-fontaine/forge/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/b-fontaine/forge/compare/v0.4.0-rc.14...v0.4.0
 [0.4.0-rc.14]: https://github.com/b-fontaine/forge/compare/v0.4.0-rc.12...v0.4.0-rc.14
