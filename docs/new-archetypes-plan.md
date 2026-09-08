@@ -2188,13 +2188,21 @@ le scaffold rendu, et T-022 ne voit pas les ajouts `.gitignore`d.
 Les deux gates passent (`verify.sh` 0 échec ; `constitution-linter.sh` 0 échec),
 re-mesurés le 2026-09-08. Mais **rien n'est publié depuis `v0.4.0` (2026-06-06)** :
 B.6, B.7, K.4, K.5 et les trois briques B.9 dorment dans `CHANGELOG [Unreleased]`.
-Le blocage est une décision : `dispatch-table.yml` engage déjà trois MINOR distincts
-(`since: 0.5.0` pour `ai-native-rag`, `0.6.0` pour `event-driven-eu`, `0.7.0` pour
-`mobile-pwa-first`) pour un seul bloc `[Unreleased]` — une coupe unique en rendra
-forcément un faux. S'y ajoute une contradiction de convention : la roadmap définit
-v0.5.0 comme « les cinq archétypes », alors que la table attribue 0.5.0 au seul
-`ai-native-rag`. **Le nom du heading est l'arbitrage** ; tant qu'il n'est pas tranché,
-aucune coupe n'est possible.
+Le blocage était une décision, **tranchée le 2026-09-08**. `dispatch-table.yml`
+engageait trois MINOR distincts (`since: 0.5.0` pour `ai-native-rag`, `0.6.0` pour
+`event-driven-eu`, `0.7.0` pour `mobile-pwa-first`) écrits sous l'hypothèse de trois
+coupes séquentielles — hypothèse démentie par les faits, aucune des trois n'ayant
+jamais été publiée. **Arbitrage du mainteneur : une coupe unique en `0.5.0`** portant
+tout le bloc `[Unreleased]`, et `since:` réaligné à `0.5.0` pour les trois archétypes
+(cinq valeurs au total, dont les règles Janus J8-RULE-007/008). `since:` nomme donc la
+version qui livre réellement l'entrée, pas une version promise. Corollaire assumé : le
+jalon roadmap « cinq archétypes + conformité EU » **perd le label `v0.5.0`** — cette
+coupe en livre trois, pas cinq, et `mobile-pwa-first` y entre en `candidate`, enregistré
+mais pas encore scaffoldable (la promotion reste B.9.11).
+
+Il reste alors quatre gestes mécaniques pour couper : bumper `VERSION` et
+`cli/package.json`, sceller un heading `## [0.5.0]`, poser le tag. Rien d'autre ne
+bloque.
 
 ---
 

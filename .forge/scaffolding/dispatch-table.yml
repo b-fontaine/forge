@@ -70,7 +70,7 @@ archetypes:
     signals:
       - pubspec.yaml
       - web-pwa/package.json
-    since: "0.7.0"
+    since: "0.5.0"
     status: candidate
     # `status: candidate` is REQUIRED, not decorative. t5-1.test.sh FR-T51-055
     # (_test_t51_l1_016_dispatch_xref) demands a CLI Trust Harness fixture at
@@ -83,8 +83,15 @@ archetypes:
     #
     # B.9.2 (b9-2-web-pwa) — REGISTRATION. Placed immediately after the `mobile-only`
     # legacy alias so a reader landing on the alias sees its `target:` right below.
-    # `since: 0.7.0` per VERSIONING.md (new archetype ⇒ MINOR; next after the 0.6.0
-    # event-driven-eu registration).
+    # `since: 0.5.0` — REALIGNED 2026-09-08. The original value was `0.7.0`, chosen
+    # per VERSIONING.md (new archetype ⇒ MINOR) on the assumption of three sequential
+    # cuts: 0.5.0 ai-native-rag, 0.6.0 event-driven-eu, 0.7.0 mobile-pwa-first. That
+    # assumption did not hold — none of the three was ever released, and all three sit
+    # in the same `[Unreleased]` block. Maintainer arbitration 2026-09-08: ONE cut at
+    # 0.5.0 carrying all of them, so `since:` records the version in which the entry
+    # actually becomes available rather than a promised future one. NOTE: this entry
+    # ships in 0.5.0 as `status: candidate` — registered and visible, not yet
+    # scaffoldable; the flip to `stable` is B.9.11's and does NOT move `since:`.
     #
     # EFFECT ON `forge init`: registering this key moves the refusal from exit 2
     # (unknown archetype, init.ts:210-217) to exit 3 (init.ts:238, no scaffoldable
@@ -118,7 +125,7 @@ archetypes:
     scaffolder: "bin/forge-init-event-driven-eu.sh"
     description: "EU-sovereign event-driven archetype — NATS JetStream + Temporal saga orchestration + AsyncAPI 3.1 + Postgres event store, on a Rust axum/Connect backend. Promoted to stable/scaffoldable in B.6.7 (b6-7-harness)."
     signals: []
-    since: "0.6.0"
+    since: "0.5.0"
     # B.6.2 (b6-2-scaffolder) registered this entry + shipped the templates + the
     # gated wrapper (bin/forge-init-event-driven-eu.sh) + the verify-then-pin'd
     # backend; B.6.7 (b6-7-harness) PROMOTED the 1.0.0 schema to `stage: stable` /
@@ -130,8 +137,12 @@ archetypes:
     # on cargo+buf, so skipped where they are absent). The `status:` field below is the
     # matrix marker (archetypes-smoke.test.ts + t5-1.test.sh T-016 gate on
     # `status != candidate`); flipped candidate→stable in lockstep with the promotion.
-    # `since: 0.6.0` per VERSIONING.md (new archetype ⇒ MINOR; next after the 0.5.0
-    # ai-native-rag cut).
+    # `since: 0.5.0` — REALIGNED 2026-09-08. Originally `0.6.0`, chosen per
+    # VERSIONING.md (new archetype ⇒ MINOR) assuming a 0.5.0 ai-native-rag cut would
+    # land first. It never did: ai-native-rag, event-driven-eu and mobile-pwa-first all
+    # sit in the same `[Unreleased]` block. Maintainer arbitration 2026-09-08: one cut
+    # at 0.5.0 carries all three, so `since:` names the version that actually ships the
+    # entry.
     status: stable
 
   # ─── Removed from taxonomy (t4-adr-ratification, 2026-05-04) ────
@@ -229,14 +240,14 @@ forbidden_combinations:
     provider: confluent-cloud
     tier: any            # fires regardless of declared tier (never a valid default)
     reason: "Confluent Cloud = US-managed Kafka SaaS ; Schrems II / CLOUD Act incompatible with the event-driven-eu EU-sovereign posture (schema event_specifics.eu_sovereignty.no_kafka_saas_us)"
-    since: "0.6.0"
+    since: "0.5.0"   # realigned 2026-09-08 with the event-driven-eu entry — single 0.5.0 cut
     alternative: "self-hosted NATS JetStream (the archetype default) or Redpanda (Kafka-API-compatible, self-hostable, EU-deployable) on EU infrastructure"
     rule_id: J8-RULE-007
   - archetype: event-driven-eu
     provider: us-managed-kafka
     tier: T3
     reason: "T3 (SecNumCloud / EUCS High) requires 100% EU jurisdiction ; any US-managed Kafka SaaS (Confluent Cloud / AWS MSK / Azure Event Hubs) is CLOUD Act exposure"
-    since: "0.6.0"
+    since: "0.5.0"   # realigned 2026-09-08 with the event-driven-eu entry — single 0.5.0 cut
     alternative: "self-hosted NATS JetStream or Redpanda on EU infrastructure (SecNumCloud / OVHcloud / Scaleway)"
     rule_id: J8-RULE-008
 
