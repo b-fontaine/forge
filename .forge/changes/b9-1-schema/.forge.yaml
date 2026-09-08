@@ -1,5 +1,8 @@
 name: b9-1-schema
-status: implemented
+status: archived
+archived_to:
+  - .forge/specs/mobile-pwa-first.md  # B.9.1 ADDED block (FR-B9-1-* / NFR-B9-1-* / ADR-B9-1-*) — created this file ; `mobile-only / 1.0.0` keeps .forge/specs/mobile-only.md as a supported legacy alias
+  - .forge/specs/b8-validator-versioned-schema.md  # FR-B83B-002 amended by ADR-B9-1-001 (layer_profile discriminator) ; falsifies the NFR-B83B-005 "no further validator edit" prediction
 created: 2026-07-27
 schema: default
 constitution_version: "2.0.0"
@@ -15,6 +18,7 @@ timeline:
   designed: 2026-07-27
   planned: 2026-07-27
   implemented: 2026-07-27
+  archived: 2026-09-08
 # NOTE (Article V): Q-001 was escalated to the maintainer and answered 2026-07-27
 # (option b — `layer_profile` discriminator, default `multi-layer`), NOT self-approved.
 # Q-002..Q-005 resolved at design as ADR-B9-1-002..005.

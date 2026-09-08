@@ -1,5 +1,7 @@
 name: b9-2-web-pwa
-status: implemented
+status: archived
+archived_to:
+  - .forge/specs/mobile-pwa-first.md  # B.9.2 ADDED block (FR-B9-2-* / NFR-B9-2-* / ADR-B9-2-*) appended at archive ; carries the MODIFIED FR-B9-1-031 amendment (four PWA components now name `standard: pwa.yaml`, ADR-B9-2-004)
 created: 2026-07-27
 schema: default
 constitution_version: "2.0.0"
@@ -16,6 +18,7 @@ timeline:
   designed: 2026-07-28
   planned: 2026-07-28
   implemented: 2026-07-28
+  archived: 2026-09-08
 # Maintainer decision 2026-07-27: the `mobile-pwa-first:` dispatch key IS added by
 # this brick (not a separate b9-2a mirroring b7-2a). Consequence: the init refusal
 # moves exit 2 → exit 3, so b9-1.test.sh T-022 and T-L2-001 MUST be flipped in this

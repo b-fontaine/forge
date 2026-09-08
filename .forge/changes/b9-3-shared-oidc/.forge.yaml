@@ -1,5 +1,7 @@
 name: b9-3-shared-oidc
-status: implemented
+status: archived
+archived_to:
+  - .forge/specs/mobile-pwa-first.md  # B.9.3 ADDED block (FR-B9-3-* / NFR-B9-3-* / FR-GL-B9-3-* / ADR-B9-3-*) appended at archive ; `identity.yaml` deliberately NOT edited (ADR-B9-3-004)
 created: 2026-07-29
 schema: default
 constitution_version: "2.0.0"
@@ -14,6 +16,7 @@ timeline:
   designed: 2026-07-29
   planned: 2026-07-29
   implemented: 2026-07-31
+  archived: 2026-09-08
 # The plan's wording for this brick ("un client TypeScript Connect-ES") does not
 # survive contact with the code — see proposal.md Problem. Connect-ES is an RPC
 # transport for a backend this archetype does not have, and B.9.2 deliberately pruned
@@ -35,7 +38,8 @@ timeline:
 # T-006 gained a positive counterpart; baseline 580 -> 582; SECURITY.md quote was a
 # paraphrase and the file is not in the npm tarball). Reviewer found no siblings of
 # the self-caught oidc-client-ts claim. Re-review of B1 pending before implement.
-# Implemented 2026-07-31, phases 1-7 (T7.5 independent review is the one open gate).
+# Implemented 2026-07-31, phases 1-7. (T7.5 was then the one open gate; it is closed
+# below — see the SIGN-OFF line at the end of this block.)
 # Phase 2 (the B1 acceptance proof) ran BEFORE the real client existed and held: the
 # adversarial bare-fetch implementation failed six of seven rejection rows.
 # Two defects surfaced during GREEN and are recorded in evidence.md, not absorbed:
@@ -79,3 +83,10 @@ timeline:
 #   every local run too.
 # Not fixed here, recorded: `npm run build` (qwik build) is broken in the rendered
 #   scaffold — pre-existing from B.9.2, needs a Qwik pin bump owned by web-frontend.yaml.
+# SIGN-OFF 2026-09-08: ARCHIVABLE. The T7.5 gate opened at implement is closed — both
+# lanes ran post-fix probes and the reviewer's own verdict is recorded verbatim at
+# evidence.md:594 ("Verdict: APPROVED. Repo byte-identical to the pre-review snapshot
+# after all probes."). Article V satisfied: this line records that independent verdict,
+# it does not create one. Two follow-ups are carried forward rather than blocking, both
+# already inventoried: the broken `qwik build` pin above, and T-022's blindness to
+# `.gitignore`d additions (reasoned-only; nothing in this archetype ignores files there).

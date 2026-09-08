@@ -14,6 +14,104 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ### Added
 
+- **`mobile-pwa-first/2.0.0` candidate scaffold schema (B.9.1, `b9-1-schema`)** —
+  first brick of the mobile-PWA archetype chain (`new-archetypes-plan.md` §5.2).
+  Ships `.forge/schemas/mobile-pwa-first/2.0.0.yaml` as `stage: candidate` /
+  `scaffoldable: false` with **two** layers only — `app` (path `.`, `FR-APP-`,
+  Hera) and `web-pwa` (path `web-pwa/`, `FR-PWA-`, Iris-Web) — inlined `phases`
+  (proposal → specs → **`channel-decision`** → features → design → tasks →
+  implementation → review → archive, no `extends:`) and a `pwa_specifics` block
+  (installability, offline shell, Web Push/VAPID, the iOS fallback rule as
+  contract text, no pins). The load-bearing conflict: the B.8.3.b sibling
+  validator `check_versioned_schema_siblings` hard-required
+  `{backend, frontend, infra}`, so a client-only archetype could not validate.
+  The maintainer ratified (Q-001, option b) a **`layer_profile` discriminator**
+  in `validate-foundations.sh` — default `multi-layer` (today's behaviour
+  preserved), `client-only` relaxing the triple, unknown values rejected — so the
+  three existing versioned schemas still PASS **with no edit to any of them**.
+  Components are reference-only (qwik-city → `web-frontend.yaml`, oidc →
+  `identity.yaml`, state-management, observability; service-worker / web-push /
+  offline-shell / manifest carried as `delivered_by: B.9.2`, no inline pin).
+  `mobile-only/1.0.0` stays untouched as the legacy alias. Harness
+  `b9-1.test.sh` (23 L1 + 1 L2) in `forge-ci.yml`. At this point
+  `forge init --archetype mobile-pwa-first` refuses at the **dispatch gate,
+  exit 2** — no `mobile-pwa-first:` key exists yet (B.9.2 adds it and moves the
+  refusal to exit 3). Two independent review rounds → APPROVE-WITH-NITS; all
+  nine findings sat in the written record, none in the code or the tests.
+
+- **`mobile-pwa-first` scaffolder — Flutter port + Qwik PWA surface (B.9.2, `b9-2-web-pwa`)** —
+  renders the two-layer tree B.9.1 declares. **(a)** the `app` surface is a
+  copy-forward port of all 48 `mobile-only` template files into
+  `.forge/templates/archetypes/mobile-pwa-first/2.0.0/` (placeholders rewritten
+  to the `<project-name>` / `<reverse-domain>` convention), driven by a new
+  declarative `scaffold-plan.yaml` + `bin/forge-init-mobile-pwa-first.sh` — an
+  ADR-B7-2-007 **gated real body** that refuses exit 3 with zero filesystem
+  writes while the schema is candidate, **absolutizes the plan into a `mktemp`
+  copy** (because `overlay.sh:128` hardcodes `ARCHETYPE_DIR` to the flagship
+  tree — the documented `bin/forge-init-ai-native-rag.sh` trick; `overlay.sh`
+  is worked around, never edited) and relocates the Kotlin
+  `{{reverse_domain_path}}` directory. The port's acceptance criterion is a
+  **byte-equivalence gate** (FR-B9-2-004): the legacy and the new wrapper must
+  render an empty `diff -r` over the `app` surface — and the new path also emits
+  a `.forge/scaffold-manifest.yaml` (archetype version, plan SHA, template-set
+  SHA) the bespoke renderer never produced. **(b)** a new `web-pwa/` Qwik City
+  surface ported from the B.8.9 spine: web app manifest, Service Worker +
+  registration + a navigable offline route, and client-side push subscription
+  only — **no push server, no VAPID keygen, no key storage** (provenance is an
+  adopter responsibility, ADR-B9-2-005) — deliberately **without
+  `@connectrpc/*`**, the archetype being `layer_profile: client-only` with no
+  backend to call (ADR-B9-2-001). Pins verify-then-pin LIVE:
+  `@builder.io/qwik`/`qwik-city` hold at 1.20.0, `vite` **drifted**
+  `=7.3.5 → =7.3.6` and stays an exact pin because Qwik's peer range
+  `>=5 <8` excludes the npm-latest Vite 8. **(c)** a new role-named standard
+  `.forge/standards/pwa.yaml` (`index.yml` + `REVIEW.md` registered) governing
+  installability / offline behaviour / push delivery — `web-frontend.yaml` is a
+  framework-**selection** standard and PWA capability is orthogonal to framework
+  choice (ADR-B9-2-004 reverses the proposal's lean). **(d)** the
+  `mobile-pwa-first:` dispatch key registered (`status: candidate`, the
+  `mobile-only:` `legacy_alias` / `target:` / `migration:` metadata preserved),
+  which moves the `forge init` refusal **exit 2 → 3** and forced flipping
+  `b9-1.test.sh` T-020 / T-022 / T-L2-001 in the same change. Harness
+  `b9-2.test.sh` (22 L1 + 2 L2) in `forge-ci.yml`. Two independent review rounds
+  → APPROVE-WITH-NITS.
+
+- **Shared OIDC across the `app` and `web-pwa` surfaces (B.9.3, `b9-3-shared-oidc`)** —
+  the archetype's first real cross-layer brick. Ships a browser OIDC client
+  under `web-pwa/src/lib/auth/` (`config` / `provider` / `discovery` /
+  `authorize` / `pending` / `session` / `token` / `callback` / `index`) plus the
+  `/auth/callback` route, built on **`oauth4webapi` `^3.8.6`** (verify-then-pin
+  LIVE 2026-07-31, MIT, `npm install` reports `added 1 package`) rather than
+  hand-rolled — ADR-B9-3-001/003 **reverse** the proposal's lean, because a
+  correct client must validate the ID token and that is not code to hand-write.
+  `authorization_code` + PKCE, `validateAuthResponse` against the pending state,
+  `processAuthorizationCodeResponse` with `expectedNonce` + `requireIdToken:
+  true`, a `history.replaceState` URL scrub, a 30 s clock skew matching
+  `auth_token.dart:17`, access + refresh tokens **in memory only**
+  (`localStorage` forbidden outright, no token material in `sessionStorage` —
+  the PKCE verifier must survive a full-page redirect), and a
+  `login` / `refresh` / `logout` / `getCurrentToken` port of the Dart
+  `AuthRepository` contract with the one genuine signature divergence
+  (`login()` resolves `void`) documented at the call site. A new root-level
+  `oidc-provider.json.tmpl` declares `issuer` / `scopes` / `discoveryUrl` **once**
+  with per-surface `clientId` + `redirectUri` under `surfaces.{app,web-pwa}`;
+  the Dart `OidcConfig` is additive-only, byte-frozen by the B.9.2 T-007
+  equivalence gate, so rewiring the Dart side is deferred. The README documents
+  what is **not** delivered: the two surfaces hold independent sessions —
+  **not SSO** — and the T3 self-host obligation transfers to the adopter's
+  separately-operated provider (`identity.yaml` deliberately **not** edited,
+  ADR-B9-3-004). TDD ran through an **adversarial phase** (review finding B1): a
+  deliberately wrong bare-`fetch` callback was written first and had to fail six
+  of the seven `T-L2-002` rejection rows before the real client was allowed to
+  exist. FR-B9-3-009 is met by opting into `validateApplicationLevelSignature` —
+  `oauth4webapi` deliberately skips ID-token signature validation on the code
+  path (OIDC Core §3.1.3.7) — rather than by relaxing the requirement. Harness
+  `b9-3.test.sh` (27 L1 + 4 L2) in `forge-ci.yml`. Two independent lanes, both
+  CHANGES REQUIRED then signed off: `server.fs.allow: [".."]` served the whole
+  project over the dev server (reproduced by fetching the Flutter
+  `pubspec.yaml`) and was narrowed to the single shared config file; a
+  `prompt=none` silent re-authorization was described in five places and never
+  implemented; and several harness rows could not fail.
+
 - **Hermes-Async event-driven messenger agent (K.1, `b6-4-hermes-async`)** — a new
   `.claude/agents/hermes-async.md` persona that maintains the AsyncAPI 3.1 event
   contracts, generates NATS/Kafka protocol bindings, and enforces idempotency keys +
@@ -342,6 +440,60 @@ minor bump and will be called out under a `### BREAKING` subsection.
   L2) in `forge-ci.yml`; validated on landing by the b8-3b versioned-schema gate.
   Additive — no existing schema/standard/constitution/CLI/template touched.
   Independent reviewer APPROVE; ADRs ratified.
+
+### Changed
+
+- **`new-archetypes-plan.md` §5.2 B.9.3 corrected — Connect-ES cannot perform an
+  OIDC flow (`cf822fb`)** — the plan bullet specified doubling the Flutter
+  `AuthGateway` with "un client TypeScript **Connect-ES** (Qwik) qui parle au
+  même provider OIDC via `authorization_code + PKCE`". That is a category error:
+  Connect-ES is an RPC transport for calling a Connect/gRPC backend, while OIDC
+  `authorization_code` + PKCE is browser redirects plus token-endpoint calls
+  against an identity provider. Following the bullet literally would also have
+  **reversed** ADR-B9-2-001 — B.9.2 deliberately pruned `@connectrpc/connect` and
+  `@connectrpc/connect-web` from `web-pwa/package.json` because
+  `mobile-pwa-first` is `layer_profile: client-only` and has no backend to call.
+  The bullet now reads "client OIDC **navigateur**" and carries the correction
+  inline rather than being silently reworded, plus two bounds the original left
+  implicit, both established from the code: **(a)** the two surfaces share no
+  runtime, no storage and no session — what is shared is a *configuration shape*
+  and a *contract* (`OidcConfig` and its TS counterpart;
+  `AuthRepository{login,refresh,logout,getCurrentToken}`), explicitly **not**
+  single sign-on; **(b)** they normally need **two** client registrations at the
+  provider (custom-scheme redirect `<reverse-domain>://callback` for native,
+  `https://` for the browser) — "same provider" holds, "same client" does not.
+  Also records that `identity.yaml` is server-shaped while this archetype has no
+  infra layer and can self-host nothing, so the T3 obligation transfers to the
+  adopter's provider (→ ADR-B9-3-004). Verified before editing that this file is
+  not content-pinned (`t4.test.sh:283` pins `docs/ARCHITECTURE-TARGET.md`, not
+  this one).
+
+### Fixed
+
+- **`pipefail` + `grep -q` had silently disabled harness negatives (`f8e3dd7`)** —
+  `set -o pipefail` combined with `producer | grep -q PATTERN` is broken for any
+  stream larger than the ~64 KiB pipe buffer: `grep -q` exits at the first match,
+  the producer is still writing, takes SIGPIPE and exits 141, and `pipefail`
+  promotes that to the pipeline's status (measured on the real stream:
+  `PIPESTATUS=(141 0)` — grep matched, the pipeline reported failure). Both
+  directions are wrong and the second is dangerous:
+  `producer | grep -q X || fail` reports a **present** pattern as absent (noisy,
+  self-announcing — this is how the bug was noticed, via T-017's `PushManager`
+  check), whereas `if producer | grep -q X; then fail` lets the violation match,
+  the pipeline still exit non-zero, the `then` branch never run, and the check
+  **PASS having detected nothing**. `b9-2.test.sh` T-017's "no VAPID keygen may
+  be scaffolded" negative was dead exactly this way, and four negatives in
+  `b9-3.test.sh` with it. It surfaced only because B.9.3 appends ~80 lines to
+  `web-pwa/README.md.tmpl`, pushing the `_stripped_stream` output past the
+  buffer — nothing about the b9-2 code changed, the corpus grew past the
+  threshold. All five stream pipelines converted to `grep -q … < <(producer)`
+  (process substitution keeps the producer out of the pipeline's exit status),
+  then every negative mutation-probed in both directions. The same commit widens
+  T-007's byte-equivalence exclusion for the new shared root-level
+  `oidc-provider.json` and states the **mechanism** rather than the intent
+  (`--exclude` suppresses that basename at any depth). The shape exists in ~40
+  other harnesses, almost all `find … | grep -q .` whose output never approaches
+  64 KiB — latent rather than broken; a repo-wide sweep is a brick of its own.
 
 ## [0.4.0] — 2026-06-06
 

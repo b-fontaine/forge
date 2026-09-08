@@ -50,6 +50,23 @@ applied to `schema.yaml`** (`validate-foundations.sh:107-145`): mapping root;
 `id/path/fr_id_prefix/primary_agent`; `stage ∈ {draft, candidate, stable}`;
 `stage == stable ⇒ version ≥ 1.0.0` without prerelease; non-empty `phases`.
 
+<!-- Amended by b9-1-schema (ADR-B9-1-001), 2026-09-08. -->
+> **AMENDMENT (B.9.1, 2026-09-08).** The `layers` ids ⊇ {backend, frontend, infra}
+> clause above is **no longer unconditional**. `mobile-pwa-first / 2.0.0` is a
+> client-only archetype with no backend and no infrastructure, so two of the three
+> required ids would have been fiction. `check_versioned_schema_siblings` gained a
+> `layer_profile:` discriminator: it **defaults to `multi-layer`**, which keeps this
+> requirement exactly as written for every schema authored before B.9.1, and
+> `client-only` relaxes the triple while keeping the per-layer
+> `id/path/fr_id_prefix/primary_agent` contract. Unknown values are rejected. Every
+> other clause of FR-B83B-002 is unchanged.
+>
+> This also falsifies the prediction in **NFR-B83B-005**, which anticipated that a
+> future `mobile-pwa-first/2.0.0.yaml` would be discovered and validated "with no
+> further edit to the validator": a one-site patch was in fact required. The
+> discovery mechanism itself remained generic, which is what NFR-B83B-005 was
+> protecting.
+
 ##### FR-B83B-003 — name MUST equal the archetype directory name
 For a discovered file under `.forge/schemas/<archetype>/<X.Y.Z>.yaml`, the
 validation MUST require `name == <archetype>` (the directory name) — generalizing
