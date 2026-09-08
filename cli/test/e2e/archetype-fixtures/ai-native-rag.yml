@@ -9,6 +9,23 @@
 # (and the buf-less dev sandbox) skip-pass the actual scaffold, but the fixture
 # MUST exist + be well-formed (the dispatch-table cross-reference, FR-T51-055).
 # Required paths : MUST exist post-scaffold. Forbidden paths : MUST NOT exist.
+#
+# CORRECTED 2026-09-08 — this fixture had never actually run. It is gated on buf,
+# CI's main job is buf-less, and its live legs live in the separate harness-rust
+# job, so the matrix below was asserted nowhere from B.7.6 until a buf install on
+# a dev host finally executed it. Four of its twelve required paths were wrong:
+# `.forge/constitution.md`, `.claude/settings.json`, `.mcp.json` and `.forge.yaml`
+# are framework assets, and **per-archetype scaffolders do not copy framework
+# assets** — `.forge/` carries only `scaffold-manifest.yaml`. That is the same
+# finding `event-driven-eu.yml` records from a real B.6.7 render (2026-07-12);
+# `mobile-only.yml` never asserted them either. Only `full-stack-monorepo`, which
+# the CLI copies itself rather than rendering through an overlay wrapper, ships
+# them — which is why its fixture keeps them and passes.
+#
+# The matrix below was re-derived path by path from a real render
+# (`forge init --archetype ai-native-rag --org com.example.probe`, buf 1.72.0 +
+# cargo on the b9 dev host, 2026-09-08): every entry was individually stat-ed,
+# present and absent alike. It lists ONLY paths the render actually produces.
 
 archetype: ai-native-rag
 
@@ -16,18 +33,18 @@ has_rust_backend: true
 has_flutter_frontend: false
 
 required_paths:
-  - .forge/constitution.md
-  - .claude/settings.json
-  - .mcp.json
+  - .forge/scaffold-manifest.yaml
   - Taskfile.yml
   - CLAUDE.md
   - README.md
   - .gitignore
+  - .env.example
   - docker-compose.dev.yml
   - backend/Cargo.toml
+  - backend/rust-toolchain.toml
   - frontend/web-public/package.json
   - shared/protos
-  - .forge.yaml
+  - infra/k8s
 
 forbidden_paths:
   - cli
