@@ -1,6 +1,15 @@
-# OMC runtime state — per-session journals + working state, never committed
-.omc/sessions/
-.omc/state/
+# OMC runtime state — per-session journals + working state, never committed.
+# The `**/` prefix matters: a pattern containing a slash is anchored to this
+# file's directory, so the old `.omc/state/` never matched `cli/.omc/state/`,
+# and six runtime files were tracked there until 2026-09-08.
+**/.omc/sessions/
+**/.omc/state/
+**/.omc/logs/
+**/.omc/artifacts/
+**/.omc/handoffs/
+.omc/notepad.md
+.omc/project-memory.json
+# `.omc/skills/**` stays committable on purpose (project-scoped skills).
 
 # Local Claude settings overrides
 .claude/settings.local.json

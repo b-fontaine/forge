@@ -1,7 +1,0 @@
-{
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"git add .forge/scripts/tests/t5.test.sh cli/test/e2e/archetypes-smoke.test.ts && git status --short && echo \\\"---\\\" && git commit -m \\\"$(cat <<'EOF'\\nfix(ci): T5.1.B vitest skip + t5 harne...",
-  "error": "Exit code 128\nfatal: pathspec '.forge/scripts/tests/t5.test.sh' did not match any files",
-  "timestamp": "2026-05-19T08:04:12.507Z",
-  "retry_count": 1
-}
