@@ -12,6 +12,28 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`scripts/release.sh` created the tag before the CLI suite had run** — the
+  pre-flight block gated on `verify.sh` + `constitution-linter.sh` only, while
+  `cd cli && npm test` lived inside the publish step, i.e. **after**
+  `git tag -a` (step 3) and `git push origin <tag>` (step 4). Since `verify.sh`
+  has no coverage of `cli/` whatsoever, nothing in between could catch a broken
+  CLI, and a red vitest run could not stop a release. This fired on `v0.5.0`:
+  `T5.1.A` was red because B.9.2 had registered the `mobile-pwa-first` dispatch
+  key without adding it to the `--archetype` help text; the tag was created,
+  pushed and GitHub-released before `npm test` ever ran, and had to be deleted
+  and re-cut by hand. The install + vitest gate is now pre-flight check 9,
+  above the tag steps. Two consequences worth stating: the publish step no
+  longer re-runs the suite (`prepublishOnly` already runs
+  `lint && test && bundle && smoke` as `npm publish` fires, so it previously ran
+  **twice** in step 5 — and **zero** times under `--skip-npm`), and `--skip-npm`
+  no longer disables it. A dedicated `--skip-cli-tests` flag is the escape hatch
+  for environments without npm, so skipping the gate is now an explicit choice
+  rather than a side effect. Covered by FR-F3-140 / FR-F3-141
+  (`f3-release-script-fix` ADDENDUM), both verified RED before the fix and
+  probe-proven against four mutations. `GOVERNANCE.md § Release Process` updated.
+
 ## [0.5.0] — 2026-09-08
 
 First cut since `v0.4.0` (2026-06-06). Ships the whole queued backlog in one

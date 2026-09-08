@@ -6,9 +6,13 @@ set -euo pipefail
 # Run AFTER the PR that closes the release scope is merged into main
 # (per GOVERNANCE.md § Release Process). Performs the post-merge
 # release steps :
+#   2. Pre-flight gates — repo state, VERSION/CHANGELOG match,
+#      verify.sh, constitution-linter.sh, AND the cli/ vitest suite.
+#      Every gate runs BEFORE the tag exists, so a red test can still
+#      stop the release (see the note above step 3).
 #   3. Tag git vX.Y.Z on main
 #   4. Push tag
-#   5. Build + publish npm package from cli/ (with 2FA OTP)
+#   5. Bundle + publish npm package from cli/ (with 2FA OTP)
 #   6. Create GitHub release (manual fallback if gh not installed)
 #
 # Usage :
@@ -31,7 +35,14 @@ set -euo pipefail
 #                       account uses WebAuthn 2FA and `npm publish`
 #                       triggers the browser flow directly (npm v11+).
 #   --dry-run           preview every step without side effects.
-#   --skip-npm          skip npm publish step (and OTP collection).
+#   --skip-npm          skip npm publish step (and OTP collection). Does
+#                       NOT skip the cli/ test gate — that is a pre-flight
+#                       check now ; use --skip-cli-tests for it.
+#   --skip-cli-tests    skip the cli/ install + vitest pre-flight gate.
+#                       Escape hatch for environments without npm. Using
+#                       it means the tag is cut without the CLI suite ever
+#                       having run — the exact hole that let v0.5.0 ship a
+#                       tag with a red test.
 #   --skip-gh           skip GitHub release step.
 #   --skip-login        skip the `npm login` auto-trigger (assumes a
 #                       valid session token already cached).
@@ -68,20 +79,25 @@ set -euo pipefail
 
 DRY_RUN=0
 SKIP_NPM=0
+SKIP_CLI_TESTS=0
 SKIP_GH=0
 SKIP_LOGIN=0
 VERSION=""
 OTP=""
 
 # Print the header comment block as user-facing help.
+# NOTE: the upper bound is coupled to the header's length — it must land on
+# the `# npm 2FA modes supported :` line, so adding flag documentation above
+# means bumping it in the same edit or the help silently truncates.
 _print_help() {
-  sed -n '2,40p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  sed -n '2,51p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
 }
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) DRY_RUN=1; shift ;;
     --skip-npm) SKIP_NPM=1; shift ;;
+    --skip-cli-tests) SKIP_CLI_TESTS=1; shift ;;
     --skip-gh) SKIP_GH=1; shift ;;
     --skip-login) SKIP_LOGIN=1; shift ;;
     --version)
@@ -300,7 +316,7 @@ fi
 ok "CHANGELOG.md sealed for $TAG"
 
 # 8. Test surface (sanity check — quick)
-step "Sanity tests (verify.sh + constitution-linter — quick gate)"
+step "Pre-flight tests (verify.sh + constitution-linter + cli/ vitest)"
 if [ "$DRY_RUN" = "0" ]; then
   if ! bash .forge/scripts/verify.sh >/dev/null 2>&1; then
     fatal "verify.sh failed. Aborting release."
@@ -310,8 +326,28 @@ if [ "$DRY_RUN" = "0" ]; then
     fatal "constitution-linter.sh failed. Aborting release."
   fi
   ok "constitution-linter.sh OVERALL PASS"
+
+  # 9. cli/ test surface. This MUST stay above the tag steps : verify.sh
+  # has no coverage of cli/ at all, so before this gate moved here the
+  # only run of the vitest suite was inside step 5 — after `git tag` and
+  # `git push`. v0.5.0 was cut that way with a red T5.1.A and the tag had
+  # to be moved by hand. `npm test` needs node_modules, so the install
+  # travels with it ; vitest's globalSetup runs `npm run bundle` itself,
+  # so this also warms the artefact step 5 publishes.
+  if [ "$SKIP_CLI_TESTS" = "1" ]; then
+    warn "cli/ test gate SKIPPED via --skip-cli-tests — the tag will be cut without it"
+  else
+    if ! ( cd cli && npm install ) >/dev/null 2>&1; then
+      fatal "cli/ npm install failed. Fix it, or pass --skip-cli-tests to tag without the CLI gate."
+    fi
+    ok "cli/ deps installed"
+    if ! ( cd cli && npm test ) >/dev/null 2>&1; then
+      fatal "cli/ test suite FAILED. Aborting before the tag is created. Re-run the suite from the cli/ directory to see the failures."
+    fi
+    ok "cli/ vitest suite PASS"
+  fi
 else
-  echo "    [dry-run] skipped sanity tests"
+  echo "    [dry-run] skipped pre-flight tests"
 fi
 
 # ─── OTP resolution before publish ───────────────────────────────
@@ -359,8 +395,10 @@ else
   ok "cli/ deps installed"
   run "cd cli && npm run bundle"
   ok "cli/ bundle built"
-  run "cd cli && npm test"
-  ok "cli/ tests passed"
+  # The vitest suite is NOT re-run here : it is a pre-flight gate now, and
+  # `prepublishOnly` (cli/package.json) runs lint + test + bundle + smoke
+  # again as npm publish fires. Keeping a third run only lengthened the
+  # release without adding a gate.
 
   # The publish step. Two modes :
   #   - WebAuthn (default, no OTP) : invoke `npm publish --access public`

@@ -150,12 +150,22 @@ package) and on GitHub Releases. To cut a release, follow these steps:
    ```
    The helper performs pre-flight checks (on `main`, clean tree, in
    sync with `origin`, VERSION / `cli/package.json` / CHANGELOG match,
-   tag not yet taken, `verify.sh` + `constitution-linter.sh` PASS),
-   creates the `vX.Y.Z` annotated tag, pushes it, builds and publishes
-   `@sdd-forge/cli` to npm with the supplied 2FA OTP, and creates the
-   GitHub release (via `gh` if installed). The helper script is
-   **maintainer-side only** and is not shipped to adopters by
-   `forge init` today.
+   tag not yet taken, `verify.sh` + `constitution-linter.sh` PASS, and
+   the `cli/` vitest suite GREEN), creates the `vX.Y.Z` annotated tag,
+   pushes it, bundles and publishes `@sdd-forge/cli` to npm with the
+   supplied 2FA OTP, and creates the GitHub release (via `gh` if
+   installed). The helper script is **maintainer-side only** and is not
+   shipped to adopters by `forge init` today.
+
+   **Every gate runs before the tag exists.** This is load-bearing, not
+   incidental: until 2026-09-08 the `cli/` test suite ran inside the
+   publish step, *after* the tag had been created and pushed, and
+   `verify.sh` has no coverage of `cli/` at all. A red CLI test therefore
+   could not stop a release — `v0.5.0` was cut that way and had to be
+   re-tagged by hand. `--skip-cli-tests` remains as an escape hatch for
+   environments without npm, but using it means tagging without ever
+   having run the suite. The one gate that still runs after the tag is
+   `prepublishOnly`, by construction: it hooks `npm publish`.
 
    The `--otp` flag is required when 2FA is enabled on the npm
    account (it is, on the BDFL account). Three resolution paths,

@@ -13,7 +13,9 @@
 #     invocation form.
 #   - CHANGELOG.md [Unreleased] entry citing f3-release-script-fix.
 #
-# 10 L1 + 1 L2 = 11 tests.
+# 12 L1 + 1 L2 = 13 tests.
+# (10 + 1 at F.3 archive time ; FR-F3-140/141 added 2026-09-08 — see the
+#  ADDENDUM in .forge/changes/f3-release-script-fix/specs.md.)
 # Performance budget : L1 ≤ 3 s wall-clock (NFR-F3-001).
 
 set -uo pipefail
@@ -43,7 +45,7 @@ FAIL_NAMES=()
 
 # ─── Manifest ────────────────────────────────────────────────────
 #
-# L1 (10 tests)
+# L1 (12 tests)
 # MANIFEST: _test_f3_001_script_presence            — FR-F3-001
 # MANIFEST: _test_f3_002_old_script_removed         — FR-F3-004
 # MANIFEST: _test_f3_003_audit_comment              — FR-F3-002
@@ -54,6 +56,8 @@ FAIL_NAMES=()
 # MANIFEST: _test_f3_008_top_level_cd_count         — FR-F3-061 / FR-F3-062
 # MANIFEST: _test_f3_009_npm_publish_otp_forward    — FR-F3-044
 # MANIFEST: _test_f3_010_changelog_entry            — FR-F3-120
+# MANIFEST: _test_f3_011_cli_tests_in_preflight     — FR-F3-140
+# MANIFEST: _test_f3_012_cli_tests_precede_tag      — FR-F3-141
 #
 # L2 (1 test, opt-in via FORGE_F3_LIVE=1 ; skip-pass otherwise)
 # MANIFEST: _test_f3_l2_dry_run_otp_forward         — FR-F3-044 / FR-F3-047 / ADR-F3-004
@@ -243,6 +247,69 @@ _test_f3_010_changelog_entry() {
   fi
 }
 
+# Line number of the first EXECUTABLE occurrence of a pattern in
+# release.sh, or 0. Two exclusions matter and both cost a real bug if
+# dropped: `^[^#]*` drops comment lines, and the `fatal|echo|warn` filter
+# drops lines where the pattern only appears inside a user-facing message.
+# Without the second one, `fatal "... re-run \`cd cli && npm test\` ..."`
+# satisfied an ordering assertion about the command it merely names — the
+# same substring-satisfaction trap that killed three b9-3 rows.
+_release_line() {
+  grep -nE "^[^#]*$1" "$RELEASE_SCRIPT" 2>/dev/null \
+    | grep -vE ':[[:space:]]*(fatal|echo|warn|ok)[[:space:]]' \
+    | head -1 | cut -d: -f1 || echo 0
+}
+
+# FR-F3-140 — the cli/ vitest suite runs inside the pre-flight block
+_test_f3_011_cli_tests_in_preflight() {
+  if [ ! -f "$RELEASE_SCRIPT" ]; then
+    echo "    release script missing: $RELEASE_SCRIPT" >&2; return 1
+  fi
+  # `^[^#]*` keeps comment lines out of the match : the header documents
+  # the same command text, and matching it would let a comment satisfy a
+  # test about executable order.
+  local l_test l_pre l_tag
+  l_test=$(_release_line 'cd cli && npm test([^A-Za-z0-9_-]|$)')
+  l_pre=$(grep -nF 'step "Pre-flight checks"' "$RELEASE_SCRIPT" | head -1 | cut -d: -f1 || echo 0)
+  l_tag=$(_release_line 'git tag -a')
+  if [ "${l_test:-0}" -eq 0 ]; then
+    echo "    'cd cli && npm test' absent from release.sh (FR-F3-140)" >&2; return 1
+  fi
+  if [ "${l_pre:-0}" -eq 0 ] || [ "${l_tag:-0}" -eq 0 ]; then
+    echo "    anchors not found (preflight=$l_pre, tag=$l_tag) (FR-F3-140)" >&2; return 1
+  fi
+  if [ "$l_test" -le "$l_pre" ] || [ "$l_test" -ge "$l_tag" ]; then
+    echo "    'cd cli && npm test' (line $l_test) MUST sit inside the pre-flight block, between 'step \"Pre-flight checks\"' (line $l_pre) and the tag step (line $l_tag) (FR-F3-140)" >&2
+    return 1
+  fi
+}
+
+# FR-F3-141 — a red CLI suite MUST be able to stop the tag
+_test_f3_012_cli_tests_precede_tag() {
+  if [ ! -f "$RELEASE_SCRIPT" ]; then
+    echo "    release script missing: $RELEASE_SCRIPT" >&2; return 1
+  fi
+  # Regression witness : v0.5.0 was tagged and pushed with T5.1.A red,
+  # because `cd cli && npm test` sat at line 362 while `git tag -a` was at
+  # 328 and `git push origin` at 334. The tag had to be moved by hand.
+  # Static line-order inspection — the script pushes real tags, so it is
+  # never executed here (NFR-F3-001 also caps L1 at 3 s).
+  local l_test l_tag l_push
+  l_test=$(_release_line 'cd cli && npm test([^A-Za-z0-9_-]|$)')
+  l_tag=$(_release_line 'git tag -a')
+  l_push=$(_release_line 'git push origin')
+  if [ "${l_test:-0}" -eq 0 ]; then
+    echo "    'cd cli && npm test' absent from release.sh (FR-F3-141)" >&2; return 1
+  fi
+  if [ "${l_tag:-0}" -eq 0 ] || [ "${l_push:-0}" -eq 0 ]; then
+    echo "    'git tag -a' / 'git push origin' anchors not found (tag=$l_tag, push=$l_push) (FR-F3-141)" >&2; return 1
+  fi
+  if [ "$l_test" -ge "$l_tag" ] || [ "$l_test" -ge "$l_push" ]; then
+    echo "    'cd cli && npm test' (line $l_test) MUST precede 'git tag -a' (line $l_tag) and 'git push origin' (line $l_push) — otherwise a red CLI test cannot stop the tag (FR-F3-141)" >&2
+    return 1
+  fi
+}
+
 # ─── L2 tests (opt-in via FORGE_F3_LIVE=1 ; skip-pass otherwise) ─
 
 # FR-F3-044 / FR-F3-047 / ADR-F3-004 — dry-run OTP forward + redaction
@@ -349,6 +416,8 @@ main() {
   run_test _test_f3_008_top_level_cd_count
   run_test _test_f3_009_npm_publish_otp_forward
   run_test _test_f3_010_changelog_entry
+  run_test _test_f3_011_cli_tests_in_preflight
+  run_test _test_f3_012_cli_tests_precede_tag
 
   # L2 runs when --level includes 2 or "all".
   if [[ ",$LEVEL," == *",2,"* ]] || [[ "$LEVEL" == "1,2" ]] || [[ "$LEVEL" == "2" ]] || [[ "$LEVEL" == "all" ]]; then

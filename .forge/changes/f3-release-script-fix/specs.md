@@ -395,3 +395,52 @@ $OTP` or equivalent pattern exists).
   amendment.
 
 No constitutional amendment required.
+
+---
+
+## ADDENDUM 2026-09-08 — Cluster 7: pre-flight ordering (FR-F3-140 / FR-F3-141)
+
+Added after the fact, on the archived F.3 surface, because the defect they
+describe lives in `scripts/release.sh` — the artefact this change owns — and
+inventing a new change for a ten-line reordering would have split the release
+script's requirements across two namespaces.
+
+The original F.3 scope never stated **where** in the run the test surface had
+to be exercised, only that the script existed and behaved. That gap shipped: the
+sanity gate (`verify.sh` + `constitution-linter.sh`) ran as pre-flight check 8,
+while `cd cli && npm test` sat inside the publish step, i.e. **after**
+`git tag -a` and `git push origin <tag>`. `verify.sh` has no coverage of `cli/`
+whatsoever, so nothing between the two could catch a broken CLI.
+
+It fired on `v0.5.0` (2026-09-08): `T5.1.A` (`cli/test/e2e/help-snapshots.test.ts`)
+was red because B.9.2 registered the `mobile-pwa-first` dispatch key without
+adding it to the `--archetype` help text. The tag was created, pushed, and the
+GitHub release published before `npm test` ever ran. The tag had to be deleted
+and re-cut by hand.
+
+- **FR-F3-140** — the `cli/` install + vitest gate MUST execute inside the
+  pre-flight block, between `step "Pre-flight checks"` and the tag step.
+- **FR-F3-141** — it MUST precede both `git tag -a` and `git push origin`, so a
+  red CLI suite can still stop the release. Asserted by static line-order
+  inspection: the script pushes real tags, so a harness must never run it.
+
+**Deliberately not requirements**, recorded so the reasoning is not re-litigated:
+
+- The publish step no longer re-runs the suite. `prepublishOnly`
+  (`cli/package.json`) already runs `lint && test && bundle && smoke` as
+  `npm publish` fires, so before this change the suite ran **twice** inside
+  step 5 — and **zero** times under `--skip-npm`.
+- `--skip-npm` does **not** disable the gate any more. A dedicated
+  `--skip-cli-tests` flag is the escape hatch for environments without npm, so
+  skipping the gate is an explicit, recorded choice rather than a side effect of
+  skipping publication.
+
+Harness: `.forge/scripts/tests/f3.test.sh` grows from 10 L1 to 12 L1 (13 total
+with the L2 leg); the counters in this change's `design.md` describe the state
+at archive time and are left as written. Both new tests were verified RED before
+the fix (`npm test` at line 362 vs `git tag -a` at 328) and probe-proven against
+four mutations: gate deleted, gate renamed, gate moved after the tag, and gate
+replaced by a message merely naming the command. That last one matters — the
+first draft of the assertion was satisfied by the literal string inside a
+`fatal "... re-run cd cli && npm test ..."` message, the same
+substring-satisfaction trap that killed three `b9-3` rows.
