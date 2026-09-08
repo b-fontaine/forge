@@ -12,6 +12,16 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-09-08
+
+First cut since `v0.4.0` (2026-06-06). Ships the whole queued backlog in one
+release rather than the three sequential MINORs the `since:` fields originally
+promised: the `ai-native-rag` and `event-driven-eu` archetypes (both
+`stable` / `scaffoldable`), `mobile-pwa-first` registered as `candidate`
+(B.9.1–B.9.3 — visible and validated, promotion to scaffoldable is B.9.11), and
+the Iris-Web (K.4) and Themis (K.5) agents. `since:` was realigned to `0.5.0`
+for the three archetypes so it names the version that actually ships them.
+
 ### Added
 
 - **`mobile-pwa-first/2.0.0` candidate scaffold schema (B.9.1, `b9-1-schema`)** —
@@ -3830,7 +3840,28 @@ Initial framework drop. Constitution v1.0.0 ratified, 19 commands, 28
 agents, 39 standards, 5 schemas, 4 templates, 3 skills, 2 deterministic
 scripts. Private license at the time.
 
-[Unreleased]: https://github.com/b-fontaine/forge/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/b-fontaine/forge/compare/v0.1.0-t0...v0.2.0
+[Unreleased]: https://github.com/b-fontaine/forge/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/b-fontaine/forge/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/b-fontaine/forge/compare/v0.4.0-rc.14...v0.4.0
+[0.4.0-rc.14]: https://github.com/b-fontaine/forge/compare/v0.4.0-rc.12...v0.4.0-rc.14
+[0.4.0-rc.12]: https://github.com/b-fontaine/forge/compare/v0.4.0-rc.11...v0.4.0-rc.12
+[0.4.0-rc.11]: https://github.com/b-fontaine/forge/compare/v0.4.0-rc.10...v0.4.0-rc.11
+[0.4.0-rc.10]: https://github.com/b-fontaine/forge/compare/v0.4.0-rc.9...v0.4.0-rc.10
+[0.4.0-rc.9]: https://github.com/b-fontaine/forge/compare/v0.4.0-rc.8...v0.4.0-rc.9
+[0.4.0-rc.8]: https://github.com/b-fontaine/forge/compare/v0.4.0-rc.7...v0.4.0-rc.8
+[0.4.0-rc.7]: https://github.com/b-fontaine/forge/compare/v0.4.0-rc.6...v0.4.0-rc.7
+[0.4.0-rc.6]: https://github.com/b-fontaine/forge/compare/v0.4.0-rc.5...v0.4.0-rc.6
+[0.4.0-rc.5]: https://github.com/b-fontaine/forge/compare/v0.4.0-rc.4...v0.4.0-rc.5
+[0.4.0-rc.4]: https://github.com/b-fontaine/forge/compare/v0.4.0-rc.3...v0.4.0-rc.4
+[0.4.0-rc.3]: https://github.com/b-fontaine/forge/compare/v0.4.0-rc.2...v0.4.0-rc.3
+[0.4.0-rc.2]: https://github.com/b-fontaine/forge/compare/v0.4.0-rc.1...v0.4.0-rc.2
+[0.4.0-rc.1]: https://github.com/b-fontaine/forge/compare/v0.3.4...v0.4.0-rc.1
+[0.3.4]: https://github.com/b-fontaine/forge/compare/v0.3.3...v0.3.4
+[0.3.3]: https://github.com/b-fontaine/forge/compare/v0.3.2...v0.3.3
+[0.3.2]: https://github.com/b-fontaine/forge/compare/v0.3.1...v0.3.2
+[0.3.1]: https://github.com/b-fontaine/forge/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/b-fontaine/forge/compare/v0.2.1...v0.3.0
+[0.2.1]: https://github.com/b-fontaine/forge/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/b-fontaine/forge/releases/tag/v0.2.0
 [0.1.0-t0]: https://github.com/b-fontaine/forge/releases/tag/v0.1.0-t0
 [0.0.0]: https://github.com/b-fontaine/forge/releases/tag/v0.0.0
