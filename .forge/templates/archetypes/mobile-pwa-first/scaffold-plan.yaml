@@ -31,6 +31,9 @@ templates:
 - source: 2.0.0/.github/workflows/mobile-ci.yml.tmpl
   target: .github/workflows/mobile-ci.yml
   substitute: true
+- source: 2.0.0/.github/workflows/web-pwa-ci.yml.tmpl
+  target: .github/workflows/web-pwa-ci.yml
+  substitute: true
 - source: 2.0.0/.gitignore
   target: .gitignore
   substitute: false

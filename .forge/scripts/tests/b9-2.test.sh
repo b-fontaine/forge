@@ -266,10 +266,26 @@ _test_b92_l1_007_byte_equivalence() {
   # Flutter drift is still caught byte-for-byte — but "every Flutter file is compared"
   # holds only for files not carrying that exact basename.
   local out
+  #
+  # `web-pwa-ci.yml` was added by B.9.7 (b9-7-web-ci, FR-B9-7-008). Same shape as
+  # oidc-provider.json above: a NEW root-level file the legacy mobile-only render
+  # has no counterpart for. It cannot live under web-pwa/ — GitHub Actions only
+  # reads .github/workflows/ at the repository root — so the exclusion is the only
+  # option short of ending this gate.
+  #
+  # The SAME basename caveat applies: --exclude matches a BASENAME at ANY depth,
+  # so a file called web-pwa-ci.yml anywhere under either tree is skipped too. The
+  # name is distinctive enough that this costs nothing today; it is spelled out so
+  # the next person adding an exclusion sees the mechanism rather than inferring it.
+  #
+  # What the gate still guarantees, stated precisely: every file under lib/, ios/,
+  # android/, test/, and mobile-ci.yml itself, is still compared byte-for-byte.
+  # B.9.7 adds no file under any of them (asserted independently by b9-7 T7.1).
   out=$(diff -r \
         --exclude=web-pwa \
         --exclude=scaffold-manifest.yaml \
         --exclude=oidc-provider.json \
+        --exclude=web-pwa-ci.yml \
         "$legacy" "$ported" 2>&1)
   if [ -n "$out" ]; then
     echo "    FAIL T-007: app surface NOT byte-equivalent — the port is wrong (FR-B9-2-004)" >&2

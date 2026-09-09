@@ -1,0 +1,147 @@
+# <!-- Audit: B.9.7 (b9-7-web-ci, FR-B9-7-001..007) -->
+# CI for the Qwik City PWA surface of <project-name> (mobile-pwa-first 2.0.0).
+# Standard: .forge/standards/infra/ci-workflows.md
+#
+# This is the SECOND required check for this archetype. `mobile-ci.yml` gates the
+# Flutter surface; this one gates web-pwa/. Configure branch protection for both —
+# neither covers the other, and before this file existed a pull request could
+# rewrite the entire PWA surface while `mobile-ci` reported success without a
+# single web step having run.
+#
+# ── What is deliberately NOT here ────────────────────────────────────────────
+#
+# * no format step and no test step. ci-workflows.md orders gates
+#   format → static analysis → tests → Forge gates, and this surface has tooling
+#   for only two of the four: web-pwa/package.json declares no prettier, no eslint
+#   and no test runner. The steps below keep the mandated ORDER among the gates
+#   that exist; the two that do not exist are absent, not silently folded into
+#   another step. Do not read this file as evidence that the surface is
+#   format-clean or tested. Adding that tooling means three pins, three config
+#   files and a verify-then-pin pass — a quality brick, not a CI brick
+#   (b9-7-web-ci/open-questions.md Q-003).
+#
+# * no deploy job. Maintainer decision 2026-09-09 (ADR-B9-7-003): a scaffolded
+#   deploy needs adopter secrets to exist before the first push, so it would be
+#   red on day one for everyone who has not yet chosen a host, and
+#   pwa.yaml::PWA-RULE-003 already places deploy-time secrets with the adopter.
+#   The build is uploaded as an artifact instead; wire your host to it.
+#
+# ── Two choices that look wrong until you know why ───────────────────────────
+#
+# * `npm install`, not `npm ci`. `npm ci` REQUIRES a lockfile and exits non-zero
+#   without one; a freshly scaffolded project has no package-lock.json, so `npm ci`
+#   would fail on your very first push. Commit a lockfile and `npm install` will
+#   honour it (ADR-B9-7-002).
+#
+# * the npm cache is keyed on package.json, not package-lock.json, and
+#   actions/setup-node's own `cache: npm` is NOT used — it resolves its key from a
+#   lockfile and errors out when there is none. Same root cause as above.
+#
+# Node comes from web-pwa/.nvmrc rather than a literal here. That is load-bearing:
+# `qwik build` appends ` --pretty` to `npm run build.types`, so the flag reaches
+# npm, which rejects unknown flags from v12 on (npm 9/10/11 accept them). .nvmrc
+# pins Node 24, which ships npm <= 11. Reading the version from that file keeps CI
+# and the declared target from drifting apart.
+
+name: web-pwa-ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# NOT `on.<event>.paths`. A natively-skipped workflow publishes no required
+# status, so branch protection cannot tell "not applicable" from "never ran"
+# (ci-workflows.md ADR-002). The workflow always runs; the filter below skips the
+# work with SUCCESS.
+
+concurrency:
+  group: web-pwa-ci-<project-name>-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  filter:
+    name: Detect web-pwa changes
+    runs-on: ubuntu-latest
+    outputs:
+      web: ${{ steps.changes.outputs.web }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            web:
+              - 'web-pwa/**'
+              - '.github/workflows/web-pwa-ci.yml'
+
+  build:
+    name: web-pwa — static analysis + build
+    needs: filter
+    if: needs.filter.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web-pwa
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node (pinned via web-pwa/.nvmrc)
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: web-pwa/.nvmrc
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('web-pwa/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Static analysis (tsc --noEmit)
+        run: npm run build.types
+
+      - name: Production build
+        run: npm run build
+
+      - name: Upload dist/
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-pwa-dist
+          path: web-pwa/dist
+          if-no-files-found: error
+
+      - name: verify.sh
+        working-directory: ${{ github.workspace }}
+        run: bash .forge/scripts/verify.sh
+
+      - name: constitution-linter.sh
+        working-directory: ${{ github.workspace }}
+        run: bash .forge/scripts/constitution-linter.sh
+
+  summary:
+    name: web-pwa-ci summary (required check)
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [filter, build]
+    steps:
+      - name: Aggregate result
+        env:
+          BUILD_RESULT: ${{ needs.build.result }}
+        run: |
+          set -e
+          echo "  build: $BUILD_RESULT"
+          # `skipped` is the paths-filter miss, which ADR-002 defines as the
+          # normal not-applicable outcome — the whole reason the workflow runs
+          # unconditionally. Anything else is a failure.
+          if [ "$BUILD_RESULT" != "success" ] && [ "$BUILD_RESULT" != "skipped" ]; then
+            exit 1
+          fi

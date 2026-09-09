@@ -164,6 +164,7 @@ jobs:
             # B.9.3: L1 hermetic (browser OIDC client + shared provider config). Its
             # L2 legs need npm + a render, so they stay opt-in (FORGE_B9_3_NPM).
             "b9-3.test.sh --level 1"
+            "b9-7.test.sh --level 1"
           )
           fail=0
           for entry in "${harnesses[@]}"; do

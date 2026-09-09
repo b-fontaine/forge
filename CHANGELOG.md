@@ -12,6 +12,44 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added
+
+- **`mobile-pwa-first` now has CI for its web surface** — `b9-7-web-ci`. The
+  archetype shipped exactly one workflow, the B.4 `mobile-only` one, whose header
+  still read "CI workflow for `<project-name>` mobile-only Flutter app" because
+  B.9.2 ported it verbatim. It declares `ios`, `android`, `e2e-android`,
+  `summary` and filters on `lib|ios|android|pubspec`: `web-pwa/**` appeared
+  nowhere, so a pull request could rewrite the entire PWA surface while the
+  `summary` required check reported success with no web step having run. The new
+  `web-pwa-ci.yml` gates that surface — `dorny/paths-filter@v3` scoped to
+  `web-pwa/**`, Node read from `web-pwa/.nvmrc`, then static analysis
+  (`npm run build.types`) → build (`npm run build`) → `verify.sh` →
+  `constitution-linter.sh`, in the order `ci-workflows.md` mandates — and uploads
+  `dist/` as an artifact. This is the **first Qwik CI anywhere in the templates**:
+  the flagship's own `2.0.0/frontend/web-public/` surface has none either, and its
+  2.0.0 tree has no workflows at all (recorded as Q-001, a flagship brick).
+
+  Three things it deliberately does not do, each stated in the template header so
+  it is not mistaken for coverage. **No deploy job** (maintainer decision): a
+  scaffolded deploy needs adopter secrets before the first push, so it is red on
+  day one for anyone who has not chosen a host, and `pwa.yaml::PWA-RULE-003`
+  already places deploy-time secrets with the adopter. **No format or test step**:
+  `web-pwa/package.json` declares no prettier, no eslint and no test runner, so
+  two of the standard's four gates have nothing to run. **`npm install`, not
+  `npm ci`**: `npm ci` requires a lockfile and a freshly scaffolded project has
+  none — and for the same reason the npm cache is keyed on `package.json` rather
+  than through `setup-node`'s own `cache: npm`, which resolves its key from a
+  lockfile.
+
+  Reading Node from `.nvmrc` is load-bearing rather than tidy: `qwik build` hands
+  ` --pretty` to npm, which npm ≥ 12 rejects, and `.nvmrc` pins Node 24 (npm ≤ 11)
+  where the build exits 0. `b9-2.test.sh::T-007` gained a documented
+  `--exclude=web-pwa-ci.yml`, following the precedent B.9.3 set for
+  `oidc-provider.json`; the exclusion was probe-proven not to disarm the gate by
+  perturbing a Flutter file and confirming T-007 still reds. New harness
+  `b9-7.test.sh`, 12 L1, every assertion mutation-probed; `forge-ci.yml` 418 → 419
+  lines against its 420 cap.
+
 ### Fixed
 
 - **Every scaffolded Qwik surface shipped a dead `npm run build`** — fixed via

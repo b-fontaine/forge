@@ -1,0 +1,21 @@
+name: b9-7-web-ci
+status: implemented
+created: 2026-09-09
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.9.7  # docs/new-archetypes-plan.md §5.2 — re-scoped by §0.14 from "add a
+           # pwa-deploy job" to "the whole web CI layer": the archetype's only
+           # workflow is the B.4 mobile-only one, which declares ios/android/
+           # e2e-android/summary and filters on lib|ios|android|pubspec — so a
+           # change under web-pwa/ triggers nothing at all today.
+depends_on:
+  - t5-qwik-cli-ignore-dep  # `npm run build` was dead in this surface until
+                            # 2026-09-09; a CI job around it would have been
+                            # red on its first run.
+timeline:
+  proposed: 2026-09-09
+  specified: 2026-09-09
+  designed: 2026-09-09
+  planned: 2026-09-09
+  implemented: 2026-09-09
