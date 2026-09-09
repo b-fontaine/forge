@@ -1124,3 +1124,58 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   which required this ledger entry to state which branch was taken — drift, not
   hold. `@builder.io/qwik-city@1.20.0` declares no `peerDependencies`; the vite
   constraint comes from the core package alone.
+
+---
+
+## 2026-09-09 — web-frontend.yaml: undeclared upstream dependency pinned (t5-qwik-cli-ignore-dep)
+
+- **Reviewed**:
+
+  | Standard | Version | Verdict | Next review | Notes |
+  |---|---|---|---|---|
+  | web-frontend.yaml | 1.2.0 | KEEP-WITH-CHANGES | 2027-06-03 | Adds one pin, `ignore: "7.0.9"`, and its `pin_review_cadence` entry. Additive: no existing pin changed, no rule added, no interdiction added — hence MINOR. `expires_at` unchanged (this event does not restart the 12-month cycle; it records a workaround, not a re-review of the framework choice). |
+
+- **Notes**:
+
+  **Why a dependency Forge does not use appears in a Forge standard.**
+  `@builder.io/qwik@1.20.0` ships a CLI bundle, `dist/cli.cjs`, that
+  `require("ignore")` from its `__init` prologue — the call site is
+  `packages/qwik/src/cli/migrate-v2/tools/visit-not-ignored-files.ts` — while the
+  published package declares only `csstype`, `launch-editor` and `rollup`. npm
+  therefore never installs `ignore`, and the require throws `MODULE_NOT_FOUND`
+  **before argument parsing**. Consequence: not one broken script but the entire
+  CLI. `qwik --help` fails. `build`, `preview` and the `qwik` passthrough are all
+  dead in every Forge-scaffolded Qwik surface.
+
+  **Scope, established by execution rather than inference.** Reproduced on
+  2026-09-09 with a `package.json` carrying two dependencies and **zero source
+  files**, which is what rules out any Forge template as a contributing cause. The
+  flagship was then checked separately rather than by analogy: it carries
+  `@connectrpc/connect` and `@connectrpc/connect-web` on top of Qwik, so `ignore`
+  could plausibly have been hoisted transitively and the flagship spared. Its exact
+  dependency set was installed; `ignore` was absent and `qwik build` died. Three
+  surfaces are affected — `full-stack-monorepo/2.0.0` (**stable, scaffoldable, and
+  shipped inside `@sdd-forge/cli@0.5.1`**), `ai-native-rag/1.0.0`, and
+  `mobile-pwa-first/2.0.0`.
+
+  **Why a pin and not a version bump.** There is nothing to bump to: `1.20.0` is
+  the npm `latest`, verified live on 2026-09-09. Re-scripting `build` on top of
+  `vite` was rejected — it fixes one script, silently redefines what `build` means
+  (the CLI orchestrates client + SSR + type-check as one step), and leaves
+  `preview` and the passthrough broken (ADR-T5QCI-001).
+
+  **Removal condition, recorded so it is actionable.** Drop this pin and the
+  `devDependencies` entries it governs as soon as upstream declares `ignore`. The
+  `P30D` cadence entry exists to force that question rather than let the workaround
+  become permanent by inattention.
+
+  **Supply chain.** `ignore@7.0.9`: MIT, `engines.node >= 4`, and **zero transitive
+  dependencies** (`npm install` reports `added 1 package`) — the property that made
+  `oauth4webapi` acceptable to B.9.3.
+
+  **Prior-art note.** The previous bump of this standard (1.0.0 → 1.1.0, 2026-07-28)
+  brought its ledger row correctly but left `b8-9.test.sh::T-007` asserting the
+  literal `"1.0.0"`, which put the repository's `harness` CI job red for six weeks.
+  T-007 now asserts a well-formed SemVer, and T-008 requires a ledger row for
+  whichever version the standard currently declares — so a future bump that forgets
+  this file fails loudly instead of freezing a stale number.

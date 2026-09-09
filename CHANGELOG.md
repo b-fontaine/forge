@@ -12,6 +12,55 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Every scaffolded Qwik surface shipped a dead `npm run build`** — fixed via
+  `t5-qwik-cli-ignore-dep`. `@builder.io/qwik@1.20.0` publishes a `dist/cli.cjs`
+  that `require("ignore")` from its `__init` prologue
+  (`packages/qwik/src/cli/migrate-v2/tools/visit-not-ignored-files.ts`) while
+  declaring only `csstype`, `launch-editor` and `rollup` as dependencies. npm
+  therefore never installs `ignore`, and the require throws `MODULE_NOT_FOUND`
+  **before argument parsing** — so not one broken script but the whole CLI:
+  `qwik --help` fails, and `build`, `preview` and the `qwik` passthrough are all
+  dead. Reproduced with two dependencies and **zero source files**, which is what
+  rules out any Forge template as a contributing cause. Three surfaces were
+  affected: `full-stack-monorepo/2.0.0` — **stable, scaffoldable, and shipped
+  inside `@sdd-forge/cli@0.5.1`**, so anyone who ran `forge init` and then
+  `npm run build` in the web surface got a stack trace — plus
+  `ai-native-rag/1.0.0` and `mobile-pwa-first/2.0.0`. The flagship was verified by
+  installing its exact dependency set rather than by analogy, since its extra
+  `@connectrpc/*` dependencies could plausibly have hoisted `ignore` and spared it;
+  they do not. Each surface now declares `ignore` (pinned `7.0.9` — MIT, zero
+  transitive dependencies, verify-then-pin live 2026-09-09) with an `_audit` note
+  naming the upstream cause and the condition for deleting it. There was no
+  version to bump to: `1.20.0` is the npm `latest`. `web-frontend.yaml` 1.1.0 →
+  1.2.0 carries the pin; `b8-9.test.sh::T-013` discovers Qwik surfaces by grep
+  rather than enumerating them, so a fourth surface inherits the guard for free,
+  and fails if the sweep ever discovers none.
+- **`main`'s CI had been red for six weeks, and the `Forge gates` job could not
+  see it.** `b8-9.test.sh::T-007` asserted the literal `version: "1.0.0"` for
+  `web-frontend.yaml` and went red the moment `b9-2-web-pwa` legitimately bumped
+  that standard to `1.1.0` on 2026-07-28. `verify.sh` and `constitution-linter.sh`
+  stayed green throughout — they do not run the per-brick harnesses, which are a
+  separate CI job — so "the gates pass" was true and considerably narrower than it
+  sounded. T-007 now asserts a well-formed SemVer, and T-008 requires a `REVIEW.md`
+  ledger row for whichever version the standard *currently* declares, so a future
+  bump cannot silently desynchronise the two again.
+- **`b9-1.test.sh` failed `Shell lint`** — two variables named `fi`, the `if`
+  terminator keyword (SC1010). CI runs shellcheck at `severity=warning`, so a
+  warning is a red job. Renamed to `fidx`.
+
+### Known issues
+
+- **`qwik build` additionally fails under npm ≥ 12**, independently of the fix
+  above: the qwik CLI appends ` --pretty` to `npm run build.types`, so the flag
+  reaches npm rather than `tsc`. npm 9/10/11 accept unknown flags; npm 12 rejects
+  them and the CLI then reports `Type check failed:` with empty output, naming the
+  wrong cause. The archetypes' `.nvmrc` targets Node 24 (npm ≤ 11), where
+  `npm run build` exits 0, so the scaffold was deliberately **not** rewritten to
+  route around a bug the declared target does not hit
+  (`t5-qwik-cli-ignore-dep/open-questions.md` Q-004).
+
 ## [0.5.1] — 2026-09-08
 
 Patch release carrying the release-process defects that `v0.5.0` uncovered on

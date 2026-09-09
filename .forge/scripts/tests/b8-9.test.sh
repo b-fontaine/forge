@@ -18,8 +18,9 @@
 #   T-010  2.0.0 buf.gen es out-path re-pointed + bump-note; frozen 1.0.0 untouched (FR-B89-030/032/086, ADR-B89-004)
 #   T-011  coupling guard: b8-3 (17/17) + b8-3b (12/12) + b8-6 (12/12) stay GREEN   (NFR-B89-003/087)
 #   T-012  CHANGELOG.md has a b8-9-qwik-web-public entry (whole-file grep)          (FR-B89-087, NFR-B89-001)
+#   T-013  every Qwik surface declares `ignore`, agreeing with the standard's pin  (FR-T5QCI-001/002/005)
 #
-# 12 L1 tests. Budget L1 ≤ 2 s, zero net/Docker/npm. The live verify-then-pin
+# 13 L1 tests. Budget L1 ≤ 2 s, zero net/Docker/npm. The live verify-then-pin
 # (Qwik/Vite/Node + Connect-ES/Qwik API shapes) is a /forge:implement step, NOT
 # an L1 assertion. T-011 is exit-code only (the b8-4/b8-5/b8-6/b8-7 coupling
 # strategy) — keeps the coupling guard within budget. Mirrors b8-7.test.sh
@@ -155,8 +156,14 @@ _test_b89_l1_007_web_frontend_standard_shape() {
     echo "    FAIL T-007: web-frontend.yaml missing: $WEB_FRONTEND_STD (FR-B89-040, ADR-B89-005)" >&2; return 1
   fi
   local ok=1
-  grep -qE '^version:[[:space:]]*"1\.0\.0"' "$WEB_FRONTEND_STD" \
-    || { echo "    FAIL T-007: web-frontend.yaml version: field is not \"1.0.0\" (FR-B89-040/084, ADR-B89-005)" >&2; ok=0; }
+  # NOT a frozen literal. This assertion pinned "1.0.0" and went RED the moment
+  # b9-2-web-pwa legitimately bumped the standard to 1.1.0 (2026-07-28) — main's
+  # CI harness job stayed red for six weeks because the only thing that broke was
+  # the harness's own copy of a number that is SUPPOSED to move. What the brick
+  # actually needs to guarantee is that the field is present and well-formed;
+  # the version's *correctness* is the ledger's job, asserted by T-008.
+  grep -qE '^version:[[:space:]]*"[0-9]+\.[0-9]+\.[0-9]+"' "$WEB_FRONTEND_STD" \
+    || { echo "    FAIL T-007: web-frontend.yaml has no well-formed SemVer version: field (FR-B89-040/084, ADR-B89-005)" >&2; ok=0; }
   grep -qF 'versions:' "$WEB_FRONTEND_STD" \
     || { echo "    FAIL T-007: web-frontend.yaml has no versions: block (FR-B89-043/084, ADR-B89-005)" >&2; ok=0; }
   grep -qF 'default:' "$WEB_FRONTEND_STD" \
@@ -175,9 +182,19 @@ _test_b89_l1_008_index_and_review_ledger() {
   if [ ! -f "$REVIEW_MD" ]; then
     echo "    FAIL T-008: REVIEW.md missing: $REVIEW_MD (FR-B89-045)" >&2; ok=0
   else
-    # FR-J7-023 anchor: BARE basename + version 1.0.0 ledger row.
-    grep -qE '\|[[:space:]]*web-frontend\.yaml[[:space:]]*\|[[:space:]]*1\.0\.0[[:space:]]*\|' "$REVIEW_MD" \
-      || { echo "    FAIL T-008: REVIEW.md has no '| web-frontend.yaml | 1.0.0 |' ledger row (FR-J7-023, FR-B89-045/085)" >&2; ok=0; }
+    # FR-J7-023 anchor: BARE basename + a ledger row for the version the standard
+    # CURRENTLY declares — not for a frozen literal. Read the version out of the
+    # standard and require the matching row, so every bump must bring its own
+    # ledger entry (the discipline b9-2 did honour) and no bump can silently
+    # desynchronise the two files again.
+    local cur_ver
+    cur_ver=$(grep -m1 -oE '^version:[[:space:]]*"[0-9]+\.[0-9]+\.[0-9]+"' "$WEB_FRONTEND_STD" \
+              | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || true)
+    if [ -z "$cur_ver" ]; then
+      echo "    FAIL T-008: cannot read a version out of web-frontend.yaml — T-007 covers the shape (FR-B89-045/085)" >&2; ok=0
+    elif ! grep -qE "\|[[:space:]]*web-frontend\.yaml[[:space:]]*\|[[:space:]]*${cur_ver//./\\.}[[:space:]]*\|" "$REVIEW_MD"; then
+      echo "    FAIL T-008: REVIEW.md has no '| web-frontend.yaml | $cur_ver |' ledger row for the version the standard declares (FR-J7-023, FR-B89-045/085)" >&2; ok=0
+    fi
   fi
   [ "$ok" = "1" ]
 }
@@ -238,6 +255,65 @@ _test_b89_l1_012_changelog_entry() {
   fi
 }
 
+# T-013 — every Qwik surface declares the dependency the Qwik CLI needs.
+#
+# `@builder.io/qwik@1.20.0` publishes a `dist/cli.cjs` that `require("ignore")`
+# at module-init, but does NOT declare `ignore` in its dependencies. npm never
+# installs it, so EVERY `qwik` subcommand dies with MODULE_NOT_FOUND before
+# argument parsing — `qwik --help` included, not just `qwik build`. Forge scaffolds
+# three Qwik surfaces and all three shipped that dead build (t5-qwik-cli-ignore-dep).
+#
+# DISCOVERY, not enumeration (ADR-T5QCI-002): the surfaces are found by grepping
+# for the qwik dependency, so a fourth surface added later inherits the guard with
+# no edit here. Three per-archetype copies would be silent about it.
+#
+# This test lives in the B.8.9 harness because B.8.9 owns web-frontend.yaml, the
+# standard that pins Qwik for ALL surfaces — including the mobile-pwa-first one,
+# whose own harness is b9-2.
+_test_b89_l1_013_qwik_cli_ignore_dep() {
+  local ok=1
+
+  # The pin is the standard's to declare (FR-T5QCI-002); read it first so the
+  # per-surface check can compare against it rather than against a second literal.
+  local pinned
+  pinned=$(grep -m1 -oE '^[[:space:]]+ignore:[[:space:]]*"[0-9]+\.[0-9]+\.[0-9]+"' "$WEB_FRONTEND_STD" \
+           | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || true)
+  if [ -z "$pinned" ]; then
+    echo "    FAIL T-013: web-frontend.yaml versions: has no 'ignore' pin (FR-T5QCI-002)" >&2
+    ok=0
+  fi
+
+  # Discover every template package.json that pulls in Qwik.
+  local surfaces=()
+  local f
+  while IFS= read -r f; do
+    grep -qF '"@builder.io/qwik"' "$f" && surfaces+=("$f")
+  done < <(find "$FORGE_ROOT/.forge/templates" -name 'package.json.tmpl' -type f | sort)
+
+  # Non-empty guard. A discovery-based assertion that discovers nothing otherwise
+  # PASSES, which is how a guard silently stops guarding (the _test_f3_011 lesson).
+  if [ "${#surfaces[@]}" -eq 0 ]; then
+    echo "    FAIL T-013: discovered ZERO Qwik surfaces under .forge/templates — the sweep is not covering anything (FR-T5QCI-005)" >&2
+    return 1
+  fi
+
+  for f in "${surfaces[@]}"; do
+    local rel="${f#"$FORGE_ROOT"/}"
+    local declared
+    declared=$(grep -m1 -oE '"ignore":[[:space:]]*"[0-9]+\.[0-9]+\.[0-9]+"' "$f" \
+               | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || true)
+    if [ -z "$declared" ]; then
+      echo "    FAIL T-013: $rel declares @builder.io/qwik but not 'ignore' — its 'npm run build' is dead (FR-T5QCI-001)" >&2
+      ok=0
+    elif [ -n "$pinned" ] && [ "$declared" != "$pinned" ]; then
+      echo "    FAIL T-013: $rel pins ignore $declared but web-frontend.yaml pins $pinned (FR-T5QCI-002)" >&2
+      ok=0
+    fi
+  done
+
+  [ "$ok" = "1" ]
+}
+
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 main() {
@@ -254,6 +330,7 @@ main() {
   run_test _test_b89_l1_010_buf_gen_repoint_and_frozen_guard
   run_test _test_b89_l1_011_sibling_harness_coupling
   run_test _test_b89_l1_012_changelog_entry
+  run_test _test_b89_l1_013_qwik_cli_ignore_dep
   print_summary
 }
 

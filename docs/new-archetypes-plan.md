@@ -2180,8 +2180,18 @@ de `mobile-only / 1.0.0`** exigé par `upgrade-policy.md` au moment où une vers
 gelée (ni manifeste `.sha256` ni harness de dérive) ; la reconstruction de son tarball
 (la moitié des entrées sont des fichiers AppleDouble macOS `._*`) ; et le snapshot
 `full-stack-monorepo / 2.0.0`, jamais produit alors que le schéma est promu `stable`.
-Deux dettes héritées restent ouvertes : `npm run build` (`qwik build`) est cassé dans
-le scaffold rendu, et T-022 ne voit pas les ajouts `.gitignore`d.
+Une dette héritée reste ouverte : T-022 ne voit pas les ajouts `.gitignore`d.
+L'autre — `npm run build` (`qwik build`) cassé — **est corrigée (2026-09-09,
+`t5-qwik-cli-ignore-dep`)**, et elle était mal cadrée ici sur les deux axes. Ce
+n'était pas `build` mais **tout** le CLI qwik : le `require("ignore")` manquant
+s'exécute dans le prologue `__init` du bundle, avant l'analyse des arguments, si
+bien que `qwik --help` mourait aussi. Et ce n'était pas propre au scaffold rendu
+de `mobile-pwa-first` mais commun aux **trois** archétypes déclarant Qwik — dont
+`full-stack-monorepo / 2.0.0`, stable, scaffoldable et **publié dans
+`@sdd-forge/cli@0.5.1`**. Reproduit avec deux dépendances et zéro fichier source,
+ce qui écarte tout template Forge comme cause. Une seconde incompatibilité amont
+(le CLI passe `--pretty` à npm, refusé par npm ≥ 12 seulement) est enregistrée
+sans être corrigée : `.nvmrc` cible Node 24 (npm ≤ 11), où le build sort à 0.
 
 ### État de release — bloqué par un arbitrage, pas par du travail
 

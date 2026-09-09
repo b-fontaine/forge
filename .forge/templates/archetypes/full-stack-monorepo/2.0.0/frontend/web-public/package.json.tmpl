@@ -7,7 +7,14 @@
     "EXACTLY to 7.3.5: vite 8.x is the npm latest but is EXCLUDED by @builder.io/qwik",
     "peerDependencies '>=5 <8'. See web-frontend.yaml versions block + README PITFALL.",
     "Connect-ES runtime pins (^2.0.0) are owned by transport.yaml v1.3.0 (single",
-    "source of truth). No zod dependency (deferred per ADR-B89-003)."
+    "source of truth). No zod dependency (deferred per ADR-B89-003).",
+    "WORKAROUND (t5-qwik-cli-ignore-dep, 2026-09-09): `ignore` is a devDependency",
+    "we do not import. @builder.io/qwik 1.20.0 publishes dist/cli.cjs which",
+    "require(\"ignore\") at module-init while declaring only csstype/launch-editor/",
+    "rollup, so WITHOUT this entry every qwik subcommand dies MODULE_NOT_FOUND —",
+    "`qwik --help` included, not just `qwik build`. 1.20.0 is the npm latest, so",
+    "there is no fixed release to bump to. Pinned by web-frontend.yaml v1.2.0.",
+    "DELETE this entry once upstream declares `ignore` itself."
   ],
   "name": "<project-name>-web-public",
   "description": "Qwik City public-facing web surface for <project-name> (2.0.0 candidate; web-frontend.yaml).",
@@ -31,6 +38,7 @@
     "@connectrpc/connect-web": "^2.0.0"
   },
   "devDependencies": {
+    "ignore": "7.0.9",
     "@types/node": "^22.0.0",
     "typescript": "^5.4.0",
     "vite": "=7.3.5",

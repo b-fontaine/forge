@@ -15,8 +15,8 @@
 # Iris-Web agent ships (K.4, T7). Machine enforcement (ci_blocking / linter_rule)
 # stays OFF at birth — that is Iris-Web/K.4 territory.
 
-version: "1.1.0"
-last_reviewed: 2026-07-28
+version: "1.2.0"
+last_reviewed: 2026-09-09
 expires_at: 2027-06-03             # 12-month cycle (NOT structural — web framework pins drift fast)
 exception_constitutional: false    # dated expiry ⇒ exc:false (FR-J7-020 coupling)
 linter_rule: null                  # advisory standard; no constitution-linter.sh anchor
@@ -56,6 +56,22 @@ versions:
   # EXCLUDED by @builder.io/qwik 1.20.0 peerDependencies ">=5 <8". Pin to 7.3.6
   # exactly (max stable in the `<8` range at 2026-07-28) — installing the default
   # vite 8 yields an incompatible peer / broken build.
+  ignore: "7.0.9"                  # NOT a Forge design choice — a WORKAROUND.
+  # @builder.io/qwik 1.20.0 publishes dist/cli.cjs, which `require("ignore")` at
+  # module-init (packages/qwik/src/cli/migrate-v2/tools/visit-not-ignored-files.ts,
+  # reached from the bundle's __init prologue) while declaring only csstype /
+  # launch-editor / rollup as dependencies. `ignore` is therefore never installed
+  # and EVERY qwik subcommand dies with MODULE_NOT_FOUND before argument parsing —
+  # `qwik --help` included, so `build`, `preview` and the `qwik` passthrough are all
+  # dead. Reproduced 2026-09-09 with two dependencies and ZERO source files, which
+  # is what proves the cause is upstream packaging and not a Forge template.
+  # No fixed release exists to bump to: 1.20.0 IS the npm `latest` (verified live
+  # 2026-09-09). So each Qwik surface declares the missing dependency itself.
+  # DELETE THIS PIN, and the devDependencies entries it governs, once upstream
+  # declares `ignore` properly. Verify-then-pin LIVE 2026-09-09: 7.0.9 is the npm
+  # latest, MIT, `engines.node >= 4`, and installs ZERO transitive packages
+  # (`added 1 package`) — the same property that made oauth4webapi acceptable to
+  # B.9.3. Tracked by b8-9.test.sh::T-013 (t5-qwik-cli-ignore-dep).
   # Cross-references (transport.yaml v1.3.0 owns these — NOT re-pinned here;
   # single source of truth per ADR-B8-3-002 reference-only annotation):
   # @connectrpc/connect: "^2.0.0"      → transport.yaml v1.3.0 codegen.versions_2_0_0
@@ -80,4 +96,15 @@ pin_review_cadence:                # ISO 8601 durations (gateway.yaml / identity
   qwik: "P30D"                     # active upstream velocity; fast-moving web framework
   qwik_city: "P30D"               # co-released with core — same cadence
   vite: "P30D"                     # web toolchain moves fast; re-check Vite-8 peer compat
+  ignore: "P30D"                   # re-check whether upstream declares it — then DROP the pin
+
+# ── Known upstream incompatibility, npm >= 12 (recorded 2026-09-09, NOT fixed) ──
+# `qwik build` composes `npm run build.types` and appends ` --pretty`, so the flag
+# reaches NPM, not tsc. npm 9/10/11 accept unknown flags; npm 12 rejects them
+# (EUNKNOWNCONFIG) and the CLI then reports "Type check failed:" with empty output,
+# which names the wrong cause. Measured 2026-09-09: `npm run build` exits 0 under
+# npm 11 and 1 under npm 12. `.nvmrc` targets Node 24 (npm <= 11), so the declared
+# target is unaffected and the scaffold was NOT rewritten to route around it
+# (t5-qwik-cli-ignore-dep/open-questions.md Q-004). Revisit when .nvmrc moves to a
+# Node release shipping npm >= 12, or when upstream stops appending the flag.
   node: "P12M"                     # .nvmrc active-LTS re-verify on the annual LTS cycle

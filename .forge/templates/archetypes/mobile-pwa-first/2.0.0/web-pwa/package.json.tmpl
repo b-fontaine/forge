@@ -9,7 +9,14 @@
     "vite is pinned EXACTLY: vite 8.x is the npm latest (8.1.5) but is EXCLUDED by",
     "@builder.io/qwik 1.20.0 peerDependencies '>=5 <8' — re-confirmed live 2026-07-28.",
     "NO @connectrpc/* dependency: mobile-pwa-first is layer_profile client-only and",
-    "has NO backend layer (ADR-B9-1-001 / ADR-B9-2-001)."
+    "has NO backend layer (ADR-B9-1-001 / ADR-B9-2-001).",
+    "WORKAROUND (t5-qwik-cli-ignore-dep, 2026-09-09): `ignore` is a devDependency",
+    "we do not import. @builder.io/qwik 1.20.0 publishes dist/cli.cjs which",
+    "require(\"ignore\") at module-init while declaring only csstype/launch-editor/",
+    "rollup, so WITHOUT this entry every qwik subcommand dies MODULE_NOT_FOUND —",
+    "`qwik --help` included, not just `qwik build`. 1.20.0 is the npm latest, so",
+    "there is no fixed release to bump to. Pinned by web-frontend.yaml v1.2.0.",
+    "DELETE this entry once upstream declares `ignore` itself."
   ],
   "name": "<project-name>-web-pwa",
   "description": "Qwik City installable PWA surface for <project-name> (mobile-pwa-first 2.0.0 candidate).",
@@ -32,6 +39,7 @@
     "oauth4webapi": "^3.8.6"
   },
   "devDependencies": {
+    "ignore": "7.0.9",
     "@types/node": "^22.0.0",
     "typescript": "^5.4.0",
     "vite": "=7.3.6",

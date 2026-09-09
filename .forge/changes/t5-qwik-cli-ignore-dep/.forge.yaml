@@ -1,0 +1,17 @@
+name: t5-qwik-cli-ignore-dep
+status: implemented
+created: 2026-09-09
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - T5.1.E  # cross-cutting scaffold-integrity fix, same family as t5-bin-server-deps
+            # (a shipped tarball must not scaffold a project whose build is dead).
+            # Surfaced while clearing the B.9 debt list (docs/new-archetypes-plan.md
+            # §0.14 "Deux dettes héritées"), then found to be repo-wide, not B.9-local.
+depends_on: []
+timeline:
+  proposed: 2026-09-09
+  specified: 2026-09-09
+  designed: 2026-09-09
+  planned: 2026-09-09
+  implemented: 2026-09-09

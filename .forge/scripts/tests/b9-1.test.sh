@@ -388,13 +388,16 @@ _test_b91_l1_016_tdd_flutter_chain() {
   for p in proposal specs features design tasks implementation review archive; do
     [ "$(_get "phase_$p")" = "True" ] || { echo "    FAIL T-016: phase '$p' missing (FR-B9-1-021)" >&2; ok=0; }
   done
-  local fi di; fi=$(_get idx_features); di=$(_get idx_design)
+  # NOT named `fi`/`di`: `fi` is the `if` terminator keyword, and shellcheck
+  # flags `local fi ...` as SC1010 (CI `Shell lint` is severity=warning, so a
+  # warning is a red job, not advice).
+  local fidx didx; fidx=$(_get idx_features); didx=$(_get idx_design)
   # Guard: empty when the schema is absent (RED phase) — keep the failure clean
   # instead of emitting a bash integer-expression error.
-  [ -n "$fi" ] || fi=-1
-  [ -n "$di" ] || di=-1
-  if [ "$fi" -lt 0 ] || [ "$di" -lt 0 ] || [ "$fi" -ge "$di" ]; then
-    echo "    FAIL T-016: 'features' (idx $fi) must precede 'design' (idx $di) — BDD-before-design gate (FR-B9-1-021)" >&2; ok=0
+  [ -n "$fidx" ] || fidx=-1
+  [ -n "$didx" ] || didx=-1
+  if [ "$fidx" -lt 0 ] || [ "$didx" -lt 0 ] || [ "$fidx" -ge "$didx" ]; then
+    echo "    FAIL T-016: 'features' (idx $fidx) must precede 'design' (idx $didx) — BDD-before-design gate (FR-B9-1-021)" >&2; ok=0
   fi
   [ "$ok" = "1" ]
 }
@@ -403,12 +406,13 @@ _test_b91_l1_017_channel_decision_placement() {
   _ensure_py_cache || return 1
   local ok=1
   [ "$(_get phase_channel-decision)" = "True" ] || { echo "    FAIL T-017: 'channel-decision' phase missing (FR-B9-1-022)" >&2; return 1; }
-  local si ci fi; si=$(_get idx_specs); ci=$(_get idx_channel); fi=$(_get idx_features)
+  # `fidx`, not `fi` — see the SC1010 note in T-016 above.
+  local si ci fidx; si=$(_get idx_specs); ci=$(_get idx_channel); fidx=$(_get idx_features)
   [ -n "$si" ] || si=-1
   [ -n "$ci" ] || ci=-1
-  [ -n "$fi" ] || fi=-1
-  if [ "$si" -lt 0 ] || [ "$ci" -lt 0 ] || [ "$fi" -lt 0 ] || [ "$si" -ge "$ci" ] || [ "$ci" -ge "$fi" ]; then
-    echo "    FAIL T-017: expected specs($si) < channel-decision($ci) < features($fi) — order '$(_get phase_order)' (FR-B9-1-022, ADR-B9-1-003)" >&2; ok=0
+  [ -n "$fidx" ] || fidx=-1
+  if [ "$si" -lt 0 ] || [ "$ci" -lt 0 ] || [ "$fidx" -lt 0 ] || [ "$si" -ge "$ci" ] || [ "$ci" -ge "$fidx" ]; then
+    echo "    FAIL T-017: expected specs($si) < channel-decision($ci) < features($fidx) — order '$(_get phase_order)' (FR-B9-1-022, ADR-B9-1-003)" >&2; ok=0
   fi
   [ "$ok" = "1" ]
 }
