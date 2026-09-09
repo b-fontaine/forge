@@ -281,7 +281,7 @@ _test_k5_012_cli_help_exit0() {
   if [ "$rc" -ne 0 ]; then
     echo "    --help expected exit 0, got $rc" >&2; return 1
   fi
-  if ! printf '%s' "$out" | grep -Fq "Usage:"; then
+  if ! grep -Fq "Usage:" <<<"$out"; then
     echo "    --help output missing 'Usage:'" >&2; return 1
   fi
 }
@@ -346,7 +346,7 @@ _test_k5_017_index_registered() {
     echo "    standards-review-rules entry missing" >&2; return 1
   fi
   for trig in "themis" "review-standards" "nis2" "dora" "cra" "ai-act" "k5-rule"; do
-    if ! grep -A 6 "id: global/standards-review-rules" "$STANDARDS_INDEX" | grep -q "$trig"; then
+    if ! grep -q "$trig" < <(grep -A 6 "id: global/standards-review-rules" "$STANDARDS_INDEX"); then
       echo "    trigger '$trig' missing on standards-review-rules entry" >&2; return 1
     fi
   done
@@ -526,7 +526,7 @@ YML
   assert_contains "$content" '"severity": "Medium"' || return 1
   assert_contains "$content" 'stale-standard.md' || return 1
   # Structural exception must NOT be flagged.
-  if printf '%s' "$content" | grep -q 'structural.yaml.*EXPIRED'; then
+  if grep -q 'structural.yaml.*EXPIRED' <<<"$content"; then
     echo "    structural exception wrongly flagged EXPIRED" >&2; return 1
   fi
 }

@@ -203,7 +203,7 @@ _test_b85_l1_007_orch_j7_dir_mode() {
     echo "    FAIL T-007: validate-standards-yaml.sh (dir mode) exited $rc (FR-B85-004)" >&2
     printf '%s\n' "$out" | grep -F 'STD-FAIL' | head -5 >&2; ok=0
   fi
-  if ! printf '%s' "$out" | grep -qE '\[STD-PASS\] .*standards/orchestration\.yaml'; then
+  if ! grep -qE '\[STD-PASS\] .*standards/orchestration\.yaml' <<<"$out"; then
     echo "    FAIL T-007: no [STD-PASS] line for standards/orchestration.yaml in dir-mode output (FR-B85-004)" >&2; ok=0
   fi
   # FR-J7-023 anchor: the REVIEW.md cell is the BARE basename + version 1.1.0.

@@ -290,7 +290,7 @@ _test_t51_l1_013_changelog_entry() {
   # Pre-archive : must live under [Unreleased].
   local section
   section=$(awk '/^## \[Unreleased\]/{flag=1; next} /^## \[/{flag=0} flag' "$CHANGELOG_MD")
-  if ! printf '%s' "$section" | grep -Fq "cli-trust-harness"; then
+  if ! grep -Fq "cli-trust-harness" <<<"$section"; then
     echo "    CHANGELOG.md [Unreleased] does not mention cli-trust-harness" >&2
     return 1
   fi

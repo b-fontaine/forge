@@ -135,7 +135,7 @@ _test_b8sig_l1_002_canonical_no_rotted_pins() {
   local body; body="$(_sig_body_without_audit "$SIG_CANONICAL")"
   local needle
   for needle in "signoz/frontend" "signoz/query-service" "otel/opentelemetry-collector-contrib" ":0.55.1"; do
-    if printf '%s' "$body" | grep -Fq -- "$needle"; then
+    if grep -Fq -- "$needle" <<<"$body"; then
       echo "    canonical still contains rotted substring '$needle' outside audit block (FR-B8-SIG-A-003)" >&2
       return 1
     fi
@@ -571,11 +571,11 @@ _l2_assert_manifest_multiarch() {
     printf '%s\n' "$out" | head -20 >&2
     return 1
   fi
-  if ! printf '%s' "$out" | grep -Eq '"architecture"[[:space:]]*:[[:space:]]*"amd64"'; then
+  if ! grep -Eq '"architecture"[[:space:]]*:[[:space:]]*"amd64"' <<<"$out"; then
     echo "    $pin manifest missing amd64 ($fr / NFR-B8-SIG-004)" >&2
     return 1
   fi
-  if ! printf '%s' "$out" | grep -Eq '"architecture"[[:space:]]*:[[:space:]]*"arm64"'; then
+  if ! grep -Eq '"architecture"[[:space:]]*:[[:space:]]*"arm64"' <<<"$out"; then
     echo "    $pin manifest missing arm64 ($fr / NFR-B8-SIG-004)" >&2
     return 1
   fi

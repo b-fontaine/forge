@@ -483,10 +483,10 @@ _test_b76_l2_c02_buf_generate() {
   fi
   local ok=1
   # TS Connect descriptor materialised (the Qwik import target).
-  find "$out/frontend/web-public/src/lib/generated/connect" -name 'rag_pb*' 2>/dev/null | grep -q . \
+  grep -q . < <(find "$out/frontend/web-public/src/lib/generated/connect" -name 'rag_pb*' 2>/dev/null) \
     || { echo "    FAIL T-C02: TS generated/connect/rag_pb descriptor not materialised (FR-B7-6-005)" >&2; ok=0; }
   # Rust stubs materialised into the codegen target dir.
-  find "$out/backend/crates/grpc-api/src/generated" -name '*.rs' 2>/dev/null | grep -q . \
+  grep -q . < <(find "$out/backend/crates/grpc-api/src/generated" -name '*.rs' 2>/dev/null) \
     || { echo "    FAIL T-C02: Rust grpc-api generated stubs not materialised (FR-B7-6-005)" >&2; ok=0; }
   rm -rf "$work"
   [ "$ok" = "1" ]

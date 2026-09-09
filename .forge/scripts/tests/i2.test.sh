@@ -89,12 +89,12 @@ _test_i2_003_trigger_comment() {
   fi
   local header
   header="$(head -5 "$STD_FILE")"
-  if ! printf '%s' "$header" | grep -q "<!-- Trigger:"; then
+  if ! grep -q "<!-- Trigger:" <<<"$header"; then
     echo "    trigger comment missing in first 5 lines" >&2; return 1
   fi
   local kw
   for kw in compliance t1 t2 t3 eu-tier dpa schrems cloud-act tier-classification; do
-    if ! printf '%s' "$header" | grep -Fq "$kw"; then
+    if ! grep -Fq "$kw" <<<"$header"; then
       echo "    trigger keyword missing: $kw" >&2; return 1
     fi
   done

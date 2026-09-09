@@ -462,11 +462,11 @@ _test_b8obi_l2_001_dockerhub_manifest_pullable() {
     printf '%s\n' "$out" | head -20 >&2
     return 1
   fi
-  if ! printf '%s' "$out" | grep -Eq '"architecture"[[:space:]]*:[[:space:]]*"amd64"'; then
+  if ! grep -Eq '"architecture"[[:space:]]*:[[:space:]]*"amd64"' <<<"$out"; then
     echo "    manifest missing amd64 platform (FR-B8-OBI-104)" >&2
     return 1
   fi
-  if ! printf '%s' "$out" | grep -Eq '"architecture"[[:space:]]*:[[:space:]]*"arm64"'; then
+  if ! grep -Eq '"architecture"[[:space:]]*:[[:space:]]*"arm64"' <<<"$out"; then
     echo "    manifest missing arm64 platform (FR-B8-OBI-104)" >&2
     return 1
   fi

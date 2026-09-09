@@ -1,0 +1,17 @@
+name: t5-pipefail-sweep
+status: implemented
+created: 2026-09-09
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - T5.1.E  # repo-wide follow-up to t5-helpers-sigpipe, which fixed the shared
+            # helper. This is the sweep of the same defect in harness bodies and
+            # in constitution-linter.sh.
+depends_on:
+  - t5-helpers-sigpipe
+timeline:
+  proposed: 2026-09-09
+  specified: 2026-09-09
+  designed: 2026-09-09
+  planned: 2026-09-09
+  implemented: 2026-09-09

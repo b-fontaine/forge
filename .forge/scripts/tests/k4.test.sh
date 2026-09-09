@@ -311,7 +311,7 @@ _test_k4_016_index_registered() {
     echo "    qwik-frontend-patterns entry missing in $STANDARDS_INDEX" >&2; return 1
   fi
   for trig in "iris-web" "qwik" "sveltekit" "resumability" "connect-es" "vitest" "k4-rule"; do
-    if ! grep -A 6 "id: global/qwik-frontend-patterns" "$STANDARDS_INDEX" | grep -q "$trig"; then
+    if ! grep -q "$trig" < <(grep -A 6 "id: global/qwik-frontend-patterns" "$STANDARDS_INDEX"); then
       echo "    trigger '$trig' missing on qwik-frontend-patterns entry" >&2; return 1
     fi
   done

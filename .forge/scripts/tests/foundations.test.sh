@@ -507,6 +507,30 @@ test_helpers_assert_contains_is_deterministic() {
   fi
 }
 
+# FR-T5PFS-004 — the ONE shape that is always wrong, not merely risky.
+#
+# `find <tree> | grep -q .` under `set -o pipefail` was measured at 200 failures per
+# 200 on a 4000-file tree: find is still traversing when grep exits on the first
+# line, takes SIGPIPE, and the pipeline yields 141. So `if find … | grep -q .` never
+# takes its true branch, and `find … | grep -q . || fail` always fails. Both are a
+# permanently wrong answer, not a flake.
+#
+# Deliberately NOT a guard against every `| grep -q`: 176 such sites remain by
+# design (t5-pipefail-sweep ADR-T5PFS-002), and a guard that flags them would be
+# noise and get disabled. This one states a measured fact.
+test_no_find_piped_into_grep_q() {
+  local dir; dir="$(dirname "${BASH_SOURCE[0]}")/.."
+  local hits
+  hits=$(grep -rnE '(find|grep[[:space:]]+-r)[^|]*\|[[:space:]]*grep[[:space:]]+-[A-Za-z]*q' \
+         "$dir" --include='*.sh' 2>/dev/null | grep -vE ':[0-9]+:[[:space:]]*#' || true)
+  if [ -n "$hits" ]; then
+    echo "    a find/grep -r is piped into grep -q — that branch can never be taken" >&2
+    echo "    (measured 200/200 failures on a large tree; use: grep -q . < <(find …))" >&2
+    printf '%s\n' "$hits" | head -5 | sed 's/^/      /' >&2
+    return 1
+  fi
+}
+
 main() {
   echo "── Forge Foundations Test Harness ──"
   echo "  VALIDATOR=$VALIDATOR"
@@ -536,6 +560,7 @@ main() {
   run_test test_performance_under_two_seconds
   run_test test_helpers_no_pipe_into_early_exiting_reader
   run_test test_helpers_assert_contains_is_deterministic
+  run_test test_no_find_piped_into_grep_q
 
   print_summary
 }

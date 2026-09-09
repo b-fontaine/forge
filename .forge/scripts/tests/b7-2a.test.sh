@@ -87,7 +87,7 @@ _test_b72a_l1_003_wrapper_refuses_no_writes() {
   if [ "$rc" = "3" ]; then
     echo "    FAIL T-003: wrapper still exits 3 (candidate refusal) AFTER the B.7.6 promotion (ADR-B7-2A-002 inverted)" >&2; return 1
   fi
-  if printf '%s' "$err" | grep -qiE '\[REFUSAL'; then
+  if grep -qiE '\[REFUSAL' <<<"$err"; then
     echo "    FAIL T-003: wrapper still emits a [REFUSAL ...] AFTER promotion (should pass the gate); got: $err" >&2; return 1
   fi
 }

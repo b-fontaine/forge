@@ -600,7 +600,7 @@ _test_b75_l2_bundle_integration() {
     "audit/audit-ledger.json" \
     "audit/audit-ledger.md" \
     "sbom/sbom.cdx.json"; do
-    if ! printf '%s\n' "$listing" | grep -Fxq "$member"; then
+    if ! grep -Fxq "$member" <<<"$listing"; then
       echo "    expected base bundle member missing: $member" >&2
       printf '%s\n' "$listing" | sed 's/^/      /' >&2
       return 1
@@ -612,7 +612,7 @@ _test_b75_l2_bundle_integration() {
     for f in "$L2_TMP/.forge/compliance/$reg"/*; do
       [ -f "$f" ] || continue
       name="$(basename "$f")"
-      if ! printf '%s\n' "$listing" | grep -Fxq "regulatory/$reg/$name"; then
+      if ! grep -Fxq "regulatory/$reg/$name" <<<"$listing"; then
         echo "    expected regulatory member missing: regulatory/$reg/$name" >&2
         return 1
       fi
@@ -660,7 +660,7 @@ _test_b75_l2_graceful_absence() {
   local listing
   listing="$(tar -tzf "$out" 2>/dev/null | sort)"
   # Zero regulatory members.
-  if printf '%s\n' "$listing" | grep -q '^regulatory/'; then
+  if grep -q '^regulatory/' <<<"$listing"; then
     echo "    regulatory members present despite absent source dirs" >&2
     printf '%s\n' "$listing" | sed 's/^/      /' >&2
     return 1
@@ -673,7 +673,7 @@ _test_b75_l2_graceful_absence() {
     "audit/audit-ledger.json" \
     "audit/audit-ledger.md" \
     "sbom/sbom.cdx.json"; do
-    if ! printf '%s\n' "$listing" | grep -Fxq "$member"; then
+    if ! grep -Fxq "$member" <<<"$listing"; then
       echo "    expected base member missing in graceful-absence fixture: $member" >&2
       return 1
     fi

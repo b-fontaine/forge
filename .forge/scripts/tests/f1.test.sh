@@ -243,7 +243,7 @@ _test_f1_l2_002() {
   # Run verify.sh — gate should NOT fail on this change.
   local out
   out=$(FORGE_ROOT="$tmp" bash "$tmp/.forge/scripts/verify.sh" 2>&1 || true)
-  if echo "$out" | grep -qE 'test-archived-answered.*open question'; then
+  if grep -qE 'test-archived-answered.*open question' <<<"$out"; then
     echo "    verify.sh wrongly fails on answered question" >&2; return 1
   fi
 }
@@ -258,7 +258,7 @@ _test_f1_l2_003() {
   _make_fixture_change "$tmp" "test-archived-noFile" "archived"
   local out
   out=$(FORGE_ROOT="$tmp" bash "$tmp/.forge/scripts/verify.sh" 2>&1 || true)
-  if echo "$out" | grep -qE 'test-archived-noFile.*open question'; then
+  if grep -qE 'test-archived-noFile.*open question' <<<"$out"; then
     echo "    verify.sh wrongly fails on absent open-questions.md" >&2; return 1
   fi
 }
@@ -296,18 +296,18 @@ _test_f1_l2_005() {
   _make_fixture_change "$tmp" "gamma" "implemented" "answered"
   local out
   out=$(FORGE_ROOT="$tmp" bash "$QUESTIONS_SH" 2>&1)
-  if ! echo "$out" | grep -q 'alpha:Q-001'; then
+  if ! grep -q 'alpha:Q-001' <<<"$out"; then
     echo "    forge-questions.sh missed alpha" >&2; return 1
   fi
-  if ! echo "$out" | grep -q 'beta:Q-001'; then
+  if ! grep -q 'beta:Q-001' <<<"$out"; then
     echo "    forge-questions.sh missed beta" >&2; return 1
   fi
-  if echo "$out" | grep -q 'gamma:Q-001'; then
+  if grep -q 'gamma:Q-001' <<<"$out"; then
     echo "    forge-questions.sh wrongly listed gamma (answered)" >&2; return 1
   fi
   # Filter --change
   out=$(FORGE_ROOT="$tmp" bash "$QUESTIONS_SH" --change alpha 2>&1)
-  if echo "$out" | grep -q 'beta:Q-001'; then
+  if grep -q 'beta:Q-001' <<<"$out"; then
     echo "    --change filter did not exclude beta" >&2; return 1
   fi
 }

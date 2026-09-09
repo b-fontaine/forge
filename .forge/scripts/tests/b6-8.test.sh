@@ -262,7 +262,7 @@ test_examples_meta_readme_lists_eda_example() {
     echo "    meta README does not list forge-eda-example" >&2
     return 1
   fi
-  if ! grep -E 'forge-eda-example' "$EXAMPLES_README" | grep -q 'event-driven-eu'; then
+  if ! grep -q 'event-driven-eu' < <(grep -E 'forge-eda-example' "$EXAMPLES_README"); then
     echo "    forge-eda-example row does not name the event-driven-eu archetype" >&2
     return 1
   fi

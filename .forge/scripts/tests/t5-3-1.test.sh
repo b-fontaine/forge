@@ -208,7 +208,7 @@ _test_b1dum_l2_dev_up_cycle() {
   local ps_json
   ps_json=$(cd "$tmp" && docker compose ps --format json 2>/dev/null || true)
   for svc in fsm-db fsm-kong fsm-signoz fsm-otel-collector; do
-    if ! printf '%s' "$ps_json" | grep -q "\"Service\":\"$svc\""; then
+    if ! grep -q "\"Service\":\"$svc\"" <<<"$ps_json"; then
       echo "    $svc not listed in 'docker compose ps --format json' (FR-B1-DUM-061)" >&2
       return 1
     fi
@@ -218,7 +218,7 @@ _test_b1dum_l2_dev_up_cycle() {
     return 1
   fi
   # Assert no orphan fsm-* containers.
-  if docker ps --format '{{.Names}}' | grep -q '^fsm-'; then
+  if grep -q '^fsm-' < <(docker ps --format '{{.Names}}'); then
     echo "    orphan fsm-* container survives task dev:down (FR-B1-DUM-062)" >&2
     return 1
   fi

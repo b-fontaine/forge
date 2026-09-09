@@ -138,7 +138,7 @@ _test_b81_l1_006_no_fabricated_mtbf() {
   # (number before the token).
   local body; body=$(cat "$BASELINE_DOC")
   local mtbf_re='MTBF.{0,12}[0-9]|[0-9].{0,12}MTBF'
-  if printf '%s' "$body" | grep -iEq "$mtbf_re"; then
+  if grep -iEq "$mtbf_re" <<<"$body"; then
     echo "    FABRICATED Temporal MTBF figure detected (Article III.4 / FR-B8-1-033)" >&2
     printf '%s' "$body" | grep -iE "$mtbf_re" | head -3 >&2
     return 1

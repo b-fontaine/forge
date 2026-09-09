@@ -255,11 +255,11 @@ _test_b8cor_l2_001_ghcr_manifest_pullable() {
   # Docker manifest inspect emits formatted JSON with whitespace
   # around `:` separators ; the regex below tolerates either pretty
   # or compact JSON output.
-  if ! printf '%s' "$out" | grep -Eq '"architecture"[[:space:]]*:[[:space:]]*"amd64"'; then
+  if ! grep -Eq '"architecture"[[:space:]]*:[[:space:]]*"amd64"' <<<"$out"; then
     echo "    manifest is missing amd64 platform (FR-B8-COR-072 / NFR-B8-COR-008)" >&2
     return 1
   fi
-  if ! printf '%s' "$out" | grep -Eq '"architecture"[[:space:]]*:[[:space:]]*"arm64"'; then
+  if ! grep -Eq '"architecture"[[:space:]]*:[[:space:]]*"arm64"' <<<"$out"; then
     echo "    manifest is missing arm64 platform (FR-B8-COR-072 / NFR-B8-COR-008)" >&2
     return 1
   fi

@@ -160,7 +160,7 @@ _test_b83b_l1_010_pos_stable_no_scaffoldable() {
   local root out
   root=$(_mk_fixture_with_versioned full-stack-monorepo 3.0.0.yaml "d['version']='3.0.0'; d['stage']='stable'; d.pop('scaffoldable', None)")
   out=$(FORGE_ROOT="$root" bash "$VALIDATOR" 2>&1)
-  if printf '%s' "$out" | grep -qE '^FAIL: FR-GL-001-versioned:full-stack-monorepo/3\.0\.0\.yaml'; then
+  if grep -qE '^FAIL: FR-GL-001-versioned:full-stack-monorepo/3\.0\.0\.yaml' <<<"$out"; then
     echo "    stable 3.0.0.yaml without scaffoldable should NOT fail the versioned check (FR-B83B-012)" >&2
     printf '%s\n' "$out" | grep -F 'FR-GL-001-versioned' >&2; return 1
   fi
@@ -176,7 +176,7 @@ _test_b83b_l1_011_noop_no_sibling() {
   mkdir -p "$adir"
   cp "$SCHEMA_10" "$adir/schema.yaml"
   out=$(FORGE_ROOT="$root" bash "$VALIDATOR" 2>&1)
-  if printf '%s' "$out" | grep -qF 'FR-GL-001-versioned:fresh-arch'; then
+  if grep -qF 'FR-GL-001-versioned:fresh-arch' <<<"$out"; then
     echo "    versioned discovery emitted a line for an archetype with no X.Y.Z.yaml sibling (FR-B83B-004)" >&2
     printf '%s\n' "$out" | grep -F 'fresh-arch' >&2; return 1
   fi

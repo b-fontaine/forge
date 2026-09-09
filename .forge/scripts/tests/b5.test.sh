@@ -194,7 +194,7 @@ SHIM
   local out
   out=$(bash "$tmp/bin/forge-init-fsm.sh" \
     --target /some/dir --project-name foo --reverse-domain io.test.foo 2>&1)
-  if ! echo "$out" | grep -q 'argv: foo --org io.test.foo --target-dir /some/dir'; then
+  if ! grep -q 'argv: foo --org io.test.foo --target-dir /some/dir' <<<"$out"; then
     echo "    wrapper ABI translation mismatch. Got: $out" >&2
     return 1
   fi
@@ -370,11 +370,11 @@ test_wizard_skips_when_non_tty() {
   [ -f "$cli_dist" ] || { echo "    CLI not built" >&2; return 1; }
   local out
   out=$(node "$cli_dist" init --source "$tmp_source" --target "$tmp_target" </dev/null 2>&1)
-  if echo "$out" | grep -q 'Pick an archetype'; then
+  if grep -q 'Pick an archetype' <<<"$out"; then
     echo "    wizard prompt appeared on non-TTY stdin" >&2
     return 1
   fi
-  if ! echo "$out" | grep -q 'forge init: copied'; then
+  if ! grep -q 'forge init: copied' <<<"$out"; then
     echo "    silent default did not produce the legacy summary line" >&2
     echo "    output: $out" >&2
     return 1
@@ -397,7 +397,7 @@ test_auto_detection_ambiguous_aborts() {
     echo "    output: $out" >&2
     return 1
   fi
-  if ! echo "$out" | grep -q '\[NEEDS DECISION:'; then
+  if ! grep -q '\[NEEDS DECISION:' <<<"$out"; then
     echo "    expected '[NEEDS DECISION:' marker in output" >&2
     echo "    output: $out" >&2
     return 1

@@ -274,7 +274,7 @@ test_snapshot_tarball_present_and_extractable() {
   if [ ! -f "$SNAPSHOT_TARBALL" ]; then
     echo "    missing: $SNAPSHOT_TARBALL" >&2; return 1
   fi
-  if ! file "$SNAPSHOT_TARBALL" | grep -q 'gzip compressed'; then
+  if ! grep -q 'gzip compressed' < <(file "$SNAPSHOT_TARBALL"); then
     echo "    tarball is not gzip-compressed" >&2; return 1
   fi
   local tmp; tmp=$(mk_tmpdir_with_trap a7-tarball-extract)
@@ -454,7 +454,7 @@ test_major_version_aborts() {
   out=$(_a7_check_version_compat "1.5.2" "2.0.0" 2>&1) && {
     echo "    expected non-zero exit on major bump" >&2; return 1
   }
-  if ! echo "$out" | grep -q '\[NEEDS MIGRATION: from 1.5.2 to 2.0.0\]'; then
+  if ! grep -q '\[NEEDS MIGRATION: from 1.5.2 to 2.0.0\]' <<<"$out"; then
     echo "    output missing [NEEDS MIGRATION:] marker" >&2
     return 1
   fi

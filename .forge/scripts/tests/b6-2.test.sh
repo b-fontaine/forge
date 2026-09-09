@@ -127,7 +127,7 @@ _test_b62_l1_006_wrapper_refuses_while_candidate() {
   err=$(bash "$WRAPPER" --project-name demo --reverse-domain com.example.demo 2>&1 1>/dev/null); rc=$?
   local ok=1
   [ "$rc" != "3" ] || { echo "    FAIL T-006: wrapper still exits 3 (candidate refusal) AFTER the B.6.7 promotion (FR-B6-2-051)" >&2; ok=0; }
-  if printf '%s' "$err" | grep -qiE '\[REFUSAL'; then
+  if grep -qiE '\[REFUSAL' <<<"$err"; then
     echo "    FAIL T-006: wrapper still emits a [REFUSAL ...] AFTER promotion (should pass the gate); got: $err" >&2; ok=0
   fi
   [ "$ok" = "1" ]

@@ -378,7 +378,7 @@ LOG
     --dry-run --version 0.0.1 --otp 654321 --skip-gh 2>&1 || true)"
 
   # Assertion 1 : the dry-run trace mentions `npm publish`.
-  if ! printf '%s\n' "$out" | grep -Fq "npm publish"; then
+  if ! grep -Fq "npm publish" <<<"$out"; then
     echo "    dry-run trace missing 'npm publish'" >&2
     printf '%s\n' "$out" | head -40 | sed 's/^/      /' >&2
     return 1
@@ -393,7 +393,7 @@ LOG
 
   # Assertion 3 : the OTP literal '654321' MUST be redacted ; it
   # MUST NOT appear in the trace.
-  if printf '%s\n' "$out" | grep -Fq "654321"; then
+  if grep -Fq "654321" <<<"$out"; then
     echo "    OTP literal '654321' leaked into dry-run trace (FR-F3-045 violation)" >&2
     printf '%s\n' "$out" | head -40 | sed 's/^/      /' >&2
     return 1

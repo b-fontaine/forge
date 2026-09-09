@@ -210,10 +210,10 @@ _test_b64_008_idempotency_blocking() {
   if [ ! -f "$HERMES_AGENT" ]; then
     echo "    persona file missing: $HERMES_AGENT" >&2; return 1
   fi
-  if ! grep "K1-RULE-006" "$HERMES_AGENT" | grep -q "Blocking"; then
+  if ! grep -q "Blocking" < <(grep "K1-RULE-006" "$HERMES_AGENT"); then
     echo "    K1-RULE-006 not marked Blocking" >&2; return 1
   fi
-  if ! grep "K1-RULE-006" "$HERMES_AGENT" | grep -q "VIII.2"; then
+  if ! grep -q "VIII.2" < <(grep "K1-RULE-006" "$HERMES_AGENT"); then
     echo "    K1-RULE-006 does not cite VIII.2" >&2; return 1
   fi
 }

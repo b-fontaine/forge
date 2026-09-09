@@ -168,7 +168,7 @@ _test_t5bsd_l1_008_snapshot_content() {
     echo "    snapshot extraction of $pathname returned empty" >&2
     return 1
   fi
-  if ! printf '%s' "$extracted" | grep -Fq 'name = "bin-server"'; then
+  if ! grep -Fq 'name = "bin-server"' <<<"$extracted"; then
     echo "    snapshot embedded bin-server manifest missing name = \"bin-server\"" >&2
     return 1
   fi

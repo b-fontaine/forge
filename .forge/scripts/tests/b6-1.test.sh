@@ -322,9 +322,9 @@ _test_b61_l1_018_header_block() {
   # additivity. Grep the header region only. Fails loud if the file is missing.
   local header; header=$(awk '/^[^#]/{exit} {print}' "$SCHEMA" 2>/dev/null)
   local ok=1
-  printf '%s' "$header" | grep -qiE 'candidate'  || { echo "    FAIL T-018: header block missing 'candidate' semantics (FR-B6-1-005)" >&2; ok=0; }
+  grep -qiE 'candidate' <<<"$header"  || { echo "    FAIL T-018: header block missing 'candidate' semantics (FR-B6-1-005)" >&2; ok=0; }
   printf '%s' "$header" | grep -qiE 'promotion|promote'  || { echo "    FAIL T-018: header block missing promotion trigger (FR-B6-1-005)" >&2; ok=0; }
-  printf '%s' "$header" | grep -qiE 'additive'   || { echo "    FAIL T-018: header block missing additivity note (FR-B6-1-005)" >&2; ok=0; }
+  grep -qiE 'additive' <<<"$header"   || { echo "    FAIL T-018: header block missing additivity note (FR-B6-1-005)" >&2; ok=0; }
   [ "$ok" = "1" ]
 }
 

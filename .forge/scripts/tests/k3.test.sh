@@ -339,7 +339,7 @@ _test_k3_016_index_registered() {
   fi
   # Trigger keywords required by FR-K3-DEM-082.
   for trig in "demeter" "data-steward" "dpa" "cloud-act" "schrems" "k3-rule"; do
-    if ! grep -A 6 "id: global/data-stewardship-rules" "$STANDARDS_INDEX" | grep -q "$trig"; then
+    if ! grep -q "$trig" < <(grep -A 6 "id: global/data-stewardship-rules" "$STANDARDS_INDEX"); then
       echo "    trigger '$trig' missing on data-stewardship-rules entry" >&2; return 1
     fi
   done

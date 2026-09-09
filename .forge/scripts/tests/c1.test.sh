@@ -194,7 +194,7 @@ test_verify_no_skip_when_no_examples_dir() {
   # Run verify.sh with FORGE_ROOT pointing at the fixture.
   local out
   out=$(FORGE_ROOT="$tmp" bash "$VERIFY_SH" 2>&1 || true)
-  if printf '%s' "$out" | grep -q '\[skipped: examples\]'; then
+  if grep -q '\[skipped: examples\]' <<<"$out"; then
     echo "    verify.sh emitted [skipped: examples] line when no examples/ dir exists" >&2
     return 1
   fi
@@ -228,11 +228,11 @@ F
   out=$(FORGE_ROOT="$tmp" bash "$LINTER_SH" 2>&1 || true)
   # Look for the BDD-section count line. With skip-guard, count==1 ;
   # without skip-guard, count==2.
-  if printf '%s' "$out" | grep -qE ' 2 \.feature files found'; then
+  if grep -qE ' 2 \.feature files found' <<<"$out"; then
     echo "    linter found 2 .feature files (recursed into examples/) — skip-guard not active" >&2
     return 1
   fi
-  if ! printf '%s' "$out" | grep -qE ' 1 \.feature files found'; then
+  if ! grep -qE ' 1 \.feature files found' <<<"$out"; then
     echo "    linter did not report exactly 1 .feature file (output excerpt below)" >&2
     printf '%s' "$out" | grep -E '\.feature' | head -3 >&2 || true
     return 1

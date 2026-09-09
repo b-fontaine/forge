@@ -81,7 +81,7 @@ _test_b815_001_negative_major_abort() {
   if [ "$rc" -ne 7 ]; then
     echo "    expected exit 7 on 1.5.2→2.0.0, got $rc" >&2; return 1
   fi
-  if ! printf '%s' "$out" | grep -qF "[NEEDS MIGRATION: from 1.5.2 to 2.0.0]"; then
+  if ! grep -qF "[NEEDS MIGRATION: from 1.5.2 to 2.0.0]" <<<"$out"; then
     echo "    missing literal [NEEDS MIGRATION: from 1.5.2 to 2.0.0] marker" >&2; return 1
   fi
 }
@@ -97,7 +97,7 @@ _test_b815_002_force_dirty_refused() {
   if [ "$rc" -ne 7 ]; then
     echo "    expected exit 7 (--force on dirty same-major), got $rc" >&2; return 1
   fi
-  if ! printf '%s' "$out" | grep -qiF "requires a clean Git working tree"; then
+  if ! grep -qiF "requires a clean Git working tree" <<<"$out"; then
     echo "    missing dirty-git refusal message" >&2; return 1
   fi
 }

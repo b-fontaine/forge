@@ -14,6 +14,39 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ### Fixed
 
+- **`find … | grep -q .` never takes its true branch, and the constitution linter
+  was silently affected** — `t5-pipefail-sweep`, the repo-wide follow-up to
+  `t5-helpers-sigpipe`. Measured under `set -o pipefail`: `find` over a 4 000-file
+  tree piped into `grep -q .` returns non-zero **200 times out of 200**, because
+  `grep` exits on the first line and `find` takes SIGPIPE. It is not flaky; it is a
+  permanently wrong answer.
+
+  The consequence reaches real projects. `constitution-linter.sh:597` guards an
+  Article XI check with exactly that shape: with **3 000** matching `.schema.json`
+  files present, the branch was taken **0 times out of 50**. In the Forge repo the
+  searched paths do not exist, so the branch is correctly false and nothing showed —
+  the defect only appears in a scaffolded project, which is where the linter runs.
+
+  The earlier assessment ("latent — the streams are too small") measured the wrong
+  quantity. The driver is how many **lines** remain when the reader exits, not total
+  bytes: 0 failures at 100 lines, 99/200 at 1 000, 200/200 at 5 000. A byte-only
+  probe reads 0/200 even at 256 KB when the stream has no newlines, which nearly
+  buried this.
+
+  **112 of 288 candidate sites converted** — 107 automatically (here-string for
+  variable writers, process substitution for command writers) plus 5 multi-line
+  `find … | grep -q . \` sites by hand, all of which asserted *presence* and so
+  would have failed permanently on a large tree. `bash -n` clean on every touched
+  file; the proven-broken shape is now absent repo-wide, guarded by
+  `foundations.test.sh::test_no_find_piped_into_grep_q`.
+
+  **176 sites were deliberately left**, listed with file:line in the change's
+  `skipped-sites.json`. The transform broke shell in two independent ways on its
+  first two drafts — a greedy pattern swallowing `; then`, then an orphaned `||`
+  continuation — neither of which reached the tree because it was dry-run on copies.
+  Across 60 files that cannot be hand-verified, a transform that guesses is worse
+  than a site left alone with a note. None of the 176 is in the proven-broken class.
+
 - **The intermittent CI reds were one race in one shared helper, not a shared-tree
   snapshot race** — fixed via `t5-helpers-sigpipe`. `b8-1`, `b8-12`, `b8-13`,
   `b8-14` and `b8-15` had been failing in shifting combinations for months, recorded

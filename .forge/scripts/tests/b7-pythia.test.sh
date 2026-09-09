@@ -212,10 +212,10 @@ _test_b7p_008_fallback_blocking() {
     echo "    persona file missing: $PYTHIA_AGENT" >&2; return 1
   fi
   # The K2-RULE-006 row must carry both 'Blocking' and an 'XI.5' reference.
-  if ! grep "K2-RULE-006" "$PYTHIA_AGENT" | grep -q "Blocking"; then
+  if ! grep -q "Blocking" < <(grep "K2-RULE-006" "$PYTHIA_AGENT"); then
     echo "    K2-RULE-006 not marked Blocking" >&2; return 1
   fi
-  if ! grep "K2-RULE-006" "$PYTHIA_AGENT" | grep -q "XI.5"; then
+  if ! grep -q "XI.5" < <(grep "K2-RULE-006" "$PYTHIA_AGENT"); then
     echo "    K2-RULE-006 does not cite XI.5" >&2; return 1
   fi
 }
@@ -272,15 +272,15 @@ _test_b7p_012_index_triggers() {
   # Each of the three B.7.3 entries must carry the 'sibyl' trigger keyword
   # within its 5-line block.
   for entry in "global/rag-patterns" "global/llm-gateway" "global/mcp-servers"; do
-    if ! grep -A 5 "id: $entry" "$STANDARDS_INDEX" | grep -q "sibyl"; then
+    if ! grep -q "sibyl" < <(grep -A 5 "id: $entry" "$STANDARDS_INDEX"); then
       echo "    'sibyl' trigger missing on $entry entry" >&2; return 1
     fi
   done
   # rag-patterns also gains the ef-search + embeddings-tuning tuning keywords.
-  if ! grep -A 5 "id: global/rag-patterns" "$STANDARDS_INDEX" | grep -q "ef-search"; then
+  if ! grep -q "ef-search" < <(grep -A 5 "id: global/rag-patterns" "$STANDARDS_INDEX"); then
     echo "    'ef-search' trigger missing on rag-patterns entry" >&2; return 1
   fi
-  if ! grep -A 5 "id: global/rag-patterns" "$STANDARDS_INDEX" | grep -q "embeddings-tuning"; then
+  if ! grep -q "embeddings-tuning" < <(grep -A 5 "id: global/rag-patterns" "$STANDARDS_INDEX"); then
     echo "    'embeddings-tuning' trigger missing on rag-patterns entry" >&2; return 1
   fi
 }
@@ -332,10 +332,10 @@ _test_b7p_015_janus_step3_note() {
     /^### Step 4 — / {flag=0}
     flag {print}
   ' "$JANUS_AGENT")"
-  if ! printf '%s' "$step3_block" | grep -q "ai-native-rag"; then
+  if ! grep -q "ai-native-rag" <<<"$step3_block"; then
     echo "    Step 3 ai-native-rag note missing" >&2; return 1
   fi
-  if ! printf '%s' "$step3_block" | grep -q "Sibyl"; then
+  if ! grep -q "Sibyl" <<<"$step3_block"; then
     echo "    Step 3 Sibyl reference missing" >&2; return 1
   fi
   # COLLISION GUARD (NFR-K2-PYT-006) : the Step 9 Demeter narrative must be
@@ -351,7 +351,7 @@ _test_b7p_015_janus_step3_note() {
     /^### Step 10 — / {flag=0}
     flag {print}
   ' "$JANUS_AGENT")"
-  if printf '%s' "$step9_block" | grep -q "Sibyl"; then
+  if grep -q "Sibyl" <<<"$step9_block"; then
     echo "    Sibyl leaked into Step 9 (must stay in Step 3 — collision guard)" >&2; return 1
   fi
 }

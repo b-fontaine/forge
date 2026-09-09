@@ -157,7 +157,7 @@ _git_clean_vs_head() {
 
 _test_b93_l1_001_auth_module_exists() {
   [ -d "$AUTHDIR" ] || { echo "    FAIL T-001: no auth module at web-pwa/src/lib/auth/ (FR-B9-3-001)" >&2; return 1; }
-  find "$AUTHDIR" -type f -name '*.ts.tmpl' 2>/dev/null | grep -q . \
+  grep -q . < <(find "$AUTHDIR" -type f -name '*.ts.tmpl' 2>/dev/null) \
     || { echo "    FAIL T-001: auth module dir is empty (FR-B9-3-001)" >&2; return 1; }
 }
 
@@ -246,7 +246,7 @@ _test_b93_l1_007_state_and_nonce() {
 }
 
 _test_b93_l1_009_callback_route() {
-  find "$WEBPWA/src/routes" -ipath "*auth*" -name "index.tsx.tmpl" 2>/dev/null | grep -q . \
+  grep -q . < <(find "$WEBPWA/src/routes" -ipath "*auth*" -name "index.tsx.tmpl" 2>/dev/null) \
     || { echo "    FAIL T-009: no callback route under src/routes/auth/ (FR-B9-3-005)" >&2; return 1; }
 }
 

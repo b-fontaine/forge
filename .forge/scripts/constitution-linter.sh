@@ -594,7 +594,7 @@ else
       pass "  AI features present but no UI rendering — no XI.3 surface"
     else
       has_schema=0
-      if find "$FORGE_ROOT/lib" "$FORGE_ROOT/src" -type f -name '*.schema.json' 2>/dev/null | grep -q .; then
+      if grep -q . < <(find "$FORGE_ROOT/lib" "$FORGE_ROOT/src" -type f -name '*.schema.json' 2>/dev/null); then
         has_schema=1
       fi
       if grep -rEq '\.schema\.json' "$FORGE_ROOT/lib" "$FORGE_ROOT/src" 2>/dev/null; then
@@ -638,18 +638,18 @@ else
       base=$(basename "$src")
       stem="${base%.*}"
       paired=0
-      if find "$FORGE_ROOT/test" -type f \( -iname "${stem}*test*.dart" -o -iname "*${stem}*test*.dart" -o -iname "${stem}_test.dart" \) 2>/dev/null | grep -q .; then
+      if grep -q . < <(find "$FORGE_ROOT/test" -type f \( -iname "${stem}*test*.dart" -o -iname "*${stem}*test*.dart" -o -iname "${stem}_test.dart" \) 2>/dev/null); then
         paired=1
       fi
       if [ "$paired" -eq 0 ]; then
-        if find "$FORGE_ROOT/test" -type f -iname '*fallback*test*' 2>/dev/null | grep -q .; then
+        if grep -q . < <(find "$FORGE_ROOT/test" -type f -iname '*fallback*test*' 2>/dev/null); then
           paired=1
         fi
       fi
       if [ "$paired" -eq 0 ] && [[ "$src" == *.rs ]]; then
         if grep -qE '#\[cfg\(test\)\]|#\[test\]' "$src"; then
           paired=1
-        elif find "$FORGE_ROOT/tests" -type f -iname '*fallback*' 2>/dev/null | grep -q .; then
+        elif grep -q . < <(find "$FORGE_ROOT/tests" -type f -iname '*fallback*' 2>/dev/null); then
           paired=1
         fi
       fi

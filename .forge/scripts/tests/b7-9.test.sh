@@ -146,7 +146,7 @@ _test_b7_9_021_entry_shape() {
   local needles=("archetype:" "provider:" "tier:" "reason:" "since:" "alternative:" "rule_id:")
   local n
   for n in "${needles[@]}"; do
-    if ! awk '/^forbidden_combinations:/{flag=1; next} flag && /^[A-Za-z]/{flag=0} flag' "$DISPATCH_TABLE" | grep -qF "$n"; then
+    if ! grep -qF "$n" < <(awk '/^forbidden_combinations:/{flag=1; next} flag && /^[A-Za-z]/{flag=0} flag' "$DISPATCH_TABLE"); then
       echo "    forbidden_combinations entry missing key: $n" >&2; return 1
     fi
   done
@@ -158,7 +158,7 @@ _test_b7_9_022_seed_entries() {
   block="$(awk '/^forbidden_combinations:/{flag=1; next} flag && /^[A-Za-z]/{flag=0} flag' "$DISPATCH_TABLE")"
   local rid
   for rid in J8-RULE-004 J8-RULE-005 J8-RULE-006; do
-    if ! printf '%s' "$block" | grep -qF "rule_id: $rid"; then
+    if ! grep -qF "rule_id: $rid" <<<"$block"; then
       echo "    seed entry rule_id: $rid missing in forbidden_combinations" >&2; return 1
     fi
   done
@@ -277,7 +277,7 @@ _test_b7_9_l2_refuse_t3() {
   tmpdir="$(_mk_combo_fixture T3)"
   trap "rm -rf '$tmpdir'" RETURN
   output="$(_run_combo_helper "$tmpdir" T3 "ai-native-rag" "us-managed-inference")"
-  if ! printf '%s' "$output" | grep -qF "RC=3"; then
+  if ! grep -qF "RC=3" <<<"$output"; then
     echo "    expected exit 3 from combination helper at T3" >&2
     printf '    output: %s\n' "$output" >&2
     return 1
@@ -294,7 +294,7 @@ _test_b7_9_l2_t1_no_refuse() {
   tmpdir="$(_mk_combo_fixture T1)"
   trap "rm -rf '$tmpdir'" RETURN
   output="$(_run_combo_helper "$tmpdir" T1 "ai-native-rag" "openai-via-eu-gateway")"
-  if ! printf '%s' "$output" | grep -qF "RC=0"; then
+  if ! grep -qF "RC=0" <<<"$output"; then
     echo "    expected exit 0 (no refusal) at T1 for openai-via-eu-gateway" >&2
     printf '    output: %s\n' "$output" >&2
     return 1

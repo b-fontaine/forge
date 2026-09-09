@@ -323,9 +323,9 @@ _test_b71_l1_018_header_block() {
   # false pass). Fails loud if the file is missing (awk yields empty).
   local header; header=$(awk '/^[^#]/{exit} {print}' "$SCHEMA" 2>/dev/null)
   local ok=1
-  printf '%s' "$header" | grep -qiE 'candidate'  || { echo "    FAIL T-018: header block missing 'candidate' semantics (FR-B7-1-005)" >&2; ok=0; }
-  printf '%s' "$header" | grep -qiE 'promotion'  || { echo "    FAIL T-018: header block missing promotion trigger (FR-B7-1-005)" >&2; ok=0; }
-  printf '%s' "$header" | grep -qiE 'additive'   || { echo "    FAIL T-018: header block missing additivity note (FR-B7-1-005)" >&2; ok=0; }
+  grep -qiE 'candidate' <<<"$header"  || { echo "    FAIL T-018: header block missing 'candidate' semantics (FR-B7-1-005)" >&2; ok=0; }
+  grep -qiE 'promotion' <<<"$header"  || { echo "    FAIL T-018: header block missing promotion trigger (FR-B7-1-005)" >&2; ok=0; }
+  grep -qiE 'additive' <<<"$header"   || { echo "    FAIL T-018: header block missing additivity note (FR-B7-1-005)" >&2; ok=0; }
   [ "$ok" = "1" ]
 }
 

@@ -220,7 +220,7 @@ EOF
   local out rc=0
   out=$(FORGE_ROOT="$tmp" bash "$tmp/.forge/scripts/constitution-linter.sh" 2>&1) || rc=$?
   # FAIL line uses 'missing' keyword, PASS line uses 'has' keyword.
-  if ! echo "$out" | grep -qE 'test-no-fr.*missing.*audit trail'; then
+  if ! grep -qE 'test-no-fr.*missing.*audit trail' <<<"$out"; then
     echo "    expected V.1 fail message about test-no-fr ; got:" >&2
     echo "$out" | tail -10 >&2
     return 1
@@ -242,7 +242,7 @@ EOF
   local out
   out=$(FORGE_ROOT="$tmp" bash "$tmp/.forge/scripts/constitution-linter.sh" 2>&1)
   # FAIL message contains "missing"; PASS message contains "has".
-  if echo "$out" | grep -qE 'test-with-fr.*missing.*audit trail'; then
+  if grep -qE 'test-with-fr.*missing.*audit trail' <<<"$out"; then
     echo "    V.1 wrongly fails on change with [Story: FR-001]" >&2; return 1
   fi
 }
@@ -302,7 +302,7 @@ name: testapp
 EOF
   local out
   out=$(FORGE_ROOT="$tmp" FORGE_LINTER_X3_THRESHOLD=0 bash "$tmp/.forge/scripts/constitution-linter.sh" 2>&1)
-  if echo "$out" | grep -qE 'X\.3.*FAIL.*ratio'; then
+  if grep -qE 'X\.3.*FAIL.*ratio' <<<"$out"; then
     echo "    X.3 wrongly fails when threshold env var = 0" >&2; return 1
   fi
 }

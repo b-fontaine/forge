@@ -578,7 +578,7 @@ _test_b69_l2_bundle_integration() {
     "audit/audit-ledger.json" \
     "audit/audit-ledger.md" \
     "sbom/sbom.cdx.json"; do
-    if ! printf '%s\n' "$listing" | grep -Fxq "$member"; then
+    if ! grep -Fxq "$member" <<<"$listing"; then
       echo "    expected base bundle member missing: $member" >&2
       printf '%s\n' "$listing" | sed 's/^/      /' >&2
       return 1
@@ -589,7 +589,7 @@ _test_b69_l2_bundle_integration() {
   for f in "$L2_TMP/.forge/compliance/nis2"/*; do
     [ -f "$f" ] || continue
     name="$(basename "$f")"
-    if ! printf '%s\n' "$listing" | grep -Fxq "regulatory/nis2/$name"; then
+    if ! grep -Fxq "regulatory/nis2/$name" <<<"$listing"; then
       echo "    expected regulatory member missing: regulatory/nis2/$name" >&2
       return 1
     fi
@@ -635,7 +635,7 @@ _test_b69_l2_graceful_absence() {
   local listing
   listing="$(tar -tzf "$out" 2>/dev/null | sort)"
   # Zero nis2 members.
-  if printf '%s\n' "$listing" | grep -q '^regulatory/nis2/'; then
+  if grep -q '^regulatory/nis2/' <<<"$listing"; then
     echo "    nis2 members present despite absent source dir" >&2
     printf '%s\n' "$listing" | sed 's/^/      /' >&2
     return 1
@@ -648,7 +648,7 @@ _test_b69_l2_graceful_absence() {
     "audit/audit-ledger.json" \
     "audit/audit-ledger.md" \
     "sbom/sbom.cdx.json"; do
-    if ! printf '%s\n' "$listing" | grep -Fxq "$member"; then
+    if ! grep -Fxq "$member" <<<"$listing"; then
       echo "    expected base member missing in graceful-absence fixture: $member" >&2
       return 1
     fi

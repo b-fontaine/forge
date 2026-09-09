@@ -189,14 +189,14 @@ _test_t52_l2_001_pubdev_tooling_smoke() {
 
   # pub.dev's chip label is "Platform" (singular) in the package
   # detail panel ; grep case-insensitive to cover both renderings.
-  if ! printf '%s' "$body" | grep -iEq "[Pp]latform"; then
+  if ! grep -iEq "[Pp]latform" <<<"$body"; then
     echo "    [FR-T52-E-002] pub.dev page for flutter_bloc missing 'Platform' chip label — regression?" >&2
     return 1
   fi
 
   local found=0 plat
   for plat in Android iOS Linux macOS Web Windows; do
-    if printf '%s' "$body" | grep -Fq "$plat"; then
+    if grep -Fq "$plat" <<<"$body"; then
       found=1; break
     fi
   done

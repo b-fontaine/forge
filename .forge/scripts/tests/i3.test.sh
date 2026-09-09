@@ -104,7 +104,7 @@ _test_i3_003_opt_out_env_var() {
   local output
   output="$(FORGE_LINTER_SKIP_T3_FORBIDDEN=1 \
              bash "$LINTER_SH" 2>&1 || true)"
-  if ! printf '%s' "$output" | grep -Fq "skipped via FORGE_LINTER_SKIP_T3_FORBIDDEN"; then
+  if ! grep -Fq "skipped via FORGE_LINTER_SKIP_T3_FORBIDDEN" <<<"$output"; then
     echo "    opt-out branch did not emit 'skipped via FORGE_LINTER_SKIP_T3_FORBIDDEN'" >&2
     return 1
   fi
@@ -127,7 +127,7 @@ _test_i3_005_tier_discovery_na() {
   local output
   output="$(unset FORGE_EU_TIER; bash "$LINTER_SH" 2>&1 || true)"
   # Expect N/A line under the T3-Forbidden Components header
-  if ! printf '%s' "$output" | grep -Fq "no compliance tier declared"; then
+  if ! grep -Fq "no compliance tier declared" <<<"$output"; then
     echo "    'no compliance tier declared' N/A line missing" >&2
     echo "    output preview:" >&2
     printf '%s' "$output" | grep -A 1 "T3-Forbidden" >&2 || true
@@ -321,7 +321,7 @@ dependencies:
       in_block && /^[A-Z]/ { in_block=0 }
       in_block { print }
     ')"
-  if ! printf '%s' "$section_body" | grep -Eq "FAIL.*T3-RULE-001.*firebase-auth.*forbidden at T3"; then
+  if ! grep -Eq "FAIL.*T3-RULE-001.*firebase-auth.*forbidden at T3" <<<"$section_body"; then
     echo "    expected T3-RULE-001 FAIL refusal line missing in section body" >&2
     echo "    section body:" >&2
     printf '%s\n' "$section_body" >&2
@@ -346,7 +346,7 @@ inngest = \"0.1\"
       in_block && /^[A-Z]/ { in_block=0 }
       in_block { print }
     ')"
-  if ! printf '%s' "$section_body" | grep -Eq "FAIL.*T3-RULE-003.*inngest.*forbidden at T3"; then
+  if ! grep -Eq "FAIL.*T3-RULE-003.*inngest.*forbidden at T3" <<<"$section_body"; then
     echo "    expected T3-RULE-003 FAIL refusal line missing in section body" >&2
     echo "    section body:" >&2
     printf '%s\n' "$section_body" >&2
@@ -370,7 +370,7 @@ dependencies:
   local output
   output="$(_run_linter_in_fixture "$tmpdir")"
   # Expect WARN line in T3-Forbidden section.
-  if ! printf '%s' "$output" | grep -Eq "WARN.*T3-RULE-001.*forbidden at T1"; then
+  if ! grep -Eq "WARN.*T3-RULE-001.*forbidden at T1" <<<"$output"; then
     echo "    expected T1 WARN T3-RULE-001 line missing" >&2
     printf '%s' "$output" | grep -A 2 "T3-Forbidden" >&2 || true
     return 1
@@ -403,7 +403,7 @@ _test_i3_l2_no_tier_na() {
       in_block && /^[A-Z]/ { in_block=0 }
       in_block { print }
     ')"
-  if ! printf '%s' "$section_body" | grep -Fq "no compliance tier declared"; then
+  if ! grep -Fq "no compliance tier declared" <<<"$section_body"; then
     echo "    expected N/A 'no compliance tier declared' line missing in section body" >&2
     echo "    section body:" >&2
     printf '%s\n' "$section_body" >&2

@@ -146,7 +146,7 @@ _test_j8_010_dispatch_forbidden() {
 _test_j8_011_entry_shape() {
   local needles=("name:" "reason:" "since:" "alternative:" "rule_id:")
   for n in "${needles[@]}"; do
-    if ! awk '/^forbidden_archetypes:/{flag=1; next} flag && /^[A-Za-z]/{flag=0} flag' "$DISPATCH_TABLE" | grep -q "$n"; then
+    if ! grep -q "$n" < <(awk '/^forbidden_archetypes:/{flag=1; next} flag && /^[A-Za-z]/{flag=0} flag' "$DISPATCH_TABLE"); then
       echo "    forbidden_archetypes entry missing key: $n" >&2; return 1
     fi
   done
@@ -154,10 +154,10 @@ _test_j8_011_entry_shape() {
 
 # FR-J8-012 seed entry shape (flutter-firebase + J8-RULE-001)
 _test_j8_012_seed_flutter_firebase() {
-  if ! awk '/^forbidden_archetypes:/{flag=1; next} flag && /^[A-Za-z]/{flag=0} flag' "$DISPATCH_TABLE" | grep -q "name: flutter-firebase"; then
+  if ! grep -q "name: flutter-firebase" < <(awk '/^forbidden_archetypes:/{flag=1; next} flag && /^[A-Za-z]/{flag=0} flag' "$DISPATCH_TABLE"); then
     echo "    seed entry name=flutter-firebase missing" >&2; return 1
   fi
-  if ! awk '/^forbidden_archetypes:/{flag=1; next} flag && /^[A-Za-z]/{flag=0} flag' "$DISPATCH_TABLE" | grep -q "rule_id: J8-RULE-001"; then
+  if ! grep -q "rule_id: J8-RULE-001" < <(awk '/^forbidden_archetypes:/{flag=1; next} flag && /^[A-Za-z]/{flag=0} flag' "$DISPATCH_TABLE"); then
     echo "    seed entry rule_id=J8-RULE-001 missing" >&2; return 1
   fi
 }

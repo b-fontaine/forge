@@ -437,7 +437,7 @@ _test_b92_l1_016_service_worker_and_offline_shell() {
     || { echo "    FAIL T-016: root.tsx never RENDERS <ServiceWorkerRegister /> (importing it is not registering it) — the SW would never be registered (FR-B9-2-012)" >&2; ok=0; }
 
   # The offline shell must be a real route AND be precached by the worker.
-  find "$WEBPWA/src/routes" -ipath "*offline*" -name "index.tsx.tmpl" 2>/dev/null | grep -q . \
+  grep -q . < <(find "$WEBPWA/src/routes" -ipath "*offline*" -name "index.tsx.tmpl" 2>/dev/null) \
     || { echo "    FAIL T-016: no offline-shell route under src/routes/ (FR-B9-2-012)" >&2; ok=0; }
   # Require addAll specifically. `caches.open` alone is NOT precaching — the fetch
   # handler opens the same cache to READ from it, so accepting `caches.open` let a

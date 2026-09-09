@@ -170,7 +170,7 @@ _test_b84_l1_006_gateway_std_j7_dir_mode() {
     printf '%s\n' "$out" | grep -F 'STD-FAIL' | head -5 >&2
     return 1
   fi
-  if ! printf '%s' "$out" | grep -qE '\[STD-PASS\] .*standards/gateway\.yaml'; then
+  if ! grep -qE '\[STD-PASS\] .*standards/gateway\.yaml' <<<"$out"; then
     echo "    FAIL T-006: no [STD-PASS] line for standards/gateway.yaml in dir-mode output (FR-B84-030)" >&2
     return 1
   fi

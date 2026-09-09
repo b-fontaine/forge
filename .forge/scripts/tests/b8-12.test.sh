@@ -339,7 +339,7 @@ _test_b812_013_transport_yaml_pin() {
 
 # FR-B812-040 — Envoy-OIDC template(s) present in the 2.0.0 subtree
 _test_b812_014_envoy_oidc_tmpl_present() {
-  if ! find "$ENVOY_OIDC_DIR" \( -name "*security*" -o -name "*jwt*" -o -name "*oidc*" \) -type f 2>/dev/null | grep -q .; then
+  if ! grep -q . < <(find "$ENVOY_OIDC_DIR" \( -name "*security*" -o -name "*jwt*" -o -name "*oidc*" \) -type f 2>/dev/null); then
     echo "    no Envoy-OIDC template (*security*/*jwt*/*oidc*) found under $ENVOY_OIDC_DIR" >&2
     return 1
   fi
@@ -347,7 +347,7 @@ _test_b812_014_envoy_oidc_tmpl_present() {
 
 # FR-B812-042 — backend JWT middleware template present
 _test_b812_015_jwt_middleware_tmpl_present() {
-  if ! find "$BACKEND_TPL_DIR" \( -name "*jwt*" -o -name "*auth*middleware*" \) -type f 2>/dev/null | grep -q .; then
+  if ! grep -q . < <(find "$BACKEND_TPL_DIR" \( -name "*jwt*" -o -name "*auth*middleware*" \) -type f 2>/dev/null); then
     echo "    no backend JWT middleware template (*jwt*/*auth*middleware*) found under $BACKEND_TPL_DIR" >&2
     return 1
   fi

@@ -187,11 +187,11 @@ _test_t5c_l1_008_snapshot_content() {
   if [ -z "$extracted" ]; then
     echo "    snapshot extraction of $pathname returned empty" >&2; return 1
   fi
-  if ! printf '%s' "$extracted" | grep -Fq 'buffa        = "=0.3.0"'; then
+  if ! grep -Fq 'buffa        = "=0.3.0"' <<<"$extracted"; then
     echo "    snapshot embedded Cargo.toml.tmpl missing buffa = \"=0.3.0\"" >&2
     return 1
   fi
-  if printf '%s' "$extracted" | grep -Eq '^buffa(-types)?[[:space:]]+=[[:space:]]*"=0\.3\.3"'; then
+  if grep -Eq '^buffa(-types)?[[:space:]]+=[[:space:]]*"=0\.3\.3"' <<<"$extracted"; then
     echo "    snapshot embedded Cargo.toml.tmpl still contains dead pin buffa(-types) = \"=0.3.3\"" >&2
     return 1
   fi

@@ -115,7 +115,7 @@ _test_b6_10_020_combinations_entries() {
   block="$(awk '/^forbidden_combinations:/{flag=1; next} flag && /^[A-Za-z]/{flag=0} flag' "$DISPATCH_TABLE")"
   local n
   for n in "event-driven-eu" "confluent-cloud" "us-managed-kafka"; do
-    if ! printf '%s' "$block" | grep -qF "$n"; then
+    if ! grep -qF "$n" <<<"$block"; then
       echo "    forbidden_combinations block missing token: $n" >&2; return 1
     fi
   done
@@ -127,7 +127,7 @@ _test_b6_10_021_seed_rule_ids() {
   block="$(awk '/^forbidden_combinations:/{flag=1; next} flag && /^[A-Za-z]/{flag=0} flag' "$DISPATCH_TABLE")"
   local rid
   for rid in J8-RULE-007 J8-RULE-008; do
-    if ! printf '%s' "$block" | grep -qF "rule_id: $rid"; then
+    if ! grep -qF "rule_id: $rid" <<<"$block"; then
       echo "    seed entry rule_id: $rid missing in forbidden_combinations" >&2; return 1
     fi
   done
@@ -221,7 +221,7 @@ _test_b6_10_l2_refuse_confluent() {
   tmpdir="$(_mk_combo_fixture "")"
   trap "rm -rf '$tmpdir'" RETURN
   output="$(_run_combo_helper "$tmpdir" "" "event-driven-eu" "confluent-cloud")"
-  if ! printf '%s' "$output" | grep -qF "RC=3"; then
+  if ! grep -qF "RC=3" <<<"$output"; then
     echo "    expected exit 3 from combination helper for confluent-cloud (any tier)" >&2
     printf '    output: %s\n' "$output" >&2
     return 1
@@ -236,7 +236,7 @@ _test_b6_10_l2_refuse_t3_kafka() {
   tmpdir="$(_mk_combo_fixture T3)"
   trap "rm -rf '$tmpdir'" RETURN
   output="$(_run_combo_helper "$tmpdir" T3 "event-driven-eu" "us-managed-kafka")"
-  if ! printf '%s' "$output" | grep -qF "RC=3"; then
+  if ! grep -qF "RC=3" <<<"$output"; then
     echo "    expected exit 3 from combination helper at T3 for us-managed-kafka" >&2
     printf '    output: %s\n' "$output" >&2
     return 1
@@ -252,7 +252,7 @@ _test_b6_10_l2_nats_no_refuse() {
   tmpdir="$(_mk_combo_fixture T3)"
   trap "rm -rf '$tmpdir'" RETURN
   output="$(_run_combo_helper "$tmpdir" T3 "event-driven-eu" "nats-jetstream")"
-  if ! printf '%s' "$output" | grep -qF "RC=0"; then
+  if ! grep -qF "RC=0" <<<"$output"; then
     echo "    expected exit 0 (no refusal) at T3 for nats-jetstream (sovereign default)" >&2
     printf '    output: %s\n' "$output" >&2
     return 1

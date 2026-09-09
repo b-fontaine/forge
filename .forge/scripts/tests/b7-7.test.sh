@@ -254,7 +254,7 @@ test_examples_meta_readme_lists_rag_example() {
     echo "    meta README does not list forge-rag-example" >&2
     return 1
   fi
-  if ! grep -E 'forge-rag-example' "$EXAMPLES_README" | grep -q 'ai-native-rag'; then
+  if ! grep -q 'ai-native-rag' < <(grep -E 'forge-rag-example' "$EXAMPLES_README"); then
     echo "    forge-rag-example row does not name the ai-native-rag archetype" >&2
     return 1
   fi

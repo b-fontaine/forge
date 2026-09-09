@@ -101,7 +101,7 @@ _test_i6_002_script_help_exit_zero() {
   if [ "$rc" -ne 0 ]; then
     echo "    --help expected exit 0, got $rc" >&2; return 1
   fi
-  if ! printf '%s' "$out" | grep -Fq "Usage:"; then
+  if ! grep -Fq "Usage:" <<<"$out"; then
     echo "    --help output missing 'Usage:' block" >&2; return 1
   fi
 }
@@ -409,7 +409,7 @@ _test_i6_l2_bundle_good() {
     "audit/audit-ledger.json" \
     "audit/audit-ledger.md" \
     "sbom/sbom.cdx.json"; do
-    if ! printf '%s\n' "$listing" | grep -Fxq "$member"; then
+    if ! grep -Fxq "$member" <<<"$listing"; then
       echo "    expected bundle member missing: $member" >&2
       echo "    listing was:" >&2
       printf '%s\n' "$listing" | sed 's/^/      /' >&2

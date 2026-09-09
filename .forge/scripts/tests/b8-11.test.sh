@@ -286,7 +286,7 @@ PUBSPEC
       in_block && /^[A-Z]/ { in_block=0 }
       in_block { print }
     ')"
-  if ! printf '%s' "$section_body" | grep -Eq "forbidden state-mgmt dep '?riverpod'?.*ci_blocking=true"; then
+  if ! grep -Eq "forbidden state-mgmt dep '?riverpod'?.*ci_blocking=true" <<<"$section_body"; then
     echo "    expected NSMA FAIL line with riverpod + ci_blocking=true not found" >&2
     echo "    NSMA section body:" >&2
     printf '%s\n' "$section_body" >&2
@@ -320,13 +320,13 @@ PUBSPEC
       in_block && /^[A-Z]/ { in_block=0 }
       in_block { print }
     ')"
-  if ! printf '%s' "$section_body" | grep -qF "no forbidden state-mgmt deps detected"; then
+  if ! grep -qF "no forbidden state-mgmt deps detected" <<<"$section_body"; then
     echo "    expected NSMA PASS line 'no forbidden state-mgmt deps detected' not found" >&2
     echo "    NSMA section body:" >&2
     printf '%s\n' "$section_body" >&2
     return 1
   fi
-  if printf '%s' "$section_body" | grep -Eq "forbidden state-mgmt dep.*ci_blocking=true"; then
+  if grep -Eq "forbidden state-mgmt dep.*ci_blocking=true" <<<"$section_body"; then
     echo "    clean pubspec unexpectedly emitted a FAIL line" >&2
     return 1
   fi

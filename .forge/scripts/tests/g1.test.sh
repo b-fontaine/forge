@@ -362,7 +362,7 @@ test_forge_ci_nvmrc_present_and_pinned() {
     echo "    cli/.nvmrc missing" >&2; return 1
   fi
   local content; content=$(tr -d '[:space:]' < "$NVMRC")
-  if ! echo "$content" | grep -qE '^20\.[0-9]+\.[0-9]+$'; then
+  if ! grep -qE '^20\.[0-9]+\.[0-9]+$' <<<"$content"; then
     echo "    cli/.nvmrc must match ^20\\.[0-9]+\\.[0-9]+$ ; got '$content'" >&2; return 1
   fi
 }

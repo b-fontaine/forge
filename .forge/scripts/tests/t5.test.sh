@@ -386,7 +386,7 @@ _test_t5_016() {
 }
 _test_t5_017() {
   # FR-T5-CC-012 : domain layer untouched — no template under crates/domain/
-  if find "$BACKEND_DIR/crates/domain" -type f -name '*.tmpl' 2>/dev/null | grep -q .; then
+  if grep -q . < <(find "$BACKEND_DIR/crates/domain" -type f -name '*.tmpl' 2>/dev/null); then
     echo "    forbidden: template files found under $BACKEND_DIR/crates/domain/" >&2
     return 1
   fi
