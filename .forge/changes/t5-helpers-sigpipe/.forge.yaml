@@ -1,0 +1,16 @@
+name: t5-helpers-sigpipe
+status: implemented
+created: 2026-09-09
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - T5.1.E  # cross-cutting test-infrastructure fix, same bucket as
+            # t5-qwik-cli-ignore-dep. Root cause of the intermittent CI reds
+            # attributed for months to a "shared-tree snapshot race".
+depends_on: []
+timeline:
+  proposed: 2026-09-09
+  specified: 2026-09-09
+  designed: 2026-09-09
+  planned: 2026-09-09
+  implemented: 2026-09-09

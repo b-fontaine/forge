@@ -43,9 +43,16 @@ assert_contains() {
   local haystack="$1"
   local needle="$2"
   local msg="${3:-assert_contains}"
-  if ! printf '%s' "$haystack" | grep -Fq -- "$needle"; then
+  # HERE-STRING, never a pipe. Every harness runs under `set -o pipefail`; grep -Fq
+  # exits the instant it matches, closing the pipe, and a printf still writing takes
+  # SIGPIPE — so the pipeline yields 141 and this assertion reports the OPPOSITE of
+  # the truth. Measured on the real b8-1 data (needle at offset 1735 of 23723 bytes):
+  # 57 spurious failures per 500 with the piped form, 0 with this one. It is a race,
+  # not a buffer-size threshold — a closed pipe gives EPIPE whatever would have fit.
+  # Guarded by foundations.test.sh::test_helpers_no_pipe_into_early_exiting_reader.
+  if ! grep -Fq -- "$needle" <<<"$haystack"; then
     echo "    ${msg}: needle='${needle}' not in haystack" >&2
-    echo "    haystack preview: $(printf '%s' "$haystack" | head -5)" >&2
+    echo "    haystack preview: $(head -5 <<<"$haystack")" >&2
     return 1
   fi
 }
@@ -55,7 +62,10 @@ assert_not_contains() {
   local haystack="$1"
   local needle="$2"
   local msg="${3:-assert_not_contains}"
-  if printf '%s' "$haystack" | grep -Fq -- "$needle"; then
+  # Here-string for the same reason as assert_contains. This direction is the more
+  # dangerous one: a SIGPIPE here makes a NEGATIVE assertion silently PASS while the
+  # forbidden needle sits in the stream.
+  if grep -Fq -- "$needle" <<<"$haystack"; then
     echo "    ${msg}: needle='${needle}' unexpectedly found" >&2
     return 1
   fi

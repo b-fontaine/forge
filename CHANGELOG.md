@@ -14,6 +14,45 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ### Fixed
 
+- **The intermittent CI reds were one race in one shared helper, not a shared-tree
+  snapshot race** — fixed via `t5-helpers-sigpipe`. `b8-1`, `b8-12`, `b8-13`,
+  `b8-14` and `b8-15` had been failing in shifting combinations for months, recorded
+  in project notes as `b8-obi`/`b8-signoz` rebuilding `docker-compose.dev.yml` while
+  `b8-1` read it. **That explanation was wrong on every count.** Running the nine b8
+  harnesses in sequence and hashing `git status --porcelain` after each shows the
+  tree is *never* mutated; the file in question had an mtime of 2026-06-06 and was
+  byte-identical to HEAD throughout.
+
+  The real cause: `_helpers.sh::assert_contains` did
+  `printf '%s' "$haystack" | grep -Fq -- "$needle"`, and every harness runs under
+  `set -o pipefail`. `grep -Fq` exits the instant it matches, closing the pipe; the
+  still-writing `printf` takes SIGPIPE; the pipeline yields **141**; the assertion
+  reports `needle not in haystack` for a needle that is right there. One call site
+  showed it — `b8-1`'s `_test_b81_l1_002_component_matrix`, matching
+  `postgres:16-alpine` at offset 1735 of a 23 723-byte haystack — at **57 spurious
+  failures per 500**. `b8-12`/`b8-13`/`b8-14`/`b8-15` were collateral: each runs its
+  siblings as subprocesses, so a single ~7 % leaf failure surfaced as four harnesses
+  going red unpredictably. A harness printing `Failed: 0` while exiting non-zero is
+  that chain, not a test.
+
+  Fixed with a here-string in `assert_contains`, `assert_not_contains` and the
+  failure-preview line — three lines in the helper that 11 harnesses and 122 call
+  sites route through. `b8-1` now runs **15/15 green** where it was
+  `0 0 1 1 1 0 0 0`.
+
+  Two guards in `foundations.test.sh`, both mutation-probed: a static one rejecting
+  any `| grep` / `| head` in the helper, and a behavioural one calling
+  `assert_contains` 300 times against an early-match ~43 KB haystack and requiring
+  zero failures — with a positive control, so a helper that returned 0
+  unconditionally could not pass it. Against the unfixed helper the behavioural
+  guard fails 185/300.
+
+  Also corrected in the project record: the note claiming this needs a stream past
+  64 KiB. That makes the failure *certain*, not *necessary* — a closed pipe gives
+  EPIPE regardless of what would have fit, so it is a race at any size, measured at
+  57/500 on 23 KB. The ~60 harnesses carrying the same pattern in their own bodies
+  remain an open sweep.
+
 - **`forge-migrate-flagship` shipped raw templates into adopters' projects** —
   fixed via `b8-10b-migrate-render`. The 1.0.0 → 2.0.0 migration pointed its
   3-way-merge RIGHT side straight at the framework's `2.0.0/` template tree and

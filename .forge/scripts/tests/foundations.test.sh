@@ -443,6 +443,70 @@ test_performance_under_two_seconds() {
 
 # ─── Main runner ────────────────────────────────────────────────
 
+# ─── Shared-helper integrity (t5-helpers-sigpipe) ────────────────────────────
+#
+# _helpers.sh is sourced by every harness in this directory: 11 of them call
+# assert_contains / assert_not_contains across 122 sites. A defect there is a defect
+# everywhere, which is why the guards live in the foundations harness rather than
+# beside any one consumer.
+
+# FR-T5HSP-003 — static: the helper must not pipe a haystack into an early-exiting
+# reader. Under `set -o pipefail` (which every harness sets) the reader closes the
+# pipe on match, the writer takes SIGPIPE, and the pipeline yields 141 — so the
+# assertion reports the OPPOSITE of the truth. This pattern reads as ordinary shell
+# and will come back without a guard.
+test_helpers_no_pipe_into_early_exiting_reader() {
+  local helpers
+  helpers="$(dirname "${BASH_SOURCE[0]}")/_helpers.sh"
+  [ -f "$helpers" ] || { echo "    _helpers.sh missing: $helpers" >&2; return 1; }
+  local hits
+  hits=$(grep -nE '\|[[:space:]]*(grep|head|tail|sed)[[:space:]]' "$helpers" | grep -v '^[[:space:]]*#' || true)
+  if [ -n "$hits" ]; then
+    echo "    _helpers.sh pipes into an early-exiting reader (FR-T5HSP-001/002):" >&2
+    printf '%s\n' "$hits" | head -5 | sed 's/^/      /' >&2
+    echo "      use a here-string: grep -Fq -- \"\$needle\" <<<\"\$haystack\"" >&2
+    return 1
+  fi
+}
+
+# FR-T5HSP-004 — behavioural: the static guard proves the code changed, not that the
+# race is gone. This exercises the real helper against a haystack shaped like the one
+# that failed in production — an EARLY match in a multi-kilobyte string, which
+# maximises the bytes still unwritten when the reader exits.
+#
+# The real case: `postgres:16-alpine` at offset 1735 of a 23723-byte haystack, in
+# b8-1.test.sh::_test_b81_l1_002_component_matrix. Measured 57 failures / 500 with
+# the piped form, 0 / 500 with the here-string.
+test_helpers_assert_contains_is_deterministic() {
+  local needle="EARLY-MATCH-SENTINEL"
+  local haystack; haystack="$needle"$'\n'
+  local i
+  for i in $(seq 1 600); do haystack+="filler line $i — padding so the reader exits with bytes left unwritten"$'\n'; done
+  # ~40 KB, sentinel at offset 0: the worst case for the race.
+
+  local fails=0
+  for i in $(seq 1 300); do
+    assert_contains "$haystack" "$needle" "determinism probe" >/dev/null 2>&1 || fails=$((fails+1))
+  done
+  if [ "$fails" -gt 0 ]; then
+    echo "    assert_contains failed $fails/300 times on a needle that IS present" >&2
+    echo "    — SIGPIPE under pipefail (FR-T5HSP-004). haystack=${#haystack} bytes" >&2
+    return 1
+  fi
+
+  # Positive control: the probe must be capable of failing at all. A needle that is
+  # genuinely absent has to return non-zero, or the loop above proves nothing.
+  if assert_contains "$haystack" "THIS-NEEDLE-IS-NOT-PRESENT-ANYWHERE" "control" >/dev/null 2>&1; then
+    echo "    control failed: assert_contains returned 0 for an absent needle" >&2
+    return 1
+  fi
+  # ... and the negative helper must still detect a present needle.
+  if assert_not_contains "$haystack" "$needle" "control" >/dev/null 2>&1; then
+    echo "    control failed: assert_not_contains returned 0 for a PRESENT needle" >&2
+    return 1
+  fi
+}
+
 main() {
   echo "── Forge Foundations Test Harness ──"
   echo "  VALIDATOR=$VALIDATOR"
@@ -470,6 +534,8 @@ main() {
   run_test test_dict_shaped_layers_do_not_crash_fr_gl_017
   run_test test_idempotence
   run_test test_performance_under_two_seconds
+  run_test test_helpers_no_pipe_into_early_exiting_reader
+  run_test test_helpers_assert_contains_is_deterministic
 
   print_summary
 }
