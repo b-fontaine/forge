@@ -1,0 +1,11 @@
+name: b8-10b-migrate-render
+status: proposed
+created: 2026-09-09
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.8.10  # defect in the b8-10-migrate-flagship deliverable. Naming follows the
+            # b8-3 → b8-3b precedent: a follow-up brick against the same audit item.
+depends_on: []
+timeline:
+  proposed: 2026-09-09
