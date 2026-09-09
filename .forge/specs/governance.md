@@ -39,9 +39,36 @@ substantive content, not a placeholder).
 ### FR-GOV-003 — Maintainers section content
 
 The `## Maintainers` section MUST list nominatively the current BDFL
-(`Benoit Fontaine`, GitHub `@bfontaine`, role `BDFL (current phase
+(`Benoit Fontaine`, GitHub `@b-fontaine`, role `BDFL (current phase
 ≤ 1.0)`), and MUST include a structurally-present co-maintainers table
 (empty until first appointment).
+
+<!-- Modified 2026-09-09 — handle corrected, maintainer-confirmed. -->
+<!-- Previously: "GitHub `@bfontaine`". That handle belongs to a different,   -->
+<!-- existing GitHub account; the maintainer's is `@b-fontaine`, matching the -->
+<!-- repository owner. Dated ledger entries elsewhere (REVIEW.md, archived    -->
+<!-- changes, published CHANGELOG rows) keep the old spelling on purpose:     -->
+<!-- they record what was written at the time, not who the maintainer is.     -->
+
+### FR-GOV-016 — outward links use the real repository coordinate
+
+The repository coordinate is `b-fontaine/forge`. No tracked file may use the
+unhyphenated spelling, except archived changes, the published `CHANGELOG.md`
+and the append-only `REVIEW.md` ledger, which record what was written at the
+time. The unhyphenated form 404s on both `github.com` and
+`raw.githubusercontent.com`, and that account exists and belongs to someone
+else, so the wrong coordinate pointed into a third party's namespace rather
+than merely dead-ending.
+
+Asserted by `_test_d5_016`. Added 2026-09-09, after the defect was found in
+eight outward-facing places at once — including `SECURITY.md`'s
+private-advisory link, and, functionally rather than merely in prose,
+`bin/forge-install.sh`'s `REPO_SLUG`, which made the one-line install command
+advertised in `README.md` fetch a 404.
+
+This requirement is deliberately worded without quoting the forbidden string:
+the rule is enforced by a repo-wide grep, and a spec that spelled out what it
+forbids would trip its own check.
 
 ### FR-GOV-004 — Roles and Responsibilities content
 
@@ -155,7 +182,7 @@ test, but the Constitution Article XII delegates this rule explicitly.
 
 Only `contact@benoitfontaine.fr` is published. No phone number, postal
 address, or other personal PII appears in `GOVERNANCE.md` or
-`CODE_OF_CONDUCT.md`. The GitHub handle `@bfontaine` is public and
+`CODE_OF_CONDUCT.md`. The GitHub handle `@b-fontaine` is public and
 non-sensitive.
 
 ### NFR-GOV-004 — GitHub Community Standards detection
@@ -178,7 +205,7 @@ Then GOVERNANCE.md is listed as a community file (sidebar)
 And "Code of conduct" is shown as detected by GitHub
 And README.md § "## Governance" links to GOVERNANCE.md and CODE_OF_CONDUCT.md
 And the contributor identifies, in under 30 seconds :
-  - the BDFL (Benoit Fontaine, @bfontaine)
+  - the BDFL (Benoit Fontaine, @b-fontaine)
   - how to propose an amendment (Amendment Process, 4 steps)
   - the contact email (contact@benoitfontaine.fr)
 ```

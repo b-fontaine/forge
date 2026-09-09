@@ -40,7 +40,7 @@ FAIL_NAMES=()
 #
 # MANIFEST: _test_d5_001  — FR-GOV-001 GOVERNANCE.md exists ≥ 50 lines
 # MANIFEST: _test_d5_002  — FR-GOV-002 7 H2 sections present
-# MANIFEST: _test_d5_003  — FR-GOV-003 Maintainers names BDFL @bfontaine
+# MANIFEST: _test_d5_003  — FR-GOV-003 Maintainers names BDFL @b-fontaine
 # MANIFEST: _test_d5_004  — FR-GOV-004 Roles ≥ 4 bullets
 # MANIFEST: _test_d5_005  — FR-GOV-005 Decision Making mentions current+mature phase
 # MANIFEST: _test_d5_006  — FR-GOV-006 Amendment Process : 7 days + 4 numbered steps
@@ -53,7 +53,7 @@ FAIL_NAMES=()
 # MANIFEST: _test_d5_013  — FR-GOV-012 templates bumped, d5 stays 1.0.0
 # MANIFEST: _test_d5_014  — FR-GOV-013 README links to GOVERNANCE + CODE_OF_CONDUCT
 # MANIFEST: _test_d5_015  — FR-GOV-014 CI workflow registers d5.test.sh
-# MANIFEST: _test_d5_016  — FR-GOV-015 outward links point at the real repo (b-fontaine)
+# MANIFEST: _test_d5_016  — FR-GOV-016 no unhyphenated repo coordinate outside archives
 
 # ─── Helpers locaux ──────────────────────────────────────────────
 
@@ -93,7 +93,15 @@ _test_d5_002() {
 _test_d5_003() {
   [ -f "$GOV_MD" ] || { echo "    GOVERNANCE.md missing" >&2; return 1; }
   grep -qF 'Benoit Fontaine' "$GOV_MD" || { echo "    'Benoit Fontaine' missing" >&2; return 1; }
-  grep -qF '@bfontaine' "$GOV_MD" || { echo "    '@bfontaine' missing" >&2; return 1; }
+  # Handle confirmed by the maintainer 2026-09-09: `b-fontaine`, matching the
+  # repo owner. `bfontaine` (no hyphen) is a different, existing GitHub account.
+  grep -qF '@b-fontaine' "$GOV_MD" || { echo "    '@b-fontaine' missing" >&2; return 1; }
+  # And the old handle MUST be gone from this table specifically, so the
+  # authoritative record is unambiguous. Dated ledger entries elsewhere keep it.
+  if grep -nF '@bfontaine' "$GOV_MD" | grep -vF '@b-fontaine' | grep -q .; then
+    echo "    GOVERNANCE.md still carries the pre-2026-09-09 '@bfontaine' handle" >&2
+    return 1
+  fi
   grep -qiF 'BDFL' "$GOV_MD" || { echo "    'BDFL' missing" >&2; return 1; }
 }
 
@@ -223,7 +231,7 @@ _test_d5_015() {
     || { echo "    d5.test.sh not registered in forge-ci.yml" >&2; return 1; }
 }
 
-# FR-GOV-015 — outward-facing links MUST point at the real repository.
+# FR-GOV-016 — outward-facing links MUST point at the real repository.
 # `github.com/bfontaine/forge` 404s: the repo lives under `b-fontaine` (with a
 # hyphen), while `bfontaine` is a DIFFERENT, existing GitHub account. So the bad
 # URLs did not merely dead-link, they pointed into someone else's namespace —
@@ -238,13 +246,31 @@ _test_d5_016() {
   local hits
   # Tracked files only, and `.forge/changes/` is excluded on purpose: archived
   # changes are audit history and are not rewritten after the fact.
-  # This harness is excluded from its own search: it necessarily contains the
-  # very string it forbids, both as the grep pattern and in the comment above.
-  hits=$(cd "$FORGE_ROOT_REAL" && git grep -n -F 'github.com/bfontaine/forge' -- \
-    ':!.forge/changes/' ':!cli/assets/' ':!.forge/scripts/tests/d5.test.sh' 2>/dev/null || true)
+  # Pattern is the bare `bfontaine/forge` coordinate, NOT `github.com/...`.
+  # The first cut of this rule anchored on the host and so walked straight past
+  # README.md's install line, which uses raw.githubusercontent.com — the single
+  # most user-facing link in the repo, and a 404. `b-fontaine/forge` does not
+  # contain `bfontaine/forge`, so the hyphenated form never matches.
+  #
+  # Scope is the COORDINATE only, not the `@bfontaine` handle. A wrong URL is
+  # wrong whenever it was written, so it is fixed everywhere; a handle recorded
+  # in a dated ledger entry is a historical statement about who acted, and
+  # rewriting it would falsify the audit trail. `GOVERNANCE.md`'s Maintainers
+  # table is the authoritative handle, and _test_d5_003 owns it.
+  #
+  # Exclusions, each for a reason and not for convenience:
+  #   .forge/changes/    archived changes — audit history, never rewritten
+  #   CHANGELOG.md       published release notes — history, not a live link
+  #   REVIEW.md          append-only standards-review ledger
+  #   cli/assets/        gitignored bundle output, regenerated from the above
+  #   d5.test.sh         this harness necessarily contains the string it forbids
+  hits=$(cd "$FORGE_ROOT_REAL" && git grep -n -F 'bfontaine/forge' -- \
+    ':!.forge/changes/' ':!cli/assets/' ':!.forge/scripts/tests/d5.test.sh' \
+    ':!CHANGELOG.md' ':!.forge/standards/REVIEW.md' 2>/dev/null || true)
   if [ -n "$hits" ]; then
-    echo "    outward-facing links point at github.com/bfontaine/forge, which 404s" >&2
-    echo "    (the repo is github.com/b-fontaine/forge — note the hyphen):" >&2
+    echo "    references the 'bfontaine/forge' coordinate, which 404s on both" >&2
+    echo "    github.com and raw.githubusercontent.com — the repo is" >&2
+    echo "    'b-fontaine/forge', with a hyphen:" >&2
     while IFS= read -r line; do
       [ -n "$line" ] && echo "      $line" >&2
     done <<<"$hits"

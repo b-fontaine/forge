@@ -431,7 +431,7 @@ Forge is distributed through three channels. None is exclusive.
 
 ```bash
 # A — curl | sh (without Node)
-curl -fsSL https://raw.githubusercontent.com/bfontaine/forge/main/bin/forge-install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/b-fontaine/forge/main/bin/forge-install.sh | bash
 
 # B — npm
 npx @sdd-forge/cli init

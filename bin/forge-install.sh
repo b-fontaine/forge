@@ -3,7 +3,7 @@
 #
 # Usage:
 #   Local  : bash bin/forge-install.sh [--force] [--target <dir>] [--source <dir>]
-#   Remote : curl -fsSL https://raw.githubusercontent.com/bfontaine/forge/main/bin/forge-install.sh \
+#   Remote : curl -fsSL https://raw.githubusercontent.com/b-fontaine/forge/main/bin/forge-install.sh \
 #              | bash -s -- [--force] [--target <dir>] [--ref <tag-or-branch>]
 #
 # Behavior:
@@ -28,7 +28,7 @@ set -euo pipefail
 
 # ─── Config ────────────────────────────────────────────────────
 
-REPO_SLUG="bfontaine/forge"
+REPO_SLUG="b-fontaine/forge"
 DEFAULT_REF="main"
 TMP_PREFIX="forge-install"
 

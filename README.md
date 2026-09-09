@@ -11,7 +11,7 @@ Pick whichever channel fits your workflow.
 **A — `curl | sh` (no Node required)**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/bfontaine/forge/main/bin/forge-install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/b-fontaine/forge/main/bin/forge-install.sh | bash
 ```
 
 **B — `@sdd-forge/cli` (npm)**

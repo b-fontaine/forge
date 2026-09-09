@@ -181,7 +181,7 @@ jobs:
 ```
 
 Replace `<forge-repo>` with the forge repo coordinate (e.g.
-`bfontaine/forge` or your fork) and `<ref>` with a tag, branch, or
+`b-fontaine/forge` or your fork) and `<ref>` with a tag, branch, or
 SHA (e.g. `v0.4.0` or `main`). The workflow uploads
 `forge-compliance-artefacts.tgz` as a CI artefact ; adopters
 download it from the GitHub Actions UI for hand-off to auditors,

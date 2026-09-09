@@ -21,7 +21,7 @@ decisions. A future amendment may transition the project to the **Mature Phase**
 
 | Name             | GitHub handle | Role                                      |
 | ---------------- | ------------- | ----------------------------------------- |
-| Benoit Fontaine  | `@bfontaine`  | BDFL (current phase ≤ 1.0)                |
+| Benoit Fontaine  | `@b-fontaine`  | BDFL (current phase ≤ 1.0)                |
 
 ### Co-maintainers
 

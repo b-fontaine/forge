@@ -297,7 +297,7 @@ jobs:
 ```
 
 Replace `<forge-repo>` with the Forge repo coordinate (e.g.
-`bfontaine/forge` or your fork) and `<ref>` with a tag, branch, or
+`b-fontaine/forge` or your fork) and `<ref>` with a tag, branch, or
 SHA (e.g. `v0.4.0`, `main`, or a commit hash).
 
 ### Tier inheritance
