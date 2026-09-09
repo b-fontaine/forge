@@ -153,7 +153,16 @@ cover what gets committed.
 |---|---|
 | `b8-13`, `b8-14` | GREEN in isolation — the known shared-tree snapshot race |
 | `b8-15` | **non-deterministic**: RED / GREEN / RED across three identical isolated runs |
-| `scaffolder`, `workflow` | exit **0, 0, 0** and **0** when run alone; both print `Failed: 0` even in the sweep — sequential-run interference, not a failure |
+| `scaffolder`, `workflow` | GREEN in isolation at the CI invocation: **14/0 and 11/0, exit 0** — sequential-run interference, not a failure |
+
+**A probe error worth recording, because the conclusion survived it and that is
+exactly when such an error goes unnoticed.** `scaffolder` and `workflow` were
+first re-run **bare**, without arguments — but `forge-ci.yml:70-71` invokes them
+as `--level 1,2`. Three green bare runs were therefore evidence about a different
+invocation than the one that had gone red, and the L2 legs the sweep exercised
+were never re-run. Repeated correctly: both green, `14/0` and `11/0`, exit 0. The
+conclusion did not change; the basis for it did. A probe that does not reproduce
+the failing invocation proves nothing, however green it looks.
 
 `b8-15` deserves the emphasis: it was GREEN in isolation earlier in this same
 session and RED in isolation later, which is what "flaky" means and why an
