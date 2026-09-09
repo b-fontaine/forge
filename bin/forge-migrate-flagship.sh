@@ -44,8 +44,16 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FORGE_REPO_ROOT="${FORGE_REPO_ROOT:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 
-# Phase 2 merge RIGHT root (the 27-file 2.0.0 template-set, evidence P-13/P-30).
+# The 2.0.0 template-set. NOTE: this is NO LONGER the merge RIGHT root — since
+# b8-10b-migrate-render, RIGHT is a RENDERED copy produced by _b810_render_right.
+# TPL_20 survives only as the input to the template_set_sha recorded in the
+# adopter's manifest, which is legitimately a hash of the framework's template
+# state, not of the rendered output. (The old comment said "27-file"; the set is 36.)
 TPL_20="$FORGE_REPO_ROOT/.forge/templates/archetypes/full-stack-monorepo/2.0.0"
+# The renderer and the plan that drives it (ADR-B810B-003). The plan is passed by
+# BARE NAME: overlay.sh:136 resolves it under its own hardcoded archetype dir.
+OVERLAY_SH="$FORGE_REPO_ROOT/.forge/scripts/scaffolder/overlay.sh"
+MIGRATION_PLAN="migration-plan-2.0.0.yaml"
 # Merge BASE + rollback SOURCE (the byte-frozen B.8.2 snapshot, evidence P-11/P-35).
 SNAP="$FORGE_REPO_ROOT/.forge/scaffold-snapshots/full-stack-monorepo/1.0.0.tar.gz"
 SNAP_SHA="$FORGE_REPO_ROOT/.forge/scaffold-snapshots/full-stack-monorepo/1.0.0.sha256"
@@ -130,6 +138,13 @@ if arch != "full-stack-monorepo":
     print("wrong-archetype:%s" % (arch or "<none>")); raise SystemExit(0)
 if ver != "1.0.0":
     print("wrong-version:%s" % (ver or "<none>")); raise SystemExit(0)
+# b8-10b: the overlay render needs these three. Refuse rather than substitute an
+# empty string — an empty substitution yields a file that LOOKS rendered and is
+# silently wrong, which is worse than the raw-.tmpl defect it replaces
+# (ADR-B810B-001, FR-B810B-003).
+for k in ("project_name", "reverse_domain", "root_module"):
+    if not str(d.get(k, "")).strip():
+        print("missing-key:%s" % k); raise SystemExit(0)
 print("ok")
 PY
 )
@@ -140,6 +155,9 @@ PY
       exit 7 ;;
     wrong-version:*)
       err "preflight: wrong-version: target archetype_version is '${verdict#wrong-version:}'. Migration requires archetype_version: 1.0.0."
+      exit 7 ;;
+    missing-key:*)
+      err "preflight: manifest-incomplete: $manifest has no '${verdict#missing-key:}'. The 2.0.0 overlay is RENDERED through overlay.sh and that key supplies a placeholder value; migrating without it would write unsubstituted templates into your project."
       exit 7 ;;
     *)
       err "preflight: manifest-unreadable: could not parse $manifest (${verdict})"
@@ -172,7 +190,7 @@ PY
     echo "[Phase 0] preflight: OK"
     echo "  target:        $target"
     echo "  from version:  1.0.0"
-    echo "  to version:    2.0.0 (scaffoldable: false until B.8.14)"
+    echo "  to version:    2.0.0 (stable, scaffoldable since B.8.14 2026-06-05)"
     echo "  phases:        $PHASE"
     echo "  additive deltas (5):"
     echo "    - Kong → Envoy Gateway          (B.8.4)"
@@ -220,13 +238,64 @@ _b810_phase1_obs_contracts() {
   echo "[Phase 1] obs/contracts: ${#missing[@]} sentinel(s) absent — additive apply deferred to Phase 2 overlay"
 }
 
-# ─── Phase 2 relpath mapper ───────────────────────────────────────────────────
-# Strip the leading 2.0.0/ prefix; the remainder is the adopter-project relpath
-# (the schema layer names backend/ frontend/ infra/ shared/ are identical in the
-# 2.0.0 tree and the adopter tree — evidence P-16). FR-B810-030, ADR-B810-001.
-_b810_map_relpath() {
-  local rel="$1"
-  printf '%s\n' "${rel#2.0.0/}"
+# ─── Phase 2 RIGHT renderer (b8-10b-migrate-render, ADR-B810B-003) ───────────
+# RIGHT used to be $TPL_20 — the framework's RAW 2.0.0 template tree — walked and
+# `cp`d file by file. That shipped 36 `.tmpl` files into the adopter's project, 24
+# of them still carrying <project-name>, and 9 landing beside an already-rendered
+# file of the same name. The relpath mapper that used to live here stripped the
+# `2.0.0/` prefix and nothing else; it is gone, because migration-plan-2.0.0.yaml's
+# `target:` field now does that mapping and the `.tmpl` strip in one place.
+#
+# Rendering goes through overlay.sh so there is exactly ONE implementation of the
+# placeholder semantics (NFR-B810B-001) — the reasoning ADR-B810-001 applied to the
+# merge engine, applied to the renderer.
+#
+# Echoes the rendered directory on stdout. Caller owns cleanup.
+_b810_render_right() {
+  local manifest="$1"
+  local out
+  out=$(mktemp -d -t forge-mig-right-XXXXXX)
+
+  local pn rd rmod
+  pn=$(_b810_manifest_get "$manifest" project_name)
+  rd=$(_b810_manifest_get "$manifest" reverse_domain)
+  rmod=$(_b810_manifest_get "$manifest" root_module)
+
+  if ! bash "$OVERLAY_SH" --target "$out" \
+        --project-name "$pn" --reverse-domain "$rd" --root-module "$rmod" \
+        --plan "$MIGRATION_PLAN" >/dev/null 2>&1; then
+    err "phase2: overlay render failed (plan $MIGRATION_PLAN)"
+    rm -rf "$out"
+    return 1
+  fi
+
+  # overlay.sh writes its own .forge/scaffold-manifest.yaml into the render target.
+  # It MUST NOT enter the merge: the adopter's manifest is authoritative.
+  #
+  # MEASURED, not assumed (b8-10b evidence P-6). With this line removed, a migration
+  # of a target whose manifest carried a prior upgrade_history entry DESTROYS it —
+  # the sentinel entry was present with the exclusion and gone without it. The
+  # clobber is near-invisible because the rendered manifest carries the SAME
+  # project_name / reverse_domain / root_module (they were read from the adopter's
+  # own manifest to drive the render), so only the history, scaffold_date and tools
+  # are lost. That is data loss, not a cosmetic diff.
+  rm -f "$out/.forge/scaffold-manifest.yaml"
+  rmdir "$out/.forge" 2>/dev/null || true
+
+  printf '%s\n' "$out"
+}
+
+# Read one scalar key out of a scaffold manifest. Empty output means absent — the
+# preflight has already refused that case (FR-B810B-003).
+_b810_manifest_get() {
+  python3 - "$1" "$2" <<'PY'
+import sys, yaml
+try:
+    d = yaml.safe_load(open(sys.argv[1])) or {}
+except Exception:
+    d = {}
+print(str(d.get(sys.argv[2], "")).strip())
+PY
 }
 
 # ─── Phase 2 structural overlay (additive 3-way merge via sourced _a7_*) ──────
@@ -242,14 +311,23 @@ _b810_phase2_overlay() {
   trap "rm -rf '$base_dir'" RETURN
   tar -xzf "$SNAP" -C "$base_dir"
 
+  # Render RIGHT through overlay.sh (ADR-B810B-003). Before this, RIGHT was the raw
+  # template tree and the loop below `cp`d `.tmpl` files straight into the adopter.
+  local right_root
+  right_root=$(_b810_render_right "$manifest") || exit 7
+  # shellcheck disable=SC2064
+  trap "rm -rf '$base_dir' '$right_root'" RETURN
+
   local C_UNC=0 C_UPG=0 C_PRS=0 C_CNF=0 C_SKP=0
   local right_abs rel tgt_rel left base cls
 
-  # Walk the 2.0.0 RIGHT set (sorted for determinism).
+  # Walk the RENDERED RIGHT set (sorted for determinism).
   while IFS= read -r right_abs; do
     [ -z "$right_abs" ] && continue
-    rel="${right_abs#"$TPL_20"/}"
-    tgt_rel="$(_b810_map_relpath "2.0.0/$rel")"
+    rel="${right_abs#"$right_root"/}"
+    # No mapping step: migration-plan-2.0.0.yaml's `target:` already expressed each
+    # path in adopter layout, so the rendered tree IS the target layout.
+    tgt_rel="$rel"
     left="$target/$tgt_rel"
     base="$base_dir/$tgt_rel"
     cls=$(_a7_classify "$left" "$base" "$right_abs")
@@ -291,7 +369,7 @@ _b810_phase2_overlay() {
           C_UPG=$((C_UPG+1))
         fi ;;
     esac
-  done < <(find "$TPL_20" -type f | sort)
+  done < <(find "$right_root" -type f | sort)
 
   # Canary cutover guidance (document-only; ADR-B810-005, FR-B810-034). No
   # per-route weights are generated — the Kong→Envoy canary is adopter-driven.

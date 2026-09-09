@@ -35,9 +35,9 @@ Three facts this settles:
    `2.0.0/` strip, so `_b810_map_relpath` becomes an identity function and the
    prefix-stripping logic at `:227-230` is retired rather than patched.
 3. **`overlay.sh` writes `.forge/scaffold-manifest.yaml` into the temp dir.** That
-   file must be excluded from the merge — the adopter's own manifest is authoritative
-   and is updated separately by the existing `_a7_append_upgrade_history` path.
-   Missing this would overwrite the adopter's `upgrade_history` with an empty one.
+   file must be excluded from the merge — the adopter's own manifest is authoritative.
+   The consequence of not excluding it was measured, not guessed; see
+   "The manifest exclusion" below.
 
 **Consequences.** One renderer, identical to fresh-init by construction rather than
 by discipline. The cost is a new committed artefact — the migration plan — which is
@@ -69,18 +69,31 @@ Read from the target's `.forge/scaffold-manifest.yaml`: `project_name`,
 `reverse_domain`, `root_module`. Missing key ⇒ exit 7, naming the key
 (FR-B810B-003 / ADR-B810B-001). The ABI stays `--target`-only.
 
-## Idempotence (NFR-B810B-003, the requirement most at risk)
+## The manifest exclusion — corrected after measuring
 
-Today the second run compares `.tmpl` bytes against `.tmpl` bytes and converges
-trivially. After the fix, RIGHT is rendered output, so the second run compares
-rendered bytes against the files the first run wrote — which are the same bytes,
-provided rendering is deterministic for a fixed manifest. `SOURCE_DATE_EPOCH` is
-already honoured (`b8-10.test.sh::_test_b810_l1_012`).
+This section originally claimed the temp manifest would break *idempotence*: each
+run rewriting the adopter's manifest so the migration never converged. **Both halves
+of that were wrong**, and the probe that was supposed to confirm it is what showed so.
 
-The risk is the manifest itself: if `overlay.sh`'s temp-dir manifest leaked into the
-merge, each run would rewrite the adopter's manifest and never converge. Excluding it
-(point 3 above) is what makes idempotence hold, so the second-run test is the
-real guard, not a formality.
+*Convergence* was never the exposure: a second full run is refused by the preflight,
+which requires `archetype_version: 1.0.0` and the first run sets `2.0.0`. And
+`docs/MIGRATIONS.md:76-81` scopes its idempotence claim to **Phase 1**
+(`phase_1(phase_1(target)) == phase_1(target)`), not to the whole script.
+
+What the exclusion actually prevents is **data loss**. Probed both ways on a target
+seeded with a prior `upgrade_history` entry:
+
+| | prior history after migration |
+|---|---|
+| exclusion present (shipped) | **preserved** |
+| exclusion removed | **destroyed** |
+
+The clobber is near-invisible, which is why it deserved measuring rather than
+reasoning: the rendered manifest carries the *same* `project_name`,
+`reverse_domain` and `root_module`, because those were read from the adopter's own
+manifest to drive the render. Only `upgrade_history`, `scaffold_date` and `tools`
+differ — so an eyeball check on a freshly-rendered fixture (which has no history)
+shows nothing wrong. The first probe did exactly that and came back clean.
 
 ## Verification
 
@@ -103,7 +116,8 @@ today's `cp`-based implementation, it does not test what it claims.
 2. `migration-plan-2.0.0.yaml` (all 36 entries).
 3. Rewrite the RIGHT-selection: render via `overlay.sh` into `mktemp -d`, exclude the
    temp manifest, retire `_b810_map_relpath`.
-4. Run → GREEN. Then the second-run idempotence assertion.
+4. Run → GREEN. Then probe the manifest exclusion both ways on a target seeded
+   with prior `upgrade_history`.
 5. L2 real-migration test.
 6. Banner `:175`; `docs/MIGRATIONS.md`; CHANGELOG including the already-migrated
    adopter note (Q-004).

@@ -99,6 +99,42 @@ frozen 1.0.0 snapshot; the merge RIGHT is the 27-file 2.0.0 template-set:
 preserved. B.8.14 performs the breaking removal and the VIII.1/VIII.2
 Constitution amendment — not this script.
 
+**The overlay is rendered, not copied** (since `b8-10b-migrate-render`,
+2026-09-09). The files above arrive as real project files — placeholders
+substituted from your `.forge/scaffold-manifest.yaml`, no `.tmpl` extension.
+
+Two consequences worth knowing before you run it:
+
+- **Overlapping files now merge.** Nine paths that the 2.0.0 set also provides —
+  `CLAUDE.md`, `README.md`, `Taskfile.yml`, `docker-compose.dev.yml` and five
+  others — used to land beside your file as `X.tmpl` and were never merged.
+  They now go through the same 3-way merge as everything else, so you may get a
+  genuine conflict where you previously got a silent duplicate. Conflicts are
+  listed in `.merge-conflicts` at the project root, with the usual markers in the
+  file. On a stock 1.0.0 tree, exactly one conflicts: `CLAUDE.md`.
+- **The migration refuses if your manifest is incomplete.** It needs
+  `project_name`, `reverse_domain` and `root_module` to render. Missing any of
+  them exits **7** naming the key, rather than writing a file that looks rendered
+  and silently contains an empty value.
+
+### If you migrated before 2026-09-09
+
+Earlier runs copied the 2.0.0 set verbatim, leaving **36 `.tmpl` files** in your
+project — 24 of them still containing `<project-name>` and similar placeholders,
+and 9 sitting beside the real file of the same name.
+
+The tool will not delete them: this script is additive by contract and never
+removes adopter files. List them with
+
+```sh
+find . -name '*.tmpl' -not -path './.forge/templates/*' -not -path './.git/*'
+```
+
+Every one of those is a stray. Re-running the migration will not clear them
+either — the preflight requires `archetype_version: 1.0.0` and your manifest now
+reads `2.0.0`. Delete them by hand, then take the rendered files from a fresh
+migration of a scratch copy if you want the content you missed.
+
 **Orchestration note (B8O / ADR-B8O-001).** The proposed
 `temporal-intent → embedded-orchestration` migration delta is **cancelled** (not
 deferred): Temporal is retained as the Rust orchestrator. This script does not

@@ -93,14 +93,18 @@ own"), applied to rendering. How it is honoured is Q-001.
 `--project-name` / `--org` may be added: every documented invocation and the
 `docs/MIGRATIONS.md` runbook depend on the current shape.
 
-### NFR-B810B-003 — idempotence survives
+### NFR-B810B-003 — the adopter's manifest is never clobbered
 
-`docs/MIGRATIONS.md:80` states re-running produces no further changes. Re-running
-the migration after this fix MUST still converge — the second run must classify the
-now-rendered files as `unchanged`, not re-render and re-merge them.
+The rendered RIGHT tree contains `overlay.sh`'s own
+`.forge/scaffold-manifest.yaml`. It MUST NOT reach the merge: the adopter's manifest
+is authoritative, and letting the rendered one through **destroys the adopter's
+prior `upgrade_history`** (measured both ways — evidence P-6).
 
-This is the requirement most likely to break under a naive fix, because rendering
-changes the bytes the classifier compares.
+Originally written as an idempotence requirement. Corrected after probing: a second
+full run is refused by the preflight (`archetype_version: 1.0.0` required, the first
+run sets `2.0.0`), and `docs/MIGRATIONS.md:76-81` scopes its idempotence claim to
+Phase 1 only. The real exposure is data loss, and it is near-invisible because the
+rendered manifest repeats the adopter's own project values.
 
 ### NFR-B810B-004 — the frozen 1.0.0 base is untouched
 

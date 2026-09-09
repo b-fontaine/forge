@@ -1,0 +1,140 @@
+# Forge Archetype — full-stack-monorepo MIGRATION plan (1.0.0 → 2.0.0)
+# <!-- Audit: B.8.10b (b8-10b-migrate-render, FR-B810B-001) -->
+#
+# NOT a `forge init` input. Deliberately named `migration-plan-` rather than
+# `scaffold-plan-`: a third `scaffold-plan-*.yaml` here would invite exactly the
+# confusion that a plan's mere existence proves something invokes it. `forge init`
+# uses scaffold-plan.yaml (1.0.0) or scaffold-plan-2.0.0.yaml (2.0.0); this file is
+# consumed ONLY by bin/forge-migrate-flagship.sh.
+#
+# WHY IT EXISTS. The migration used to point its 3-way-merge RIGHT side straight at
+# the 2.0.0 template tree and `cp` the files across, so adopters received 36 raw
+# `.tmpl` files — 24 still carrying `<project-name>` — and 9 of those landed beside
+# an already-rendered file of the same name. The fix renders through overlay.sh,
+# which needs a plan; this is that plan (ADR-B810B-003).
+#
+# WHY ALL 36 AND NOT THE 13 IN scaffold-plan-2.0.0.yaml. The migration's contract
+# (docs/MIGRATIONS.md) is that the adopter receives the Qwik web-public surface,
+# Zitadel and pgvector — precisely the files B.8.14 left out of fresh-init as an
+# explicit scope decision. Reusing the scaffold plan would render 13 files and
+# silently drop the 23 this migration exists to deliver.
+#
+# COVERAGE IS ASSERTED, NOT TRUSTED: b8-10.test.sh::T-014 fails if this list and the
+# 2.0.0/ tree disagree in either direction. It compares against `git ls-files`, not a
+# filesystem walk — the tree is a working directory and runtime tooling can drop
+# ignored state into it (that happened while this plan was being authored and briefly
+# made the count 37).
+#
+# Targets are the adopter-project layout: the `2.0.0/` prefix and the `.tmpl` suffix
+# are both dropped here, which is why the script needs no path-mapping of its own.
+archetype: full-stack-monorepo
+version: 2.0.0
+templates:
+- source: 2.0.0/.env.example.tmpl
+  target: .env.example
+  substitute: true
+- source: 2.0.0/CLAUDE.md.tmpl
+  target: CLAUDE.md
+  substitute: true
+- source: 2.0.0/README.md.tmpl
+  target: README.md
+  substitute: true
+- source: 2.0.0/Taskfile.yml.tmpl
+  target: Taskfile.yml
+  substitute: true
+- source: 2.0.0/backend/crates/grpc-api/Cargo.toml.tmpl
+  target: backend/crates/grpc-api/Cargo.toml
+  substitute: true
+- source: 2.0.0/backend/crates/grpc-api/src/jwt_middleware.rs.tmpl
+  target: backend/crates/grpc-api/src/jwt_middleware.rs
+  substitute: true
+- source: 2.0.0/backend/crates/grpc-api/src/transport_connect.rs.tmpl
+  target: backend/crates/grpc-api/src/transport_connect.rs
+  substitute: true
+- source: 2.0.0/backend/crates/grpc-api/src/transport_connect_client.rs.tmpl
+  target: backend/crates/grpc-api/src/transport_connect_client.rs
+  substitute: true
+- source: 2.0.0/docker-compose.dev.yml.tmpl
+  target: docker-compose.dev.yml
+  substitute: true
+- source: 2.0.0/frontend/web-public/.nvmrc.tmpl
+  target: frontend/web-public/.nvmrc
+  substitute: true
+- source: 2.0.0/frontend/web-public/README.md.tmpl
+  target: frontend/web-public/README.md
+  substitute: true
+- source: 2.0.0/frontend/web-public/package.json.tmpl
+  target: frontend/web-public/package.json
+  substitute: true
+- source: 2.0.0/frontend/web-public/qwik.env.d.ts.tmpl
+  target: frontend/web-public/qwik.env.d.ts
+  substitute: true
+- source: 2.0.0/frontend/web-public/src/entry.ssr.tsx.tmpl
+  target: frontend/web-public/src/entry.ssr.tsx
+  substitute: true
+- source: 2.0.0/frontend/web-public/src/lib/connect-client.ts.tmpl
+  target: frontend/web-public/src/lib/connect-client.ts
+  substitute: true
+- source: 2.0.0/frontend/web-public/src/root.tsx.tmpl
+  target: frontend/web-public/src/root.tsx
+  substitute: true
+- source: 2.0.0/frontend/web-public/src/routes/index.tsx.tmpl
+  target: frontend/web-public/src/routes/index.tsx
+  substitute: true
+- source: 2.0.0/frontend/web-public/tsconfig.json.tmpl
+  target: frontend/web-public/tsconfig.json
+  substitute: true
+- source: 2.0.0/frontend/web-public/vite.config.ts.tmpl
+  target: frontend/web-public/vite.config.ts
+  substitute: true
+- source: 2.0.0/infra/CLAUDE.md.tmpl
+  target: infra/CLAUDE.md
+  substitute: true
+- source: 2.0.0/infra/k8s/envoy-gateway/README.md.tmpl
+  target: infra/k8s/envoy-gateway/README.md
+  substitute: true
+- source: 2.0.0/infra/k8s/envoy-gateway/backendtlspolicy.yaml.tmpl
+  target: infra/k8s/envoy-gateway/backendtlspolicy.yaml
+  substitute: true
+- source: 2.0.0/infra/k8s/envoy-gateway/gateway.yaml.tmpl
+  target: infra/k8s/envoy-gateway/gateway.yaml
+  substitute: true
+- source: 2.0.0/infra/k8s/envoy-gateway/gatewayclass.yaml.tmpl
+  target: infra/k8s/envoy-gateway/gatewayclass.yaml
+  substitute: true
+- source: 2.0.0/infra/k8s/envoy-gateway/httproute.yaml.tmpl
+  target: infra/k8s/envoy-gateway/httproute.yaml
+  substitute: true
+- source: 2.0.0/infra/k8s/envoy-gateway/kustomization.yaml.tmpl
+  target: infra/k8s/envoy-gateway/kustomization.yaml
+  substitute: true
+- source: 2.0.0/infra/k8s/envoy-gateway/security-policy.yaml.tmpl
+  target: infra/k8s/envoy-gateway/security-policy.yaml
+  substitute: true
+- source: 2.0.0/infra/postgres/README.md.tmpl
+  target: infra/postgres/README.md
+  substitute: true
+- source: 2.0.0/infra/postgres/docker-compose.fragment.yml.tmpl
+  target: infra/postgres/docker-compose.fragment.yml
+  substitute: true
+- source: 2.0.0/infra/postgres/init-pgvector.sql.tmpl
+  target: infra/postgres/init-pgvector.sql
+  substitute: true
+- source: 2.0.0/infra/zitadel/README.md.tmpl
+  target: infra/zitadel/README.md
+  substitute: true
+- source: 2.0.0/infra/zitadel/bootstrap.md.tmpl
+  target: infra/zitadel/bootstrap.md
+  substitute: true
+- source: 2.0.0/infra/zitadel/docker-compose.fragment.yml.tmpl
+  target: infra/zitadel/docker-compose.fragment.yml
+  substitute: true
+- source: 2.0.0/infra/zitadel/values-forge.yaml.tmpl
+  target: infra/zitadel/values-forge.yaml
+  substitute: true
+- source: 2.0.0/shared/protos/README.md.tmpl
+  target: shared/protos/README.md
+  substitute: true
+- source: 2.0.0/shared/protos/buf.gen.yaml.tmpl
+  target: shared/protos/buf.gen.yaml
+  substitute: true

@@ -19,8 +19,13 @@
 #   T-010  frozen snapshot sha256 file present + expected digest + .tar.gz present (FR-B810-012/077/NFR-B810-004)
 #   T-011  coupling guard: b8-2 (frozen) + b8-3 (schema) stay GREEN (exit-code)    (FR-B810-078/NFR-B810-003)
 #   T-012  SOURCE_DATE_EPOCH determinism (L1 static) + L2 opt-in FORGE_B8_10_LIVE  (FR-B810-007/078/NFR-B810-005)
+#   T-013  a REAL migration writes no .tmpl, no placeholder, no shadowing sibling (FR-B810B-001/002/004)
+#   T-014  migration-plan-2.0.0.yaml covers the 2.0.0 tree exactly, both ways   (FR-B810B-001)
 #
-# 12 L1 tests. Budget L1 ≤ 2 s, zero net/Docker/live-`forge init`. The live
+#   T-L2-002 (opt-in) the same assertions on a REAL 1.0.0 render — proves the
+#            synthetic T-013 fixture is faithful                              (FR-B810B-005)
+#
+# 14 L1 + 2 L2 tests. Budget L1 ≤ 2 s, zero net/Docker/live-`forge init`. The live
 # verify-then-pin (forge-upgrade.sh _a7_* inventory + 2.0.0 template-set) is a
 # /forge:implement Phase 0 step recorded in evidence.md (P-28..P-36), NOT an L1
 # assertion. T-011 is exit-code only (the b8-9 coupling strategy) — keeps the
@@ -312,10 +317,177 @@ _test_b810_l1_012_source_date_epoch_static() {
     || { echo "    FAIL T-012: script body does not reference SOURCE_DATE_EPOCH (FR-B810-007/NFR-B810-005)" >&2; return 1; }
 }
 
+_test_b810_l1_014_migration_plan_covers_the_tree() {
+  # A hand-maintained list of 36 paths drifts the moment someone adds a template.
+  # Asserted in BOTH directions: an entry pointing at a missing source would make
+  # overlay.sh fail at migration time, and an unlisted source would be silently
+  # dropped from what the adopter receives — which is the failure this whole brick
+  # exists to fix, reappearing one file at a time (FR-B810B-001).
+  local plan="$FORGE_ROOT/.forge/templates/archetypes/full-stack-monorepo/migration-plan-2.0.0.yaml"
+  [ -f "$plan" ] || { echo "    FAIL T-014: migration-plan-2.0.0.yaml missing (FR-B810B-001)" >&2; return 1; }
+
+  python3 - "$FORGE_ROOT" "$plan" <<'PY' >&2
+import subprocess, sys, yaml, os
+root, plan = sys.argv[1], sys.argv[2]
+prefix = ".forge/templates/archetypes/full-stack-monorepo/2.0.0/"
+# git ls-files, NOT a filesystem walk: this tree is a working directory and runtime
+# tooling can drop ignored state into it. That happened while the plan was authored
+# and briefly made the count 37.
+out = subprocess.run(["git", "-C", root, "ls-files", prefix],
+                     capture_output=True, text=True).stdout
+tracked = {p[len(prefix):] for p in out.splitlines() if p.strip()}
+doc = yaml.safe_load(open(plan)) or {}
+listed = {e["source"][len("2.0.0/"):] for e in (doc.get("templates") or [])
+          if str(e.get("source", "")).startswith("2.0.0/")}
+missing = sorted(tracked - listed)
+extra = sorted(listed - tracked)
+bad = False
+if missing:
+    print("    FAIL T-014: %d tracked 2.0.0 file(s) absent from the migration plan "
+          "— the adopter would not receive them (FR-B810B-001):" % len(missing))
+    for m in missing[:5]:
+        print("      %s" % m)
+    bad = True
+if extra:
+    print("    FAIL T-014: %d plan entr(y/ies) point at a source that does not exist "
+          "— overlay.sh would fail at migration time:" % len(extra))
+    for e in extra[:5]:
+        print("      %s" % e)
+    bad = True
+if not tracked:
+    print("    FAIL T-014: git ls-files found NO tracked files under 2.0.0/ — the "
+          "comparison is vacuous")
+    bad = True
+raise SystemExit(1 if bad else 0)
+PY
+}
+
+_test_b810_l1_013_migration_output_rendered() {
+  # THE gap this harness had: every other test inspects the SCRIPT, and the only
+  # live test is a --dry-run, which by construction produces no files. Nothing
+  # ever looked at what the migration actually writes into an adopter's tree.
+  #
+  # It writes raw templates. `TPL_20` (:48) is the framework's 2.0.0 template
+  # tree, `_b810_map_relpath` strips only the `2.0.0/` prefix, and the file ops
+  # are a plain `cp` — so `.tmpl` files land with `<project-name>` intact
+  # (b8-10b-migrate-render, FR-B810B-001/002/004).
+  local fix; fix=$(_b810_make_fixture 1.0.0)
+  # shellcheck disable=SC2064
+  trap "rm -rf '$fix'" RETURN
+
+  # Seed the two files the 2.0.0 set also provides, so assertion (3) is actually
+  # exercised. Without them the fixture has nothing to shadow and that branch
+  # would pass vacuously — which is how a three-part test quietly becomes a
+  # two-part one. A real adopter tree has nine such collisions.
+  printf '# %s\n' "b810-fixture" > "$fix/README.md"
+  printf '# %s\n' "b810-fixture" > "$fix/CLAUDE.md"
+  git -C "$fix" add -A >/dev/null 2>&1
+  git -C "$fix" -c user.email=b810@forge.test -c user.name=b810 \
+    commit -q -m "seed shadowable files" >/dev/null 2>&1
+
+  bash "$SCRIPT" --target "$fix" --force >/dev/null 2>&1
+  local rc=$?
+  if [ "$rc" != "0" ]; then
+    echo "    FAIL T-013: migration exited $rc on a clean 1.0.0 fixture (FR-B810B-001)" >&2
+    return 1
+  fi
+
+  local ok=1
+
+  # (1) No raw template may reach the adopter. Stated over the tree, not over a
+  # list of known files, so a future addition to the 2.0.0 set inherits the rule.
+  local tmpls
+  tmpls=$(find "$fix" -name '*.tmpl' -not -path '*/.git/*' -not -path '*/.forge/templates/*' | sort)
+  if [ -n "$tmpls" ]; then
+    echo "    FAIL T-013: $(printf '%s\n' "$tmpls" | wc -l | tr -d ' ') raw .tmpl file(s) written into the target (FR-B810B-001):" >&2
+    printf '%s\n' "$tmpls" | head -5 | sed "s|$fix/|      |" >&2
+    ok=0
+  fi
+
+  # (2) No unsubstituted placeholder. A file could be renamed off .tmpl and still
+  # carry <project-name>, which is why this is a separate assertion.
+  local ph
+  ph=$(grep -rlE '<project-name>|<reverse-domain>|<root-module>|<project_name_snake>' \
+       "$fix" --exclude-dir=.git --exclude-dir=templates 2>/dev/null | sort)
+  if [ -n "$ph" ]; then
+    echo "    FAIL T-013: $(printf '%s\n' "$ph" | wc -l | tr -d ' ') file(s) still carry an unsubstituted placeholder (FR-B810B-002):" >&2
+    printf '%s\n' "$ph" | head -5 | sed "s|$fix/|      |" >&2
+    ok=0
+  fi
+
+  # (3) No file may shadow an already-rendered sibling: `X.tmpl` beside `X` leaves
+  # the adopter two files where the migration should have merged one.
+  local shadow=0 f
+  while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    [ -f "${f%.tmpl}" ] && shadow=$((shadow+1))
+  done <<<"$tmpls"
+  if [ "$shadow" -gt 0 ]; then
+    echo "    FAIL T-013: $shadow file(s) shadow an already-rendered sibling of the same name (FR-B810B-004)" >&2
+    ok=0
+  fi
+
+  [ "$ok" = "1" ]
+}
+
 # ─── L2 (opt-in) ─────────────────────────────────────────────────
 # Mirrors the b8-1 FORGE_B8_1_DOCKER opt-in env-gate (P-23). When
 # FORGE_B8_10_LIVE=1 and a real 1.0.0 scaffold target can be produced, run a
 # live --dry-run and assert exit 0 + no mutation. When unset, skip-pass.
+
+_test_b810_l2_002_real_migration_rendered() {
+  # T-013's L1 sibling runs against a SYNTHETIC target — a manifest plus two seeded
+  # files. That is enough to catch the defect and it runs everywhere, which is the
+  # point (b8-10's only pre-existing live test is toolchain-gated, and CI's `cli`
+  # job installs neither flutter nor buf, so gated legs never run there).
+  #
+  # This leg proves the synthetic fixture is FAITHFUL: same assertions against a
+  # real `bin/forge-init-fsm.sh` render, where the 2.0.0 set genuinely overlaps 9
+  # existing files. Opt-in, skip-when-absent (FR-B810B-005, Q-003).
+  if [ "${FORGE_B8_10_LIVE:-}" != "1" ]; then
+    echo "    SKIP T-L2-002: set FORGE_B8_10_LIVE=1 to run the real-render leg"
+    return 0
+  fi
+  if ! command -v flutter >/dev/null 2>&1 || ! command -v cargo >/dev/null 2>&1; then
+    echo "    SKIP T-L2-002: needs flutter + cargo for a real 1.0.0 render"
+    return 0
+  fi
+
+  local tgt; tgt=$(mktemp -d -t b8-10-live-XXXXXX)
+  # shellcheck disable=SC2064
+  trap "rm -rf '$tgt'" RETURN
+
+  if ! SOURCE_DATE_EPOCH=0 bash "$FORGE_ROOT/bin/forge-init-fsm.sh" \
+        --target "$tgt" --project-name b810live --reverse-domain io.forge.b810live \
+        --force >/dev/null 2>&1; then
+    echo "    FAIL T-L2-002: 1.0.0 render failed — cannot exercise the migration" >&2
+    return 1
+  fi
+  git init -q "$tgt" >/dev/null 2>&1
+  git -C "$tgt" add -A >/dev/null 2>&1
+  git -C "$tgt" -c user.email=b810@forge.test -c user.name=b810 \
+    commit -q -m "1.0.0 base" >/dev/null 2>&1
+
+  bash "$SCRIPT" --target "$tgt" --force >/dev/null 2>&1
+
+  local ok=1 n
+  n=$(find "$tgt" -name '*.tmpl' -not -path '*/.git/*' -not -path '*/.forge/templates/*' | wc -l | tr -d ' ')
+  if [ "$n" != "0" ]; then
+    echo "    FAIL T-L2-002: $n raw .tmpl file(s) in a REAL migrated tree (FR-B810B-001)" >&2
+    ok=0
+  fi
+  # The whole point of the real leg: the Qwik surface must arrive as usable files.
+  if [ ! -f "$tgt/frontend/web-public/package.json" ]; then
+    echo "    FAIL T-L2-002: frontend/web-public/package.json absent — the surface docs/MIGRATIONS.md promises did not arrive rendered (FR-B810B-001)" >&2
+    ok=0
+  fi
+  if grep -qE '<project-name>|<reverse-domain>|<root-module>' \
+       "$tgt/frontend/web-public/README.md" 2>/dev/null; then
+    echo "    FAIL T-L2-002: the rendered web-public README still carries a placeholder (FR-B810B-002)" >&2
+    ok=0
+  fi
+  [ "$ok" = "1" ]
+}
 
 _test_b810_l2_001_live_dry_run() {
   if [ "${FORGE_B8_10_LIVE:-0}" != "1" ]; then
@@ -372,9 +544,12 @@ main() {
   run_test _test_b810_l1_010_frozen_snapshot_guard
   run_test _test_b810_l1_011_sibling_coupling
   run_test _test_b810_l1_012_source_date_epoch_static
+  run_test _test_b810_l1_013_migration_output_rendered
+  run_test _test_b810_l1_014_migration_plan_covers_the_tree
 
   if [ "$LEVEL" = "2" ] || printf '%s' "$LEVEL" | grep -q '2'; then
     run_test _test_b810_l2_001_live_dry_run
+    run_test _test_b810_l2_002_real_migration_rendered
   fi
 
   print_summary

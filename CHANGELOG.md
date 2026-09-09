@@ -12,6 +12,60 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`forge-migrate-flagship` shipped raw templates into adopters' projects** —
+  fixed via `b8-10b-migrate-render`. The 1.0.0 → 2.0.0 migration pointed its
+  3-way-merge RIGHT side straight at the framework's `2.0.0/` template tree and
+  `cp`d the files across, so a migrated project received **36 `.tmpl` files**, 24 of
+  them still containing `<project-name>` and similar placeholders, and 9 sitting
+  beside an already-rendered file of the same name — `CLAUDE.md` next to
+  `CLAUDE.md.tmpl`, and likewise `README.md`, `Taskfile.yml` and
+  `docker-compose.dev.yml`. `README.md.tmpl` line 3 was literally `# <project-name>`.
+  The migration reported success throughout: the manifest recorded `upgraded: 36`
+  and flipped `archetype_version` to `2.0.0`.
+
+  Not a deferred scope decision. `ADR-B810-001` has a dedicated path-mapping note
+  covering the `2.0.0/` prefix strip and the schema layer paths, and never mentions
+  the `.tmpl` suffix or the placeholders; `grep -c 'tmpl\|substitut\|placeholder'`
+  over the script returned 0.
+
+  It survived because **no test had ever inspected the migration's output**.
+  `b8-10.test.sh` was 12 L1 + 1 L2, and the single "live" test is a `--dry-run`,
+  which by construction produces no files.
+
+  The fix renders the 2.0.0 set through `overlay.sh` into a temp directory and
+  merges from there, so there is exactly one implementation of the placeholder
+  semantics — the reasoning `ADR-B810-001` applied to the merge engine, applied to
+  the renderer. New `migration-plan-2.0.0.yaml` drives it, covering all 36 files
+  rather than the 13 `scaffold-plan-2.0.0.yaml` lists (B.8.14 deliberately left
+  pgvector, Zitadel and the Qwik surface out of fresh-init; they are precisely what
+  the migration exists to deliver). Substitution values come from the target's own
+  `.forge/scaffold-manifest.yaml`, so the `--target`-only ABI is unchanged; a
+  manifest missing `project_name`, `reverse_domain` or `root_module` now exits **7**
+  naming the key rather than substituting an empty string.
+
+  #### BREAKING for the migration's output
+
+  Nine paths that previously landed beside your file now go through the 3-way merge.
+  On a stock 1.0.0 tree exactly one conflicts (`CLAUDE.md`), recorded in
+  `.merge-conflicts` with the usual markers — where before you silently got two
+  files. **Adopters who migrated before 2026-09-09** have 36 stray `.tmpl` files
+  that this fix cannot remove (the script is additive by contract and never deletes
+  adopter files); `docs/MIGRATIONS.md` now carries a section listing how to find and
+  clear them.
+
+  Also corrected: the script announced `to version: 2.0.0 (scaffoldable: false until
+  B.8.14)` — B.8.14 shipped on 2026-06-05 and the schema has read `scaffoldable:
+  true` ever since.
+
+  Two new guards, both mutation-probed: `b8-10.test.sh::T-013` runs a **real**
+  migration and asserts zero `.tmpl`, zero placeholders and zero shadowed siblings
+  in the result; `T-014` asserts `migration-plan-2.0.0.yaml` and the `2.0.0/` tree
+  agree in both directions, comparing against `git ls-files` rather than a
+  filesystem walk — a walk briefly reported 37 files after runtime tooling dropped
+  ignored state into the template tree.
+
 ### Added
 
 - **`mobile-pwa-first` now has CI for its web surface** — `b9-7-web-ci`. The
