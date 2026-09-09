@@ -9,7 +9,6 @@ const CLI_ROOT = resolve(__dirname, "..", "..");
 const CLI_ENTRY = resolve(CLI_ROOT, "dist", "index.js");
 const REPO_ROOT = resolve(CLI_ROOT, "..");
 const ASSETS_DIR = resolve(CLI_ROOT, "assets");
-const BUNDLE_SCRIPT = resolve(CLI_ROOT, "scripts", "bundle-assets.mjs");
 
 function run(args: string[], cwd?: string): { stdout: string; stderr: string; status: number } {
   const r = spawnSync(process.execPath, [CLI_ENTRY, ...args], {
@@ -75,20 +74,26 @@ describe("@sdd-forge/cli (e2e — requires build)", () => {
 
   describe("published-tarball layout (bundled assets/)", () => {
     beforeAll(() => {
-      // Simulate `npm publish` preparation: run the same bundle step prepack
-      // would run. Required so `forge init` without --source has something to
-      // copy from. Fails loudly if the bundle script is broken.
-      const r = spawnSync(process.execPath, [BUNDLE_SCRIPT], {
-        cwd: CLI_ROOT,
-        encoding: "utf8",
-      });
-      if (r.status !== 0) {
-        throw new Error(
-          `bundle-assets.mjs failed (status=${r.status}):\n${r.stderr}`,
-        );
-      }
+      // `assets/` is built ONCE by the vitest globalSetup (test/global-setup.ts,
+      // ADR-T533-001), which runs `npm run bundle` before any test file starts
+      // and throws if it fails. This block used to re-run bundle-assets.mjs
+      // itself — a leftover from before globalSetup existed.
+      //
+      // Re-running it here is a data race, not redundancy: bundle-assets.mjs
+      // does `rm -rf assets/` and then re-copies ~4055 files, while vitest runs
+      // test FILES in parallel workers. archetypes-smoke.test.ts shells out to
+      // `forge init`, which reads that same tree, so a rebuild starting here
+      // empties assets/ underneath it. Observed twice inside `npm publish` on
+      // 2026-09-09, on the fastest archetype (mobile-only) both times and with
+      // two different symptoms — `exited 127` on a missing wrapper script, then
+      // a missing `.forge/framework-owned-paths.yml` — each an artefact of
+      // which copy the rebuild had reached.
+      //
+      // Assert the precondition instead of re-establishing it.
       if (!existsSync(ASSETS_DIR)) {
-        throw new Error(`expected ${ASSETS_DIR} to exist after bundling`);
+        throw new Error(
+          `expected ${ASSETS_DIR} to exist — the vitest globalSetup should have built it via 'npm run bundle' before any test ran`,
+        );
       }
     });
 
