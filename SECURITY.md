@@ -43,7 +43,7 @@ Out of scope:
 Please report privately via one of the following channels, in order of
 preference:
 
-1. **GitHub Security Advisories** — [open a private advisory](https://github.com/bfontaine/forge/security/advisories/new)
+1. **GitHub Security Advisories** — [open a private advisory](https://github.com/b-fontaine/forge/security/advisories/new)
    on this repository. This is the preferred channel.
 2. **Email** — send an encrypted or plaintext report to
    **benoit.fontaine@septeo.com** with the subject line

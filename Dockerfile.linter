@@ -65,6 +65,6 @@ ENTRYPOINT ["/usr/local/bin/forge-lint"]
 ARG FORGE_VERSION=dev
 LABEL org.opencontainers.image.title="forge-linter" \
       org.opencontainers.image.description="Deterministic Forge constitutional and verification linter." \
-      org.opencontainers.image.source="https://github.com/bfontaine/forge" \
+      org.opencontainers.image.source="https://github.com/b-fontaine/forge" \
       org.opencontainers.image.licenses="Apache-2.0" \
       org.opencontainers.image.version="${FORGE_VERSION}"

@@ -1,6 +1,6 @@
 # @sdd-forge/cli
 
-Install, upgrade, and verify the [Forge framework](https://github.com/bfontaine/forge)
+Install, upgrade, and verify the [Forge framework](https://github.com/b-fontaine/forge)
 in a project.
 
 ## Install

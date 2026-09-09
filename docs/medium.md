@@ -578,7 +578,7 @@ If you write Flutter or Rust with Claude Code, and you have already paid the cos
 
 ## Going further
 
-- **Repository**: `https://github.com/bfontaine/forge`
+- **Repository**: `https://github.com/b-fontaine/forge`
 - **Constitution**: 12 articles, v1.1.0, ratified
 - **Governance**: BDFL-with-fallback model
 - **License**: Apache 2.0, with attributions BMAD / SpecKit / OpenSpec / Agent OS v3 / Superpowers / oh-my-claudecode / Context7

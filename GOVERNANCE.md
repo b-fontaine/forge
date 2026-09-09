@@ -277,9 +277,9 @@ to public GitHub channels:
 
 For non-confidential topics:
 
-- **GitHub Discussions** — https://github.com/bfontaine/forge/discussions
+- **GitHub Discussions** — https://github.com/b-fontaine/forge/discussions
   (proposals, design questions, community announcements)
-- **GitHub Issues** — https://github.com/bfontaine/forge/issues
+- **GitHub Issues** — https://github.com/b-fontaine/forge/issues
   (bug reports, regressions, concrete actionable tickets)
 
 Please use the public channels first when the topic is not sensitive: the

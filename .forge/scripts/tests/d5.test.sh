@@ -53,6 +53,7 @@ FAIL_NAMES=()
 # MANIFEST: _test_d5_013  — FR-GOV-012 templates bumped, d5 stays 1.0.0
 # MANIFEST: _test_d5_014  — FR-GOV-013 README links to GOVERNANCE + CODE_OF_CONDUCT
 # MANIFEST: _test_d5_015  — FR-GOV-014 CI workflow registers d5.test.sh
+# MANIFEST: _test_d5_016  — FR-GOV-015 outward links point at the real repo (b-fontaine)
 
 # ─── Helpers locaux ──────────────────────────────────────────────
 
@@ -222,6 +223,35 @@ _test_d5_015() {
     || { echo "    d5.test.sh not registered in forge-ci.yml" >&2; return 1; }
 }
 
+# FR-GOV-015 — outward-facing links MUST point at the real repository.
+# `github.com/bfontaine/forge` 404s: the repo lives under `b-fontaine` (with a
+# hyphen), while `bfontaine` is a DIFFERENT, existing GitHub account. So the bad
+# URLs did not merely dead-link, they pointed into someone else's namespace —
+# including SECURITY.md's private-advisory link, i.e. the channel a vulnerability
+# reporter is told to use. Shipped that way through v0.5.1.
+#
+# Scope note: the maintainer handle `@bfontaine` in the Maintainers table is NOT
+# covered here and MUST NOT be rewritten by this rule — both accounts exist, only
+# the maintainer knows which is theirs, and _test_d5_003 asserts it as written.
+# This checks repository URLs only.
+_test_d5_016() {
+  local hits
+  # Tracked files only, and `.forge/changes/` is excluded on purpose: archived
+  # changes are audit history and are not rewritten after the fact.
+  # This harness is excluded from its own search: it necessarily contains the
+  # very string it forbids, both as the grep pattern and in the comment above.
+  hits=$(cd "$FORGE_ROOT_REAL" && git grep -n -F 'github.com/bfontaine/forge' -- \
+    ':!.forge/changes/' ':!cli/assets/' ':!.forge/scripts/tests/d5.test.sh' 2>/dev/null || true)
+  if [ -n "$hits" ]; then
+    echo "    outward-facing links point at github.com/bfontaine/forge, which 404s" >&2
+    echo "    (the repo is github.com/b-fontaine/forge — note the hyphen):" >&2
+    while IFS= read -r line; do
+      [ -n "$line" ] && echo "      $line" >&2
+    done <<<"$hits"
+    return 1
+  fi
+}
+
 # ─── Main ───────────────────────────────────────────────────────
 
 main() {
@@ -252,6 +282,9 @@ main() {
   echo ""
   echo "── Phase 6 : CI integration ──"
   run_test _test_d5_015
+  echo ""
+  echo "── Phase 7 : outward-facing links ──"
+  run_test _test_d5_016
   echo ""
   print_summary
 }
