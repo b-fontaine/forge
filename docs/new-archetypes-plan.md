@@ -2164,13 +2164,16 @@ deux rendu CHANGES REQUIRED**. Deux enseignements dépassent B.9 :
   elle-même pas échouer (export renommé et corps toujours-lançant marquaient 2/2).
   Réécrite avec un garde d'export et un contrôle positif.
 
-### Reste de B.9 — 6 briques
+### Reste de B.9 — 3 briques
 
 B.9.4 (arbre de décision dans `docs/ARCHETYPES.md`), B.9.5 (générateurs Bloc de
 Hera — **à re-scoper** : l'archétype est client-only et n'a pas de messages proto
-comme source), B.9.8 (snapshot), B.9.9 (`bin/forge-migrate-mobile-pwa.sh`), B.9.10
-(`docs/MIGRATION-PATHS.md`), B.9.11 (gate de promotion). **B.9.6 est un no-op**
-(linter NSMA déjà activé repo-wide par B.8.11).
+comme source), B.9.11 (gate de promotion, **en dernier** : la bascule
+`candidate` → `stable` casse tous les frères qui assertent `candidate`, et
+enregistrer `b9.test.sh` demande la dernière ligne de `forge-ci.yml`, à 419/420).
+**B.9.6 est un no-op** (linter NSMA déjà activé repo-wide par B.8.11).
+
+B.9.8, B.9.9 et B.9.10 sont livrées (2026-09-10) — détails §5.2.
 
 **B.9.7 est livrée (2026-09-09, `b9-7-web-ci`)**, dans le périmètre élargi retenu
 ici — la couche CI web entière, pas le seul job de déploiement. Nouveau workflow
@@ -2747,9 +2750,39 @@ fallback natif si push critique.
   `build.gradle.kts`) car un install `mobile-only` n'a aucun `scaffold-manifest.yaml`.
   Rendu via `overlay.sh`, jamais copié (leçon `b8-10b`). Preuve : un arbre migré est
   **identique octet pour octet** à un rendu natif, hors manifeste. Effort réel : `S`.
-- **B.9.10.** Documentation : `docs/MIGRATION-PATHS.md` enrichi avec
-  `mobile-only → mobile-pwa-first` (contrairement au plan d'origine qui listait
-  cette migration comme `M`, c'est ici trivialisée par B.9.9). Effort : `S`.
+- **B.9.10.** ✅ **Livrée 2026-09-10** via `b9-10-migration-paths`. Le périmètre
+  §5.2 (« enrichi avec `mobile-only → mobile-pwa-first` ») est livré, et la
+  révision d'effort tient : la section est courte **parce que** la migration
+  n'ajoute que des fichiers — pas de sémantique de fusion, pas de registre de
+  conflits, pas de table de phases à décrire. Une migration additive se documente
+  surtout par ce qu'elle **refuse** de faire.
+
+  Trouvé en chemin, et couvert ici parce que §8 le demandait déjà (« enrichi B.8
+  + B.9 ») : le document s'ouvrait sur *« indexes every supported migration »* et
+  en indexait **une**. La migration flagship — script, runbook, rollback, tout
+  livré par B.8.10 — n'y figurait pas, son walkthrough ayant été écrit dans
+  `docs/MIGRATIONS.md` sans que rien ne relie les deux. D'où trois ajouts : une
+  **table d'index** (une ligne par migration, avec son driver et le document qui
+  la détaille), la **frontière entre les deux documents** qu'aucun des deux
+  n'énonçait — même archétype version→version ⇒ `MIGRATIONS.md`, changement
+  d'archétype ⇒ ici (`ADR-B910-002`) —, et la section B.9 elle-même.
+
+  Chaque chiffre de la section vient d'une sonde, pas de la prose qui l'avait
+  prédit : 26 ajouts / 0 modification, identité octet avec un rendu natif hors
+  trois champs de manifeste, et les cinq codes de sortie provoqués. Deux faits
+  qu'aucune brique antérieure n'avait consignés y entrent : le script **n'a pas
+  de drapeau de rollback** (et ce qu'il faut supprimer à la place), et
+  `.forge/framework-owned-paths.yml` ne nomme rien sous `web-pwa/` — donc
+  `forge upgrade` ne fusionnera jamais de changement framework dans ce sous-arbre.
+  Hérité de l'archétype, identique pour un `forge init` neuf, donc consigné en
+  question ouverte plutôt que corrigé dans une brique de documentation.
+
+  Trois gardes dans `b9-2.test.sh`. `T-029` est celui qui a un avenir : il balaie
+  tous les `bin/forge-migrate-*.sh` et exige une ligne d'index pour chacun. Sa
+  première version cherchait dans **tout** le document et a **survécu à une sonde
+  de mutation qui supprimait la ligne du flagship** — la prose sur le rollback
+  mentionne `forge-migrate-flagship.sh` plus bas. Restreint aux lignes de la
+  table, il tombe comme il doit. Effort réel : `S`.
 - **B.9.11.** Harness `b9.test.sh` : 25–30 tests L1 + 5 L2 fixture. Effort : `S`.
 
 **Total B.9 : `L`**, ~3–4 semaines.
@@ -2995,7 +3028,7 @@ Reprise de ARCHITECTURE-TARGET §11.
 | **T5.3.1** | **`b1-1-dev-up-matrix-fixes` (template hygiene)**                                                  | ✅ **Done** via `b1-1-dev-up-matrix-fixes` (archivé). Closes the `dev-up-matrix` red lights that T5.3 exposed (chiefly `image: scratch` placeholder in `full-stack-monorepo/docker-compose.dev.yml.tmpl:60` + `version: "3.X"` obsolete attribute). Détails §0.4. Effort `S`–`M`. Release : piggyback v0.4.0-rc.1 ou patch rc.2. | Hygiène pré-existante `b1-foundations`/`b1-delivery` template. Pas de lien avec Workiva → Dartastic ; séparé pour scope auditability + atomic revertability. |
 | **T6**    | **B.8 (flagship 1.0.0 → 2.0.0), Phase 2 ARCHITECTURE-TARGET, B.8.15 couche D upgrade-matrix**     | ✅ **COMPLET — `v0.4.0`** (détails §0.12). Constitution v2.0.0 (§VIII.1 Kong→Envoy ratifié, B.8.14). 17 changes B.8 archivés + trio OTel rehosté. B.8.15 ferme la couche D de T5.1. **Point de non-retour franchi.** Déviation §10 Phase 2 : **DBOS abandonné côté Rust** (B8O 2026-06-01) ⇒ Temporal natif conservé (`temporalio-sdk 0.4.0`). | Migration breaking flagship. **Point de non-retour**. B.8.15 ferme la dernière couche de T5.1 (upgrade matrix N-1 → N).                      |
 | **T7**    | **B.6 (event-driven-eu), B.7 (ai-native-rag), K.1, K.2, K.4, K.5**                               | ✅ **T7 COMPLET au 2026-07-12** — les six modules du périmètre (B.6, B.7, K.1, K.2, K.4, K.5) sont livrés et archivés. **B.7 ✅ COMPLET (9/9) au 2026-06-23** (mainteneur 2026-06-11 : réutilise substrat 2.0.0). `ai-native-rag` promu **stable / scaffoldable:true** (PR #33). Chaîne 9 briques **toutes archivées** : ✅ `b7-1-schema` (B.7.1) + ✅ `b7-2a-dispatch-register` + ✅ `b7-standards` (B.7.3) + ✅ `b7-2-scaffolder` (B.7.2, PR #25) + ✅ `b7-pythia` (K.2 Sibyl, PR #29) + ✅ `b7-9-janus-ai` (J.8.c, PR #27) + ✅ `b7-5-ai-act` (PR #30) + ✅ `b7-10-streaming` (PR #31) + ✅ `b7-7-example` (PR #31 via #32) + ✅ `b7-6-harness` (gate de promotion, PR #33). **K.4 ✅ Iris-Web archivé 2026-07-10 via `k4-iris-web` (PR #36).** **K.5 ✅ Themis archivé 2026-07-12 via `k5-themis` (PR #37).** **B.6 event-driven-eu — 10/10 briques archivées au 2026-07-12** : ✅ `b6-1-schema` (B.6.1, PR #38) + ✅ `b6-2-scaffolder` (B.6.2, PR #38) + ✅ `b6-3-standards` (B.6.3, PR #39) + ✅ `b6-4-hermes-async` (B.6.4/K.1, PR #42) + ✅ `b6-5-ci-templates` (B.6.5, PR #40) + ✅ `b6-6-helm` (B.6.6, PR #41) + ✅ `b6-9-compliance` (B.6.9, PR #44) + ✅ `b6-10-janus-rule` (B.6.10, PR #43) + ✅ `b6-7-harness` (B.6.7 — gate de promotion ≥35 tests + flip candidate→stable/scaffoldable:true, live sur main) + ✅ `b6-8-example` (B.6.8 — `examples/forge-eda-example/`, 3 demos, PR #47). Schema **promu `stable`/`scaffoldable:true`** par B.6.7 : `forge init --archetype event-driven-eu` **rend l'arbre** (ne refuse plus exit 3) — B.6.8 le prouve end-to-end en scaffoldant l'exemple via le vrai CLI (ADR-B6-8-001). **B.6 event-driven-eu COMPLET.** Détails §0.13. | Deux nouveaux archétypes + 4 nouveaux agents.                                                                                                |
-| **T8**    | **B.9 (mobile-pwa-first / 2.0.0), B.3 (rust-cli-tui), pédagogie C.2-C.5**                        | 🚧 **EN COURS depuis 2026-07-27 — B.9 6/11 briques archivées 2026-09-10** : ✅ `b9-1-schema` (B.9.1, schéma `mobile-pwa-first/2.0.0` candidate + discriminateur `layer_profile`) + ✅ `b9-2-web-pwa` (B.9.2, surface Qwik City + SW + Web Push VAPID + standard `pwa.yaml`, et enregistrement de la clé de dispatch) + ✅ `b9-3-shared-oidc` (B.9.3, client OIDC navigateur sur `oauth4webapi` + config provider partagée). + ✅ `b9-7-web-ci` (B.9.7, workflow `web-pwa-ci.yml` — première CI Qwik du dépôt ; livrée SANS le job `pwa-deploy`, par arbitrage). + ✅ `b9-8-snapshot` (B.9.8) + ✅ `b9-9-migrate-mobile-pwa` (B.9.9, migration additive prouvée octet-identique à un rendu natif). Reste **4 briques** : B.9.4 (arbre de décision), B.9.5 (générateurs Bloc Hera), B.9.10 (MIGRATION-PATHS), B.9.11 (gate de promotion). **B.9.6 est un no-op** (linter NSMA déjà activé par B.8.11). **B.3 et pédagogie C.2–C.5 : non commencés.** Détails §0.14. **F.3 pulled forward, delivered 2026-05-12 via `f3-release-script-fix`.**                                                                                                                                                                | Renommage mobile + dernier archétype premium + walkthrough/anti-patterns/comparison/migration. F.3 release script fix shipped early (T5).    |
+| **T8**    | **B.9 (mobile-pwa-first / 2.0.0), B.3 (rust-cli-tui), pédagogie C.2-C.5**                        | 🚧 **EN COURS depuis 2026-07-27 — B.9 6/11 briques archivées 2026-09-10** : ✅ `b9-1-schema` (B.9.1, schéma `mobile-pwa-first/2.0.0` candidate + discriminateur `layer_profile`) + ✅ `b9-2-web-pwa` (B.9.2, surface Qwik City + SW + Web Push VAPID + standard `pwa.yaml`, et enregistrement de la clé de dispatch) + ✅ `b9-3-shared-oidc` (B.9.3, client OIDC navigateur sur `oauth4webapi` + config provider partagée). + ✅ `b9-7-web-ci` (B.9.7, workflow `web-pwa-ci.yml` — première CI Qwik du dépôt ; livrée SANS le job `pwa-deploy`, par arbitrage). + ✅ `b9-8-snapshot` (B.9.8) + ✅ `b9-9-migrate-mobile-pwa` (B.9.9, migration additive prouvée octet-identique à un rendu natif) + ✅ `b9-10-migration-paths` (B.9.10, `docs/MIGRATION-PATHS.md` : section cross-archétype, table d'index, frontière avec `MIGRATIONS.md` — la migration flagship n'y figurait pas). Reste **3 briques** : B.9.4 (arbre de décision), B.9.5 (générateurs Bloc Hera), B.9.11 (gate de promotion, en dernier). **B.9.6 est un no-op** (linter NSMA déjà activé par B.8.11). **B.3 et pédagogie C.2–C.5 : non commencés.** Détails §0.14. **F.3 pulled forward, delivered 2026-05-12 via `f3-release-script-fix`.**                                                                                                                                                                | Renommage mobile + dernier archétype premium + walkthrough/anti-patterns/comparison/migration. F.3 release script fix shipped early (T5).    |
 | **T9+**   | **L.1 (multi-vendor agent core — Codex/Antigravity/Cursor via émetteurs), G.* (Forge Guardian, VSCode, pre-commit ; G.6 superseded by L.1), H.* (multi-tenant, télémétrie, compliance reports)** | ⏸️ Pending.                                                                                                                                                                                                                             | Outillage périphérique et enterprise après que les 5 archétypes soient stables. L.1 = portabilité multi-CLI source-unique + connecteurs (feasibility §0.11). |
 
 ### Alternative « adoption lente, qualité maximale »

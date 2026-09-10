@@ -6,6 +6,12 @@ between archetype template-set versions. Each `X.Y.Z → A.B.C` section is the
 authoritative walkthrough that the `forge upgrade` exit-7 `[NEEDS MIGRATION:]`
 abort points adopters to.
 
+**Same archetype only.** Moving a project from one archetype to another —
+`mobile-only` to `mobile-pwa-first`, say — is a different question and lives in
+[`MIGRATION-PATHS.md`](MIGRATION-PATHS.md), which also indexes every migration
+Forge supports, this document's sections included.
+(`b9-10-migration-paths` ADR-B910-002.)
+
 ---
 
 ## full-stack-monorepo 1.0.0 → 2.0.0

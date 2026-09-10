@@ -1,0 +1,16 @@
+name: b9-10-migration-paths
+status: implemented
+created: 2026-09-10
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.9.10  # docs/new-archetypes-plan.md §5.2 — "docs/MIGRATION-PATHS.md enrichi
+            # avec mobile-only → mobile-pwa-first". §8 adds "enrichi B.8 + B.9".
+depends_on:
+  - b9-9-migrate-mobile-pwa  # the migration this documents, and its measurements
+timeline:
+  proposed: 2026-09-10
+  specified: 2026-09-10
+  designed: 2026-09-10
+  planned: 2026-09-10
+  implemented: 2026-09-10

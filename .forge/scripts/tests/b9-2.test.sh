@@ -743,6 +743,148 @@ _test_b92_l1_027_rerun_refuses() {
   esac
 }
 
+# ─── B.9.10 — docs/MIGRATION-PATHS.md (b9-10-migration-paths) ────────────────
+#
+# Same host as B.9.9's T-024..T-027, for the same reason: forge-ci.yml sits at
+# 419/420 lines against NFR-CI-002 and B.9.11 still needs the last one to register
+# b9.test.sh. This harness already owns the script these guards read.
+#
+# EVERY check in T-028 is a PRESENCE assertion. A negative one — "the section must not
+# say X" — would fire on the sentence explaining why it does not. That is the
+# T-013/T-014 trap this very file carries twice, and t6-fsm-2-0-0-wiring walked into
+# it again a day later.
+
+MIGRATION_PATHS="$FORGE_ROOT/docs/MIGRATION-PATHS.md"
+
+# The B.9 section alone, so a fact stated elsewhere in the file cannot satisfy a check.
+_b910_section() {
+  [ -f "$MIGRATION_PATHS" ] || return 1
+  awk '/^## B\.9 /{f=1;print;next} f&&/^## /{exit} f{print}' "$MIGRATION_PATHS"
+}
+
+# FR-B910-001..004 / FR-B910-007 — the section states what an adopter needs before
+# they run anything.
+_test_b92_l1_028_migration_paths_section() {
+  [ -f "$MIGRATION_PATHS" ] \
+    || { echo "    FAIL T-028: $MIGRATION_PATHS missing (FR-B910-001)" >&2; return 1; }
+  local sec; sec="$(_b910_section)"
+  [ -n "$sec" ] \
+    || { echo "    FAIL T-028: no '## B.9 ' section in MIGRATION-PATHS.md (FR-B910-001)" >&2; return 1; }
+
+  local ok=1 needle fr why n=0
+  while IFS='|' read -r needle fr why; do
+    [ -z "$needle" ] && continue
+    n=$((n + 1))
+    grep -qF -- "$needle" <<<"$sec" \
+      || { echo "    FAIL T-028: the section does not state '$needle' — $why ($fr)" >&2; ok=0; }
+  done <<'NEEDLES'
+bin/forge-migrate-mobile-pwa.sh|FR-B910-001|the driver an adopter runs
+mobile-only|FR-B910-001|the source archetype
+mobile-pwa-first|FR-B910-001|the target archetype
+26 files added, 0 modified|FR-B910-002|the additive contract, as measured
+scaffold-manifest.yaml|FR-B910-002|the only file that differs from a native render
+exit 7|FR-B910-003|what an already-migrated target hits
+exit 8|FR-B910-003|what a collision hits
+--dry-run|FR-B910-003|the flag that makes the plan inspectable first
+candidate|FR-B910-004|the target schema is not scaffoldable yet
+B.9.11|FR-B910-004|and this is the brick that opens the gate
+framework-owned-paths.yml|FR-B910-007|what forge upgrade will NOT propagate afterwards
+NEEDLES
+  # Anti-vacuity: a mangled here-doc that yields no rows would pass silently.
+  [ "$n" = "11" ] \
+    || { echo "    FAIL T-028: read $n needle(s) from the battery, expected 11 — the battery itself is broken" >&2; ok=0; }
+  [ "$ok" = "1" ]
+}
+
+# The rows of the `## Index` table, and nothing else.
+#
+# Scoped deliberately. The first version of T-029 grepped the WHOLE document for each
+# driver name and passed a mutation probe that deleted the flagship's index row —
+# because the rollback prose lower down happens to mention `forge-migrate-flagship.sh`
+# while explaining why this migration needs no rollback flag. "The name appears
+# somewhere" is not "the driver is indexed", and a guard that cannot tell them apart
+# is the exact failure this brick was opened to fix.
+_b910_index_rows() {
+  [ -f "$MIGRATION_PATHS" ] || return 1
+  awk '/^## Index/{f=1;next} f&&/^## /{exit} f&&/^\|/{print}' "$MIGRATION_PATHS"
+}
+
+# FR-B910-005 — the index covers every migration driver in the repository.
+#
+# The guard with a future: it fires on a migration script that ships without an index
+# row. That is exactly how bin/forge-migrate-flagship.sh stayed unindexed while the
+# document's first sentence claimed to index every supported migration.
+_test_b92_l1_029_index_covers_every_driver() {
+  [ -f "$MIGRATION_PATHS" ] \
+    || { echo "    FAIL T-029: $MIGRATION_PATHS missing (FR-B910-005)" >&2; return 1; }
+  local rows; rows="$(_b910_index_rows)"
+  [ -n "$rows" ] \
+    || { echo "    FAIL T-029: no '## Index' table in MIGRATION-PATHS.md (FR-B910-005)" >&2; return 1; }
+
+  local ok=1 drv base n=0 nrows
+  while IFS= read -r drv; do
+    [ -z "$drv" ] && continue
+    n=$((n + 1))
+    base="$(basename "$drv")"
+    grep -qF -- "$base" <<<"$rows" \
+      || { echo "    FAIL T-029: $base is a migration driver with no row in the MIGRATION-PATHS.md index (FR-B910-005)" >&2; ok=0; }
+  done < <(find "$FORGE_ROOT/bin" -maxdepth 1 -name 'forge-migrate-*.sh' -type f | sort)
+
+  # Anti-vacuity, both ends: no drivers found means the sweep is broken, and a table
+  # of fewer rows than drivers-plus-header means the extraction is.
+  nrows=$(grep -c . <<<"$rows")
+  [ "$n" -ge 2 ] \
+    || { echo "    FAIL T-029: found $n migration driver(s) under bin/, expected >= 2 — this guard is not guarding (FR-B910-005)" >&2; ok=0; }
+  [ "$nrows" -ge $((n + 2)) ] \
+    || { echo "    FAIL T-029: the index table has $nrows row(s) for $n driver(s) — header, separator and one row per driver is the floor (FR-B910-005)" >&2; ok=0; }
+  [ "$ok" = "1" ]
+}
+
+# NFR-B910-002 — the section cannot claim an ABI the script does not have.
+#
+# Both halves read a DELIMITED region, never the whole section, because the prose
+# legitimately talks about things that are not this script's ABI:
+#
+#   flags — read from the fenced code blocks. The prose says there is no rollback
+#           flag (FR-B910-008); a sweep of the prose would read that sentence as a
+#           claim and demand `--rollback` exist.
+#   codes — read from the `### Exit codes` table. The prose cites `forge init`'s
+#           exit 3 (the candidate-schema refusal, asserted by T-L2-001), which is a
+#           DIFFERENT binary's envelope. A guard that cannot tell the two apart would
+#           push the document toward vaguer wording — the wrong trade for a brick
+#           whose whole point is that documentation states checkable facts.
+_test_b92_l1_030_doc_claims_track_the_script() {
+  [ -f "$MIGRATE_MPWA" ] || { echo "    FAIL T-030: script absent (see T-024)" >&2; return 1; }
+  local sec; sec="$(_b910_section)"
+  [ -n "$sec" ] || { echo "    FAIL T-030: no B.9 section (see T-028)" >&2; return 1; }
+
+  local ok=1 flags codes envelope f c nf=0 nc=0
+  flags="$(awk '/^```/{inb=!inb;next} inb' <<<"$sec" | grep -oE -- '--[a-z][a-z-]*' | sort -u)"
+  while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    nf=$((nf + 1))
+    grep -qF -- "$f" "$MIGRATE_MPWA" \
+      || { echo "    FAIL T-030: the example invokes '$f', which $MIGRATE_MPWA does not accept (NFR-B910-002)" >&2; ok=0; }
+  done <<<"$flags"
+
+  envelope="$(awk '/^### Exit codes/{f=1;next} f&&/^### /{exit} f' <<<"$sec")"
+  [ -n "$envelope" ] \
+    || { echo "    FAIL T-030: no '### Exit codes' subsection in the B.9 section (FR-B910-003)" >&2; return 1; }
+  codes="$(grep -oE 'exits? [0-9]+' <<<"$envelope" | grep -oE '[0-9]+' | sort -un)"
+  while IFS= read -r c; do
+    [ -z "$c" ] && continue
+    nc=$((nc + 1))
+    grep -qE "exit ${c}\b" "$MIGRATE_MPWA" \
+      || { echo "    FAIL T-030: the section documents exit $c, which is unreachable in $MIGRATE_MPWA (NFR-B910-002)" >&2; ok=0; }
+  done <<<"$codes"
+
+  [ "$nf" -ge 2 ] \
+    || { echo "    FAIL T-030: $nf flag(s) read from the section's code blocks — the invocation example is missing (FR-B910-003)" >&2; ok=0; }
+  [ "$nc" -ge 4 ] \
+    || { echo "    FAIL T-030: $nc exit code(s) named in the section — the refusal envelope is missing (FR-B910-003)" >&2; ok=0; }
+  [ "$ok" = "1" ]
+}
+
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 main() {
@@ -780,6 +922,9 @@ main() {
   run_test _test_b92_l1_025_additive_set_matches_plan
   run_test _test_b92_l1_026_migration_is_additive_and_rendered
   run_test _test_b92_l1_027_rerun_refuses
+  run_test _test_b92_l1_028_migration_paths_section
+  run_test _test_b92_l1_029_index_covers_every_driver
+  run_test _test_b92_l1_030_doc_claims_track_the_script
   print_summary
 }
 

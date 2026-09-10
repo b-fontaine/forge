@@ -14,6 +14,40 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ### Added
 
+- **`docs/MIGRATION-PATHS.md` is now an index, and says so truthfully** —
+  `b9-10-migration-paths`. The document opened with *"This document indexes every
+  supported migration in Forge"* and indexed **one**: the T.5 Connect additive. The
+  flagship `full-stack-monorepo 1.0.0 → 2.0.0` — a shipped migration with a driver
+  script, a runbook and a rollback procedure — never appeared, because B.8.10 wrote
+  its walkthrough into `docs/MIGRATIONS.md` and nothing linked the two.
+
+  Three additions. An **index table** with one row per migration, naming its driver
+  and the document that holds its walkthrough. The **boundary between the two
+  documents**, which `.forge/specs/init-wizard.md` had assigned in 2026 and neither
+  document ever stated: same archetype version-to-version → `MIGRATIONS.md`;
+  different archetype → here (`ADR-B910-002`). And the **`mobile-only 1.0.0 →
+  mobile-pwa-first 2.0.0` section** for the migration `b9-9` shipped — the first
+  cross-archetype path in the repository.
+
+  Every figure in that section is transcribed from a probe, not from the prose that
+  predicted it: 26 files added and 0 modified, byte-identical to a native render
+  except three manifest fields, and all five exit codes provoked. It also records two
+  things no prior brick did — that the script has **no rollback flag** (and what to
+  delete instead), and that `.forge/framework-owned-paths.yml` names nothing under
+  `web-pwa/`, so `forge upgrade` will never merge framework changes into that subtree.
+  That last one is inherited from the archetype, identical for a fresh `forge init`,
+  and is filed as an open question rather than patched inside a documentation brick.
+
+  Three guards in `b9-2.test.sh`. `T-029` is the one with a future: it walks every
+  `bin/forge-migrate-*.sh` and demands a row in the index table, so the next migration
+  script cannot ship unindexed. Its first version grepped the whole document and
+  **survived a mutation probe that deleted the flagship's row** — the rollback prose
+  further down happens to mention `forge-migrate-flagship.sh`. Scoped to the table's
+  rows, it fails as it should. `T-030` reads flags from the fenced code blocks and
+  exit codes from the envelope table, never from prose, so the document can say
+  `forge init` refuses at exit 3 without the guard demanding that code of the
+  migration script.
+
 - **`bin/forge-migrate-mobile-pwa.sh`** — `b9-9-migrate-mobile-pwa`. Takes a
   `mobile-only / 1.0.0` install and adds the Qwik PWA surface without touching the
   native tree.
