@@ -1,0 +1,18 @@
+name: t6-fsm-2-0-0-wiring
+status: implemented
+created: 2026-09-10
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.8.5   # infra/postgres/docker-compose.fragment.yml.tmpl says, in its own header,
+            # "Compose into the 2.0.0 dev stack at B.8.10/B.8.14." Neither did.
+  - B.8.7   # same shape for infra/zitadel.
+  - B.8.14  # scaffold-plan-2.0.0.yaml's header records the deferral:
+            # "wiring them into fresh-init is out of this brick's scope".
+depends_on: []
+timeline:
+  proposed: 2026-09-10
+  specified: 2026-09-10
+  designed: 2026-09-10
+  planned: 2026-09-10
+  implemented: 2026-09-10

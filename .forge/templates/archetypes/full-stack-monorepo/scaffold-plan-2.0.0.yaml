@@ -210,6 +210,27 @@ templates:
 - source: 2.0.0/infra/k8s/envoy-gateway/README.md.tmpl
   target: infra/k8s/envoy-gateway/README.md
   substitute: true
+- source: 2.0.0/infra/postgres/README.md.tmpl
+  target: infra/postgres/README.md
+  substitute: true
+- source: 2.0.0/infra/postgres/docker-compose.fragment.yml.tmpl
+  target: infra/postgres/docker-compose.fragment.yml
+  substitute: true
+- source: 2.0.0/infra/postgres/init-pgvector.sql.tmpl
+  target: infra/postgres/init-pgvector.sql
+  substitute: true
+- source: 2.0.0/infra/zitadel/README.md.tmpl
+  target: infra/zitadel/README.md
+  substitute: true
+- source: 2.0.0/infra/zitadel/bootstrap.md.tmpl
+  target: infra/zitadel/bootstrap.md
+  substitute: true
+- source: 2.0.0/infra/zitadel/docker-compose.fragment.yml.tmpl
+  target: infra/zitadel/docker-compose.fragment.yml
+  substitute: true
+- source: 2.0.0/infra/zitadel/values-forge.yaml.tmpl
+  target: infra/zitadel/values-forge.yaml
+  substitute: true
 post_steps:
 - action: write_scaffold_manifest
   target: .forge/scaffold-manifest.yaml

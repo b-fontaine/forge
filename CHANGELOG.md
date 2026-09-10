@@ -14,6 +14,41 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ### Added
 
+- **A fresh `full-stack-monorepo / 2.0.0` project now gets pgvector and Zitadel** —
+  `t6-fsm-2-0-0-wiring`. Until now `forge init` and `forge-migrate-flagship` produced
+  materially different trees at the same archetype and version: the fresh-init plan
+  referenced **13** of the 36 files in the `2.0.0/` tree, the migration plan all 36.
+
+  It was not merely fewer files. A fresh project **referenced what it did not have**:
+  `docker-compose.dev.yml` ran `postgres:16-alpine` while `docs/ARCHITECTURE-TARGET.md`
+  described pgvector; the shipped Envoy `security-policy.yaml` cited
+  `infra/zitadel/values-forge.yaml` for its OIDC issuer, a file the project lacked;
+  and `.claude/agents/iris-web.md` — the frontend web specialist — scaffolded with no
+  web surface to work on. Nothing broke `task dev:up`; the project simply ran
+  something other than what it documented.
+
+  The forward pointer had been explicit since 2026-05: `infra/postgres`'s compose
+  fragment says, in its own header, *"Compose into the 2.0.0 dev stack at
+  B.8.10/B.8.14."* Neither brick did it, and B.8.14's plan header recorded the
+  deferral.
+
+  Wired: `infra/postgres/**` and `infra/zitadel/**` into the fresh-init plan, the two
+  compose fragments spliced into `docker-compose.dev.yml` (`fsm-db` →
+  `pgvector/pgvector:0.8.2-pg17` with its init-SQL mount; `fsm-zitadel` added), and
+  the three `ZITADEL_*` variables into `.env.example` — two of which the service
+  dereferences with no default, so omitting them would have turned a working
+  `task dev:up` into a failing one.
+
+  **Still migration-only, by decision:** the Qwik `frontend/web-public/` surface
+  (opt-in — an entire additional toolchain), and `backend/crates/grpc-api`'s
+  Connect-RPC + JWT middleware. The middleware is Zitadel's server-side validator and
+  would have belonged, but it cannot ship without the 2.0.0 `grpc-api` Cargo.toml,
+  which carries `connectrpc`/`buffa` — so shipping it means shipping Connect-RPC in
+  every new project, which is B.8.6's decision. Coherent because the middleware
+  declares itself *defense-in-depth*: Envoy performs the primary JWT validation and
+  fresh-init already ships it. `docs/ARCHETYPES.md` now states the remaining
+  divergence rather than letting "2.0.0" read as a single content.
+
 - **`mobile-pwa-first / 2.0.0` snapshot, and the `mobile-only / 1.0.0` freeze that
   ADR-B8-2-004 deferred to B.9** — `b9-8-snapshot`. B.8.2 froze the flagship on
   2026-05-30 and left `mobile-only` explicitly to B.9

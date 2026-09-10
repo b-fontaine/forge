@@ -229,6 +229,68 @@ _test_b814f_l2_real_kongless_scaffold() {
 }
 
 # ─── Main ───────────────────────────────────────────────────────
+# ─── t6-fsm-2-0-0-wiring — pgvector + Zitadel reach FRESH init ───────────────
+#
+# B.8.14 shipped "1.0.0 minus Kong plus Envoy" and recorded, in this plan's own
+# header, that wiring pgvector (B.8.5), Zitadel (B.8.7) and Qwik (B.8.9) into
+# fresh-init was out of its scope. The postgres fragment says it more precisely:
+# "Compose into the 2.0.0 dev stack at B.8.10/B.8.14." Neither brick did, so a
+# fresh 2.0.0 project ran Postgres 16 while its own docs described pgvector, and
+# shipped an Envoy SecurityPolicy pointing at an infra/zitadel/ it did not have.
+#
+# Qwik stays opt-in by decision; these guards cover only what was wired.
+
+# FR-T6W-001 / FR-T6W-006 — every file of the two wired subtrees is in the plan.
+# Asserted as tree-vs-plan agreement, not as a list of 7 names: the gap this closes
+# was created by files landing in the tree while the plan stayed still.
+_test_b814flip_wired_subtrees_in_plan() {
+  local ok=1 rel
+  for sub in infra/postgres infra/zitadel; do
+    while IFS= read -r rel; do
+      [ -z "$rel" ] && continue
+      local src="2.0.0/${rel#"$ARCHETYPE_DIR/2.0.0/"}"
+      grep -qF "source: $src" "$PLAN_20" || {
+        echo "    $src is in the 2.0.0 tree but not in scaffold-plan-2.0.0.yaml (FR-T6W-001)" >&2; ok=0; }
+    done < <(find "$ARCHETYPE_DIR/2.0.0/$sub" -type f 2>/dev/null | sort)
+  done
+  [ "$ok" = "1" ]
+}
+
+# FR-T6W-002 / FR-T6W-003 — the compose actually runs them. Listing the files
+# without splicing the fragments changes nothing observable: the directory would
+# land and the stack would still start postgres:16-alpine.
+_test_b814flip_compose_runs_pgvector_and_zitadel() {
+  local compose="$ARCHETYPE_DIR/2.0.0/docker-compose.dev.yml.tmpl"
+  [ -f "$compose" ] || { echo "    2.0.0 compose missing" >&2; return 1; }
+  local ok=1
+  grep -qF 'pgvector/pgvector:0.8.2-pg17' "$compose" \
+    || { echo "    fsm-db does not use the pinned pgvector image (FR-T6W-002)" >&2; ok=0; }
+  grep -qF 'init-pgvector.sql' "$compose" \
+    || { echo "    the pgvector init-SQL is not mounted (FR-T6W-002)" >&2; ok=0; }
+  grep -qE '^\s*fsm-zitadel:' "$compose" \
+    || { echo "    no fsm-zitadel service (FR-T6W-003)" >&2; ok=0; }
+  # Comment-stripped: the file deliberately DOCUMENTS that it used to pin
+  # postgres:16-alpine, and an unfiltered grep reads that prose as the violation.
+  # Same trap as b9-2's T-013/T-014.
+  if grep -qF 'postgres:16-alpine' < <(grep -vE '^\s*#' "$compose"); then
+    echo "    the 2.0.0 compose still pins postgres:16-alpine (FR-T6W-002)" >&2; ok=0
+  fi
+  [ "$ok" = "1" ]
+}
+
+# FR-T6W-004 — every variable the wired services dereference without a default.
+# Wiring the service without these turns a working `task dev:up` into a failing one.
+_test_b814flip_env_example_has_zitadel_vars() {
+  local env="$ARCHETYPE_DIR/2.0.0/.env.example.tmpl"
+  [ -f "$env" ] || { echo "    2.0.0 .env.example missing" >&2; return 1; }
+  local ok=1 v
+  for v in ZITADEL_DB_DSN ZITADEL_MASTERKEY ZITADEL_EXTERNALDOMAIN; do
+    grep -qE "^${v}=" "$env" \
+      || { echo "    .env.example declares no $v — fsm-zitadel dereferences it with no default (FR-T6W-004)" >&2; ok=0; }
+  done
+  [ "$ok" = "1" ]
+}
+
 main() {
   echo "── Forge B.8.14 FLIP enablement harness (C2) ──"
   echo "  LEVEL=$LEVEL"
@@ -254,6 +316,9 @@ main() {
   esac
 
   echo ""
+  run_test _test_b814flip_wired_subtrees_in_plan
+  run_test _test_b814flip_compose_runs_pgvector_and_zitadel
+  run_test _test_b814flip_env_example_has_zitadel_vars
   print_summary
 }
 

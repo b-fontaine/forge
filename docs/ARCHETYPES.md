@@ -43,6 +43,31 @@ adopter guides — the snapshots are the contract.
 | `event-driven-eu`     | Active        | Teams shipping an EU-sovereign event-driven system (Hermes-Async, K.1) | You need saga/process-manager orchestration across services with an EU-deployable event broker and a Temporal-driven saga, no US-managed Kafka SaaS                       | Rust (axum + async-nats + Connect) + NATS JetStream + Temporal saga (native Rust SDK) + AsyncAPI 3.1 + Postgres event store   | 1.0.0 | [`event-driven-eu.md`](../.forge/specs/event-driven-eu.md)         |
 | `rust-cli-tui`        | Planned (B.3) | Dev-tool authors                                                  | You're shipping a Rust CLI / TUI binary with cargo-dist signed releases, multi-channel distribution                                                                         | Rust CLI + TUI (ratatui)                                                                                                     | TBD   | TBD                                                                |
 
+## `full-stack-monorepo` 2.0.0 — what `forge init` gives you, and what it does not
+
+`forge init` renders the **2.0.0** tree (Kong-less, Envoy Gateway) — the CLI picks the
+highest `stage: stable` + `scaffoldable: true` schema, so there is no flag to pass.
+
+Since `t6-fsm-2-0-0-wiring` (2026-09-10) a fresh project includes:
+
+- **Postgres 17 + pgvector** (`pgvector/pgvector:0.8.2-pg17`) with the `CREATE
+  EXTENSION vector` init-SQL — previously a fresh 2.0.0 project ran
+  `postgres:16-alpine` while its own docs described pgvector;
+- **Zitadel** as the dev OIDC issuer (`fsm-zitadel`), matching the Envoy
+  `SecurityPolicy` that fresh-init already shipped;
+- the Envoy Gateway manifests, `infra/postgres/`, `infra/zitadel/`.
+
+**Two surfaces are still migration-only**, i.e. present in a project upgraded from
+1.0.0 but not in a fresh one:
+
+| surface | reachable by | why not in fresh-init |
+|---|---|---|
+| `frontend/web-public/` (Qwik) | `forge-migrate-flagship` | an entire additional surface with its own toolchain, CI and pins — opt-in by decision |
+| `backend/crates/grpc-api` Connect-RPC + JWT middleware | `forge-migrate-flagship` | shipping it means shipping the Connect stack in every new project (a B.8.6 decision, not a wiring one) |
+
+Stated explicitly because a version number normally implies a content, and here it
+does not yet: the difference is real and depends on how the project was created.
+
 ## How `forge init` chooses
 
 `forge init` has three selection modes :

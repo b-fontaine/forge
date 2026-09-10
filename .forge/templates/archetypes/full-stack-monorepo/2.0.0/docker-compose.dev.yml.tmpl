@@ -36,10 +36,19 @@
 services:
 
   # ---------------------------------------------------------------------------
-  # fsm-db — PostgreSQL 16 (primary relational datastore)
+  # fsm-db — PostgreSQL 17 + pgvector (primary relational datastore)
+  #
+  # Spliced from infra/postgres/docker-compose.fragment.yml (B.8.5) by
+  # t6-fsm-2-0-0-wiring, 2026-09-10. That fragment's header had said "Compose into
+  # the 2.0.0 dev stack at B.8.10/B.8.14" since 2026-05; neither brick did it, so
+  # fresh 2.0.0 projects ran postgres:16-alpine while their own docs described
+  # pgvector. The fragment file still ships as the documented source of this block.
+  #
+  # IMAGE: verify-then-pin RESOLVED at B.8.5 (ADR-B85-003) — pgvector 0.8.2 on
+  # Postgres major 17, explicit tag rather than the rolling :pg17 alias.
   # ---------------------------------------------------------------------------
   fsm-db:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:0.8.2-pg17
     env_file: .env
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-<project-name>_dev}
@@ -49,6 +58,8 @@ services:
       - "${FSM_DB_PORT:-5432}:5432"
     volumes:
       - fsm-db-data:/var/lib/postgresql/data
+      # runs CREATE EXTENSION IF NOT EXISTS vector; once, on first DB init
+      - ./infra/postgres/init-pgvector.sql:/docker-entrypoint-initdb.d/init-pgvector.sql:ro
     networks:
       - fsm-dev
     healthcheck:
@@ -57,6 +68,37 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # fsm-zitadel — OIDC issuer (B.8.7)
+  #
+  # Spliced from infra/zitadel/docker-compose.fragment.yml by t6-fsm-2-0-0-wiring.
+  # Envoy's infra/k8s/envoy-gateway/security-policy.yaml already performed the
+  # primary JWT validation and cited infra/zitadel/values-forge.yaml for its issuer —
+  # a file fresh-init did not ship until now.
+  #
+  # The backend's own defense-in-depth validator (jwt_middleware.rs) is NOT wired:
+  # it needs the 2.0.0 grpc-api Cargo.toml, which carries the Connect-RPC stack.
+  # That is B.8.6's decision (t6-fsm-2-0-0-wiring ADR-T6W-002).
+  # ---------------------------------------------------------------------------
+  fsm-zitadel:
+    image: ghcr.io/zitadel/zitadel:v4.14.0
+    command: start-from-init --masterkeyFromEnv --tlsMode disabled
+    env_file: .env
+    environment:
+      ZITADEL_DATABASE_POSTGRES_DSN: ${ZITADEL_DB_DSN}
+      ZITADEL_MASTERKEY: ${ZITADEL_MASTERKEY}
+      ZITADEL_EXTERNALSECURE: "false"
+      ZITADEL_EXTERNALPORT: "8123"
+      ZITADEL_EXTERNALDOMAIN: ${ZITADEL_EXTERNALDOMAIN:-localhost}
+      ZITADEL_TLS_ENABLED: "false"
+    ports:
+      - "127.0.0.1:8123:8080"
+    depends_on:
+      fsm-db:
+        condition: service_healthy
+    networks:
+      - fsm-dev
 
   # ---------------------------------------------------------------------------
   # fsm-backend — Application backend
