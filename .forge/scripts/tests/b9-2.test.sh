@@ -629,6 +629,120 @@ _test_b92_l1_023_snapshot_2_0_0_present() {
   [ "$ok" = "1" ]
 }
 
+# ─── B.9.9 — bin/forge-migrate-mobile-pwa.sh (b9-9-migrate-mobile-pwa) ───────
+#
+# Hosted here rather than in a new harness for two reasons. forge-ci.yml is at
+# 419/420 lines (NFR-CI-002) and B.9.11 still has to register b9.test.sh. And this
+# harness already owns the scaffold-plan whose entries the migration filters, plus
+# _render_legacy / _render_ported — the exact fixtures these tests need.
+
+MIGRATE_MPWA="$FORGE_ROOT/bin/forge-migrate-mobile-pwa.sh"
+
+# FR-B99-001 — shape and exit envelope.
+_test_b92_l1_024_migrate_script_shape() {
+  local ok=1
+  [ -f "$MIGRATE_MPWA" ] || { echo "    FAIL T-024: $MIGRATE_MPWA missing (FR-B99-001)" >&2; return 1; }
+  [ -x "$MIGRATE_MPWA" ] || { echo "    FAIL T-024: not executable (FR-B99-001)" >&2; ok=0; }
+  grep -qE '^set -euo pipefail' "$MIGRATE_MPWA" \
+    || { echo "    FAIL T-024: no 'set -euo pipefail' (FR-B99-001)" >&2; ok=0; }
+  local out; out=$(bash "$MIGRATE_MPWA" --help 2>&1); local rc=$?
+  [ "$rc" = "0" ] || { echo "    FAIL T-024: --help exited $rc, expected 0 (FR-B99-001)" >&2; ok=0; }
+  grep -qF -- '--target' <<<"$out" \
+    || { echo "    FAIL T-024: --help does not document --target (FR-B99-001)" >&2; ok=0; }
+  # No-target must be a usage error, not a crash.
+  bash "$MIGRATE_MPWA" >/dev/null 2>&1; [ "$?" = "2" ] \
+    || { echo "    FAIL T-024: missing --target should exit 2 (FR-B99-001)" >&2; ok=0; }
+  [ "$ok" = "1" ]
+}
+
+# FR-B99-006 — the additive set is DERIVED from the archetype plan, not duplicated.
+# A second hand-maintained list is what made b8-10b need a coverage guard.
+_test_b92_l1_025_additive_set_matches_plan() {
+  [ -f "$PLAN" ] || { echo "    FAIL T-025: plan absent (see T-001)" >&2; return 1; }
+  _have_py_yaml || { echo "    FAIL T-025: python3+PyYAML required" >&2; return 1; }
+  python3 - "$PLAN" <<'PY' >&2
+import sys, yaml
+d = yaml.safe_load(open(sys.argv[1])) or {}
+t = d.get("templates") or []
+root = {"oidc-provider.json", ".github/workflows/web-pwa-ci.yml"}
+add = [e for e in t if str(e.get("target","")).startswith("web-pwa/") or e.get("target") in root]
+web = [e for e in add if str(e["target"]).startswith("web-pwa/")]
+bad = False
+if len(web) != 23:
+    print(f"    FAIL T-025: {len(web)} web-pwa/ entries in the plan, expected 23 (FR-B99-006)"); bad = True
+missing = root - {e.get("target") for e in add}
+if missing:
+    print(f"    FAIL T-025: root additive target(s) absent from the plan: {sorted(missing)} (FR-B99-006)"); bad = True
+if len(add) != 25:
+    print(f"    FAIL T-025: additive filter yields {len(add)} entries, expected 25 (FR-B99-006)"); bad = True
+raise SystemExit(1 if bad else 0)
+PY
+}
+
+# FR-B99-004 / FR-B99-005 / NFR-B99-001 — the behavioural test: migrate a REAL
+# mobile-only render and assert (a) the PWA surface arrives RENDERED, (b) the native
+# tree is byte-identical afterwards.
+#
+# (b) is the contract. b8-10b shipped 36 raw .tmpl files into adopters' projects
+# because no test ever looked at migration OUTPUT; this one looks.
+_test_b92_l1_026_migration_is_additive_and_rendered() {
+  [ -f "$MIGRATE_MPWA" ] || { echo "    FAIL T-026: script absent (see T-024)" >&2; return 1; }
+  local work; work="$(mktemp -d -t forge-b99-XXXXXX)"
+  # shellcheck disable=SC2064
+  trap "rm -rf '$work'" RETURN
+  _render_legacy "$work/app" || { echo "    FAIL T-026: legacy render failed" >&2; return 1; }
+
+  # Fingerprint the native tree BEFORE.
+  local before; before=$(cd "$work/app" && find . -type f -not -path './.git/*' -exec sha256sum {} + 2>/dev/null | sort)
+
+  bash "$MIGRATE_MPWA" --target "$work/app" >/dev/null 2>&1
+  local rc=$?
+  if [ "$rc" != "0" ]; then
+    echo "    FAIL T-026: migration exited $rc on a clean mobile-only render (FR-B99-001)" >&2; return 1
+  fi
+
+  local ok=1
+  # (a) the surface arrived, rendered.
+  [ -f "$work/app/web-pwa/package.json" ] \
+    || { echo "    FAIL T-026: web-pwa/package.json absent — surface not delivered (FR-B99-004)" >&2; ok=0; }
+  [ -f "$work/app/oidc-provider.json" ] \
+    || { echo "    FAIL T-026: oidc-provider.json absent (FR-B99-004)" >&2; ok=0; }
+  local n
+  n=$(find "$work/app" -name '*.tmpl' -not -path '*/.forge/templates/*' | wc -l | tr -d ' ')
+  [ "$n" = "0" ] || { echo "    FAIL T-026: $n raw .tmpl file(s) written — copied, not rendered (FR-B99-004)" >&2; ok=0; }
+  if grep -rqE '<project-name>|<reverse-domain>' "$work/app/web-pwa" 2>/dev/null; then
+    echo "    FAIL T-026: unsubstituted placeholder under web-pwa/ (FR-B99-004)" >&2; ok=0
+  fi
+
+  # (b) THE CONTRACT: nothing that existed before may have changed.
+  local after; after=$(cd "$work/app" && find . -type f -not -path './.git/*' -exec sha256sum {} + 2>/dev/null | sort)
+  local changed
+  changed=$(comm -23 <(printf '%s\n' "$before") <(printf '%s\n' "$after") | wc -l | tr -d ' ')
+  if [ "$changed" != "0" ]; then
+    echo "    FAIL T-026: $changed pre-existing file(s) modified — the migration must be purely additive (NFR-B99-001)" >&2
+    comm -23 <(printf '%s\n' "$before") <(printf '%s\n' "$after") | head -3 | sed 's/^/      /' >&2
+    ok=0
+  fi
+  [ "$ok" = "1" ]
+}
+
+# FR-B99-007 / NFR-B99-003 — re-running refuses rather than re-rendering.
+_test_b92_l1_027_rerun_refuses() {
+  [ -f "$MIGRATE_MPWA" ] || { echo "    FAIL T-027: script absent (see T-024)" >&2; return 1; }
+  local work; work="$(mktemp -d -t forge-b99r-XXXXXX)"
+  # shellcheck disable=SC2064
+  trap "rm -rf '$work'" RETURN
+  _render_legacy "$work/app" || return 1
+  bash "$MIGRATE_MPWA" --target "$work/app" >/dev/null 2>&1 || {
+    echo "    FAIL T-027: first migration failed (see T-026)" >&2; return 1; }
+  bash "$MIGRATE_MPWA" --target "$work/app" >/dev/null 2>&1
+  local rc=$?
+  case "$rc" in
+    7|8) ;;
+    *) echo "    FAIL T-027: re-run exited $rc, expected 7 or 8 — an additive migration has nothing to converge to (NFR-B99-003)" >&2; return 1 ;;
+  esac
+}
+
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 main() {
@@ -662,6 +776,10 @@ main() {
       ;;
   esac
   run_test _test_b92_l1_023_snapshot_2_0_0_present
+  run_test _test_b92_l1_024_migrate_script_shape
+  run_test _test_b92_l1_025_additive_set_matches_plan
+  run_test _test_b92_l1_026_migration_is_additive_and_rendered
+  run_test _test_b92_l1_027_rerun_refuses
   print_summary
 }
 

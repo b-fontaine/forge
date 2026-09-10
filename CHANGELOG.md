@@ -14,6 +14,39 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ### Added
 
+- **`bin/forge-migrate-mobile-pwa.sh`** — `b9-9-migrate-mobile-pwa`. Takes a
+  `mobile-only / 1.0.0` install and adds the Qwik PWA surface without touching the
+  native tree.
+
+  The contract was measured before it was relied on. `ADR-B9-1-004` predicted the
+  migration would be purely additive; rendering both archetypes from identical inputs
+  and diffing confirms it — **26 additions, zero modifications**: `web-pwa/`
+  (23 files), `oidc-provider.json`, `.github/workflows/web-pwa-ci.yml`, and the
+  scaffold manifest. The Flutter surface is byte-identical between the two renders.
+
+  So no 3-way merge engine, unlike `forge-migrate-flagship.sh`: there is nothing to
+  merge on a pristine install, and on a diverged one — the adopter wrote their own
+  `web-pwa/` — merging framework templates into their work is worse than refusing.
+  Collision ⇒ exit 8 without `--force`; an already-migrated target ⇒ exit 7.
+
+  Two constraints the flagship precedent does not cover. A `mobile-only` install has
+  **no** `.forge/scaffold-manifest.yaml`, so the substitution values are derived from
+  the project — `pubspec.yaml`'s `name:` and `android/app/build.gradle.kts`'s
+  `namespace`. That is also more correct than a stored value: a changed
+  `applicationId` is what the adopter's build actually uses. And everything is
+  **rendered through `overlay.sh`, never copied** — the lesson `b8-10b` paid for when
+  the flagship migration shipped 36 raw `.tmpl` files into adopters' projects.
+
+  The additive set is filtered from the archetype's own scaffold-plan (25 of its 73
+  entries) rather than duplicated into a second list, with a guard asserting the
+  filter still yields 25.
+
+  Proven end to end: a migrated tree is **byte-identical to a native
+  `forge init --archetype mobile-pwa-first` render**, except `scaffold-manifest.yaml`
+  — and that differs only in `scaffold_date` and the two content hashes, which record
+  that the render ran from the filtered plan. Four guards in `b9-2.test.sh`; the
+  load-bearing one hashes every pre-existing file before and after.
+
 - **A fresh `full-stack-monorepo / 2.0.0` project now gets pgvector and Zitadel** —
   `t6-fsm-2-0-0-wiring`. Until now `forge init` and `forge-migrate-flagship` produced
   materially different trees at the same archetype and version: the fresh-init plan

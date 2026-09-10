@@ -1,0 +1,17 @@
+name: b9-9-migrate-mobile-pwa
+status: implemented
+created: 2026-09-10
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.9.9   # docs/new-archetypes-plan.md §5.2 — "prend une install mobile-only/1.0.0
+            # et ajoute web-pwa/ sans toucher au natif existant."
+depends_on:
+  - b9-8-snapshot        # mobile-only/1.0.0 is now frozen with a manifest
+  - b8-10b-migrate-render # established render-through-overlay.sh for migrations
+timeline:
+  proposed: 2026-09-10
+  specified: 2026-09-10
+  designed: 2026-09-10
+  planned: 2026-09-10
+  implemented: 2026-09-10
