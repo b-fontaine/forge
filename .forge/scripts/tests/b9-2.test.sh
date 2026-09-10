@@ -602,6 +602,33 @@ _test_b92_l2_002_webpwa_typechecks() {
     || { echo "    FAIL T-L2-002: npm install / tsc --noEmit failed in the rendered web-pwa/ (FR-B9-2-014)" >&2; return 1; }
 }
 
+# FR-B98-001 / FR-B98-002 — the mobile-pwa-first 2.0.0 snapshot (b9-8-snapshot).
+#
+# NOTE what this archive is, because the path name misleads: forge-snapshot.sh tars
+# the FRAMEWORK's owned paths (.forge/framework-owned-paths.yml) to serve as the BASE
+# of `forge upgrade`'s 3-way merge. It renders nothing and reads no archetype
+# template — `<archetype>/<version>` is a label recording when the capture was taken.
+# ai-native-rag/1.0.0.tar.gz demonstrably contains full-stack-monorepo's 2.0.0 schema.
+_test_b92_l1_023_snapshot_2_0_0_present() {
+  local dir; dir="$FORGE_ROOT/.forge/scaffold-snapshots/mobile-pwa-first"
+  local tarball="$dir/2.0.0.tar.gz" manifest="$dir/2.0.0.sha256"
+  local ok=1
+
+  [ -f "$tarball" ] || { echo "    FAIL T-023: snapshot missing: $tarball (FR-B98-001)" >&2; return 1; }
+  [ -f "$manifest" ] || { echo "    FAIL T-023: no .sha256 beside it (upgrade-policy.md:189, FR-B98-002)" >&2; ok=0; }
+
+  if [ -f "$manifest" ] && ! ( cd "$dir" && sha256sum -c 2.0.0.sha256 ) >/dev/null 2>&1; then
+    echo "    FAIL T-023: 2.0.0.tar.gz does not match its manifest (FR-B98-002)" >&2; ok=0
+  fi
+  # Built on Linux through the Python tarfile path, so no macOS litter — the defect
+  # that cost mobile-only/1.0.0 a repack before it could be frozen.
+  local ad; ad=$(tar -tzf "$tarball" 2>/dev/null | grep -c '\._' || true)
+  if [ "${ad:-0}" != "0" ]; then
+    echo "    FAIL T-023: $ad AppleDouble member(s) in the snapshot (FR-B98-003)" >&2; ok=0
+  fi
+  [ "$ok" = "1" ]
+}
+
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 main() {
@@ -634,6 +661,7 @@ main() {
       run_test _test_b92_l2_002_webpwa_typechecks
       ;;
   esac
+  run_test _test_b92_l1_023_snapshot_2_0_0_present
   print_summary
 }
 

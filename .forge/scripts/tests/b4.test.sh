@@ -633,6 +633,45 @@ _test_b4_042() {
 
 # ─── Main ───────────────────────────────────────────────────────
 
+# FR-B98-004 / FR-B98-003 — mobile-only/1.0.0 is FROZEN (b9-8-snapshot).
+#
+# ADR-B8-2-004 deferred this freeze to B.9: B.8.2 froze the flagship and left this
+# one open from 2026-05-30. Until b9-8-snapshot there was no `.sha256`, so the only
+# reverse target for `mobile-only` adopters was unpinned and could drift unnoticed.
+#
+# The archive was repacked ONCE before freezing, to drop 299 macOS AppleDouble
+# members (half the entries) that BASE recovery would otherwise have restored into
+# an adopter's project. It was NOT rebuilt: 50 of its 219 real files differ from
+# today's tree and carry the era state that makes it a valid 3-way-merge BASE
+# (ADR-B98-001). From here it is immutable — that is what this test enforces.
+_test_b4_snapshot_frozen_and_clean() {
+  local dir; dir="$FORGE_ROOT_REAL/.forge/scaffold-snapshots/mobile-only"
+  local tarball="$dir/1.0.0.tar.gz" manifest="$dir/1.0.0.sha256"
+  local ok=1
+
+  [ -f "$tarball" ]  || { echo "    snapshot missing: $tarball (FR-B98-004)" >&2; return 1; }
+  if [ ! -f "$manifest" ]; then
+    echo "    no .sha256 manifest beside the frozen tarball (upgrade-policy.md:189, FR-B98-002)" >&2
+    return 1
+  fi
+
+  # Drift: the whole point of the freeze.
+  if ! ( cd "$dir" && sha256sum -c 1.0.0.sha256 ) >/dev/null 2>&1; then
+    echo "    FROZEN SNAPSHOT DRIFTED — 1.0.0.tar.gz no longer matches 1.0.0.sha256." >&2
+    echo "    It is the reverse BASE for every mobile-only adopter; it must never be rebuilt." >&2
+    ok=0
+  fi
+
+  # And it must stay AppleDouble-free.
+  local ad
+  ad=$(tar -tzf "$tarball" 2>/dev/null | grep -c '\._' || true)
+  if [ "${ad:-0}" != "0" ]; then
+    echo "    $ad AppleDouble member(s) back in the frozen snapshot (FR-B98-003)" >&2
+    ok=0
+  fi
+  [ "$ok" = "1" ]
+}
+
 main() {
   echo "Forge — b4-mobile-only Test Harness"
   echo "FORGE_ROOT_REAL=$FORGE_ROOT_REAL"
@@ -700,6 +739,7 @@ main() {
       ;;
   esac
 
+  run_test _test_b4_snapshot_frozen_and_clean
   print_summary
 }
 

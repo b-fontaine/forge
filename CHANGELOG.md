@@ -12,6 +12,46 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added
+
+- **`mobile-pwa-first / 2.0.0` snapshot, and the `mobile-only / 1.0.0` freeze that
+  ADR-B8-2-004 deferred to B.9** — `b9-8-snapshot`. B.8.2 froze the flagship on
+  2026-05-30 and left `mobile-only` explicitly to B.9
+  (`.forge/specs/b8-legacy-snapshot.md:37`); it has been open since.
+
+  `mobile-only/1.0.0.tar.gz` had **no `.sha256`**, so it had never been formally
+  frozen, and it was built on macOS with BSD tar before the ADR-B8-OBI-011
+  determinism patch: **299 of its 598 entries were AppleDouble `._*` members**, plus
+  `LIBARCHIVE.xattr.com.apple.*` headers. BASE recovery would have restored
+  `./._LICENSE`, `./._.mcp.json` and 297 others into an adopter's project.
+
+  It was **repacked, not rebuilt**, and the difference was measured before deciding:
+  extracting the archive and comparing its 219 real files against the current tree
+  showed **50 differ** — era state. `forge-snapshot.sh build` captures the framework
+  as of today, so rebuilding would have replaced those 50 with 2026-09 versions and
+  made every subsequent 3-way merge compute against a baseline no adopter ever had.
+  The repack drops exactly the AppleDouble members and the Apple pax headers and
+  keeps all 219 real files byte-identical (0 missing, 0 changed, verified by
+  extracting both archives and hashing every member), and is deterministic across
+  runs. 465 148 → 433 915 bytes.
+
+  Both archives now carry the `.sha256` manifest `upgrade-policy.md:189` requires,
+  with drift guards in already-registered harnesses (`b4.test.sh` for the frozen
+  `mobile-only`, `b9-2.test.sh` for the new `mobile-pwa-first/2.0.0`) — a new harness
+  would have consumed the last line of `forge-ci.yml`'s 420-line budget. All three
+  assertions mutation-probed.
+
+  `upgrade-policy.md` gains a frozen-versions table, the one permitted pre-freeze
+  repack with its rationale, and a note on **what a snapshot actually contains**: not
+  a rendered project, but the framework's own owned paths, with
+  `<archetype>/<version>` as a label recording when the capture was taken. That
+  misreading had previously produced the belief that this snapshot was blocked on a
+  render path; it never was.
+
+  Still open (`open-questions.md`): `forge-snapshot.sh` emits no manifest itself, so
+  both were written by hand — which is why `ai-native-rag/1.0.0` and
+  `event-driven-eu/1.0.0` still have none.
+
 ### Fixed
 
 - **`find … | grep -q .` never takes its true branch, and the constitution linter

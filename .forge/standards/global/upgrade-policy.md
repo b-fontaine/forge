@@ -183,6 +183,34 @@ the version-keyed path
 (`forge-upgrade.sh`) — there is **no `legacy/` directory**; the
 version-keyed path *is* the legacy archive.
 
+Frozen versions, and when:
+
+| archetype / version | frozen | manifest | note |
+|---|---|---|---|
+| `full-stack-monorepo / 1.0.0` | B.8.2, 2026-05-30 | `1.0.0.sha256` | guarded by `b8-2.test.sh` |
+| `mobile-only / 1.0.0` | **B.9.8, 2026-09-10** | `1.0.0.sha256` | guarded by `b4.test.sh`; repacked once before freezing (below) |
+
+**What a snapshot contains.** Not a rendered project: `forge-snapshot.sh` tars the
+framework's own `owned:` paths from `framework-owned-paths.yml`. The
+`<archetype>/<version>` path is a **label** recording when the capture was taken —
+`ai-native-rag/1.0.0.tar.gz` contains `full-stack-monorepo`'s 2.0.0 schema, which is
+correct and follows from the definition. Stated here because the path name reads
+otherwise and that misreading has cost time.
+
+**The one permitted pre-freeze repack (`mobile-only / 1.0.0`, 2026-09-10).** That
+archive was built on macOS with BSD tar before the ADR-B8-OBI-011 determinism patch
+and carried **299 AppleDouble `._*` members out of 598**, plus
+`LIBARCHIVE.xattr.com.apple.*` headers. BASE recovery would have restored all of them
+into an adopter's project. It was repacked to drop exactly those members, with the
+219 real files kept byte-identical (proven by extracting both archives and comparing
+every file: 0 missing, 0 changed), then frozen.
+
+It was **not** rebuilt. `forge-snapshot.sh build` captures the framework as of today,
+and 50 of those 219 files differ from the current tree — rebuilding would have
+replaced era state with 2026-09 state and made every subsequent 3-way merge compute
+against a baseline no adopter ever had. Repacking is admissible only before the
+freeze; after it, the rule below applies without exception.
+
 Freeze rules (first applied to `full-stack-monorepo / 1.0.0` at
 B.8.2, 2026-05-30):
 

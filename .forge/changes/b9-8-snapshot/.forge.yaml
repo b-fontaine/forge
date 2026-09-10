@@ -1,0 +1,18 @@
+name: b9-8-snapshot
+status: implemented
+created: 2026-09-10
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.9.8   # docs/new-archetypes-plan.md §5.2 — "Snapshot tarball
+            # mobile-pwa-first/2.0.0.tar.gz. Effort: S."
+  - B.8.2   # ADR-B8-2-004 explicitly defers the mobile-only/1.0.0 freeze to B.9:
+            # "flagship-only; mobile-only/1.0.0 freeze is B.9"
+            # (.forge/specs/b8-legacy-snapshot.md:37). This is that brick.
+depends_on: []
+timeline:
+  proposed: 2026-09-10
+  specified: 2026-09-10
+  designed: 2026-09-10
+  planned: 2026-09-10
+  implemented: 2026-09-10
