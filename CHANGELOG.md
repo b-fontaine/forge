@@ -14,6 +14,49 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ### Added
 
+- **A channel decision tree in `docs/ARCHETYPES.md`, and three matrix rows that stop
+  misdirecting the pick** — `b9-4-archetype-decision-tree`.
+
+  The brick's scope was the decision tree: PWA for Web/Android/desktop, native Flutter
+  when push is critical on iOS. Looking for what establishes that rule found the
+  routing consequence restated in four places and the **platform constraint in none** —
+  no iOS version floor, no home-screen-install precondition, no named Push API limit,
+  the whole thing sourced to one external blog URL accessed 2026-04. So the section
+  documents the route and says plainly that it makes **no claim about iOS capability**,
+  inheriting `pwa.yaml`'s own hedge (iOS installed-PWA push is *"not assumed"*) rather
+  than flattening it into an absolute that stopped being true at Safari 16.4.
+
+  Two rows misdirected the archetype choice this document exists to support.
+  `flutter-firebase` advertised "Planned (B.2)" for an archetype removed from the
+  taxonomy in 2026-05 (ADR-007, Schrems II + CLOUD Act) — and the `J8-RULE-001` refusal
+  the same file promises 63 lines later **does not fire**: `parseDispatchTable` never
+  reads `forbidden_archetypes`, so a real run exits **127** with a bash path error, not
+  exit 3. `mobile-only` said "Active" without disclosing `status: legacy_alias` /
+  `target: mobile-pwa-first`. The flagship Stack cell still named **Kong** (zero
+  occurrences in the 2.0.0 fresh-init plan; the same file says "Kong-less" 9 lines
+  down) and still promised a **Temporal → DBOS swap cancelled for Rust** by ADR-B8O-001.
+
+  **No `mobile-pwa-first` row was added**, deliberately. It is `stage: candidate`;
+  `forge init --archetype mobile-pwa-first` exits 3, and no archetype in this repository
+  has ever held a matrix row while candidate. Instead the guard was rewritten to demand
+  one automatically at promotion — simulated by flipping the status and confirming `b5`
+  then reports `matrix has no row for mobile-pwa-first`. B.9.11 cannot forget it.
+
+  That guard was the other finding. `b5.test.sh`'s FR-IW-009 check looped five
+  hardcoded April-2026 names and grepped the **whole document**: measured by deleting
+  one row at a time under CI's own invocation, **4 of the 7 archetype rows could be
+  deleted with CI green**, `full-stack-monorepo` included, while the two rows it did
+  pin were a removed archetype and a not-started one. Rewritten to derive the expected
+  set from `dispatch-table.yml` and match only the rows of the `## Available
+  archetypes` table: **7 of 7 caught**.
+
+  The audit was adversarial and it paid: six of nine verified findings were refuted,
+  three of which would otherwise have shipped — including a "fix" to the `rust-cli-tui`
+  row that `FR-IW-009` mandates verbatim and a harness pins, which would have turned CI
+  red. And `T-031`'s own battery failed a mutation probe first time: the needle
+  `client-only` was satisfied by an incidental prose mention two paragraphs below the
+  row it was meant to protect. Third instance of that defect in two days.
+
 - **`docs/MIGRATION-PATHS.md` is now an index, and says so truthfully** —
   `b9-10-migration-paths`. The document opened with *"This document indexes every
   supported migration in Forge"* and indexed **one**: the T.5 Connect additive. The

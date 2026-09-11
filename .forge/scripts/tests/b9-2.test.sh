@@ -885,6 +885,61 @@ _test_b92_l1_030_doc_claims_track_the_script() {
   [ "$ok" = "1" ]
 }
 
+# ─── B.9.4 — the channel decision tree (b9-4-archetype-decision-tree) ────────
+#
+# Hosted here for the B.9.9/B.9.10 reason (forge-ci.yml at 419/420, B.9.11 needs the
+# last line). The MATRIX guard is not here — it stays in b5.test.sh, which owns
+# FR-IW-009; two harnesses asserting the same table is how two sources of truth start
+# (ADR-B94-003).
+#
+# Presence assertions only. FR-B94-002 forbids the section from asserting an iOS
+# platform capability, and the obvious guard for that — "the section must not say
+# iOS cannot do Web Push" — would fire on the sentence explaining that the repository
+# makes no such claim. So the prohibition is enforced POSITIVELY: the section must
+# carry the disclaimer, and the disclaimer is what a flattened rewrite would drop.
+#
+# Needles name the CLAIM, never a bare word. `client-only` alone passed a mutation probe
+# that deleted the load-bearing table row, because the phrase recurs two paragraphs down
+# in `a client-only archetype has none`. Third time in two days (b9-2 T-029, b5's
+# FR-IW-009 guard, here): a substring that occurs twice is not an assertion.
+
+ARCHETYPES_DOC="$FORGE_ROOT/docs/ARCHETYPES.md"
+
+_b94_section() {
+  [ -f "$ARCHETYPES_DOC" ] || return 1
+  awk '/^## Choosing the mobile channel/{f=1;print;next} f&&/^## /{exit} f{print}' "$ARCHETYPES_DOC"
+}
+
+# FR-B94-001 / FR-B94-002 / FR-B94-003
+_test_b92_l1_031_channel_decision_tree() {
+  [ -f "$ARCHETYPES_DOC" ] \
+    || { echo "    FAIL T-031: $ARCHETYPES_DOC missing (FR-B94-001)" >&2; return 1; }
+  local sec; sec="$(_b94_section)"
+  [ -n "$sec" ] \
+    || { echo "    FAIL T-031: no '## Choosing the mobile channel' section (FR-B94-001)" >&2; return 1; }
+
+  local ok=1 needle fr why n=0
+  while IFS='|' read -r needle fr why; do
+    [ -z "$needle" ] && continue
+    n=$((n + 1))
+    grep -qF -- "$needle" <<<"$sec" \
+      || { echo "    FAIL T-031: the section does not state '$needle' — $why ($fr)" >&2; ok=0; }
+  done <<'NEEDLES'
+pwa.yaml|FR-B94-001|the normative source of the routing rule
+channel_fallback|FR-B94-001|the exact key that carries it
+channel-decision|FR-B94-001|the schema phase where the choice is recorded per change
+makes no claim about iOS capability|FR-B94-002|the disclaimer a flattened rewrite would drop
+not assumed|FR-B94-002|the repo's own epistemic framing, which must not become an absolute
+candidate|FR-B94-003|the archetype is not scaffoldable yet
+exit 3|FR-B94-003|what forge init actually does today
+bin/forge-migrate-mobile-pwa.sh|FR-B94-003|the only reachable path to the surface
+layer_profile: client-only|FR-B94-003|no backend, no infra — contrary to what ARCHITECTURE-TARGET 6.3 diagrams
+NEEDLES
+  [ "$n" = "9" ] \
+    || { echo "    FAIL T-031: read $n needle(s) from the battery, expected 9 — the battery is broken" >&2; ok=0; }
+  [ "$ok" = "1" ]
+}
+
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 main() {
@@ -925,6 +980,7 @@ main() {
   run_test _test_b92_l1_028_migration_paths_section
   run_test _test_b92_l1_029_index_covers_every_driver
   run_test _test_b92_l1_030_doc_claims_track_the_script
+  run_test _test_b92_l1_031_channel_decision_tree
   print_summary
 }
 

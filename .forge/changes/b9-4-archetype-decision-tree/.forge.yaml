@@ -1,0 +1,19 @@
+name: b9-4-archetype-decision-tree
+status: implemented
+created: 2026-09-11
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.9.4   # docs/new-archetypes-plan.md §5.2 — "Décideur par défaut documenté :
+            # si plateforme Web|Android → PWA Qwik ; si plateforme iOS ET push
+            # critique → fallback Flutter natif iOS. Documenté dans
+            # docs/ARCHETYPES.md avec arbre de décision."
+depends_on:
+  - b9-2-web-pwa          # pwa.yaml::channel_fallback is the normative rule
+  - b9-10-migration-paths # the scoped-region guard lesson this brick reuses
+timeline:
+  proposed: 2026-09-11
+  specified: 2026-09-11
+  designed: 2026-09-11
+  planned: 2026-09-11
+  implemented: 2026-09-11

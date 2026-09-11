@@ -244,18 +244,104 @@ PY
 }
 
 # FR-IW-009 — docs/ARCHETYPES.md decision matrix.
+#
+# REWRITTEN by b9-4-archetype-decision-tree (FR-B94-007). The original looped over five
+# hardcoded names and grepped the WHOLE document for each backticked name. Two defects,
+# both measured by deleting one table row at a time and re-running this harness the way
+# forge-ci.yml invokes it:
+#
+#   * whole-file match — `default` appears at :83 and :103, `full-stack-monorepo` at :46,
+#     `ai-native-rag` and `event-driven-eu` throughout the J8 tables. FOUR of the seven
+#     archetype rows could be deleted with CI green, `full-stack-monorepo` among them.
+#     Same shape as b9-2.test.sh::T-029 before b9-10 rescoped it: "the name appears
+#     somewhere" is not "the archetype is in the matrix".
+#
+#   * frozen list — the five names were April 2026. It REQUIRED a row for
+#     `flutter-firebase` (removed from the taxonomy 2026-05-04, ADR-007) and covered
+#     neither `ai-native-rag` nor `event-driven-eu`, both shipped since. Deleting a stale
+#     row turned CI red; deleting a live one left it green. Exactly inverted.
+#
+# So the expected set is DERIVED from dispatch-table.yml, and the match is scoped to the
+# rows of the "Available archetypes" table.
+#
+# Candidates are excluded on purpose. No archetype in this repo has ever held a matrix row
+# while `stage: candidate` — ai-native-rag and event-driven-eu each got theirs after
+# promotion — and a row is an availability statement, which a candidate cannot honour
+# (`forge init --archetype mobile-pwa-first` exits 3). The consequence is the point:
+# B.9.11's promotion flip makes this guard DEMAND the mobile-pwa-first row, so the
+# promotion cannot ship without it (ADR-B94-001).
 test_archetypes_decision_matrix_present() {
   if [ ! -f "$ARCHETYPES_MD" ]; then
     echo "    missing: $ARCHETYPES_MD" >&2; return 1
   fi
+  if [ ! -f "$DISPATCH_TABLE" ]; then
+    echo "    missing: $DISPATCH_TABLE (the derived set comes from it)" >&2; return 1
+  fi
   if ! grep -qE '^# Forge Archetypes' "$ARCHETYPES_MD"; then
     echo "    H1 title 'Forge Archetypes' missing" >&2; return 1
   fi
-  for archetype in default full-stack-monorepo flutter-firebase mobile-only rust-cli-tui; do
-    if ! grep -qE "\`$archetype\`" "$ARCHETYPES_MD"; then
-      echo "    matrix missing archetype: $archetype" >&2; return 1
-    fi
-  done
+  python3 - "$ARCHETYPES_MD" "$DISPATCH_TABLE" <<'PY' || return 1
+import re, sys, yaml
+
+doc_path, dispatch_path = sys.argv[1], sys.argv[2]
+
+# ── the rows of the "Available archetypes" table, and nothing else ───────────
+rows, in_section = [], False
+for line in open(doc_path, encoding="utf-8"):
+    if line.startswith("## Available archetypes"):
+        in_section = True
+        continue
+    if in_section and line.startswith("## "):
+        break
+    if in_section and line.startswith("|"):
+        rows.append(line)
+
+names_in_table = set()
+for r in rows:
+    m = re.match(r"\|\s*`([^`]+)`", r)
+    if m:
+        names_in_table.add(m.group(1))
+
+# ── the expected set, derived from the registry ──────────────────────────────
+d = yaml.safe_load(open(dispatch_path, encoding="utf-8")) or {}
+arch = d.get("archetypes") or {}
+EXCLUDED_STATUS = {"candidate", "removed_from_roadmap"}
+derived = {
+    k for k, v in arch.items()
+    if (v or {}).get("status") not in EXCLUDED_STATUS
+    and str((v or {}).get("scaffolder", "")) != "<removed>"
+}
+
+# ── the names FR-IW-009 mandates verbatim (b5-1-init-wizard/specs.md:252) ────
+# flutter-firebase and rust-cli-tui are here and NOT in `derived`: the spec ordered
+# those rows and they document a removed and a not-started archetype respectively.
+# Keeping them asserted is what stops a well-meaning cleanup from deleting them.
+SPEC_MANDATED = {"default", "full-stack-monorepo", "flutter-firebase", "mobile-only", "rust-cli-tui"}
+
+bad = False
+for name in sorted(derived - names_in_table):
+    print(f"    matrix has no row for `{name}`, which dispatch-table.yml registers as "
+          f"available (FR-B94-007)", file=sys.stderr)
+    bad = True
+for name in sorted(SPEC_MANDATED - names_in_table):
+    print(f"    matrix missing archetype row: `{name}` (FR-IW-009 mandates it verbatim)",
+          file=sys.stderr)
+    bad = True
+
+# ── anti-vacuity, both ends ─────────────────────────────────────────────────
+# A broken section scan or a dispatch-table that stopped parsing would otherwise make
+# every check above pass on an empty set.
+if len(derived) < 4:
+    print(f"    derived only {len(derived)} available archetype(s) from dispatch-table.yml, "
+          f"expected >= 4 — the derivation is broken, not the doc (FR-B94-007)", file=sys.stderr)
+    bad = True
+if len(names_in_table) < 5:
+    print(f"    read {len(names_in_table)} backticked row(s) from the 'Available archetypes' "
+          f"table, expected >= 5 — the section scan is broken (FR-B94-007)", file=sys.stderr)
+    bad = True
+
+raise SystemExit(1 if bad else 0)
+PY
 }
 
 # FR-IW-013 — feature file has 5+ scenarios mapped to AC-IW-*.

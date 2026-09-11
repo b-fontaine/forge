@@ -36,9 +36,9 @@ adopter guides — the snapshots are the contract.
 | Archetype             | Status        | Persona                                                           | When to pick                                                                                                                                                                | Stack                                                                                                                        | Since | Spec                                                               |
 |-----------------------|---------------|-------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------|-------|--------------------------------------------------------------------|
 | `default`             | Active        | Generic projects, framework dog-fooding                           | You want minimal Forge install with no language-specific scaffold ; you'll write your own structure on top                                                                  | Any (Forge framework only)                                                                                                   | 0.1.0 | `default/schema.yaml`                                              |
-| `full-stack-monorepo` | Active        | Full-stack teams shipping Flutter clients + Rust backend services | You're building a product app + a backend service + need shared protos as a single source of truth across both                                                              | Flutter + Rust + Infra (Kustomize / Kong / OTel + OBI eBPF + Coroot + SigNoz). **From v0.4.0-rc.x onward (T.5 `t5-connect-codegen`)** : Connect-RPC codegen ships **additively** alongside tonic gRPC + Kong-bridge REST — see [`MIGRATION-PATHS.md`](MIGRATION-PATHS.md). T.5 `t5-otel-stack` ships the OBI DaemonSet + Coroot deploy + `processors.probabilistic_sampler` env-tier overlays (Aegis audit required for prod ; see `infra/CLAUDE.md`). **T.5 `t5-otel-app` (Phase B — app SDK instrumentation)** wires the example Rust backend (`tracing-opentelemetry` + OTLP HTTP exporter + axum `TraceLayer` traceparent extraction) and Flutter frontend (`opentelemetry` Dart pkg + `BatchSpanProcessor` + `TracingInterceptor` + BLoC + navigation observers) so demo-005 emits a connected span tree end-to-end. Kong → Envoy + Temporal → DBOS swap is the breaking change of B.8 (T6). | 1.0.0 | [`full-stack-monorepo.md`](../.forge/specs/full-stack-monorepo.md) |
-| `flutter-firebase`    | Planned (B.2) | Consumer-app teams without backend capacity                       | You want Firebase as your backend (Auth / Firestore / Functions / Storage) with Flutter as the only stack                                                                   | Flutter + Firebase                                                                                                           | TBD   | TBD                                                                |
-| `mobile-only`         | Active        | Mobile-native teams with own backend + external OIDC provider     | You want Flutter iOS + Android with secure OIDC auth via flutter_appauth, no BaaS, with biometric lock + App Attest / Play Integrity attestation + Fastlane store pipelines | Flutter + OIDC (Auth0 / Keycloak / Cognito / Okta) + Keychain/Keystore secure storage + local_auth biometric + OpenTelemetry | 1.2.0 | [`mobile-only.md`](../.forge/specs/mobile-only.md)                 |
+| `full-stack-monorepo` | Active        | Full-stack teams shipping Flutter clients + Rust backend services | You're building a product app + a backend service + need shared protos as a single source of truth across both                                                              | Flutter + Rust + Infra (Kustomize / **Envoy Gateway** / OTel + OBI eBPF + Coroot + SigNoz). **Kong is 1.0.0 only** — `forge init` has rendered the Kong-less 2.0.0 tree since B.8.14, and `scaffold-plan-2.0.0.yaml` contains zero `kong` entries. **From v0.4.0-rc.x onward (T.5 `t5-connect-codegen`)** : Connect-RPC codegen ships **additively** alongside tonic gRPC + Kong-bridge REST — see [`MIGRATION-PATHS.md`](MIGRATION-PATHS.md). T.5 `t5-otel-stack` ships the OBI DaemonSet + Coroot deploy + `processors.probabilistic_sampler` env-tier overlays (Aegis audit required for prod ; see `infra/CLAUDE.md`). **T.5 `t5-otel-app` (Phase B — app SDK instrumentation)** wires the example Rust backend (`tracing-opentelemetry` + OTLP HTTP exporter + axum `TraceLayer` traceparent extraction) and Flutter frontend (`opentelemetry` Dart pkg + `BatchSpanProcessor` + `TracingInterceptor` + BLoC + navigation observers) so demo-005 emits a connected span tree end-to-end. Kong → Envoy shipped with B.8 (T6). The **Temporal → DBOS swap was cancelled for Rust** by `ADR-B8O-001` (2026-06-01, no Rust SDK): Temporal remains the durable-execution default, DBOS is a watch-list `future-option`, and the string `DBOS` appears nowhere under `.forge/templates/`. | 1.0.0 | [`full-stack-monorepo.md`](../.forge/specs/full-stack-monorepo.md) |
+| `flutter-firebase`    | **Removed (ADR-007, 2026-05-04)** | — | **Do not pick.** Removed from the taxonomy as Schrems II + CLOUD Act incompatible with Forge's EU positioning. `dispatch-table.yml` carries `status: removed_from_roadmap` and `scaffolder: "<removed>"`. The sanctioned answer is the `default` archetype plus an adopter-managed Firebase overlay, out of Forge scope. **Attempting it does not currently produce the `J8-RULE-001` refusal documented below** — measured 2026-09-11, `forge init --archetype flutter-firebase` exits **127** with `bash: cli/assets/<removed>: no such file or directory`, because `parseDispatchTable` never reads `forbidden_archetypes` (`b9-4-archetype-decision-tree` Q-001)                                                                   | Flutter + Firebase                                                                                                           | TBD   | TBD                                                                |
+| `mobile-only`         | Active — **legacy alias → `mobile-pwa-first`** | Mobile-native teams with own backend + external OIDC provider     | You want Flutter iOS + Android with secure OIDC auth via flutter_appauth, no BaaS, with biometric lock + App Attest / Play Integrity attestation + Fastlane store pipelines | Flutter + OIDC (Auth0 / Keycloak / Cognito / Okta) + Keychain/Keystore secure storage + local_auth biometric + OpenTelemetry. **Renamed to `mobile-pwa-first` at T.4 (2026-05-04)**; this key is a legacy compat alias (`status: legacy_alias`, `target: mobile-pwa-first`) and still scaffolds the v0.3.0 tree byte-equivalently. The successor is not yet scaffoldable — see *Choosing the mobile channel* below for what to do today. | 1.2.0 | [`mobile-only.md`](../.forge/specs/mobile-only.md)                 |
 | `ai-native-rag`       | Active        | Teams shipping an AI-native RAG product (Sibyl, K.2)               | You're building a Rust backend with pgvector/HNSW retrieval, an LLM gateway (Mistral-EU / self-hosted vLLM / OpenAI fallback), MCP tool servers, and a Qwik streaming UI     | Rust (axum + Temporal) + Postgres/pgvector + LLM gateway + MCP servers (`db`/`file`/`search`) + Qwik SSE/WebTransport UI      | 1.0.0 | [`ai-native-rag.md`](../.forge/specs/ai-native-rag.md)             |
 | `event-driven-eu`     | Active        | Teams shipping an EU-sovereign event-driven system (Hermes-Async, K.1) | You need saga/process-manager orchestration across services with an EU-deployable event broker and a Temporal-driven saga, no US-managed Kafka SaaS                       | Rust (axum + async-nats + Connect) + NATS JetStream + Temporal saga (native Rust SDK) + AsyncAPI 3.1 + Postgres event store   | 1.0.0 | [`event-driven-eu.md`](../.forge/specs/event-driven-eu.md)         |
 | `rust-cli-tui`        | Planned (B.3) | Dev-tool authors                                                  | You're shipping a Rust CLI / TUI binary with cargo-dist signed releases, multi-channel distribution                                                                         | Rust CLI + TUI (ratatui)                                                                                                     | TBD   | TBD                                                                |
@@ -67,6 +67,67 @@ Since `t6-fsm-2-0-0-wiring` (2026-09-10) a fresh project includes:
 
 Stated explicitly because a version number normally implies a content, and here it
 does not yet: the difference is real and depends on how the project was created.
+
+## Choosing the mobile channel
+
+<!-- Audit: B.9.4 (b9-4-archetype-decision-tree, FR-B94-001..003) -->
+
+`mobile-pwa-first` carries **two client surfaces** — an installable Qwik PWA
+(`web-pwa/`) and the native Flutter app (`.`, inherited 1:1 from `mobile-only`). This
+section is the default decider for which one carries a given feature. It is a
+**routing** rule; the per-change record of the choice is the schema's
+`channel-decision` phase (`ADR-B9-1-003`).
+
+### The rule
+
+```
+target platform is Web, Android or desktop
+    └─> PWA (web-pwa/)                        ← the default channel
+
+target platform is iOS
+    ├── push delivery is NOT critical
+    │      └─> PWA (web-pwa/)                 ← same default; iOS installs it too
+    └── push delivery IS critical
+           └─> native Flutter surface (.)     ← the prescribed fallback
+```
+
+Normative source: [`.forge/standards/pwa.yaml`](../.forge/standards/pwa.yaml),
+key `channel_fallback` — *"PWA is the default channel for Web, Android and desktop.
+When push delivery is critical on iOS, the native app surface is the prescribed
+fallback rather than the PWA channel."* It restates
+`docs/ARCHITECTURE-TARGET.md` §6.3, whose C4 diagram conditions the native container
+on *« Si push critique sur iOS »*.
+
+### What the rule does not say
+
+**It makes no claim about iOS capability**, in either direction. Forge does not assert
+that iOS cannot deliver Web Push — Safari has supported it for home-screen-installed
+PWAs since 16.4 — and nothing in this repository establishes an iOS version floor, an
+install precondition, or any named Push API limitation. The most careful statement
+Forge makes is `pwa.yaml`'s: iOS support for installed-PWA push is **not assumed**.
+That is a statement about what the framework takes for granted, not about what the
+platform can do.
+
+The practical consequence: if your iOS floor and your push requirements are ones you
+have verified yourself, the PWA channel may serve iOS too. The rule is a safe default,
+not a platform verdict. See `b9-4-archetype-decision-tree` Q-002 for what the
+repository would need to establish for it to be more than that.
+
+### What you actually get today
+
+| | |
+|---|---|
+| `forge init --archetype mobile-pwa-first` | **exit 3.** The `2.0.0` schema is `stage: candidate` / `scaffoldable: false`; the promotion gate is B.9.11. |
+| the reachable path | `forge init --archetype mobile-only`, then `bash bin/forge-migrate-mobile-pwa.sh --target .` — purely additive, 26 files, 0 modified. See [`MIGRATION-PATHS.md`](MIGRATION-PATHS.md). |
+| layers | `app` (Flutter, Hera) and `web-pwa` (Qwik City, Iris-Web). The schema is **`layer_profile: client-only`**: no backend layer, no infrastructure layer. |
+
+That last row matters more than it looks. `ARCHITECTURE-TARGET` §6.3 — the document the
+routing rule cites — diagrams an Envoy gateway, a Rust BFF, Postgres and Zitadel around
+these two surfaces. That is the **target**, not what `forge init` produces: a scaffolded
+project gets the two client surfaces and nothing behind them. The push sender is yours
+too (`pwa.yaml::PWA-RULE-001` — a sender is a backend, and a client-only archetype has
+none), so a freshly scaffolded PWA subscribes successfully and no notification ever
+arrives until you run one.
 
 ## How `forge init` chooses
 
