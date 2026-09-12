@@ -14,13 +14,14 @@ class BiometricService {
   }
 
   Future<bool> authenticate({required String reason}) async {
+    // local_auth 3.0.0 replaced `options: AuthenticationOptions(...)` with direct
+    // named parameters: stickyAuth -> persistAcrossBackgrounding, and
+    // useErrorDialogs was removed entirely (3.x forces it false and expects clients
+    // to handle the structured error codes instead).
     return _auth.authenticate(
       localizedReason: reason,
-      options: const AuthenticationOptions(
-        biometricOnly: true,
-        stickyAuth: true,
-        useErrorDialogs: true,
-      ),
+      biometricOnly: true,
+      persistAcrossBackgrounding: true,
     );
   }
 }

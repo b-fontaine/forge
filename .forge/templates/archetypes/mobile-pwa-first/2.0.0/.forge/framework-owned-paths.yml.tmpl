@@ -30,6 +30,21 @@ owned:
   - "android/fastlane/Fastfile"
   # CI workflow.
   - ".github/workflows/mobile-ci.yml"
+  # Dependency manifests — t7-flutter-deps-refresh, 2026-09-12.
+  #
+  # `forge upgrade` merges ONLY what `owned:` matches (`_a7_resolve_owned_paths`);
+  # `excluded:` is a subtractive filter on that set, not an independent list. So an
+  # unlisted path is never touched — which meant a framework dependency bump, security
+  # fixes included, reached new `forge init` projects and no existing one.
+  #
+  # The 3-way merge is what makes this safe for a file adopters also edit: their own
+  # dependencies are preserved while framework-side pins move. Same reasoning as
+  # oidc_config.dart above — the framework owns the shape, the adopter owns the values.
+  - "pubspec.yaml"
+  # The web-pwa surface's dependency manifest, same reasoning. mobile-only has no
+  # web-pwa tree, which is the one licensed divergence between the two archetypes'
+  # owned sets (b9-2.test.sh T-034 asserts there is no other).
+  - "web-pwa/package.json"
 
 excluded:
   # Adopter-specific config that the framework MUST never overwrite.

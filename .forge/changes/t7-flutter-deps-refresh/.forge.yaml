@@ -1,0 +1,18 @@
+name: t7-flutter-deps-refresh
+status: implemented
+created: 2026-09-12
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.9.5   # Q-001 — state-management.yaml pinned flutter_bloc ^9.0.0 while both
+            # Flutter archetypes shipped ^8.1.6, and nothing caught it.
+  - B.9.10  # Q-001 — framework-owned-paths.yml named nothing under web-pwa/, so no
+            # framework change reached an existing project.
+depends_on:
+  - b9-11-promotion-gate
+timeline:
+  proposed: 2026-09-12
+  specified: 2026-09-12
+  designed: 2026-09-12
+  planned: 2026-09-12
+  implemented: 2026-09-12

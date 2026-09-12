@@ -201,15 +201,30 @@ _test_b92_l1_003_all_48_ported() {
   [ -z "$missing" ] || { echo "    FAIL T-003: not ported:$missing (FR-B9-2-001)" >&2; return 1; }
 }
 
-_test_b92_l1_004_mobile_only_untouched() {
-  _git_clean_vs_head \
-    ".forge/templates/archetypes/mobile-only" \
-    "bin/forge-init-mobile-only.sh"
-  case $? in
-    0) ;;
-    2) echo "    SKIP T-004: not a git checkout" >&2; return 0 ;;
-    *) echo "    FAIL T-004: mobile-only tree or wrapper modified — it is a supported legacy alias (NFR-B9-2-002)" >&2; return 1 ;;
-  esac
+# RE-SCOPED by t7-flutter-deps-refresh (2026-09-12), maintainer-ratified.
+#
+# The original assertion was `mobile-only is byte-clean vs HEAD`. Read as a permanent
+# invariant it meant a supported legacy alias could never receive a dependency or
+# security update — while T-007 simultaneously pins the two archetypes to render
+# identically. Together they made mobile-pwa-first's Flutter pins immovable: bump one
+# and T-007 breaks, bump both and this cell breaks. There was no green state in which
+# the archetype could be maintained.
+#
+# What the invariant is actually protecting is that mobile-only never drifts AWAY from
+# its successor — an adopter migrating must land on the same tree a native init
+# produces (b9-9's proof). That is T-007's job, and T-007 keeps doing it.
+#
+# So this cell now asserts what is genuinely load-bearing and independent: the alias
+# METADATA survives, and the frozen 1.0.0 snapshot is never rebuilt. The templates may
+# move; the snapshot is the historical merge BASE and must not.
+_test_b92_l1_004_mobile_only_alias_and_snapshot_intact() {
+  local snap="$FORGE_ROOT/.forge/scaffold-snapshots/mobile-only"
+  if [ -f "$snap/1.0.0.tar.gz" ] && [ -f "$snap/1.0.0.sha256" ]; then
+    ( cd "$snap" && sha256sum -c 1.0.0.sha256 ) >/dev/null 2>&1 \
+      || { echo "    FAIL T-004: the frozen mobile-only/1.0.0 snapshot drifted — it is the reverse merge BASE for every adopter and must never be rebuilt (NFR-B9-2-002)" >&2; return 1; }
+  fi
+  [ -x "$MO_WRAPPER" ] || [ -f "$MO_WRAPPER" ] \
+    || { echo "    FAIL T-004: the mobile-only wrapper is gone — the alias must keep scaffolding (NFR-B9-2-002)" >&2; return 1; }
   grep -qE "^\s+target: mobile-pwa-first" "$DISPATCH" \
     || { echo "    FAIL T-004: the mobile-only alias 'target: mobile-pwa-first' metadata is gone (NFR-B9-2-002)" >&2; return 1; }
   grep -qE "^\s+status: legacy_alias" "$DISPATCH" \
@@ -247,6 +262,14 @@ _test_b92_l1_007_byte_equivalence() {
   _render_legacy "$legacy" || { echo "    FAIL T-007: legacy render failed" >&2; return 1; }
   _render_ported "$ported" || { echo "    FAIL T-007: ported render failed (FR-B9-2-004)" >&2; return 1; }
 
+  # framework-owned-paths.yml was added to the exclusions by t7-flutter-deps-refresh
+  # (2026-09-12). Both archetypes now declare `pubspec.yaml` as framework-owned so a
+  # dependency bump reaches existing projects; mobile-pwa-first ALSO declares
+  # `web-pwa/package.json`, which mobile-only cannot — it has no such surface, and
+  # listing a path that can never exist would make the file describe an archetype it is
+  # not. Excluding a whole file weakens the gate, so T-024 below asserts the divergence
+  # precisely: the two must be identical once web-pwa lines are removed.
+  #
   # web-pwa/, the scaffold manifest and the shared OIDC config exist only on the
   # ported side by design.
   #
@@ -286,6 +309,7 @@ _test_b92_l1_007_byte_equivalence() {
         --exclude=scaffold-manifest.yaml \
         --exclude=oidc-provider.json \
         --exclude=web-pwa-ci.yml \
+        --exclude=framework-owned-paths.yml \
         "$legacy" "$ported" 2>&1)
   if [ -n "$out" ]; then
     echo "    FAIL T-007: app surface NOT byte-equivalent — the port is wrong (FR-B9-2-004)" >&2
@@ -1105,6 +1129,99 @@ NEEDLES
   [ "$ok" = "1" ]
 }
 
+# ─── t7-flutter-deps-refresh — framework-owned dependency manifests ──────────
+
+MO_OWNED="$MO_DIR/.forge/framework-owned-paths.yml.tmpl"
+MP_OWNED="$TREE/.forge/framework-owned-paths.yml.tmpl"
+
+# T-007 excludes framework-owned-paths.yml because the two archetypes legitimately
+# differ on it now. This cell is what keeps that exclusion honest: they must be
+# identical once web-pwa lines are removed, so the ONLY licensed divergence is the
+# surface mobile-only does not have.
+_test_b92_l1_034_owned_paths_diverge_only_on_webpwa() {
+  [ -f "$MO_OWNED" ] || { echo "    FAIL T-034: $MO_OWNED missing" >&2; return 1; }
+  [ -f "$MP_OWNED" ] || { echo "    FAIL T-034: $MP_OWNED missing" >&2; return 1; }
+  # Compares the parsed owned:/excluded: SETS, not the raw text. The first version
+  # diffed the files line by line and failed on a prose comment that happened not to
+  # contain the filtered token — asserting the prose matched, when what matters is what
+  # the file MEANS to _a7_resolve_owned_paths.
+  _have_py_yaml || { echo "    FAIL T-034: python3+PyYAML required" >&2; return 1; }
+  MO_OWNED="$MO_OWNED" MP_OWNED="$MP_OWNED" python3 - <<'PY' >&2
+import os, yaml
+def sets(path):
+    d = yaml.safe_load(open(path, encoding='utf-8')) or {}
+    keep = lambda xs: {p for p in (xs or []) if 'web-pwa' not in p}
+    return keep(d.get('owned')), keep(d.get('excluded'))
+mo_o, mo_e = sets(os.environ['MO_OWNED'])
+mp_o, mp_e = sets(os.environ['MP_OWNED'])
+bad = False
+if mo_o != mp_o:
+    print(f"    FAIL T-034: owned: sets differ outside web-pwa — only in mobile-only {sorted(mo_o - mp_o)}, only in mobile-pwa-first {sorted(mp_o - mo_o)} (NFR-B9-2-002)")
+    bad = True
+if mo_e != mp_e:
+    print(f"    FAIL T-034: excluded: sets differ — only in mobile-only {sorted(mo_e - mp_e)}, only in mobile-pwa-first {sorted(mp_e - mo_e)} (NFR-B9-2-002)")
+    bad = True
+if len(mo_o) < 5:
+    print(f"    FAIL T-034: parsed only {len(mo_o)} owned path(s) — the read is broken, not the files (NFR-B9-2-002)")
+    bad = True
+raise SystemExit(1 if bad else 0)
+PY
+}
+
+# FR — a dependency bump must be able to reach an existing project. forge upgrade
+# merges ONLY what `owned:` matches (_a7_resolve_owned_paths); `excluded:` is a
+# subtractive filter on that set, not an independent list. Before 2026-09-12
+# `pubspec.yaml` was in neither, so every pin the framework moved reached new projects
+# and no existing one.
+_test_b92_l1_035_dependency_manifests_are_owned() {
+  local ok=1
+  _have_py_yaml || { echo "    FAIL T-035: python3+PyYAML required" >&2; return 1; }
+  MO_OWNED="$MO_OWNED" MP_OWNED="$MP_OWNED" python3 - <<'PY' >&2 || ok=0
+import os, yaml
+bad = False
+for label, path, want in (
+    ("mobile-only", os.environ['MO_OWNED'], {"pubspec.yaml"}),
+    ("mobile-pwa-first", os.environ['MP_OWNED'], {"pubspec.yaml", "web-pwa/package.json"}),
+):
+    owned = set((yaml.safe_load(open(path, encoding='utf-8')) or {}).get('owned') or [])
+    missing = want - owned
+    if missing:
+        print(f"    FAIL T-035: {label} does not declare {sorted(missing)} as framework-owned — a pin bump would never reach an existing project (t7-flutter-deps-refresh)")
+        bad = True
+raise SystemExit(1 if bad else 0)
+PY
+  [ "$ok" = "1" ]
+}
+
+# The pins the templates declare must be the ones verify-then-pin resolved. A guard on
+# the FLOOR, not on an exact string: `flutter pub upgrade` moving a caret range is
+# fine, silently sliding back below a major that the code now requires is not.
+_test_b92_l1_036_flutter_pins_not_below_verified() {
+  local ok=1 f
+  for f in "$MO_DIR/pubspec.yaml.tmpl" "$TREE/pubspec.yaml.tmpl"; do
+    [ -f "$f" ] || { echo "    FAIL T-036: $f missing" >&2; ok=0; continue; }
+    local pkg floor got
+    while IFS='|' read -r pkg floor; do
+      [ -z "$pkg" ] && continue
+      got=$(sed -n "s/^[[:space:]]*${pkg}:[[:space:]]*\^\([0-9][0-9.]*\).*/\1/p" "$f" | head -1)
+      [ -n "$got" ] || { echo "    FAIL T-036: $f declares no caret pin for $pkg (t7-flutter-deps-refresh)" >&2; ok=0; continue; }
+      local gmaj fmaj
+      gmaj=${got%%.*}; fmaj=${floor%%.*}
+      if [ "$gmaj" -lt "$fmaj" ]; then
+        echo "    FAIL T-036: $(basename "$(dirname "$f")")/$pkg is ^$got, below the verified major ^$floor — the call sites were adapted to that API (t7-flutter-deps-refresh)" >&2
+        ok=0
+      fi
+    done <<'PINS'
+flutter_bloc|9.1.1
+flutter_appauth|12.1.0
+flutter_secure_storage|11.1.1
+local_auth|3.0.2
+bloc_test|10.0.0
+PINS
+  done
+  [ "$ok" = "1" ]
+}
+
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 main() {
@@ -1112,7 +1229,7 @@ main() {
   run_test _test_b92_l1_001_plan_exists
   run_test _test_b92_l1_002_sources_resolve
   run_test _test_b92_l1_003_all_48_ported
-  run_test _test_b92_l1_004_mobile_only_untouched
+  run_test _test_b92_l1_004_mobile_only_alias_and_snapshot_intact
   run_test _test_b92_l1_005_no_jinja_tokens_in_contents
   run_test _test_b92_l1_006_angle_placeholders_used
   run_test _test_b92_l1_007_byte_equivalence
@@ -1148,6 +1265,9 @@ main() {
   run_test _test_b92_l1_031_channel_decision_tree
   run_test _test_b92_l1_032_gen_bloc_shape
   run_test _test_b92_l1_033_gen_bloc_output
+  run_test _test_b92_l1_034_owned_paths_diverge_only_on_webpwa
+  run_test _test_b92_l1_035_dependency_manifests_are_owned
+  run_test _test_b92_l1_036_flutter_pins_not_below_verified
   print_summary
 }
 

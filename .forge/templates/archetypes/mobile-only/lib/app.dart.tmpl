@@ -44,20 +44,30 @@ class App extends StatelessWidget {
     );
     final biometricService = BiometricService();
 
+    // BiometricLockWidget goes INSIDE MaterialApp, through its `builder:`, not
+    // around it. It renders a Stack with an ElevatedButton, and both need ancestors
+    // that MaterialApp introduces — Directionality, Theme, Material, Localizations.
+    // Wrapping MaterialApp instead threw on the very first build:
+    //   `No Directionality widget found. Stack widgets require a Directionality
+    //    widget ancestor to resolve the 'alignment' argument.`
+    // Fixed 2026-09-12 (t7-flutter-deps-refresh Q-002); it had been latent since B.4
+    // because the scaffold's only test failed earlier, on an uninitialised OTel, and
+    // no harness ran `flutter test` on a rendered tree.
     return BlocProvider<AuthBloc>(
       create: (_) => AuthBloc(repository: repository),
-      child: BiometricLockWidget(
-        biometricService: biometricService,
-        child: MaterialApp(
-          title: '{{project_name}}',
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-            useMaterial3: true,
-          ),
-          home: const Scaffold(
-            body: Center(
-              child: Text('{{project_name}} — mobile-only scaffold'),
-            ),
+      child: MaterialApp(
+        title: '{{project_name}}',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          useMaterial3: true,
+        ),
+        builder: (context, child) => BiometricLockWidget(
+          biometricService: biometricService,
+          child: child ?? const SizedBox.shrink(),
+        ),
+        home: const Scaffold(
+          body: Center(
+            child: Text('{{project_name}} — mobile-only scaffold'),
           ),
         ),
       ),

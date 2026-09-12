@@ -6,8 +6,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:{{project_name}}/app.dart';
+import 'package:{{project_name}}/observability/otel_init.dart';
 
 void main() {
+  // App.build() calls OTel.tracer(), which throws
+  // `Bad state: OTel.initialize() must be called first` unless the SDK is up.
+  // main() does this via initOtel(); the test must too.
+  //
+  // This scaffold's only test had never passed: `flutter test` on a fresh
+  // `forge init` render failed here long before the 2026-09-12 dependency refresh
+  // (verified against an unbumped render). Nothing caught it because no harness runs
+  // `flutter test` on a rendered tree — t7-flutter-deps-refresh Q-002.
+  setUpAll(() async {
+    await initOtel();
+  });
+
   testWidgets('App builds and shows scaffold text', (WidgetTester tester) async {
     await tester.pumpWidget(const App());
     await tester.pump();

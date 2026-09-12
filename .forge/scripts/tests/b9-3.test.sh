@@ -478,17 +478,36 @@ _test_b93_l1_021_t3_gap_and_identity_untouched() {
   [ "$ok" = "1" ]
 }
 
-_test_b93_l1_022_flutter_untouched() {
-  _git_clean_vs_head \
-    ".forge/templates/archetypes/mobile-pwa-first/2.0.0/lib" \
-    ".forge/templates/archetypes/mobile-pwa-first/2.0.0/ios" \
-    ".forge/templates/archetypes/mobile-pwa-first/2.0.0/android" \
-    ".forge/templates/archetypes/mobile-pwa-first/2.0.0/test"
-  case $? in
-    0) return 0 ;;
-    2) echo "    SKIP T-022: not a git checkout" >&2; return 0 ;;
-    *) echo "    FAIL T-022: the Flutter surface changed — it is byte-frozen by b9-2 T-007 (NFR-B9-3-001)" >&2; return 1 ;;
-  esac
+# RE-SCOPED by t7-flutter-deps-refresh (2026-09-12).
+#
+# The original cell ran `_git_clean_vs_head` on the Flutter surface and reported it as
+# "byte-frozen by b9-2 T-007". That message misstated its own mechanism: T-007 freezes
+# the two archetypes RELATIVE TO EACH OTHER, not against git history. Read as a
+# permanent invariant, git-cleanliness meant the Flutter surface could never receive a
+# dependency or security update — which is what blocked the 2026-09-12 refresh until
+# both this cell and b9-2 T-004 were re-scoped.
+#
+# What NFR-B9-3-001 actually protects is that B.9.3's deliverable — a BROWSER OIDC
+# client on oauth4webapi — stays on the web-pwa side and never leaks into the Flutter
+# app. That is a standing property of the tree, not of the diff, so it is asserted
+# directly. The two archetypes still render identically: b9-2 T-007 keeps that.
+_test_b93_l1_022_browser_oidc_stays_off_the_flutter_surface() {
+  local tree="$FORGE_ROOT/.forge/templates/archetypes/mobile-pwa-first/2.0.0"
+  local ok=1 tok hits n=0
+  for tok in oauth4webapi web-pwa/src/lib/auth sessionStorage; do
+    n=$((n + 1))
+    hits=$(grep -rl -- "$tok" "$tree/lib" "$tree/ios" "$tree/android" "$tree/test" 2>/dev/null || true)
+    if [ -n "$hits" ]; then
+      echo "    FAIL T-022: '$tok' — a browser-OIDC concern — reached the Flutter surface (NFR-B9-3-001):" >&2
+      printf '      %s\n' $hits >&2
+      ok=0
+    fi
+  done
+  [ "$n" = "3" ] || { echo "    FAIL T-022: swept $n token(s), expected 3 — the battery is broken" >&2; ok=0; }
+  # Anti-vacuity: the paths must exist, or the sweep proves nothing.
+  [ -d "$tree/lib" ] && [ -d "$tree/test" ] \
+    || { echo "    FAIL T-022: the Flutter surface paths are missing — the sweep read nothing (NFR-B9-3-001)" >&2; ok=0; }
+  [ "$ok" = "1" ]
 }
 
 _test_b93_l1_023_promoted() {
@@ -669,7 +688,7 @@ main() {
   run_test _test_b93_l1_019_readme_cost
   run_test _test_b93_l1_020_no_token_leak
   run_test _test_b93_l1_021_t3_gap_and_identity_untouched
-  run_test _test_b93_l1_022_flutter_untouched
+  run_test _test_b93_l1_022_browser_oidc_stays_off_the_flutter_surface
   run_test _test_b93_l1_023_promoted
   case "$LEVEL" in
     *2*)

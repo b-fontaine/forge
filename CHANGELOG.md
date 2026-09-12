@@ -12,6 +12,57 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Changed
+
+- **Every Flutter pin is current, and a pin bump can now reach a project that already
+  exists** — `t7-flutter-deps-refresh`.
+
+  Nine packages moved, three of them across a major: `flutter_bloc` 8→**9.1.1**,
+  `flutter_appauth` 7→**12.1.0**, `flutter_secure_storage` 9→**11.1.1**, `local_auth`
+  2→**3.0.2**, plus `intl`, `bloc_test`, `flutter_lints`, `equatable`, `mocktail`. The
+  SDK floor goes `>=3.0.0` → **`>=3.10.0`**, which is what the resolved set actually
+  requires — the old floor was a claim an adopter on Dart 3.5 would have discovered as a
+  resolution failure.
+
+  Nothing was written from memory. `flutter pub outdated` on a real render supplied the
+  resolvable set and corrected three versions read off the pub.dev API; both breaking
+  signatures came from the installed package sources. Then every pin was **proven**:
+  `flutter pub get`, `flutter analyze`, `flutter test` on renders of **both**
+  archetypes, against Flutter 3.47.2 / Dart 3.13.2. Three majors, two call sites
+  adapted.
+
+  **The bump now reaches existing projects.** `forge upgrade` merges only what `owned:`
+  matches — `excluded:` is a subtractive filter on that set, not an independent list —
+  and `pubspec.yaml` was in neither, so every version the framework moved reached new
+  `forge init` projects and no existing one. `pubspec.yaml` (both archetypes) and
+  `web-pwa/package.json` are now framework-owned. `b9-5` Q-001 and `b9-10` Q-001 turn
+  out to have been one problem.
+
+  **Two guards had made the pins immovable**: `b9-2` T-004 required `mobile-only` to be
+  byte-clean vs HEAD, while T-007 requires the two archetypes to render identically,
+  `pubspec.yaml` included — bump one and T-007 breaks, bump both and T-004 breaks. Both
+  archetypes now move in lock-step (maintainer decision) and T-004 asserts what is
+  genuinely load-bearing: the alias metadata survives and the frozen 1.0.0 snapshot is
+  never rebuilt. `b9-3` T-022 had the same flaw and its message misstated its own
+  mechanism, claiming a freeze that T-007 does not provide; it now asserts that no
+  browser-OIDC concern reaches the Flutter surface.
+
+  **And running the toolchain found two defects latent since B.4.** `flutter test`
+  failed after the bump — and failed identically on a *pristine* render, so not the
+  bump's doing. The scaffolded smoke test built `App` without `OTel.initialize()`; under
+  that, `BiometricLockWidget` wrapped `MaterialApp`, leaving its `Stack` with no
+  `Directionality` ancestor. **`forge init` produced a project whose root widget threw
+  on first build**, and the first failure had been masking the second. The overlay now
+  sits inside `MaterialApp` via its `builder:`, where it has the `Directionality`,
+  `Theme` and `Material` ancestors it needs. `flutter analyze` reported no issues on the
+  broken tree; nothing in CI runs `flutter test` on a render (Q-002).
+
+  Adopters upgrading from `flutter_secure_storage` 9.x should read the note now carried
+  in `pubspec.yaml`: v10 migrated Android data off the deprecated Jetpack backend and
+  v11 removed it, so a direct 9 → 11 jump skips the migration. This scaffold stores one
+  value, so the effect is a single forced re-authentication — but the note matters more
+  now that `forge upgrade` propagates the bump.
+
 ### Fixed
 
 - **J.8's `forbidden_archetypes` refusal is reachable** — `t7-forbidden-archetypes-wiring`.

@@ -16,11 +16,12 @@ class SecureStorageAdapter {
             accessibility: KeychainAccessibility.first_unlock_this_device,
             synchronizable: false,
           ),
-          aOptions: AndroidOptions(
-            encryptedSharedPreferences: true,
-            // StrongBox enclave preferred when device supports it (API 28+).
-            // The library falls back gracefully when StrongBox is unavailable.
-          ),
+          // flutter_secure_storage 11.0.0 removed `encryptedSharedPreferences`:
+          // the Jetpack Security backend it selected is no longer supported. The
+          // defaults are now the strong path — AES/GCM data encryption with
+          // RSA-OAEP-SHA256 KeyStore key wrapping, and migrateOnAlgorithmChange
+          // enabled — so there is nothing left to opt into here.
+          aOptions: AndroidOptions(),
         );
 
   static const _kTokenKey = 'auth_token_v1';
