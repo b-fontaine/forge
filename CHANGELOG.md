@@ -14,6 +14,54 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ### Added
 
+- **`bin/forge-gen-bloc.sh` — a flutter_bloc feature generator driven by a local
+  descriptor** — `b9-5-bloc-generator`.
+
+  The roadmap specified these generators as reading the **proto messages**. This
+  archetype has none, and that is its premise rather than a gap: the schema is
+  `layer_profile: client-only`, so there is no backend layer, no `shared/protos`, no
+  contract of any kind on Forge's side of the line. The archetype does not manage the
+  server — the identity provider lives in the adopter's own information system, and
+  Forge supplies a corner of config plus a standards-conformant client. Apply that same
+  boundary to state management and the source of truth has to be a file the adopter
+  writes and owns: `lib/presentation/<feature>/<feature>.bloc.yaml` (ADR-B95-001).
+
+  From it the generator emits the event hierarchy, the state hierarchy, Equatable
+  props, the constructor, the `on<Event>` registrations and one `blocTest` per event —
+  all copying the idiom of the archetype's own `auth_bloc.dart` rather than inventing
+  one. What it does **not** emit is the handler bodies: `auth_bloc`'s `_onLogin` calls
+  a repository, maps the result and emits, which is business logic. Each handler is
+  `throw UnimplementedError(...)`, never an empty body — an empty handler emits nothing
+  and the bloc silently does nothing, the "looks implemented" failure this repository
+  already refused for the offline shell (`pwa.yaml::PWA-RULE-002`).
+
+  The generated `blocTest` asserts `errors: [isA<UnimplementedError>()]`. It is a
+  **tripwire, not coverage**: green while the handler is a stub, red the moment it is
+  implemented — which is exactly when a real assertion is owed. Events that declare
+  fields carry `/* TODO */` in their constructor call and do not compile until filled
+  in, deliberately: only the adopter can build their own domain types, and fabricating
+  a value would make the suite green on data nobody chose.
+
+  Closes a gap the archetype had carried since B.4: `bloc_test: ^9.1.7` and
+  `mocktail: ^1.0.4` were declared dev-dependencies used by **nothing** — `test/` held
+  one `widget_test.dart`. The generator uses both and adds neither, and touches no
+  template, no schema and no snapshot (the B.9.9 precedent for `bin/` tooling).
+
+  Two things were wrong first and are recorded as such. The first version emitted
+  `final CartItem item;` with no import for `CartItem`, so any event with a domain type
+  produced code that does not compile — found by reading the output, not by a test, and
+  fixed with an optional `imports:` list. And `FR-B95-006` originally claimed the
+  generated test is green on generation; writing the generator showed that holds only
+  for field-less events, so the requirement was narrowed to match the code rather than
+  the code bent to match it.
+
+  `T-033` asserts the generator's output, the thing `b8-10b` shipped 36 raw `.tmpl`
+  files for want of. Its needles survived seven mutation probes and failed the eighth:
+  `List<Object?> get props` is emitted from **two** code paths, so breaking the base
+  classes left the field-carrying branch satisfying the needle. Split by emission site:
+  8/8. Fourth instance in three days of a needle satisfied by something other than what
+  it names — scoping the region was not enough.
+
 - **A channel decision tree in `docs/ARCHETYPES.md`, and three matrix rows that stop
   misdirecting the pick** — `b9-4-archetype-decision-tree`.
 

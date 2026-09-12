@@ -940,6 +940,165 @@ NEEDLES
   [ "$ok" = "1" ]
 }
 
+# ─── B.9.5 — bin/forge-gen-bloc.sh (b9-5-bloc-generator) ─────────────────────
+#
+# Same host as B.9.9/B.9.10/B.9.4's guards, same reason: forge-ci.yml is at 419/420
+# lines (NFR-CI-002) and the last one is B.9.11's, to register b9.test.sh.
+#
+# T-033 asserts the generator's OUTPUT, not its source. b8-10b shipped 36 raw .tmpl
+# files with live placeholders into adopters' projects because no test ever opened what
+# a generator produced.
+
+GEN_BLOC="$FORGE_ROOT/bin/forge-gen-bloc.sh"
+
+# A minimal tree that satisfies the generator's preflight: a pubspec declaring
+# flutter_bloc, and one descriptor. Deliberately NOT a real Flutter project — the
+# generator must work from the two facts it actually reads.
+_b95_fixture() {
+  local root="$1"
+  mkdir -p "$root/lib/presentation/cart"
+  cat > "$root/pubspec.yaml" <<'PUBSPEC'
+name: fixture
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+dependencies:
+  flutter_bloc: ^8.1.6
+  equatable: ^2.0.5
+dev_dependencies:
+  bloc_test: ^9.1.7
+  mocktail: ^1.0.4
+PUBSPEC
+  cat > "$root/lib/presentation/cart/cart.bloc.yaml" <<'DESC'
+name: Cart
+repository: CartRepository
+events:
+  - ItemAdded: {item: CartItem}
+  - ItemRemoved: {id: String}
+states:
+  - Initial
+  - Loading
+  - Loaded: {items: List<CartItem>}
+  - Failure: {message: String}
+DESC
+}
+
+# FR-B95-001 — shape and exit envelope, matching the sibling bin/ scripts.
+_test_b92_l1_032_gen_bloc_shape() {
+  local ok=1
+  [ -f "$GEN_BLOC" ] || { echo "    FAIL T-032: $GEN_BLOC missing (FR-B95-001)" >&2; return 1; }
+  [ -x "$GEN_BLOC" ] || { echo "    FAIL T-032: not executable (FR-B95-001)" >&2; ok=0; }
+  grep -qE '^set -euo pipefail' "$GEN_BLOC" \
+    || { echo "    FAIL T-032: no 'set -euo pipefail' (FR-B95-001)" >&2; ok=0; }
+
+  local out; out=$(bash "$GEN_BLOC" --help 2>&1); local rc=$?
+  [ "$rc" = "0" ] || { echo "    FAIL T-032: --help exited $rc, expected 0 (FR-B95-001)" >&2; ok=0; }
+  # --help IS the descriptor contract: no template ships an example (ADR-B95-002).
+  local key
+  for key in --target --feature --dry-run --force events: states: repository:; do
+    grep -qF -- "$key" <<<"$out" \
+      || { echo "    FAIL T-032: --help does not document '$key' (FR-B95-001/002)" >&2; ok=0; }
+  done
+
+  bash "$GEN_BLOC" --target . >/dev/null 2>&1; [ "$?" = "2" ] \
+    || { echo "    FAIL T-032: missing --feature should exit 2 (FR-B95-001)" >&2; ok=0; }
+  bash "$GEN_BLOC" --feature cart >/dev/null 2>&1; [ "$?" = "2" ] \
+    || { echo "    FAIL T-032: missing --target should exit 2 (FR-B95-001)" >&2; ok=0; }
+
+  local empty; empty="$(mktemp -d -t forge-b95e-XXXXXX)"
+  bash "$GEN_BLOC" --target "$empty" --feature cart >/dev/null 2>&1
+  local rc7=$?
+  rm -rf "$empty"
+  [ "$rc7" = "7" ] \
+    || { echo "    FAIL T-032: a target with no pubspec.yaml exited $rc7, expected 7 (FR-B95-007)" >&2; ok=0; }
+
+  [ "$ok" = "1" ]
+}
+
+# FR-B95-003..006 / NFR-B95-003 — the OUTPUT.
+_test_b92_l1_033_gen_bloc_output() {
+  [ -f "$GEN_BLOC" ] || { echo "    FAIL T-033: generator absent (see T-032)" >&2; return 1; }
+  local work; work="$(mktemp -d -t forge-b95-XXXXXX)"
+  # shellcheck disable=SC2064
+  trap "rm -rf '$work'" RETURN
+  _b95_fixture "$work"
+
+  bash "$GEN_BLOC" --target "$work" --feature cart >/dev/null 2>&1
+  local rc=$?
+  [ "$rc" = "0" ] \
+    || { echo "    FAIL T-033: generation exited $rc on a clean fixture (FR-B95-001)" >&2; return 1; }
+
+  local ok=1 f
+  for f in lib/presentation/cart/cart_event.dart \
+           lib/presentation/cart/cart_state.dart \
+           lib/presentation/cart/cart_bloc.dart \
+           test/presentation/cart/cart_bloc_test.dart; do
+    [ -f "$work/$f" ] || { echo "    FAIL T-033: $f not written (FR-B95-004)" >&2; ok=0; }
+  done
+  [ "$ok" = "1" ] || return 1
+
+  local ev st bl te
+  ev="$(cat "$work/lib/presentation/cart/cart_event.dart")"
+  st="$(cat "$work/lib/presentation/cart/cart_state.dart")"
+  bl="$(cat "$work/lib/presentation/cart/cart_bloc.dart")"
+  te="$(cat "$work/test/presentation/cart/cart_bloc_test.dart")"
+
+  # Needles are FULL declarations, never a bare identifier — and where the generator has
+# TWO emission sites for the same construct, each site gets its own needle. A single
+# `List<Object?> get props` needle passed a mutation that broke the base classes,
+# because the field-carrying branch still emitted it. Fourth instance in three days of
+# a needle satisfied by something other than what it names. b9-4's `client-only` needle
+  # was correctly scoped to its section and still survived the mutation that deleted the
+  # row it protected, because the word recurred two paragraphs down.
+  local needle
+  while IFS='|' read -r needle why; do
+    [ -z "$needle" ] && continue
+    grep -qF -- "$needle" <<<"$ev$st$bl$te" \
+      || { echo "    FAIL T-033: generated output lacks '$needle' — $why" >&2; ok=0; }
+  done <<'NEEDLES'
+abstract class CartEvent extends Equatable|the event base, AuthEvent's idiom (FR-B95-003)
+class CartItemAdded extends CartEvent|one class per declared event (FR-B95-003)
+class CartItemRemoved extends CartEvent|the second declared event (FR-B95-003)
+final CartItem item;|the event's declared field, with its declared type (FR-B95-002)
+abstract class CartState extends Equatable|the state base (FR-B95-003)
+class CartLoaded extends CartState|a state carrying fields (FR-B95-003)
+final List<CartItem> items;|a generic field type survives the round trip (FR-B95-002)
+List<Object?> get props => [];|the BASE classes' empty props (FR-B95-003)
+List<Object?> get props => [item];|and the field-carrying class's own props — a SECOND emission site, which is why one needle for both passed a mutation that broke only the bases (FR-B95-003)
+class CartBloc extends Bloc<CartEvent, CartState>|the bloc (FR-B95-003)
+CartBloc({required CartRepository repository})|the repository dependency (FR-B95-003)
+super(const CartInitial())|the first declared state is the initial one (FR-B95-007)
+on<CartItemAdded>|the handler registration (FR-B95-003)
+throw UnimplementedError|handlers throw; an empty body looks implemented (FR-B95-005)
+blocTest<CartBloc, CartState>|the generated tripwire test (FR-B95-006)
+isA<UnimplementedError>()|the tripwire asserts the stub (ADR-B95-003)
+extends Mock implements CartRepository|the mocktail double, no new dependency (FR-B95-006)
+NEEDLES
+
+  # One handler and one blocTest per declared event — a generator that emits the first
+  # and stops would satisfy every needle above.
+  local n_on n_test
+  n_on=$(grep -c 'on<Cart' <<<"$bl")
+  n_test=$(grep -c 'blocTest<' <<<"$te")
+  [ "$n_on" = "2" ] \
+    || { echo "    FAIL T-033: $n_on on<Event> registration(s) for 2 declared events (FR-B95-003)" >&2; ok=0; }
+  [ "$n_test" = "2" ] \
+    || { echo "    FAIL T-033: $n_test blocTest(s) for 2 declared events (FR-B95-006)" >&2; ok=0; }
+
+  # No unsubstituted placeholder, the b8-10b failure.
+  if grep -qE '<project-name>|<feature>|TODO_REPLACE' <<<"$ev$st$bl$te"; then
+    echo "    FAIL T-033: an unsubstituted placeholder reached the generated output (NFR-B95-003)" >&2
+    ok=0
+  fi
+
+  # Re-running must refuse rather than silently discard the adopter's handlers.
+  bash "$GEN_BLOC" --target "$work" --feature cart >/dev/null 2>&1
+  local rc2=$?
+  [ "$rc2" = "8" ] \
+    || { echo "    FAIL T-033: re-run exited $rc2, expected 8 (collision refusal, FR-B95-008)" >&2; ok=0; }
+
+  [ "$ok" = "1" ]
+}
+
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 main() {
@@ -981,6 +1140,8 @@ main() {
   run_test _test_b92_l1_029_index_covers_every_driver
   run_test _test_b92_l1_030_doc_claims_track_the_script
   run_test _test_b92_l1_031_channel_decision_tree
+  run_test _test_b92_l1_032_gen_bloc_shape
+  run_test _test_b92_l1_033_gen_bloc_output
   print_summary
 }
 

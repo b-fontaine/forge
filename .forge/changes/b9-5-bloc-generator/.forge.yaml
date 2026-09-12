@@ -1,0 +1,19 @@
+name: b9-5-bloc-generator
+status: implemented
+created: 2026-09-12
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.9.5   # docs/new-archetypes-plan.md §5.2 — "flutter_bloc renforcé : générateurs
+            # Hera produisent Event/State/Bloc + bloc_test à partir des proto
+            # messages." RE-SCOPED by maintainer arbitration 2026-09-12: the source
+            # is a local declarative descriptor, not proto. See ADR-B95-001.
+depends_on:
+  - b9-1-schema   # layer_profile: client-only is the reason protos are unavailable
+  - b9-2-web-pwa  # auth_bloc.dart is the idiom the generator reproduces
+timeline:
+  proposed: 2026-09-12
+  specified: 2026-09-12
+  designed: 2026-09-12
+  planned: 2026-09-12
+  implemented: 2026-09-12
