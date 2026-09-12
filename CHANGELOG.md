@@ -12,6 +12,44 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Fixed
+
+- **J.8's `forbidden_archetypes` refusal is reachable** — `t7-forbidden-archetypes-wiring`.
+  `forge init --archetype flutter-firebase` now exits **3** with
+  `[REFUSAL: flutter-firebase: J8-RULE-001: … ; alternative: …]` and renders nothing.
+  It previously exited **127** with a locale-dependent shell error —
+  `bash: cli/assets/<removed>: no such file or directory` — because the dispatcher fell
+  through and exec'd the literal string `<removed>`.
+
+  One reported defect, three broken links. `parseDispatchTable` returned
+  `{ archetypes }` and never read the block (reported by `b9-4` Q-001). Fixing that made
+  the refusal fire with the exact structured line — and the process still exited **1**,
+  because `cli.ts`'s catch did a flat `return 1` and discarded the `exitCode` the error
+  deliberately carries. That third link surfaced only *after* the second was fixed; a
+  patch stopping at the parser would have shipped a refusal reporting the wrong code,
+  and `ADR-J8-003` makes exit 3 part of the contract.
+
+  A fourth defect fell out of the same root and is fixed with it. With no block
+  tracking, every four-space `since:` in the top-level blocks *after* `archetypes:`
+  matched against the last archetype parsed. `flutter-firebase` — the last entry —
+  parsed as `"0.5.0"   # realigned 2026-09-08 …`: a wrong value **and** a trailing
+  comment, taken from `forbidden_combinations:`'s final row. Blast radius measured
+  before the fix was scoped: that one field, six other archetypes correct. It now reads
+  `"0.0.0"` as the YAML declares.
+
+  J.8 shipped this refusal in May with nothing that ran it — specified, coded,
+  documented in two places, and dead. So the deliverable is the parse **plus** the
+  coverage: `cli/test/e2e/forbidden-archetype.test.ts` drives the real parser and the
+  real binary, and `j8.test.sh` gains a data guard (every entry carries the five keys
+  the message formats; every `rule_id` is documented where adopters look) and an L2
+  behaviour cell. `forbidden_combinations:` is deliberately **not** parsed
+  (`ADR-T7FA-002`): unlike its sibling it is live, enforced wrapper-side, and a second
+  CLI-side reader would fork another module's contract.
+
+  `docs/ARCHETYPES.md`'s `flutter-firebase` row — written by `b9-4` two days ago stating
+  that the refusal does *not* fire — is corrected with the date. A matrix cell
+  describing a state that no longer holds is the defect `b9-4` itself was opened to fix.
+
 ### Added
 
 - **`mobile-pwa-first / 2.0.0` is promoted to `stable` / `scaffoldable: true`** —

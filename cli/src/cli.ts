@@ -287,7 +287,15 @@ export async function runCli(io: CliIo): Promise<number> {
     await program.parseAsync(io.argv, { from: "user" });
   } catch (err) {
     io.stderr.write(`${(err as Error).message}\n`);
-    return 1;
+    // Honour a deliberate exit code carried on the error.
+    // t7-forbidden-archetypes-wiring: J.8's forbidden-archetype refusal attaches
+    // exitCode = 3 ("policy violation", ADR-J8-003) at init-archetype.ts:169. A flat
+    // `return 1` here discarded it, so even once the refusal fired it reported the
+    // wrong code — the third and last link in a chain whose other two were a parser
+    // that never produced the data and a caller that therefore never matched.
+    // Anything thrown without an exitCode still returns 1, unchanged.
+    const carried = (err as Error & { exitCode?: number }).exitCode;
+    return typeof carried === "number" && carried > 0 ? carried : 1;
   }
   return exitCode;
 }

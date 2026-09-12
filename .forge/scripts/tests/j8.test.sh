@@ -370,6 +370,85 @@ TOML
 
 # ─── Main ────────────────────────────────────────────────────────
 
+# ─── t7-forbidden-archetypes-wiring — the refusal is REACHABLE (FR-T7FA-005) ──
+#
+# J.8 shipped the forbidden_archetypes refusal with nothing that ran it. It was
+# specified (FR-J8-020), coded (init-archetype.ts:159-171), documented in
+# docs/ARCHETYPES.md and in this module's own standard — and dead, because
+# parseDispatchTable returned `{ archetypes }` and never read the block. A real run
+# exited 127 with a locale-dependent shell error instead of 3 with a [REFUSAL: ...]
+# line. Found by running the binary, not by a red suite.
+#
+# WHAT EACH LAYER COVERS, stated because neither alone is enough:
+#   this L1  — the DATA: every entry carries the five keys the refusal message
+#              formats, and every rule_id is documented where adopters look. Catches a
+#              new forbidden archetype added without its paperwork.
+#   this L2  — the BEHAVIOUR, against the built CLI.
+#   Vitest   — cli/test/e2e/forbidden-archetype.test.ts drives the real parser and the
+#              real binary; it is the primary guard and runs in CI's `cli` job.
+
+_test_j8_090_forbidden_archetypes_data() {
+  [ -f "$DISPATCH_TABLE" ] || { echo "    dispatch-table.yml missing (FR-T7FA-005)" >&2; return 1; }
+  command -v python3 >/dev/null 2>&1 || { echo "    python3 required (FR-T7FA-005)" >&2; return 1; }
+  python3 - "$DISPATCH_TABLE" "$FORGE_ROOT_REAL/docs/ARCHETYPES.md" <<'PY' >&2
+import sys, yaml
+d = yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
+doc = open(sys.argv[2], encoding='utf-8').read()
+entries = d.get('forbidden_archetypes') or []
+bad = False
+if not entries:
+    print("    FAIL T-090: dispatch-table.yml declares no forbidden_archetypes — this guard is not guarding (FR-T7FA-005)")
+    raise SystemExit(1)
+for e in entries:
+    for k in ('name', 'reason', 'since', 'alternative', 'rule_id'):
+        if not str(e.get(k, '')).strip():
+            print(f"    FAIL T-090: entry {e.get('name')!r} has no {k} — it would render as 'undefined' inside the [REFUSAL: ...] line rather than fail (FR-T7FA-005)")
+            bad = True
+    rid = str(e.get('rule_id', ''))
+    if rid and rid not in doc:
+        print(f"    FAIL T-090: {rid} refuses {e.get('name')!r} but is absent from docs/ARCHETYPES.md — adopters hit a refusal the matrix never mentions (FR-T7FA-005)")
+        bad = True
+raise SystemExit(1 if bad else 0)
+PY
+}
+
+# FR-T7FA-002 / FR-T7FA-003 — the behaviour, against the real binary.
+_test_j8_l2_forbidden_archetype_refusal() {
+  local cli="$FORGE_ROOT_REAL/cli/dist/index.js"
+  if [ ! -f "$cli" ]; then
+    echo "    SKIP T-L2-090: build+bundle the CLI to run the live refusal check" >&2
+    return 0
+  fi
+  command -v python3 >/dev/null 2>&1 || { echo "    python3 required" >&2; return 1; }
+  local name rid
+  name=$(python3 -c "
+import sys, yaml
+d = yaml.safe_load(open('$DISPATCH_TABLE', encoding='utf-8')) or {}
+e = (d.get('forbidden_archetypes') or [{}])[0]
+print(e.get('name',''))")
+  rid=$(python3 -c "
+import sys, yaml
+d = yaml.safe_load(open('$DISPATCH_TABLE', encoding='utf-8')) or {}
+e = (d.get('forbidden_archetypes') or [{}])[0]
+print(e.get('rule_id',''))")
+  [ -n "$name" ] || { echo "    FAIL T-L2-090: no forbidden archetype to probe (see T-090)" >&2; return 1; }
+
+  local tmp; tmp="$(mktemp -d -t forge-j8fa-XXXXXX)"
+  # shellcheck disable=SC2064
+  trap "rm -rf '$tmp'" RETURN
+  local err
+  err=$( cd "$tmp" && node "$cli" init ffprobe --archetype "$name" --org dev.forge.test 2>&1 >/dev/null )
+  local rc=$?
+  local ok=1
+  [ "$rc" = "3" ] \
+    || { echo "    FAIL T-L2-090: exit=$rc, expected 3 (policy violation, ADR-J8-003). 127 means the dispatcher fell through to exec the '<removed>' scaffolder (FR-T7FA-002)" >&2; ok=0; }
+  grep -qF -- "[REFUSAL: $name: $rid:" <<<"$err" \
+    || { echo "    FAIL T-L2-090: stderr carries no '[REFUSAL: $name: $rid: ...]' line (FR-T7FA-002)" >&2; ok=0; }
+  [ ! -e "$tmp/ffprobe" ] \
+    || { echo "    FAIL T-L2-090: a tree was rendered despite the refusal (FR-T7FA-003)" >&2; ok=0; }
+  [ "$ok" = "1" ]
+}
+
 main() {
   echo "── J.8 — j8-janus-rules harness (level $LEVEL) ──"
   echo ""
@@ -392,10 +471,12 @@ main() {
   run_test _test_j8_060_tier_ledger
   run_test _test_j8_070_sbom_signature
   run_test _test_j8_080_sbom_policy_standard
+  run_test _test_j8_090_forbidden_archetypes_data
 
   if [[ ",$LEVEL," == *",2,"* ]] || [[ "$LEVEL" == "1,2" ]] || [[ "$LEVEL" == "2" ]]; then
     echo ""
     echo "Phase 2: L2 — fixture-based SBOM"
+    run_test _test_j8_l2_forbidden_archetype_refusal
     run_test _test_j8_l2_sbom_good
     run_test _test_j8_l2_sbom_determinism
   fi

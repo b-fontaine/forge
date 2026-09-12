@@ -1,0 +1,16 @@
+name: t7-forbidden-archetypes-wiring
+status: implemented
+created: 2026-09-12
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - J.8    # j8-janus-rules FR-J8-020 / ADR-J8-003 — the forbidden_archetypes refusal,
+           # specified and coded but never reachable.
+depends_on:
+  - b9-4-archetype-decision-tree  # measured the defect (Q-001) and documented exit 127
+timeline:
+  proposed: 2026-09-12
+  specified: 2026-09-12
+  designed: 2026-09-12
+  planned: 2026-09-12
+  implemented: 2026-09-12
