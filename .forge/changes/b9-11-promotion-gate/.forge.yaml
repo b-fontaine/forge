@@ -1,0 +1,21 @@
+name: b9-11-promotion-gate
+status: implemented
+created: 2026-09-12
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.9.11  # docs/new-archetypes-plan.md §5.2 — "Harness b9.test.sh : 25–30 tests L1
+            # + 5 L2 fixture." §0.14 records the other half: this is the promotion
+            # gate, and the candidate→stable flip cascades across every sibling.
+depends_on:
+  - b9-1-schema              # the candidate schema this promotes
+  - b9-2-web-pwa             # the wrapper + dispatch key
+  - b9-4-archetype-decision-tree  # its derived b5 guard DEMANDS the matrix row on flip
+  - b9-10-migration-paths    # its T-028 pins the candidate paragraph that flip falsifies
+  - b9-5-bloc-generator      # last of the content bricks; the gate covers it
+timeline:
+  proposed: 2026-09-12
+  specified: 2026-09-12
+  designed: 2026-09-12
+  planned: 2026-09-12
+  implemented: 2026-09-12

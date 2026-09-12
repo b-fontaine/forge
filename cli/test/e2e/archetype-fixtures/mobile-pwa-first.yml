@@ -1,0 +1,86 @@
+# Audit: B.9.11 (b9-11-promotion-gate) — CLI trust fixture for archetype mobile-pwa-first
+#
+# Required by FR-T51-055: cli/test/e2e/archetypes-smoke.test.ts partitions the dispatch
+# table into `scaffoldable = status !== "candidate"` and `candidates = status ===
+# "candidate"`, and every scaffoldable archetype must have a fixture here. This file
+# exists because b9-11 flipped the dispatch status to `stable`; without it the
+# cross-reference test fails, which is how b7-6's promotion shipped red (d21dda1).
+#
+# File matrix asserted after
+# `forge init smoke_mobile_pwa_first --archetype mobile-pwa-first --org dev.forge.test`.
+# The smoke test derives the slug as `smoke_${name.replace(/-/g, '_')}`, which satisfies
+# the Flutter scaffolder's `[a-z][a-z0-9_]+` rule.
+#
+# Every path below was read off a real render (74 files), not written from the scaffold
+# plan — `b9.test.sh` T-021 re-checks the two agree in both directions, so a fixture
+# listing a path the scaffolder does not produce, or omitting one it forbids, fails.
+#
+# Note : like mobile-only, this is a *lighter* scaffold than full-stack-monorepo. It
+# ships no `.forge/constitution.md` and no `.claude/settings.json`; `.forge/` carries
+# only `framework-owned-paths.yml` (anchoring `forge upgrade`) and
+# `scaffold-manifest.yaml`.
+#
+# Note : the archetype is `layer_profile: client-only` (ADR-B9-1-001) — two client
+# surfaces and nothing behind them. `has_rust_backend: false` is not an omission.
+
+archetype: mobile-pwa-first
+
+has_rust_backend: false
+has_flutter_frontend: true
+
+required_paths:
+  # ── Forge anchors ──
+  - .forge/framework-owned-paths.yml
+  - .forge/scaffold-manifest.yaml
+  - .forge.yaml
+  - CLAUDE.md
+  - README.md
+  # ── the `app` layer: Flutter, inherited 1:1 from mobile-only ──
+  - pubspec.yaml
+  - analysis_options.yaml
+  - .envrc.example
+  - ios/Runner/Info.plist
+  - ios/Runner/AppAttestService.swift
+  - android/app/build.gradle.kts
+  # NOT listed: android/app/src/main/kotlin/<org>/PlayIntegrityService.kt — the Kotlin
+  # package directory is derived from --org (ADR-B9-2-006 relocation), so no flat path
+  # in this file can name it. mobile-only.yml omits it for the same reason. The
+  # relocation is covered by b9-2.test.sh T-009, which renders with an org it controls
+  # and asserts both that the literal {{reverse_domain_path}} directory is gone and that
+  # the sources landed under the derived path.
+  #
+  # The first version of this fixture DID list it, with the org of the probe it was read
+  # off — and b9.test.sh T-021 agreed, because it rendered with that same org. The cli
+  # Vitest job, which uses --org dev.forge.test, rejected it. T-021's probe domain is now
+  # the smoke test's, so the two can no longer agree on a wrong answer.
+  - lib/main.dart
+  - lib/app.dart
+  - lib/infrastructure/auth/oidc_config.dart
+  - lib/infrastructure/storage/secure_storage_adapter.dart
+  - lib/infrastructure/biometric/biometric_service.dart
+  - lib/observability/otel_init.dart
+  - lib/domain/auth/auth_repository.dart
+  - lib/presentation/auth/auth_bloc.dart
+  - .github/workflows/mobile-ci.yml
+  # ── the `web-pwa` layer: what the promotion is actually about ──
+  - oidc-provider.json
+  - web-pwa/package.json
+  - web-pwa/.nvmrc
+  - web-pwa/public/manifest.json
+  - web-pwa/src/root.tsx
+  - web-pwa/src/routes/index.tsx
+  - web-pwa/src/routes/offline/index.tsx
+  - web-pwa/src/routes/service-worker.ts
+  - web-pwa/src/lib/push.ts
+  - web-pwa/src/lib/auth/config.ts
+  - web-pwa/src/lib/auth/discovery.ts
+  - .github/workflows/web-pwa-ci.yml
+
+forbidden_paths:
+  # No backend, no infra — the client-only profile, asserted rather than assumed.
+  - backend
+  - infra
+  - shared
+  - Cargo.toml
+  - cli
+  - .claude/settings.local.json

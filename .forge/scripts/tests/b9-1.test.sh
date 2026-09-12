@@ -276,14 +276,18 @@ _test_b91_l1_003_identity() {
   local ok=1
   [ "$(_get name)" = "mobile-pwa-first" ] || { echo "    FAIL T-003: name='$(_get name)' != 'mobile-pwa-first' (FR-B9-1-002)" >&2; ok=0; }
   [ "$(_get version)" = "2.0.0" ] || { echo "    FAIL T-003: version='$(_get version)' != '2.0.0' (FR-B9-1-002)" >&2; ok=0; }
-  [ "$(_get stage)" = "candidate" ] || { echo "    FAIL T-003: stage='$(_get stage)' != 'candidate' (FR-B9-1-002)" >&2; ok=0; }
+  # INVERTED by b9-11-promotion-gate (2026-09-12): candidate -> stable (ADR-B911-001).
+  [ "$(_get stage)" = "stable" ] || { echo "    FAIL T-003: stage='$(_get stage)' != 'stable' — promoted by B.9.11 (FR-B9-1-002)" >&2; ok=0; }
   [ "$ok" = "1" ]
 }
 
-_test_b91_l1_004_scaffoldable_false() {
+# INVERTED by b9-11-promotion-gate (2026-09-12). The property under test is
+# unchanged — the schema's declared stage — only which value is correct. Deleting
+# the cell would convert a caught regression into a silent one (ADR-B911-001).
+_test_b91_l1_004_scaffoldable_true() {
   _ensure_py_cache || return 1
   local v; v=$(_get scaffoldable)
-  [ "$v" = "False" ] || { echo "    FAIL T-004: scaffoldable=$v != False (FR-B9-1-003)" >&2; return 1; }
+  [ "$v" = "True" ] || { echo "    FAIL T-004: scaffoldable=$v != True — promoted by B.9.11 (FR-B9-1-003)" >&2; return 1; }
 }
 
 _test_b91_l1_005_tdd_bdd_coverage() {
@@ -298,7 +302,11 @@ _test_b91_l1_005_tdd_bdd_coverage() {
 _test_b91_l1_006_header_block() {
   _ensure_py_cache || return 1
   local ok=1
-  [ "$(_get header_candidate)" = "True" ] || { echo "    FAIL T-006: header block missing 'candidate' semantics (FR-B9-1-005)" >&2; ok=0; }
+  # INVERTED by b9-11-promotion-gate: the header used to declare candidate semantics.
+  # Post-promotion it must record the promotion instead. `header_promotion` below still
+  # covers the trigger; this row now asserts the header names the promoting brick, so a
+  # header left describing the old state fails (ADR-B911-001).
+  grep -qF -- "B.9.11" "$SCHEMA" || { echo "    FAIL T-006: header block does not name B.9.11 as the promoter (FR-B9-1-005)" >&2; ok=0; }
   [ "$(_get header_promotion)" = "True" ] || { echo "    FAIL T-006: header block missing promotion trigger (FR-B9-1-005)" >&2; ok=0; }
   [ "$(_get header_additive)" = "True" ] || { echo "    FAIL T-006: header block missing additivity note (FR-B9-1-005)" >&2; ok=0; }
   [ "$ok" = "1" ]
@@ -498,7 +506,7 @@ _test_b91_l1_023_validator_mirrors_in_sync() {
 
 # ─── L2 tests (opt-in live) ───────────────────────────────────────────────────
 
-_test_b91_l2_001_init_refuses() {
+_test_b91_l2_001_init_renders() {
   # NFR-B9-1-002 — the refusal MUST be clean (non-zero, no half-rendered tree).
   # FLIPPED BY B.9.2: the code is now **3**. b9-2-web-pwa registered a
   # `mobile-pwa-first:` dispatch key, so init.ts:210-217 no longer short-circuits and
@@ -513,10 +521,13 @@ _test_b91_l2_001_init_refuses() {
   fi
   local tmp; tmp=$(mk_tmpdir_with_trap b9-1-init)
   trap "rm -rf '$tmp'" RETURN
+  # INVERTED by b9-11-promotion-gate: the schema is stable/scaffoldable:true, so init
+  # RENDERS. The property under test is still "init's behaviour matches the schema's
+  # declared stage" (ADR-B911-001).
   ( cd "$tmp" && node "$cli" init pwaproj --archetype mobile-pwa-first --org com.example.test >/dev/null 2>&1 )
   local rc=$?
-  [ "$rc" = "3" ] || { echo "    FAIL T-L2-001: forge init --archetype mobile-pwa-first exit=$rc, expected 3 (init.ts:238, registered archetype with no scaffoldable version) (NFR-B9-1-002, flipped by B.9.2)" >&2; return 1; }
-  [ ! -d "$tmp/pwaproj" ] || { echo "    FAIL T-L2-001: a 'pwaproj' tree was rendered despite the refusal — a clean refusal must leave nothing behind (NFR-B9-1-002)" >&2; return 1; }
+  [ "$rc" = "0" ] || { echo "    FAIL T-L2-001: forge init --archetype mobile-pwa-first exit=$rc, expected 0 — promoted by B.9.11 (NFR-B9-1-002)" >&2; return 1; }
+  [ -f "$tmp/pwaproj/web-pwa/package.json" ] || { echo "    FAIL T-L2-001: no web-pwa surface in the render (NFR-B9-1-002)" >&2; return 1; }
 }
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
@@ -526,7 +537,7 @@ main() {
   run_test _test_b91_l1_001_schema_exists
   run_test _test_b91_l1_002_valid_yaml_not_legacy_shape
   run_test _test_b91_l1_003_identity
-  run_test _test_b91_l1_004_scaffoldable_false
+  run_test _test_b91_l1_004_scaffoldable_true
   run_test _test_b91_l1_005_tdd_bdd_coverage
   run_test _test_b91_l1_006_header_block
   run_test _test_b91_l1_007_golden_tests_required
@@ -547,7 +558,7 @@ main() {
   run_test _test_b91_l1_022_dispatch_table_untouched
   run_test _test_b91_l1_023_validator_mirrors_in_sync
   case "$LEVEL" in
-    *2*) run_test _test_b91_l2_001_init_refuses ;;
+    *2*) run_test _test_b91_l2_001_init_renders ;;
   esac
   print_summary
 }

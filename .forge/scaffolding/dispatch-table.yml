@@ -71,8 +71,16 @@ archetypes:
       - pubspec.yaml
       - web-pwa/package.json
     since: "0.5.0"
-    status: candidate
-    # `status: candidate` is REQUIRED, not decorative. t5-1.test.sh FR-T51-055
+    status: stable
+    # PROMOTED 2026-09-12 by b9-11-promotion-gate, atomically with the schema flip.
+    # There is no green state that keeps `candidate` once the schema scaffolds:
+    # cli/test/e2e/archetypes-smoke.test.ts partitions on THIS field, and its
+    # `candidates` partition asserts an exit-3 refusal the promoted schema no longer
+    # produces (b7-6's d21dda1). The trust fixture required below now exists at
+    # cli/test/e2e/archetype-fixtures/mobile-pwa-first.yml.
+    #
+    # The original note, kept because it explains why the field is load-bearing:
+    # `status: candidate` was REQUIRED, not decorative. t5-1.test.sh FR-T51-055
     # (_test_t51_l1_016_dispatch_xref) demands a CLI Trust Harness fixture at
     # cli/test/e2e/archetype-fixtures/<name>.yml for every active archetype, and
     # explicitly SKIPS `status: candidate` entries — a registered-but-not-scaffoldable

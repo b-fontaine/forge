@@ -14,6 +14,57 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ### Added
 
+- **`mobile-pwa-first / 2.0.0` is promoted to `stable` / `scaffoldable: true`** —
+  `b9-11-promotion-gate`. `forge init --archetype mobile-pwa-first` renders both
+  surfaces instead of refusing at exit 3. **B.9 is complete, 11/11.**
+
+  The flip is two fields and a cascade. `cli/test/e2e/archetypes-smoke.test.ts`
+  partitions archetypes off the dispatch `status` field — `scaffoldable = status !==
+  "candidate"` (requires a trust fixture) and `candidates = status === "candidate"`
+  (asserts an exit-3 refusal) — so a scaffoldable schema left at `status: candidate` is
+  internally inconsistent: **there is no green state in between**. `b7-6` shipped
+  precisely that half-state for `ai-native-rag` three months ago and needed a follow-up
+  commit to repair it. Schema, dispatch status, CLI fixture and six sibling guards land
+  together here, and `b9.test.sh` T-012..T-015 assert the schema↔dispatch agreement in
+  **both** directions so the half-state cannot return.
+
+  New `.forge/scripts/tests/b9.test.sh` — 28 L1 + 2 L2, registered in CI. It asserts
+  the promoted **state** as a standing invariant rather than the promotion event
+  (ADR-B911-002): a harness that asserted the event would be green once and meaningless
+  after. Seven mutation probes, 7/7 RED — demoting only the schema trips five cells,
+  which is the coherence guard doing its job.
+
+  Six held sibling guards were **inverted, never deleted** (ADR-B911-001): `b9-1`
+  T-003/T-004/T-006/T-L2-001, `b9-2` T-011/T-022/T-L2-001, `b9-3` T-023. The property
+  under test — the wrapper and the CLI behave as the schema declares — is exactly as
+  worth protecting after the flip as before; deleting would convert a caught regression
+  into a silent one. `bin/forge-init-mobile-pwa-first.sh` needed no edit at all: its
+  gate reads `stage` and `scaffoldable` out of the schema, so the flip changes its
+  behaviour with no source change, and T-016 proves that by rendering **without** the
+  `FORGE_MPF_FORCE_SCAFFOLD` override.
+
+  **Two tripwires planted by earlier bricks fired on their own**, which is the point of
+  having planted them. `b5.test.sh`, rewritten by `b9-4` to derive its expected matrix
+  rows from `dispatch-table.yml` excluding candidates, reported `matrix has no row for
+  mobile-pwa-first` the instant the dispatch status flipped. `b9-2::T-028`, whose
+  battery `b9-10` Q-003 recorded as pinning a paragraph this promotion falsifies, went
+  red on the `candidate` needle. Each turned red at the right moment and named the
+  requirement it protected.
+
+  **And the cli Vitest job caught what 81 green shell harnesses did not.** The fixture
+  listed `android/app/src/main/kotlin/com/example/promo/PlayIntegrityService.kt` — the
+  reverse domain of the probe it was read off, while the smoke test renders with
+  `--org dev.forge.test`. `b9.test.sh` T-021 checks the fixture against a real render
+  and passed, because it rendered with the *same* org: two artefacts agreeing on a wrong
+  answer because they shared a wrong input. The path is gone (no flat path can name an
+  org-derived directory — `mobile-only.yml` omits it for the same reason) and T-021's
+  probe domain is now the smoke test's, so they can no longer agree wrongly. This is the
+  failure `b7-6`'s follow-up commit warned about, found because the warning was read
+  first.
+
+  `forge-ci.yml` goes 419 → **420/420**, exactly the budget NFR-CI-002 reserved for
+  this registration. It is now spent (Q-002).
+
 - **`bin/forge-gen-bloc.sh` — a flutter_bloc feature generator driven by a local
   descriptor** — `b9-5-bloc-generator`.
 

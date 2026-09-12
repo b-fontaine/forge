@@ -329,19 +329,21 @@ _test_b92_l1_010_overlay_untouched() {
   esac
 }
 
-_test_b92_l1_011_wrapper_gated_refusal() {
+_test_b92_l1_011_wrapper_scaffolds_promoted() {
   [ -f "$WRAPPER" ] || { echo "    FAIL T-011: wrapper missing (FR-B9-2-007)" >&2; return 1; }
   local work; work="$(mktemp -d -t forge-b9-2-gate-XXXXXX)"
   trap "rm -rf '$work'" RETURN
   local out="$work/target"
-  local err; err=$(bash "$WRAPPER" --target "$out" --project-name "$PROBE_NAME" \
-                   --reverse-domain "$PROBE_DOMAIN" 2>&1 >/dev/null)
+  # INVERTED by b9-11-promotion-gate (2026-09-12). The gate is data-driven off the
+  # schema (`is_scaffoldable()` greps stage + scaffoldable), so the promotion makes the
+  # wrapper scaffold with NO source change. The property under test is unchanged — the
+  # wrapper obeys the schema — only which side is correct (ADR-B911-001).
+  SOURCE_DATE_EPOCH=0 bash "$WRAPPER" --target "$out" --project-name "$PROBE_NAME" \
+    --reverse-domain "$PROBE_DOMAIN" --force >/dev/null 2>&1
   local rc=$?
-  [ "$rc" = "3" ] || { echo "    FAIL T-011: gated wrapper exit=$rc, expected 3 while the schema is candidate (FR-B9-2-007)" >&2; return 1; }
-  grep -q "REFUSAL" <<<"$err" \
-    || { echo "    FAIL T-011: no structured [REFUSAL ...] on stderr (FR-B9-2-007)" >&2; return 1; }
-  # ZERO filesystem writes: nothing may be created.
-  [ ! -e "$out" ] || { echo "    FAIL T-011: the refusing wrapper created $out — must be zero filesystem writes (FR-B9-2-007)" >&2; return 1; }
+  [ "$rc" = "0" ] || { echo "    FAIL T-011: wrapper exit=$rc without the harness override; a promoted archetype scaffolds unaided (FR-B9-2-007)" >&2; return 1; }
+  [ -f "$out/pubspec.yaml" ] || { echo "    FAIL T-011: no pubspec.yaml in the render (FR-B9-2-007)" >&2; return 1; }
+  [ -f "$out/web-pwa/package.json" ] || { echo "    FAIL T-011: no web-pwa surface in the render (FR-B9-2-007)" >&2; return 1; }
 }
 
 _test_b92_l1_012_webpwa_spine_no_connect_client() {
@@ -564,17 +566,20 @@ _test_b92_l1_021_dispatch_key() {
     || { echo "    FAIL T-021: the mobile-only: entry was removed — it is a supported legacy alias (NFR-B9-2-002)" >&2; return 1; }
 }
 
-_test_b92_l1_022_schema_still_candidate() {
+# INVERTED by b9-11-promotion-gate (2026-09-12). The property under test is
+# unchanged — the schema's declared stage — only which value is correct. Deleting
+# the cell would convert a caught regression into a silent one (ADR-B911-001).
+_test_b92_l1_022_schema_promoted() {
   [ -f "$SCHEMA" ] || { echo "    FAIL T-022: schema missing" >&2; return 1; }
   local ok=1
-  grep -qE "^stage: candidate" "$SCHEMA" || { echo "    FAIL T-022: schema is no longer 'candidate' — promotion is B.9.11's (FR-B9-2-023)" >&2; ok=0; }
-  grep -qE "^scaffoldable: false" "$SCHEMA" || { echo "    FAIL T-022: schema is no longer scaffoldable:false (FR-B9-2-023)" >&2; ok=0; }
+  grep -qE "^stage: stable" "$SCHEMA" || { echo "    FAIL T-022: schema is not 'stable' — promoted by B.9.11 (FR-B9-2-023)" >&2; ok=0; }
+  grep -qE "^scaffoldable: true" "$SCHEMA" || { echo "    FAIL T-022: schema is not scaffoldable:true (FR-B9-2-023)" >&2; ok=0; }
   [ "$ok" = "1" ]
 }
 
 # ─── L2 tests (opt-in) ───────────────────────────────────────────────────────
 
-_test_b92_l2_001_init_refuses_exit3() {
+_test_b92_l2_001_init_renders() {
   local cli="$FORGE_ROOT/cli/dist/index.js"
   if [ "${FORGE_B9_2_LIVE:-0}" != "1" ] || [ ! -f "$cli" ]; then
     echo "    SKIP T-L2-001: set FORGE_B9_2_LIVE=1 with a built+bundled CLI to run the live refusal check" >&2
@@ -582,10 +587,11 @@ _test_b92_l2_001_init_refuses_exit3() {
   fi
   local tmp; tmp=$(mk_tmpdir_with_trap b9-2-init)
   trap "rm -rf '$tmp'" RETURN
+  # INVERTED by b9-11-promotion-gate: promoted, so init renders (ADR-B911-001).
   ( cd "$tmp" && node "$cli" init pwaproj --archetype mobile-pwa-first --org com.example.test >/dev/null 2>&1 )
   local rc=$?
-  [ "$rc" = "3" ] || { echo "    FAIL T-L2-001: exit=$rc, expected 3 (registered archetype, no scaffoldable version) (FR-B9-2-021)" >&2; return 1; }
-  [ ! -d "$tmp/pwaproj" ] || { echo "    FAIL T-L2-001: a tree was rendered despite the refusal (FR-B9-2-021)" >&2; return 1; }
+  [ "$rc" = "0" ] || { echo "    FAIL T-L2-001: exit=$rc, expected 0 — promoted by B.9.11 (FR-B9-2-021)" >&2; return 1; }
+  [ -f "$tmp/pwaproj/web-pwa/package.json" ] || { echo "    FAIL T-L2-001: no web-pwa surface in the render (FR-B9-2-021)" >&2; return 1; }
 }
 
 _test_b92_l2_002_webpwa_typechecks() {
@@ -786,8 +792,8 @@ scaffold-manifest.yaml|FR-B910-002|the only file that differs from a native rend
 exit 7|FR-B910-003|what an already-migrated target hits
 exit 8|FR-B910-003|what a collision hits
 --dry-run|FR-B910-003|the flag that makes the plan inspectable first
-candidate|FR-B910-004|the target schema is not scaffoldable yet
-B.9.11|FR-B910-004|and this is the brick that opens the gate
+stage: stable|FR-B911-006|the target schema is promoted — SUPERSEDES FR-B910-004, which required the opposite caveat while the archetype was candidate
+B.9.11|FR-B911-006|the section records when the archetype became generally available
 framework-owned-paths.yml|FR-B910-007|what forge upgrade will NOT propagate afterwards
 NEEDLES
   # Anti-vacuity: a mangled here-doc that yields no rows would pass silently.
@@ -1113,7 +1119,7 @@ main() {
   run_test _test_b92_l1_008_scaffold_manifest_emitted
   run_test _test_b92_l1_009_kotlin_relocation
   run_test _test_b92_l1_010_overlay_untouched
-  run_test _test_b92_l1_011_wrapper_gated_refusal
+  run_test _test_b92_l1_011_wrapper_scaffolds_promoted
   run_test _test_b92_l1_012_webpwa_spine_no_connect_client
   run_test _test_b92_l1_013_neg_no_connectrpc_dep
   run_test _test_b92_l1_014_neg_no_connect_import
@@ -1124,10 +1130,10 @@ main() {
   run_test _test_b92_l1_019_pwa_standard
   run_test _test_b92_l1_020_b91_pointers_resolved
   run_test _test_b92_l1_021_dispatch_key
-  run_test _test_b92_l1_022_schema_still_candidate
+  run_test _test_b92_l1_022_schema_promoted
   case "$LEVEL" in
     *2*)
-      run_test _test_b92_l2_001_init_refuses_exit3
+      run_test _test_b92_l2_001_init_renders
       run_test _test_b92_l2_002_webpwa_typechecks
       ;;
   esac

@@ -1,19 +1,26 @@
 # Forge archetype scaffold schema — mobile-pwa-first / 2.0.0
 # <!-- Audit: B.9.1 (b9-1-schema) — docs/new-archetypes-plan.md §5.2, ARCH §6.3 -->
 #
-# CANDIDATE SEMANTICS. This schema is `stage: candidate` / `scaffoldable: false`
-# because no `web-pwa/` templates exist yet — they arrive in B.9.2. While it stays
-# candidate, `forge init --archetype mobile-pwa-first` refuses cleanly and never
-# half-renders a tree. The refusal code is **exit 2** ("unknown archetype"), NOT 3:
-# `init.ts:210-217` gates on the dispatch table BEFORE reaching the B.8.14
-# selectScaffoldableVersion guard, and T.4 registered `mobile-pwa-first` only as the
-# `target:` of the `mobile-only` legacy alias — there is no `mobile-pwa-first:` key
-# of its own. It becomes exit 3 once a later brick adds that entry, exactly as
-# `b7-2a-dispatch-register` did for `ai-native-rag` after B.7.1 hit this same gate.
+# PROMOTED 2026-09-12 by **B.9.11** (`b9-11-promotion-gate`), the brick this file's
+# original header named as the only one permitted to perform the flip — after B.9.8's
+# snapshot tarball, mirroring B.6.7 and B.7.6. `stage: stable` / `scaffoldable: true`:
+# `forge init --archetype mobile-pwa-first` now renders both surfaces instead of
+# refusing.
 #
-# PROMOTION. The candidate→stable + scaffoldable:true flip is owned by **B.9.11**
-# (the harness/promotion brick), after B.9.8 has produced the snapshot tarball —
-# mirroring B.6.7 and B.7.6. No other brick may perform the flip.
+# THE FLIP IS ATOMIC WITH THE DISPATCH STATUS, and that is not stylistic.
+# `cli/test/e2e/archetypes-smoke.test.ts` partitions archetypes off the dispatch
+# `status` field — `scaffoldable = status !== "candidate"` (requires a CLI trust
+# fixture, FR-T51-055) and `candidates = status === "candidate"` (asserts an exit-3
+# refusal). A scaffoldable schema left at `status: candidate` is internally
+# inconsistent and breaks the refusal test: **there is no green state in between**.
+# b7-6 shipped precisely that half-state for `ai-native-rag` and needed a follow-up
+# commit (d21dda1) to repair it. `b9.test.sh` T-012..T-015 now assert the agreement in
+# both directions so the half-state cannot return.
+#
+# HISTORY. While candidate, the refusal code was exit 2 ("unknown archetype") until
+# B.9.2 registered a `mobile-pwa-first:` dispatch key of its own, after which it became
+# exit 3 at the B.8.14 `selectScaffoldableVersion` guard — the same sequence
+# `b7-2a-dispatch-register` walked for `ai-native-rag`.
 #
 # ADDITIVE. This file affects no existing archetype. `mobile-only / 1.0.0` remains
 # untouched and keeps scaffolding a byte-equivalent tree for v0.3.0 adopters; it is
@@ -37,8 +44,8 @@
 
 name: mobile-pwa-first
 version: "2.0.0"
-stage: candidate
-scaffoldable: false
+stage: stable
+scaffoldable: true
 
 description: >
   PWA-first public-app archetype — an installable Qwik City PWA as the default

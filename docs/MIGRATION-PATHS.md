@@ -47,13 +47,14 @@ would break a pointer adopters already follow.
 Adds the Qwik PWA surface to an existing Flutter `mobile-only` install. The native
 tree is not touched — not merged, not rewritten, not reformatted.
 
-**Status** : the driver ships and works ; the target schema does not yet.
-`mobile-pwa-first / 2.0.0` is `stage: candidate` / `scaffoldable: false`, so
-`forge init --archetype mobile-pwa-first` refuses at exit 3 while
-`bin/forge-migrate-mobile-pwa.sh` succeeds. That asymmetry is deliberate and
-temporary — **B.9.11** is the promotion gate that flips it. Until B.9.11 lands,
-treat this as a preview : a migrated project is correct, but it targets a schema
-the framework has not committed to.
+**Status** : generally available since **B.9.11** (2026-09-12).
+`mobile-pwa-first / 2.0.0` is `stage: stable` / `scaffoldable: true`, so
+`forge init --archetype mobile-pwa-first` renders both surfaces directly and this
+migration is for projects that already exist as `mobile-only`.
+
+> Until B.9.11 this section carried the opposite caveat: the driver worked while
+> `forge init` refused, and a migrated project targeted a schema the framework had
+> not committed to. That asymmetry is over — the framework has committed.
 
 ### Why `forge upgrade` cannot do this
 

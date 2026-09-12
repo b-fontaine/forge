@@ -491,10 +491,12 @@ _test_b93_l1_022_flutter_untouched() {
   esac
 }
 
-_test_b93_l1_023_still_candidate() {
+_test_b93_l1_023_promoted() {
   local ok=1
-  grep -qE "^stage: candidate" "$SCHEMA" || { echo "    FAIL T-023: schema no longer candidate (NFR-B9-3-006)" >&2; ok=0; }
-  grep -qE "^scaffoldable: false" "$SCHEMA" || { echo "    FAIL T-023: schema no longer scaffoldable:false (NFR-B9-3-006)" >&2; ok=0; }
+  # INVERTED by b9-11-promotion-gate (2026-09-12). This row is the promotion tripwire;
+  # post-promotion it guards the other direction — a silent demotion (ADR-B911-001).
+  grep -qE "^stage: stable" "$SCHEMA" || { echo "    FAIL T-023: schema is not stable — promoted by B.9.11 (NFR-B9-3-006)" >&2; ok=0; }
+  grep -qE "^scaffoldable: true" "$SCHEMA" || { echo "    FAIL T-023: schema is not scaffoldable:true (NFR-B9-3-006)" >&2; ok=0; }
   # Anchored INSIDE the mobile-pwa-first block. `grep "^    status: candidate"` matched
   # ANY entry, so flipping mobile-pwa-first to stable while an unrelated entry happened
   # to be candidate left this row GREEN — and this row is the promotion tripwire, on a
@@ -513,8 +515,8 @@ if entry is None:
     print("    FAIL T-023: no mobile-pwa-first entry in the dispatch table (NFR-B9-3-006)", file=sys.stderr)
     sys.exit(1)
 got = entry.get("status")
-if got != "candidate":
-    print(f"    FAIL T-023: mobile-pwa-first dispatch status is {got!r}, expected 'candidate' (NFR-B9-3-006)", file=sys.stderr)
+if got != "stable":
+    print(f"    FAIL T-023: mobile-pwa-first dispatch status is {got!r}, expected 'stable' (NFR-B9-3-006)", file=sys.stderr)
     sys.exit(1)
 PYDISP
   [ "$ok" = "1" ]
@@ -668,7 +670,7 @@ main() {
   run_test _test_b93_l1_020_no_token_leak
   run_test _test_b93_l1_021_t3_gap_and_identity_untouched
   run_test _test_b93_l1_022_flutter_untouched
-  run_test _test_b93_l1_023_still_candidate
+  run_test _test_b93_l1_023_promoted
   case "$LEVEL" in
     *2*)
       if _l2_gate_open; then
