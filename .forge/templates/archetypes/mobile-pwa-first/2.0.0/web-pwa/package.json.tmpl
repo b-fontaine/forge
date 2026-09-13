@@ -16,7 +16,30 @@
     "rollup, so WITHOUT this entry every qwik subcommand dies MODULE_NOT_FOUND —",
     "`qwik --help` included, not just `qwik build`. 1.20.0 is the npm latest, so",
     "there is no fixed release to bump to. Pinned by web-frontend.yaml v1.2.0.",
-    "DELETE this entry once upstream declares `ignore` itself."
+    "DELETE this entry once upstream declares `ignore` itself. RE-CHECKED LIVE",
+    "2026-09-13 (t7-qwik-deps-refresh): @builder.io/qwik 1.20.0 is still npm latest",
+    "and still declares only csstype/launch-editor/rollup, so the entry stays.",
+    "",
+    "PINS RE-RESOLVED LIVE 2026-09-13 (t7-qwik-deps-refresh), verified by",
+    "npm install + npm audit + tsc --noEmit + qwik build on a real render:",
+    "  typescript          ^5.4.0  -> ^7.0.2   (tsc 7.0.2 typechecks the surface clean)",
+    "  @types/node         ^22.0.0 -> ^24.13.4 (tracks .nvmrc's node 24 — NOT npm",
+    "                      latest 26.5.1, which would not match the pinned runtime)",
+    "  vite-tsconfig-paths ^4.2.1  -> ^6.1.1",
+    "  vite                HELD at =7.3.6 — qwik 1.20.0 peerDependencies is still",
+    "                      \">=5 <8\", re-confirmed live; vite 8.3.0 is npm latest",
+    "                      and still excluded.",
+    "  @builder.io/qwik*, oauth4webapi — already at their maximum, unmoved.",
+    "",
+    "OVERRIDES: sharp. Before this, `npm audit` on a freshly rendered surface",
+    "reported 3 HIGH advisories: @builder.io/qwik-city -> vite-imagetools -> sharp",
+    "<=0.35.4-rc.0, inheriting libvips CVE-2026-33327/33328/35590/35591 and libheif",
+    "GHSA-g89c-p67h-r497 / GHSA-2jg2-4ch7-h545. `npm audit fix --force` would have",
+    "DOWNGRADED qwik-city to 1.16.1 — a breaking change, away from the pinned line.",
+    "sharp 0.35.4 is the first release outside the vulnerable range, so the override",
+    "lifts the transitive floor and leaves qwik-city where the standard pins it.",
+    "Measured after: `found 0 vulnerabilities`. Drop this override once qwik-city",
+    "ships a vite-imagetools that depends on sharp >=0.35.4 itself."
   ],
   "name": "<project-name>-web-pwa",
   "description": "Qwik City installable PWA surface for <project-name> (mobile-pwa-first 2.0.0 candidate).",
@@ -40,9 +63,12 @@
   },
   "devDependencies": {
     "ignore": "7.0.9",
-    "@types/node": "^22.0.0",
-    "typescript": "^5.4.0",
+    "@types/node": "^24.13.4",
+    "typescript": "^7.0.2",
     "vite": "=7.3.6",
-    "vite-tsconfig-paths": "^4.2.1"
+    "vite-tsconfig-paths": "^6.1.1"
+  },
+  "overrides": {
+    "sharp": "^0.35.4"
   }
 }

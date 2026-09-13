@@ -1,0 +1,15 @@
+name: t7-qwik-deps-refresh
+status: implemented
+created: 2026-09-13
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.9.2   # the web-pwa surface, whose pins had not been re-resolved since 2026-07-28
+depends_on:
+  - t7-flutter-deps-refresh  # Q-003 — the symmetric half, left unverified there
+timeline:
+  proposed: 2026-09-13
+  specified: 2026-09-13
+  designed: 2026-09-13
+  planned: 2026-09-13
+  implemented: 2026-09-13

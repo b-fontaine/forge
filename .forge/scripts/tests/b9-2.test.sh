@@ -1222,6 +1222,80 @@ PINS
   [ "$ok" = "1" ]
 }
 
+# ─── t7-qwik-deps-refresh — the web-pwa manifest (2026-09-13) ────────────────
+
+WEBPWA_PKG="$WEBPWA/package.json.tmpl"
+
+# The security remediation, and the three constraints that must NOT move with it.
+# `npm audit` on a freshly rendered surface reported 3 HIGH advisories through
+# qwik-city -> vite-imagetools -> sharp; `npm audit fix --force` would have downgraded
+# qwik-city to 1.16.1, away from the line web-frontend.yaml pins. The override lifts
+# the transitive floor instead. Asserted on PARSED JSON, never on text — the manifest's
+# own `_audit` block discusses every one of these strings, and a textual grep would
+# read that prose as the assertion (the T-013 trap this file carries twice).
+_test_b92_l1_037_webpwa_pins_and_override() {
+  [ -f "$WEBPWA_PKG" ] || { echo "    FAIL T-037: $WEBPWA_PKG missing" >&2; return 1; }
+  command -v python3 >/dev/null 2>&1 || { echo "    FAIL T-037: python3 required" >&2; return 1; }
+  WEBPWA_PKG="$WEBPWA_PKG" NVMRC="$WEBPWA/.nvmrc.tmpl" python3 - <<'PYPKG' >&2
+import json, os, re
+d = json.load(open(os.environ['WEBPWA_PKG'], encoding='utf-8'))
+dev = d.get('devDependencies') or {}
+deps = d.get('dependencies') or {}
+bad = False
+
+# 1. the sharp override, without which a rendered surface ships 3 HIGH advisories.
+sharp = (d.get('overrides') or {}).get('sharp')
+if not sharp:
+    print("    FAIL T-037: no `overrides.sharp` — a rendered web-pwa then reports 3 HIGH "
+          "advisories via qwik-city -> vite-imagetools -> sharp (t7-qwik-deps-refresh)")
+    bad = True
+else:
+    m = re.match(r'^\^?(\d+)\.(\d+)\.(\d+)', str(sharp))
+    if not m or (int(m.group(1)), int(m.group(2)), int(m.group(3))) < (0, 35, 4):
+        print(f"    FAIL T-037: overrides.sharp is {sharp!r}; 0.35.4 is the first release "
+              f"outside the vulnerable range <=0.35.4-rc.0 (t7-qwik-deps-refresh)")
+        bad = True
+
+# 2. vite must stay EXACTLY pinned below 8 — qwik 1.20.0 peerDependencies is ">=5 <8",
+#    and vite 8.x is npm latest, so a caret or a bump silently breaks the build.
+vite = str(dev.get('vite', ''))
+if not vite.startswith('='):
+    print(f"    FAIL T-037: vite is {vite!r}, not an EXACT pin. Qwik 1.20.0 peers "
+          f'">=5 <8" and vite 8.x is npm latest (web-frontend.yaml:47)')
+    bad = True
+elif int(vite.lstrip('=').split('.')[0]) >= 8:
+    print(f"    FAIL T-037: vite is {vite!r}; Qwik 1.20.0 excludes 8.x (web-frontend.yaml:47)")
+    bad = True
+
+# 3. @types/node tracks the PINNED node, not npm latest. .nvmrc says 24; @types/node 26
+#    is latest and would describe a runtime this surface does not run on.
+try:
+    nvm = [l.strip() for l in open(os.environ['NVMRC'], encoding='utf-8')
+           if l.strip() and not l.startswith('#')][0]
+except (OSError, IndexError):
+    nvm = ''
+tn = str(dev.get('@types/node', ''))
+if nvm and not tn.lstrip('^~').startswith(nvm + '.'):
+    print(f"    FAIL T-037: @types/node is {tn!r} but .nvmrc pins node {nvm} — the types "
+          f"must describe the runtime the surface actually runs on (t7-qwik-deps-refresh)")
+    bad = True
+
+# 4. the qwik CLI workaround stays until upstream declares `ignore` itself.
+if 'ignore' not in dev:
+    print("    FAIL T-037: the `ignore` devDependency is gone — @builder.io/qwik 1.20.0 "
+          "require()s it at module-init and every qwik subcommand dies MODULE_NOT_FOUND "
+          "(t5-qwik-cli-ignore-dep)")
+    bad = True
+
+# anti-vacuity: a broken parse must fail loudly, not pass over an empty dict.
+if len(dev) < 4 or len(deps) < 2:
+    print(f"    FAIL T-037: read {len(dev)} devDependencies and {len(deps)} dependencies "
+          f"— the parse is broken, not the manifest")
+    bad = True
+raise SystemExit(1 if bad else 0)
+PYPKG
+}
+
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 main() {
@@ -1268,6 +1342,7 @@ main() {
   run_test _test_b92_l1_034_owned_paths_diverge_only_on_webpwa
   run_test _test_b92_l1_035_dependency_manifests_are_owned
   run_test _test_b92_l1_036_flutter_pins_not_below_verified
+  run_test _test_b92_l1_037_webpwa_pins_and_override
   print_summary
 }
 

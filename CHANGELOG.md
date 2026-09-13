@@ -12,6 +12,39 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Security
+
+- **The rendered `web-pwa/` surface no longer ships three HIGH advisories** —
+  `t7-qwik-deps-refresh`. `npm audit` on a freshly rendered surface reported
+  `@builder.io/qwik-city → vite-imagetools → sharp <=0.35.4-rc.0`, inheriting libvips
+  CVE-2026-33327/33328/35590/35591 and libheif GHSA-g89c-p67h-r497 /
+  GHSA-2jg2-4ch7-h545.
+
+  `npm audit fix --force` would have installed **qwik-city 1.16.1** — two minors back,
+  across a breaking change, away from the line `web-frontend.yaml` pins. The
+  vulnerability is in `sharp`, not in qwik-city, and 0.35.4 is the first release outside
+  the vulnerable range, so `overrides: { "sharp": "^0.35.4" }` lifts the transitive
+  floor and leaves the pinned line alone. Measured after: **0 vulnerabilities**.
+
+### Changed
+
+- **The `web-pwa` pins are re-resolved, and three of `npm outdated`'s four suggestions
+  were rejected** — `t7-qwik-deps-refresh`, closing `t7-flutter-deps-refresh` Q-003.
+
+  Accepted and proven by `npm install` + `tsc --noEmit` + `qwik build` on a real render:
+  `typescript` ^5.4 → **^7.0.2**, `vite-tsconfig-paths` ^4.2.1 → **^6.1.1**.
+
+  Rejected on evidence, each checked against the installed packages rather than assumed:
+  **`vite` stays exactly `=7.3.6`** (qwik 1.20.0 peers `">=5 <8"`, re-confirmed live;
+  8.3.0 is npm latest and still excluded); **`@types/node` goes to `^24.13.4`, not
+  26.5.1**, because `.nvmrc` pins node 24 and a types package describes a runtime, not a
+  registry; **the `ignore` workaround stays**, because qwik 1.20.0 is still latest and
+  still declares only `csstype`/`launch-editor`/`rollup`.
+
+  `b9-2::T-037` guards all four on **parsed JSON** — the manifest's `_audit` block now
+  discusses every one of those strings, and a textual grep would read the explanation as
+  the assertion. 6/6 mutation probes RED.
+
 ### Changed
 
 - **Every Flutter pin is current, and a pin bump can now reach a project that already
