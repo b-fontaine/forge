@@ -1,0 +1,18 @@
+name: b3-1-schema
+status: implemented
+created: 2026-09-13
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.3.1  # INFERRED, not specified. docs/new-archetypes-plan.md §3.3 says B.3 is
+           # "inchangé du plan d'origine (B.3.1 → B.3.14)" and that list is NOT in
+           # this repository. B.6.1 and B.7.1 are both "the schema", and B.9.1 was
+           # too — three archetypes, one unbroken precedent. See ADR-B31-001.
+depends_on:
+  - t7-ci-line-budget-440  # 420/420 left no line to register this brick's harness
+timeline:
+  proposed: 2026-09-13
+  specified: 2026-09-13
+  designed: 2026-09-13
+  planned: 2026-09-13
+  implemented: 2026-09-13

@@ -166,6 +166,7 @@ jobs:
             "b9-3.test.sh --level 1"
             "b9-7.test.sh --level 1"
             "b9.test.sh --level 1"
+            "b3-1.test.sh --level 1"
           )
           fail=0
           for entry in "${harnesses[@]}"; do

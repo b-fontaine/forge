@@ -12,6 +12,48 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Added
+
+- **`rust-cli-tui / 1.0.0` schema — B.3 has started** — `b3-1-schema`. The last
+  unstarted archetype: a Rust binary with a `clap` command surface and a `ratatui`
+  terminal UI, released through cargo-dist with signed artifacts across five channels.
+  `stage: candidate` / `scaffoldable: false`; `forge init --archetype rust-cli-tui` still
+  refuses at exit 2 (no dispatch key yet, by design).
+
+  **The brick number is inferred, and the schema says so.** `new-archetypes-plan.md` §3.3
+  is B.3's whole plan — *"inchangé du plan d'origine (B.3.1 → B.3.14)"* — and that
+  fourteen-item list is **not in this repository**. The only statement of B.3's content
+  here is one line of `roadmap.md:202`. That "B.3.1 is the schema" rests on precedent
+  (B.6.1, B.7.1, B.9.1 are each their archetype's schema, three for three) and is
+  recorded as `ADR-B31-001` in the schema's own header, so whoever transcribes the real
+  breakdown reconciles rather than discovers. Every `delivered_by` pointer inside names
+  an inferred brick, and `T-014` asserts none escapes B.3.
+
+  Nothing about the archetype's *shape* is invented: `archetype.schema.json` already
+  carries it in the ADR-ratified enum and describes it as "clap + ratatui + cargo-dist
+  signed releases". The two layers come from that sentence, their agents from the Rust
+  sub-team.
+
+  Four lessons applied rather than relearned: **no `extends:` key** (nothing resolves
+  it — `ADR-B9-1-003`), **no version pins** (declared by reference; resolved
+  verify-then-pin at the template brick), **no dispatch key** (it would flip exit 2 to
+  exit 3 and make `t5-1` demand a trust fixture, both the template brick's), and
+  `candidate` + `scaffoldable: false` asserted **as a pair**, the half-flip `b9-11`
+  guarded against.
+
+  One decision is not inherited: `layer_profile: client-only` is behaviourally right for
+  a CLI — the `{backend, frontend, infra}` triple does not apply — and lexically wrong,
+  since a devtool is a client of nothing. A third enum value would be taxonomy inflation
+  and a rename would touch a shipped archetype for cosmetics, so the schema spends six
+  lines explaining itself where a confused reader will be standing (Q-001).
+
+  `b3-1.test.sh`, 18 L1, spends the first line of the headroom `t7-ci-line-budget-440`
+  opened (420 → 421, cap 440). Nine mutation probes: **8/9 first pass** — the needle for
+  the inference note was the bare word `inferred`, which recurs two paragraphs later, so
+  deleting the sentence it protects left it satisfied. Narrowed and re-probed, 9/9.
+  Seventh instance of that defect here; the harness header now prescribes `grep -c`
+  inside the region before trusting a needle.
+
 ### Changed
 
 - **`NFR-CI-002` line budget 420 → 440, and the lock-step list was wrong** —

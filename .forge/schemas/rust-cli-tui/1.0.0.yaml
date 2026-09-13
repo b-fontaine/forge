@@ -1,0 +1,192 @@
+# Forge Schema — rust-cli-tui 1.0.0 (CANDIDATE / NOT SCAFFOLDABLE)
+# <!-- Audit: B.3.1 (b3-1-schema) — the Rust devtools archetype scaffold schema -->
+#
+# The devtools archetype: a single Rust binary exposing a `clap` command surface and a
+# `ratatui` terminal UI, released through cargo-dist with signed artifacts and
+# multi-channel distribution. It is the shared contract the rest of the B.3 chain
+# (templates, standards, release pipeline, harness, example) will validate against.
+#
+# WHERE THIS BRICK NUMBER COMES FROM — read this before treating it as specified.
+# docs/new-archetypes-plan.md §3.3 says B.3 is "inchangé du plan d'origine
+# (B.3.1 → B.3.14)". That list of fourteen items is NOT in this repository; the only
+# statement of B.3's content here is one line of .forge/product/roadmap.md:202
+# (cargo-dist, signed releases, SBOM SPDX, multi-channel distribution).
+#
+# That "B.3.1 is the schema" is therefore **inferred**, from an unbroken precedent:
+# B.6.1, B.7.1 and B.9.1 are each their archetype's schema. The inference is recorded
+# as ADR-B31-001 rather than presented as a specification, and every `delivered_by`
+# below names a B.3.x brick whose number is inferred the same way. Whoever writes the
+# real B.3 breakdown should reconcile these pointers with it.
+#
+# STAGE SEMANTICS (this file). `stage: candidate` / `scaffoldable: false`: the contract
+# exists, no template tree does. `forge init --archetype rust-cli-tui` refuses — today
+# with **exit 2** ("unknown archetype"), because init.ts gates on the dispatch table
+# before reaching the scaffoldable-version guard and this archetype has no dispatch key
+# yet. It becomes exit 3 when the template brick registers one, exactly the sequence
+# b7-2a walked for ai-native-rag and b9-2 for mobile-pwa-first.
+#
+# PROMOTION. The candidate→stable + scaffoldable:true flip belongs to B.3's promotion
+# brick, gated on a green harness, mirroring B.6.7 / B.7.6 / B.9.11. No other brick may
+# perform it — and b9-11 established that the flip is ATOMIC with the dispatch status,
+# because cli/test/e2e/archetypes-smoke.test.ts partitions on that field and there is no
+# green state in between.
+#
+# NO `extends:` KEY (ADR-B9-1-003, already paid for once). No scaffold-schema loader
+# resolves `extends`: parseSchemaMeta reads version/stage/scaffoldable, and
+# check_versioned_schema_siblings reads `phases` straight from this file. A documentary
+# `extends: tdd-rust` would be a trap for the next author, so the tdd-rust chain is
+# materialised inline below instead.
+#
+# NO VERSION PINS. Every component is declared by reference to its owning standard.
+# Pins are resolved verify-then-pin at the template brick, against a live toolchain —
+# never written here from memory. t7-flutter-deps-refresh is the cautionary case: nine
+# pins had drifted, three by a major, and `flutter pub outdated` corrected three
+# versions read off a registry API.
+
+name: rust-cli-tui
+version: "1.0.0"
+stage: candidate
+scaffoldable: false
+
+description: >
+  Devtools archetype — a Rust binary with a clap command surface and a ratatui
+  terminal UI, distributed as signed release artifacts through cargo-dist across
+  Homebrew, Scoop, cargo-binstall, the AUR and a Nix flake.
+
+# CLIENT-ONLY LAYER PROFILE (ADR-B31-002). A CLI binary has no backend and no infra
+# surface, so the {backend, frontend, infra} triple validate-foundations.sh requires of
+# a `multi-layer` schema does not apply. Declaring empty stub layers to satisfy it would
+# be fabrication under Article III.4 — the same reasoning ADR-B9-1-001 used to introduce
+# this discriminator for mobile-pwa-first.
+#
+# The name fits awkwardly: `client-only` reads as "a client of a server", and a devtool
+# is a client of nothing Forge scaffolds. What the discriminator actually answers is
+# binary — "does the server-layer triple apply?" — and the honest answer here is no.
+# Renaming it would touch a shipped archetype and three harnesses for cosmetics, so the
+# friction is recorded (b3-1-schema Q-001) rather than resolved by taxonomy inflation.
+layer_profile: client-only
+
+layers:
+  - id: cli
+    path: src/cli/
+    fr_id_prefix: FR-CLI-
+    primary_agent: Vulcan
+    standards_scope:
+      - rust
+      - all
+    note: >
+      The clap command surface: argument parsing, subcommands, exit codes, and the
+      non-interactive path that scripts and CI depend on. Vulcan orchestrates; Ferris
+      owns the hexagonal boundary between this surface and the core, and Centurion the
+      TDD cycle. A devtool's ABI is its argument surface, so changes here are breaking
+      changes and belong in the release notes cargo-dist generates.
+  - id: tui
+    path: src/tui/
+    fr_id_prefix: FR-TUI-
+    primary_agent: Terminal
+    standards_scope:
+      - rust
+      - all
+    note: >
+      The ratatui interactive surface. Terminal (Rust sub-team) owns it. It MUST remain
+      an alternative entry point rather than the only one: a devtool that can only be
+      driven interactively cannot be scripted, and Forge's own CI is the first consumer
+      that would be locked out.
+
+fr_id_prefix_cross_layer: FR-GL-
+cross_layer:
+  agent: Janus
+  note: >
+    A change may span both surfaces — adding a command usually means adding both a clap
+    subcommand and a ratatui view over the same core operation. Janus arbitrates; Vulcan
+    and Terminal own their respective sides.
+
+# ── Phases — the tdd-rust chain, materialised inline (see NO `extends:` above) ──
+phases:
+  - id: proposal
+    artifact: proposal.md
+    gate: constitution_compliance
+
+  - id: specs
+    artifact: specs.md
+    agent: Clio
+
+  - id: features
+    artifact: "features/*.feature"
+    description: Gherkin feature files for cucumber-rs
+    agent: Centurion
+    gate: scenarios_cover_all_fr
+
+  - id: design
+    artifact: design.md
+    agent: Ferris
+    gate: constitution_compliance_rust
+
+  - id: tasks
+    artifact: tasks.md
+    tdd_order_enforced: true
+
+  - id: implementation
+    protocol: tdd_cycle
+    agent: Vulcan
+    team:
+      - Centurion  # tests
+      - Ferris     # architecture
+      - Terminal   # TUI
+      - Sentinel   # observability
+
+  - id: review
+    agents: [Tribune, Aegis]
+    checks:
+      - cargo_test
+      - coverage_rust
+      - clippy_clean
+      - cargo_audit
+      - zero_unwrap
+      - zero_unsafe_undocumented
+
+  - id: archive
+    merges: specs.md into .forge/specs/
+
+# ── Components ────────────────────────────────────────────────────────────────
+# Every entry carries either the standard that owns its pin, or a `delivered_by`
+# pointer to the B.3 brick that will resolve it. An entry with neither is a promise
+# nobody owns — b9-1 shipped four forward pointers and b9-2 had to discharge them.
+components:
+  - name: clap
+    role: command-surface
+    delivered_by: B.3.2            # templates + the `cli.yaml` standard; pin resolved live there
+  - name: ratatui
+    role: terminal-ui
+    delivered_by: B.3.2            # same brick, same verify-then-pin pass
+  - name: hexagonal-core
+    role: architecture
+    standard: rust/architecture.md # Article VII — the core is transport-agnostic; clap
+                                   # and ratatui are both adapters over it
+  - name: cucumber-rs
+    role: bdd
+    standard: tdd-bdd.yaml         # Article II.3 — the `features` phase above
+  - name: cargo-dist
+    role: release-pipeline
+    delivered_by: B.3.4            # dist-workspace.toml + the release workflow
+  - name: code-signing
+    role: artifact-integrity
+    delivered_by: B.3.5            # codesign (macOS) / Authenticode (Windows) / gpg.
+                                   # SCAFFOLD-AND-DOCUMENT, not verified in CI: the
+                                   # certificates are adopter identities Forge cannot
+                                   # hold. Maintainer arbitration 2026-09-13, following
+                                   # the b9-7 precedent that refused to ship a deploy
+                                   # job red on day one for want of adopter secrets.
+  - name: sbom
+    role: supply-chain
+    delivered_by: B.3.6            # SPDX, alongside the CycloneDX bin/forge-sbom.sh
+                                   # this repository already ships for itself
+  - name: distribution-channels
+    role: distribution
+    delivered_by: B.3.7            # Homebrew tap, Scoop bucket, cargo-binstall metadata,
+                                   # AUR PKGBUILD, Nix flake — five channels, one
+                                   # cargo-dist configuration
+  - name: opentelemetry
+    role: observability
+    standard: observability.yaml   # Article IX. A CLI exports on exit rather than
+                                   # continuously; Sentinel owns the shape.
