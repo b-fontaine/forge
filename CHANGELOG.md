@@ -12,6 +12,38 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ## [Unreleased]
 
+### Changed
+
+- **`NFR-CI-002` line budget 420 → 440, and the lock-step list was wrong** —
+  `t7-ci-line-budget-440`. Enabling change for B.3: `forge-ci.yml` sat at exactly
+  420/420 after B.9.11 spent the last reserved line, and a 14-brick module cannot
+  register its harness without headroom.
+
+  `forge-self-ci.md` said the budget was *"asserted in four harnesses (c1, g1, t5-1,
+  t5-otel-live-run)"*. `b6-8.test.sh:73` had added a `CI_LINE_BUDGET` of its own without
+  being listed. Rather than trust the count, the set was **measured** — push the
+  workflow one line over the cap, run ten candidates, record which fire:
+
+  ```
+    c1  FIRED    g1  FIRED    t5-1  FIRED    t5-otel-live-run  FIRED    b6-8  FIRED
+    b9-2 silent  b8-12 silent  b8-15 silent  f1 silent  d5 silent
+  ```
+
+  **Five, not four.** A brick following the documentation would have bumped four and
+  pushed a red CI. Both documents now say five, and prescribe the probe rather than the
+  list.
+
+  What is not fixed, and is now written where the next bump will look: the
+  `harnesses=(...)` array is **102 of the file's 420 lines** and costs one line per
+  harness — 250→300→340→380→400→420→440 is four bumps in four months, a curve rather
+  than a run of accidents. The 2026-05-31 loop refactor removed the *second* line per
+  harness and left the first. Externalising the array would free ~80 lines and end the
+  growth; the measured obstacle is that 30 harnesses read `forge-ci.yml` and at least
+  seven grep it for their own registration (`b4`, `b6-8`, `b7-7`, `f1`, `f2`, `f4`,
+  `d5`). That is a brick of its own (Q-001).
+
+  This change adds **no line** to `forge-ci.yml`. B.3.1 spends the first one.
+
 ### Security
 
 - **The rendered `web-pwa/` surface no longer ships three HIGH advisories** —

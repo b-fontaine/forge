@@ -403,8 +403,8 @@ _test_t51_l1_017_ci_line_budget() {
   fi
   local lines
   lines=$(wc -l < "$CI_WORKFLOW" | tr -d ' ')
-  if [ "$lines" -gt 420 ]; then
-    echo "    forge-ci.yml is $lines lines, exceeds NFR-CI-002 / NFR-T51-005 budget of 420" >&2
+  if [ "$lines" -gt 440 ]; then
+    echo "    forge-ci.yml is $lines lines, exceeds NFR-CI-002 / NFR-T51-005 budget of 440" >&2
     return 1
   fi
 }

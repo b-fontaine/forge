@@ -321,7 +321,7 @@ Article X. **Testable:** yes —
 <!-- From change: c1-reference-project (2026-04-30) -->
 
 - **SHOULD** — adding the `example` job MUST keep `forge-ci.yml`
-  ≤ 420 lines (the size budget from `NFR-CI-002`; bumped 250→300 on
+  ≤ 440 lines (the size budget from `NFR-CI-002`; bumped 250→300 on
   2026-05-12, 300→340 on 2026-06-23 by `b7-7-example` for the MODIFIED
   FR-CI-012 second-tree RAG gate, 340→380 on 2026-06-23 by `b7-6-harness`
   for the new `harness-rust` job, 380→400 on 2026-07-12 by `b6-7-harness`
@@ -350,18 +350,29 @@ time of c1, `forge-ci.yml` is well under the 250-line cap.
 
 ### NFR-CI-002: Workflow file size
 
-- **SHOULD** — `forge-ci.yml` MUST be ≤ 420 lines (bumped 250→300 on
+- **SHOULD** — `forge-ci.yml` MUST be ≤ 440 lines (bumped 250→300 on
   2026-05-12, 300→340 on 2026-06-23 for b7-7-example's second-tree RAG
   gate, 340→380 on 2026-06-23 for b7-6-harness's `harness-rust` live
   codegen/build job, 380→400 on 2026-07-12 for b6-7-harness's event-driven-eu
-  `harness-rust` L2 step, then 400→420 on 2026-07-12 for b6-8-example's
-  third-tree EDA gate + the `b6-8.test.sh` harness-loop entry). Beyond that, refactor into composite actions or matrix strategies.
-  Enforced by `test_forge_ci_under_size_budget` (c1.test.sh + g1.test.sh) and
-  the sibling NFR-CI-002 assertions in t5-1.test.sh + t5-otel-live-run.test.sh —
-  all four kept in lock-step. As of 2026-05-31 the `harness` job
-  runs its harnesses via a single declarative loop step (the prescribed
-  "matrix/loop" remedy) so adding a harness no longer grows the workflow
-  ~2 lines; the file sits at ~275 lines with comfortable headroom.
+  `harness-rust` L2 step, 400→420 on 2026-07-12 for b6-8-example's
+  third-tree EDA gate + the `b6-8.test.sh` harness-loop entry, then 420→440 on
+  2026-09-13 by `t7-ci-line-budget-440` for B.3, which cannot register
+  `b3-1.test.sh` at 420/420 — B.9.11 had spent the last reserved line).
+  Beyond that, refactor into composite actions or matrix strategies.
+- Enforced in **five** harnesses — `test_forge_ci_under_size_budget` (c1 + g1),
+  and the sibling NFR-CI-002 assertions in t5-1, t5-otel-live-run **and b6-8**
+  (`CI_LINE_BUDGET`) — all five kept in lock-step. This clause said *four* until
+  2026-09-13; b6-8 had added its own budget constant without being listed. The set
+  was re-measured empirically — push the workflow one line over the cap and record
+  which harnesses fire — rather than read off this list.
+- **The 2026-05-31 remedy is spent.** Running the harnesses through a single
+  declarative loop step removed the ~2-lines-per-harness cost, but the loop's array
+  still costs **one line per harness**, and that array is now 102 of the file's 420
+  lines. Four bumps in four months is the growth curve, not a series of accidents.
+  The remedy that actually ends it is externalising the array into a file the
+  workflow reads (~80 lines freed, zero per-harness cost); the obstacle measured
+  2026-09-13 is that 30 harnesses read `forge-ci.yml` and at least seven grep it for
+  their own registration (b4, b6-8, b7-7, f1, f2, f4, d5). Revisit at 440.
 
 ### NFR-CI-003: Failure semantics
 

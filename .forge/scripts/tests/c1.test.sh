@@ -743,8 +743,8 @@ test_forge_ci_under_size_budget() {
   fi
   local lines
   lines=$(wc -l < "$WORKFLOW_FILE" | tr -d ' ')
-  if [ "$lines" -gt 420 ]; then
-    echo "    forge-ci.yml is $lines lines (> 420 NFR-CI-002 budget)" >&2
+  if [ "$lines" -gt 440 ]; then
+    echo "    forge-ci.yml is $lines lines (> 440 NFR-CI-002 budget)" >&2
     return 1
   fi
 }

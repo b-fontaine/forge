@@ -70,7 +70,7 @@ B6_8_FORGE_YAML="$FORGE_ROOT_REAL/.forge/changes/b6-8-example/.forge.yaml"
 # forge-ci.yml line budget (bumped 400→420 by b6-8 for the third example
 # gate block + the b6-8.test.sh loop entry; asserted in lockstep in
 # c1/g1/t5-1/t5-otel-live-run + forge-self-ci.md).
-CI_LINE_BUDGET=420
+CI_LINE_BUDGET=440
 
 DEMOS=(demo-001-ingestion-http-nats demo-002-projection-readmodel demo-003-order-saga)
 

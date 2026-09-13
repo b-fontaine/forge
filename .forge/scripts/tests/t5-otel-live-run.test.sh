@@ -293,8 +293,8 @@ _test_olr_030_ci_matrix_entry() {
   # entry; in sync with c1/g1/t5-1).
   local total
   total=$(wc -l < "$CI_YML" | tr -d ' ')
-  if [ "$total" -gt 420 ]; then
-    echo "    forge-ci.yml is $total lines, exceeds NFR-CI-002 budget of 420" >&2
+  if [ "$total" -gt 440 ]; then
+    echo "    forge-ci.yml is $total lines, exceeds NFR-CI-002 budget of 440" >&2
     return 1
   fi
 }
