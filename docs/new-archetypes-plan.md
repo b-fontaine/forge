@@ -2273,6 +2273,41 @@ sont créés. Cinq nouveaux agents Forge sont introduits. Plan de migration **4 
 
 ---
 
+## 0.15 Status update — 2026-09-13 (T7 — cinq briques hors-module ; B.3 démarrée)
+
+Cinq briques livrées les 2026-09-12/13, toutes hors du découpage par module, plus le
+premier pas de B.3. Chacune a trouvé plus que ce qu'elle cherchait, et toujours par la
+même mécanique : **exécuter plutôt que lire**.
+
+| brique | ce qu'elle a livré |
+|---|---|
+| `t7-forbidden-archetypes-wiring` | Le refus J.8 `forbidden_archetypes` devient joignable. **Un défaut signalé, trois maillons cassés** : `parseDispatchTable` ne lisait pas le bloc ; une fois corrigé, `cli.ts` écrasait l'`exitCode` porté par l'erreur avec un `return 1` en dur ; et sans suivi de bloc, tous les `since:` des blocs suivants se déversaient dans le dernier archétype (`flutter-firebase.since` valait `"0.5.0"   # realigned…`, mauvaise valeur *et* commentaire). `forge init --archetype flutter-firebase` sortait en **127** avec une erreur bash ; il sort désormais en 3 avec la ligne `[REFUSAL: …]` que `docs/ARCHETYPES.md` promettait depuis mai. |
+| `t7-flutter-deps-refresh` | Neuf pins Flutter, trois majeures, **prouvés** (`pub get` + `analyze` + `test` sur des rendus réels). `pubspec.yaml` devient framework-owned : `forge upgrade` ne fusionne que ce que `owned:` matche, donc aucun bump n'atteignait un projet existant. Deux gardes shippés rendaient les pins immobiles (`b9-2` T-004 vs T-007) — bascule en lock-step, arbitrage mainteneur. |
+| `t7-qwik-deps-refresh` | **Trois avis HIGH** purgés de la surface `web-pwa` livrée via un `overrides: sharp`, plutôt que la rétrogradation de qwik-city que `npm audit fix --force` proposait. Et **trois des quatre suggestions de `npm outdated` refusées sur preuve** : vite 8 exclu par les peers de qwik, `@types/node` doit suivre le Node épinglé (24) et non le latest (26), le contournement `ignore` toujours nécessaire en amont. |
+| `t7-ci-line-budget-440` | Plafond `NFR-CI-002` 420 → 440, pour débloquer B.3. **La liste de lock-step documentée était fausse** : `forge-self-ci.md` annonçait quatre harnesses, `b6-8` en était un cinquième non listé. Mesurée au lieu d'être lue (écrire une ligne au-dessus du plafond, voir qui tire). Les deux documents prescrivent désormais la sonde. |
+| `b3-1-schema` | **B.3.1** — voir §3.3. |
+
+**Deux défauts de scaffold vieux de B.4, trouvés en chemin.** `flutter test` sur un
+rendu vierge échouait : le test de fumée construisait `App` sans `OTel.initialize()`, et
+sous cette erreur, `BiometricLockWidget` enveloppait `MaterialApp`, laissant son `Stack`
+sans `Directionality` — **le widget racine levait à la première construction**.
+`forge init` produisait un projet qui ne démarrait pas, et `flutter analyze` disait
+« no issues » sur cet arbre. Les deux sont corrigés. Aucun harness ne lance
+`flutter test` sur un rendu : voir §13, caveat 9.
+
+**La documentation du dépôt s'est trompée deux fois en deux jours**, et dans les deux cas
+la mesure l'a rattrapée — la liste de lock-step du budget CI, et la liste B.3.1→B.3.14
+qui n'existe pas. Les deux erreurs auraient produit du travail faux si elles avaient été
+crues.
+
+**Et la même classe de défaut de garde est revenue une septième fois** : une aiguille
+satisfaite par une seconde occurrence dans la région qu'elle surveille — cette fois dans
+le harness de `b3-1` lui-même, sur le mot `inferred`. Restreindre à la région ne suffit
+pas ; l'aiguille doit aussi être unique **et** ancrée au chemin de code qu'elle prétend
+protéger. Le `grep -c` préalable est désormais prescrit dans l'en-tête du harness.
+
+---
+
 ## 1. Contexte — état post-v0.3.0
 
 ### 1.1 Acquis
@@ -2478,10 +2513,39 @@ Effort : `M` (J.1-J.5 du tableau §1.4).
 - Effort : `S` (juste retirer la ligne placeholder de `dispatch-table.yml`,
   marquer la décision dans CHANGELOG + `docs/ARCHETYPES.md`).
 
-### 3.3 B.3 `rust-cli-tui` — `KEEP`
+### 3.3 B.3 `rust-cli-tui` — `KEEP` — 🚧 **DÉMARRÉE 2026-09-13, 1/14**
 
-- Inchangé du plan d'origine (B.3.1 → B.3.14).
-- Effort : `XL`. Reste à livrer.
+- Inchangé du plan d'origine (B.3.1 → B.3.14). **⚠️ Cette liste de quatorze items
+  n'existe nulle part dans ce dépôt.** `grep -rn "B\.3\.[0-9]" docs/ .forge/` ne
+  renvoie que la ligne ci-dessus, alors que le plan détaille B.6.1–B.6.14 (§6.1) et
+  B.7.1–B.7.14 (§6.2) intégralement. Le seul énoncé du contenu de B.3 ici est
+  `.forge/product/roadmap.md:202`.
+- **Tout numéro `B.3.x` en usage est donc déduit**, pas spécifié. Que B.3.1 soit le
+  schéma repose sur un précédent sans exception — B.6.1, B.7.1 et B.9.1 le sont tous
+  les trois — et c'est consigné comme `ADR-B31-001` dans l'en-tête du schéma lui-même
+  plutôt que présenté comme une spécification. Qui transcrira la vraie liste devra
+  réconcilier les cinq pointeurs `delivered_by` de `b3-1-schema` (B.3.2 templates,
+  B.3.4 cargo-dist, B.3.5 signatures, B.3.6 SBOM, B.3.7 canaux) avec elle ; ils sont
+  écrits pour bouger.
+- **B.3.1 ✅ livrée 2026-09-13** via `b3-1-schema` : `.forge/schemas/rust-cli-tui/1.0.0.yaml`,
+  `stage: candidate` / `scaffoldable: false`, `layer_profile: client-only`, deux couches
+  (`cli`/Vulcan, `tui`/Terminal) issues de la description ratifiée d'`archetype.schema.json`.
+  Chaîne `tdd-rust` matérialisée inline (pas de clé `extends:` — rien ne la résout,
+  ADR-B9-1-003). Aucun pin de version, aucune clé de dispatch : la clé ferait passer
+  `forge init` de exit 2 à exit 3 et rendrait la fixture Trust Harness obligatoire, les
+  deux appartenant à la brique des templates. Harness `b3-1.test.sh` 18/18, 9/9 sondes
+  de mutation. Elle a consommé la première ligne du budget CI rouvert par
+  `t7-ci-line-budget-440`.
+- **Arbitrage mainteneur 2026-09-13** : les briques de signature (B.3.5) livrent
+  **scaffold + documentation, non vérifiés**. codesign exige un certificat Apple
+  Developer et Authenticode un certificat EV sur HSM — des identités d'adoptant que
+  Forge ne peut pas détenir. Précédent `b9-7`, qui avait refusé de livrer un job de
+  déploiement rouge au jour 1 faute de secrets.
+- **À trancher tôt** : un archétype de devtool doit-il avoir un arbre d'exemple ? La CI
+  en gate déjà trois (FR-CI-012) et chacun coûte des lignes de budget. La sortie d'un
+  devtool est un binaire, pas un dépôt — découvrir que la forme ne convient pas à la
+  brique B.3.13 serait cher.
+- Effort : `XL`. Reste 13 briques.
 
 ### 3.4 B.4 → renommé `mobile-pwa-first` — `KEEP-WITH-CHANGES`
 
@@ -3133,7 +3197,7 @@ Reprise de ARCHITECTURE-TARGET §11.
 | **T5.3.1** | **`b1-1-dev-up-matrix-fixes` (template hygiene)**                                                  | ✅ **Done** via `b1-1-dev-up-matrix-fixes` (archivé). Closes the `dev-up-matrix` red lights that T5.3 exposed (chiefly `image: scratch` placeholder in `full-stack-monorepo/docker-compose.dev.yml.tmpl:60` + `version: "3.X"` obsolete attribute). Détails §0.4. Effort `S`–`M`. Release : piggyback v0.4.0-rc.1 ou patch rc.2. | Hygiène pré-existante `b1-foundations`/`b1-delivery` template. Pas de lien avec Workiva → Dartastic ; séparé pour scope auditability + atomic revertability. |
 | **T6**    | **B.8 (flagship 1.0.0 → 2.0.0), Phase 2 ARCHITECTURE-TARGET, B.8.15 couche D upgrade-matrix**     | ✅ **COMPLET — `v0.4.0`** (détails §0.12). Constitution v2.0.0 (§VIII.1 Kong→Envoy ratifié, B.8.14). 17 changes B.8 archivés + trio OTel rehosté. B.8.15 ferme la couche D de T5.1. **Point de non-retour franchi.** Déviation §10 Phase 2 : **DBOS abandonné côté Rust** (B8O 2026-06-01) ⇒ Temporal natif conservé (`temporalio-sdk 0.4.0`). | Migration breaking flagship. **Point de non-retour**. B.8.15 ferme la dernière couche de T5.1 (upgrade matrix N-1 → N).                      |
 | **T7**    | **B.6 (event-driven-eu), B.7 (ai-native-rag), K.1, K.2, K.4, K.5**                               | ✅ **T7 COMPLET au 2026-07-12** — les six modules du périmètre (B.6, B.7, K.1, K.2, K.4, K.5) sont livrés et archivés. **B.7 ✅ COMPLET (9/9) au 2026-06-23** (mainteneur 2026-06-11 : réutilise substrat 2.0.0). `ai-native-rag` promu **stable / scaffoldable:true** (PR #33). Chaîne 9 briques **toutes archivées** : ✅ `b7-1-schema` (B.7.1) + ✅ `b7-2a-dispatch-register` + ✅ `b7-standards` (B.7.3) + ✅ `b7-2-scaffolder` (B.7.2, PR #25) + ✅ `b7-pythia` (K.2 Sibyl, PR #29) + ✅ `b7-9-janus-ai` (J.8.c, PR #27) + ✅ `b7-5-ai-act` (PR #30) + ✅ `b7-10-streaming` (PR #31) + ✅ `b7-7-example` (PR #31 via #32) + ✅ `b7-6-harness` (gate de promotion, PR #33). **K.4 ✅ Iris-Web archivé 2026-07-10 via `k4-iris-web` (PR #36).** **K.5 ✅ Themis archivé 2026-07-12 via `k5-themis` (PR #37).** **B.6 event-driven-eu — 10/10 briques archivées au 2026-07-12** : ✅ `b6-1-schema` (B.6.1, PR #38) + ✅ `b6-2-scaffolder` (B.6.2, PR #38) + ✅ `b6-3-standards` (B.6.3, PR #39) + ✅ `b6-4-hermes-async` (B.6.4/K.1, PR #42) + ✅ `b6-5-ci-templates` (B.6.5, PR #40) + ✅ `b6-6-helm` (B.6.6, PR #41) + ✅ `b6-9-compliance` (B.6.9, PR #44) + ✅ `b6-10-janus-rule` (B.6.10, PR #43) + ✅ `b6-7-harness` (B.6.7 — gate de promotion ≥35 tests + flip candidate→stable/scaffoldable:true, live sur main) + ✅ `b6-8-example` (B.6.8 — `examples/forge-eda-example/`, 3 demos, PR #47). Schema **promu `stable`/`scaffoldable:true`** par B.6.7 : `forge init --archetype event-driven-eu` **rend l'arbre** (ne refuse plus exit 3) — B.6.8 le prouve end-to-end en scaffoldant l'exemple via le vrai CLI (ADR-B6-8-001). **B.6 event-driven-eu COMPLET.** Détails §0.13. | Deux nouveaux archétypes + 4 nouveaux agents.                                                                                                |
-| **T8**    | **B.9 (mobile-pwa-first / 2.0.0), B.3 (rust-cli-tui), pédagogie C.2-C.5**                        | ✅ **B.9 COMPLÈTE 11/11 (2026-09-12)** — démarrée 2026-07-27 : ✅ `b9-1-schema` (B.9.1, schéma `mobile-pwa-first/2.0.0` candidate + discriminateur `layer_profile`) + ✅ `b9-2-web-pwa` (B.9.2, surface Qwik City + SW + Web Push VAPID + standard `pwa.yaml`, et enregistrement de la clé de dispatch) + ✅ `b9-3-shared-oidc` (B.9.3, client OIDC navigateur sur `oauth4webapi` + config provider partagée). + ✅ `b9-7-web-ci` (B.9.7, workflow `web-pwa-ci.yml` — première CI Qwik du dépôt ; livrée SANS le job `pwa-deploy`, par arbitrage). + ✅ `b9-8-snapshot` (B.9.8) + ✅ `b9-9-migrate-mobile-pwa` (B.9.9, migration additive prouvée octet-identique à un rendu natif) + ✅ `b9-10-migration-paths` (B.9.10, `docs/MIGRATION-PATHS.md` : section cross-archétype, table d'index, frontière avec `MIGRATIONS.md` — la migration flagship n'y figurait pas). + ✅ `b9-4-archetype-decision-tree` (B.9.4, arbre de décision de canal + trois cellules de matrice qui égaraient le choix ; garde FR-IW-009 dérivé de `dispatch-table.yml` — 4 des 7 lignes étaient supprimables CI verte). + ✅ `b9-5-bloc-generator` (B.9.5) + ✅ `b9-11-promotion-gate` (B.9.11, promotion `candidate`→`stable` : schéma + statut de dispatch + fixture CLI + six gardes frères inversés, en un seul commit car il n'existe aucun état vert intermédiaire). **B.9 est COMPLÈTE, 11/11.** **B.9.6 est un no-op** (linter NSMA déjà activé par B.8.11). **B.3 et pédagogie C.2–C.5 : non commencés.** Détails §0.14. **F.3 pulled forward, delivered 2026-05-12 via `f3-release-script-fix`.**                                                                                                                                                                | Renommage mobile + dernier archétype premium + walkthrough/anti-patterns/comparison/migration. F.3 release script fix shipped early (T5).    |
+| **T8**    | **B.9 (mobile-pwa-first / 2.0.0), B.3 (rust-cli-tui), pédagogie C.2-C.5**                        | ✅ **B.9 COMPLÈTE 11/11 (2026-09-12)** — démarrée 2026-07-27 : ✅ `b9-1-schema` (B.9.1, schéma `mobile-pwa-first/2.0.0` candidate + discriminateur `layer_profile`) + ✅ `b9-2-web-pwa` (B.9.2, surface Qwik City + SW + Web Push VAPID + standard `pwa.yaml`, et enregistrement de la clé de dispatch) + ✅ `b9-3-shared-oidc` (B.9.3, client OIDC navigateur sur `oauth4webapi` + config provider partagée). + ✅ `b9-7-web-ci` (B.9.7, workflow `web-pwa-ci.yml` — première CI Qwik du dépôt ; livrée SANS le job `pwa-deploy`, par arbitrage). + ✅ `b9-8-snapshot` (B.9.8) + ✅ `b9-9-migrate-mobile-pwa` (B.9.9, migration additive prouvée octet-identique à un rendu natif) + ✅ `b9-10-migration-paths` (B.9.10, `docs/MIGRATION-PATHS.md` : section cross-archétype, table d'index, frontière avec `MIGRATIONS.md` — la migration flagship n'y figurait pas). + ✅ `b9-4-archetype-decision-tree` (B.9.4, arbre de décision de canal + trois cellules de matrice qui égaraient le choix ; garde FR-IW-009 dérivé de `dispatch-table.yml` — 4 des 7 lignes étaient supprimables CI verte). + ✅ `b9-5-bloc-generator` (B.9.5) + ✅ `b9-11-promotion-gate` (B.9.11, promotion `candidate`→`stable` : schéma + statut de dispatch + fixture CLI + six gardes frères inversés, en un seul commit car il n'existe aucun état vert intermédiaire). **B.9 est COMPLÈTE, 11/11.** **B.9.6 est un no-op** (linter NSMA déjà activé par B.8.11). 🚧 **B.3 DÉMARRÉE 2026-09-13 — 1/14** (`b3-1-schema`, schéma `rust-cli-tui/1.0.0` candidate ; le budget CI a été rouvert 420→440 par `t7-ci-line-budget-440` pour l'enregistrer). **Pédagogie C.2–C.5 : non commencée.** Détails §0.14. **F.3 pulled forward, delivered 2026-05-12 via `f3-release-script-fix`.**                                                                                                                                                                | Renommage mobile + dernier archétype premium + walkthrough/anti-patterns/comparison/migration. F.3 release script fix shipped early (T5).    |
 | **T9+**   | **L.1 (multi-vendor agent core — Codex/Antigravity/Cursor via émetteurs), G.* (Forge Guardian, VSCode, pre-commit ; G.6 superseded by L.1), H.* (multi-tenant, télémétrie, compliance reports)** | ⏸️ Pending.                                                                                                                                                                                                                             | Outillage périphérique et enterprise après que les 5 archétypes soient stables. L.1 = portabilité multi-CLI source-unique + connecteurs (feasibility §0.11). |
 
 ### Alternative « adoption lente, qualité maximale »
@@ -3194,7 +3258,37 @@ existant, puis fais B.8 en T8. Le coût : flagship reste sur Kong/Temporal penda
     - Recommandation `mobile-pwa-first` PWA-by-default (le marché est partagé).
     - Postgres comme défaut universel pour `ai-native-rag` (Qdrant > 50M vecteurs).
     - *(Refactor Hera 9 → 5 sub-agents — P-5 — retiré 2026-05-06 par le mainteneur.)*
-9. **Pas d'archétype `data-intensive`** proposé (volontairement écarté faute de
+9. **TROUS DE VÉRIFICATION — rien en CI n'exécute ce qui aurait attrapé les défauts
+   trouvés à la main les 2026-09-12/13.** Les deux sont le même problème et les deux
+   attendent un arbitrage de politique CI, pas du code :
+   - **Aucun harness ne lance `flutter test` sur un arbre rendu.** Deux défauts ont
+     vécu depuis B.4 derrière un `flutter analyze` vert : le test de fumée construisait
+     `App` sans `OTel.initialize()`, et sous lui `BiometricLockWidget` enveloppait
+     `MaterialApp`, si bien que **le widget racine levait à la première construction** —
+     `forge init` produisait un projet qui ne démarrait pas. `analyze` disait « no
+     issues ». Trouvés par `t7-flutter-deps-refresh` parce qu'il avait la chaîne
+     d'outils ; corrigés ; rien ne les rattraperait la prochaine fois. Fermer demande un
+     SDK Flutter dans le runner (coût en temps de build) et une ligne de budget.
+   - **Rien ne lance `npm audit`.** Trois avis HIGH vivaient sur la surface `web-pwa`
+     livrée (`qwik-city → vite-imagetools → sharp`, CVE libvips + libheif), invisibles à
+     `npm outdated` et à tout harness shell, qui n'installent jamais. Trouvés par
+     `t7-qwik-deps-refresh` en tapant la commande. `b9-7`'s `web-pwa-ci.yml` fait `npm
+     ci` + build sans audit. Un `npm audit --audit-level=high` les fermerait — et rendra
+     rouge une PR sans rapport le jour où un avis tombe en amont, ce qui est peut-être
+     exactement le but ou intolérable. Arbitrage, pas oubli.
+   - Conséquence commune : **la vérifiabilité d'un scaffold dépend aujourd'hui de qui a
+     la chaîne d'outils sous la main.** C'est ainsi qu'un projet qui ne démarre pas est
+     resté livrable quatre mois.
+10. **DETTE CI — le tableau des harnesses coûte une ligne par harness.** Il fait ~102
+   des 420 lignes de `forge-ci.yml`, et le plafond `NFR-CI-002` est passé
+   250→300→340→380→400→420→440 en quatre mois : une courbe, pas une série d'accidents.
+   Le refactor de 2026-05-31 avait supprimé la *deuxième* ligne par harness, pas la
+   première. L'externaliser libérerait ~80 lignes et supprimerait le coût ; l'obstacle
+   mesuré le 2026-09-13 est que **30 harnesses lisent `forge-ci.yml`** et qu'au moins
+   sept y cherchent leur propre enregistrement (`b4`, `b6-8`, `b7-7`, `f1`, `f2`, `f4`,
+   `d5`), tous à repointer en lock-step dans un seul commit. Brique à part entière.
+   Avec ~19 lignes restantes, B.3 tiendra ; la suivante, non.
+11. **Pas d'archétype `data-intensive`** proposé (volontairement écarté faute de
    demande explicite — manque potentiel à 18 mois).
 
 ---
