@@ -88,17 +88,51 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ### Security
 
-- **The rendered `web-pwa/` surface no longer ships three HIGH advisories** —
-  `t7-qwik-deps-refresh`. `npm audit` on a freshly rendered surface reported
+- **No Qwik template ships the two HIGH `sharp` advisories any more** —
+  `t7-qwik-deps-refresh`. `npm audit` reported
   `@builder.io/qwik-city → vite-imagetools → sharp <=0.35.4-rc.0`, inheriting libvips
-  CVE-2026-33327/33328/35590/35591 and libheif GHSA-g89c-p67h-r497 /
-  GHSA-2jg2-4ch7-h545.
+  CVE-2026-33327/33328/35590/35591 (GHSA-f88m-g3jw-g9cj) and libheif
+  GHSA-g89c-p67h-r497 / GHSA-2jg2-4ch7-h545 (GHSA-rgj7-g3m4-5g8c). The chain comes
+  from `qwik-city` itself, so it reached every Forge Qwik template (`npm audit` counts
+  3 high: sharp and the two packages above it):
 
-  `npm audit fix --force` would have installed **qwik-city 1.16.1** — two minors back,
-  across a breaking change, away from the line `web-frontend.yaml` pins. The
-  vulnerability is in `sharp`, not in qwik-city, and 0.35.4 is the first release outside
-  the vulnerable range, so `overrides: { "sharp": "^0.35.4" }` lifts the transitive
-  floor and leaves the pinned line alone. Measured after: **0 vulnerabilities**.
+  | surface | rendered by | in `@sdd-forge/cli@0.5.1` |
+  |---|---|---|
+  | `ai-native-rag` `frontend/web-public/` | `forge init` | **stable, scaffoldable — affected** |
+  | `full-stack-monorepo` 2.0.0 `frontend/web-public/` | the flagship migration | not rendered — the 0.5.1 migration copied raw `.tmpl` files (fixed by `b8-10b-migrate-render`) |
+  | `mobile-pwa-first` `web-pwa/` | `forge init` (since B.9.11) | refused `candidate`, not renderable |
+
+  Still affected and **not** fixed: the shipped reference tree
+  `examples/forge-rag-example/frontend/web-public/` (out of scope by maintainer
+  arbitration, `t7-qwik-deps-refresh` Q-004) — the manual step below applies to it too.
+
+  The first pass fixed `web-pwa` only; a pre-release audit reopened the brick for the
+  other two before review. `npm audit fix --force` would have installed **qwik-city
+  1.16.1** — four minors back, across a breaking change, below the line
+  `web-frontend.yaml` pins. The vulnerability is in `sharp`, and 0.35.4 is the first
+  release outside the range, so `overrides: { "sharp": "^0.35.4" }` lifts the transitive
+  floor and nothing pinned moves. Measured on a real `ai-native-rag` render: **4
+  vulnerabilities (1 low, 3 high) before, 0 after** (the low `esbuild` one closes with
+  the vite alignment under *Changed*). The floor is now `web-frontend.yaml`'s, and
+  `b8-9::T-014` holds every discovered Qwik surface to it.
+
+  **Existing projects: `forge upgrade` does not deliver this.** It merges only the paths
+  the framework's own root `.forge/framework-owned-paths.yml` owns, taken from the
+  framework tree; no project manifest is in that set, and the owned-paths file rendered
+  into a project is never read. Add it by hand, then `npm install`:
+
+  ```json
+  "overrides": { "sharp": "^0.35.4" }
+  ```
+
+  An `ai-native-rag` project rendered from 0.5.1 also lacks the `ignore` devDependency
+  its `qwik` CLI needs — see the `t5-qwik-cli-ignore-dep` entry under *Fixed*.
+
+  The same mechanism means the `t7-flutter-deps-refresh` entry below overstates its
+  reach: `pubspec.yaml` and `web-pwa/package.json` were added to a per-archetype
+  owned-paths file that `forge upgrade` never reads, so a bump does **not** reach an
+  existing project that way either (`t7-qwik-deps-refresh` Q-007, found in review; that
+  entry belongs to its own brick's review).
 
 ### Changed
 
@@ -118,6 +152,21 @@ minor bump and will be called out under a `### BREAKING` subsection.
   `b9-2::T-037` guards all four on **parsed JSON** — the manifest's `_audit` block now
   discusses every one of those strings, and a textual grep would read the explanation as
   the assertion. 6/6 mutation probes RED.
+
+- **`web-frontend.yaml` 1.2.0 → 1.3.0 owns the sharp override floor, and the two
+  sibling Qwik templates are back on its exact `vite` pin** — `t7-qwik-deps-refresh`
+  (extension, 2026-09-14). `versions.sharp: "0.35.4"` joins the `ignore` workaround:
+  a pin with its removal trigger and a `P30D` review cadence (`REVIEW.md` row). The
+  `ai-native-rag` 1.0.0 and `full-stack-monorepo` 2.0.0 `frontend/web-public/`
+  templates still pinned `vite` `=7.3.5`, six weeks after the standard moved to
+  **7.3.6** — now `=7.3.6`, in the manifest, README pin table and `vite.config.ts`
+  comment. On a real `ai-native-rag` render, `tsc --noEmit`, `vite build` and the `qwik`
+  CLI give the same result before and after the edit — but only with two probe-side
+  workarounds, because the surface does not typecheck as scaffolded (see *Known
+  issues*). New `b8-9::T-014` discovers every Qwik template and checks
+  both the override and the vite pin — and the Pin cells of the README pin tables —
+  against the standard, read inside its `versions:` block only; 17/17 mutation probes
+  RED, after two rounds of independent review. No `forge-ci.yml` line spent.
 
 ### Changed
 
@@ -668,9 +717,10 @@ minor bump and will be called out under a `### BREAKING` subsection.
   `qwik --help` fails, and `build`, `preview` and the `qwik` passthrough are all
   dead. Reproduced with two dependencies and **zero source files**, which is what
   rules out any Forge template as a contributing cause. Three surfaces were
-  affected: `full-stack-monorepo/2.0.0` — **stable, scaffoldable, and shipped
-  inside `@sdd-forge/cli@0.5.1`**, so anyone who ran `forge init` and then
-  `npm run build` in the web surface got a stack trace — plus
+  affected: `full-stack-monorepo/2.0.0` (its Qwik web surface was not renderable from
+  0.5.1 at all: `forge init` excludes it, and the 0.5.1 migration copied raw `.tmpl`
+  files — `migration-plan-2.0.0.yaml` landed after the tag, in `e183673`; corrected
+  2026-09-15 by the `t7-qwik-deps-refresh` review) — plus
   `ai-native-rag/1.0.0` and `mobile-pwa-first/2.0.0`. The flagship was verified by
   installing its exact dependency set rather than by analogy, since its extra
   `@connectrpc/*` dependencies could plausibly have hoisted `ignore` and spared it;
@@ -696,6 +746,14 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ### Known issues
 
+- **A freshly rendered `ai-native-rag` `frontend/web-public/` does not typecheck or
+  build.** `task proto` fails: `buf.gen.yaml` runs `buf.build/connectrpc/go` under managed
+  mode and `rag.proto` has no `go_package`, so buf exits 1 and writes nothing (the
+  wrapper reports it as a network problem). And `connect-client.ts` imports
+  `./generated/connect/rag_pb` where buf writes `v1/rag/rag_pb.ts`. The `harness-rust`
+  CI gate does not catch either: `b7-6` T-C02 matches the go_package error with its
+  offline pattern and skips, and T-C04 always skips. Found while proving
+  `t7-qwik-deps-refresh`; recorded there as Q-005/Q-006, not fixed.
 - **`qwik build` additionally fails under npm ≥ 12**, independently of the fix
   above: the qwik CLI appends ` --pretty` to `npm run build.types`, so the flag
   reaches npm rather than `tsc`. npm 9/10/11 accept unknown flags; npm 12 rejects

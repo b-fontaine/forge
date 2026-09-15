@@ -1227,7 +1227,8 @@ PINS
 WEBPWA_PKG="$WEBPWA/package.json.tmpl"
 
 # The security remediation, and the three constraints that must NOT move with it.
-# `npm audit` on a freshly rendered surface reported 3 HIGH advisories through
+# `npm audit` on a freshly rendered surface reported 3 high-severity vulnerabilities
+# (two sharp advisories) through
 # qwik-city -> vite-imagetools -> sharp; `npm audit fix --force` would have downgraded
 # qwik-city to 1.16.1, away from the line web-frontend.yaml pins. The override lifts
 # the transitive floor instead. Asserted on PARSED JSON, never on text — the manifest's
@@ -1243,11 +1244,11 @@ dev = d.get('devDependencies') or {}
 deps = d.get('dependencies') or {}
 bad = False
 
-# 1. the sharp override, without which a rendered surface ships 3 HIGH advisories.
+# 1. the sharp override, without which a rendered surface ships two HIGH sharp advisories.
 sharp = (d.get('overrides') or {}).get('sharp')
 if not sharp:
-    print("    FAIL T-037: no `overrides.sharp` — a rendered web-pwa then reports 3 HIGH "
-          "advisories via qwik-city -> vite-imagetools -> sharp (t7-qwik-deps-refresh)")
+    print("    FAIL T-037: no `overrides.sharp` — a rendered web-pwa then reports two HIGH "
+          "sharp advisories via qwik-city -> vite-imagetools -> sharp (t7-qwik-deps-refresh)")
     bad = True
 else:
     m = re.match(r'^\^?(\d+)\.(\d+)\.(\d+)', str(sharp))

@@ -2283,7 +2283,7 @@ même mécanique : **exécuter plutôt que lire**.
 |---|---|
 | `t7-forbidden-archetypes-wiring` | Le refus J.8 `forbidden_archetypes` devient joignable. **Un défaut signalé, trois maillons cassés** : `parseDispatchTable` ne lisait pas le bloc ; une fois corrigé, `cli.ts` écrasait l'`exitCode` porté par l'erreur avec un `return 1` en dur ; et sans suivi de bloc, tous les `since:` des blocs suivants se déversaient dans le dernier archétype (`flutter-firebase.since` valait `"0.5.0"   # realigned…`, mauvaise valeur *et* commentaire). `forge init --archetype flutter-firebase` sortait en **127** avec une erreur bash ; il sort désormais en 3 avec la ligne `[REFUSAL: …]` que `docs/ARCHETYPES.md` promettait depuis mai. |
 | `t7-flutter-deps-refresh` | Neuf pins Flutter, trois majeures, **prouvés** (`pub get` + `analyze` + `test` sur des rendus réels). `pubspec.yaml` devient framework-owned : `forge upgrade` ne fusionne que ce que `owned:` matche, donc aucun bump n'atteignait un projet existant. Deux gardes shippés rendaient les pins immobiles (`b9-2` T-004 vs T-007) — bascule en lock-step, arbitrage mainteneur. |
-| `t7-qwik-deps-refresh` | **Trois avis HIGH** purgés de la surface `web-pwa` livrée via un `overrides: sharp`, plutôt que la rétrogradation de qwik-city que `npm audit fix --force` proposait. Et **trois des quatre suggestions de `npm outdated` refusées sur preuve** : vite 8 exclu par les peers de qwik, `@types/node` doit suivre le Node épinglé (24) et non le latest (26), le contournement `ignore` toujours nécessaire en amont. |
+| `t7-qwik-deps-refresh` | **Deux avis HIGH `sharp`** (`npm audit` : 3 high) purgés de la surface `web-pwa` livrée via un `overrides: sharp` — *et de celle-là seulement : rouverte le 2026-09-14 pour les deux autres surfaces Qwik, voir §0.16* —, plutôt que la rétrogradation de qwik-city que `npm audit fix --force` proposait. Et **trois des quatre suggestions de `npm outdated` refusées sur preuve** : vite 8 exclu par les peers de qwik, `@types/node` doit suivre le Node épinglé (24) et non le latest (26), le contournement `ignore` toujours nécessaire en amont. |
 | `t7-ci-line-budget-440` | Plafond `NFR-CI-002` 420 → 440, pour débloquer B.3. **La liste de lock-step documentée était fausse** : `forge-self-ci.md` annonçait quatre harnesses, `b6-8` en était un cinquième non listé. Mesurée au lieu d'être lue (écrire une ligne au-dessus du plafond, voir qui tire). Les deux documents prescrivent désormais la sonde. |
 | `b3-1-schema` | **B.3.1** — voir §3.3. |
 
@@ -2305,6 +2305,63 @@ satisfaite par une seconde occurrence dans la région qu'elle surveille — cett
 le harness de `b3-1` lui-même, sur le mot `inferred`. Restreindre à la région ne suffit
 pas ; l'aiguille doit aussi être unique **et** ancrée au chemin de code qu'elle prétend
 protéger. Le `grep -c` préalable est désormais prescrit dans l'en-tête du harness.
+
+---
+
+## 0.16 Status update — 2026-09-14 (T8 — `t7-qwik-deps-refresh` rouverte avant revue)
+
+Un audit pré-release en lecture seule (roadmap et plan confrontés au dépôt, au tarball
+npm `0.5.1` et au registre) a trouvé que `t7-qwik-deps-refresh` avait corrigé **une
+surface Qwik sur trois**, alors que son entrée CHANGELOG se lisait comme le correctif.
+La chaîne `sharp` vient de `qwik-city` lui-même, que les trois surfaces déclarent.
+
+| surface | rendue par | dans `@sdd-forge/cli@0.5.1` | avant 2026-09-14 |
+|---|---|---|---|
+| `mobile-pwa-first` `web-pwa/` | `forge init` | `candidate` refusé | corrigée (2026-09-13) |
+| `ai-native-rag` `frontend/web-public/` | `forge init` | **stable, scaffoldable** | **vulnérable** |
+| `full-stack-monorepo` 2.0.0 `frontend/web-public/` | plan de migration | non rendue (la migration 0.5.1 copiait des `.tmpl` bruts) | **vulnérable** |
+
+La brique a corrigé une surface qu'aucun adoptant de la 0.5.1 ne pouvait rendre, et laissé
+celle qu'ils pouvaient. **Mesuré sur un vrai rendu** `ai-native-rag` : 4
+vulnérabilités (1 low, 3 high) avant, **0 après**.
+
+**Arbitrages mainteneur 2026-09-14** : rouvrir la brique (non revue, non archivée) plutôt
+qu'en ouvrir une dix-huitième — une revue, une entrée Security ; les trois templates, pas
+l'exemple ; `sharp` plus le pin `vite` exact du standard, rien d'autre ; le plancher
+appartient à `web-frontend.yaml`, comme le contournement `ignore`.
+
+- `web-frontend.yaml` 1.2.0 → **1.3.0** : `versions.sharp: "0.35.4"`, déclencheur de
+  suppression, cadence `P30D`, ligne `REVIEW.md`.
+- Les deux templates frères gagnent l'override et reviennent à `vite` **`=7.3.6`** : ils
+  étaient restés à 7.3.5 six semaines après que le standard a bougé. Cet alignement ferme
+  aussi l'avis `esbuild` low — d'abord supposé exiger de bouger le pin, puis mesuré.
+- **`b8-9::T-014`**, garde par découverte : chaque template Qwik (Qwik en `dependencies`
+  ou `devDependencies`, `qwik-city` seul compris) contre le standard, lu dans son bloc
+  `versions:` seulement, et les cellules Pin des tables de README ; **17/17 sondes de
+  mutation RED** après deux tours de revue indépendante. **Zéro ligne `forge-ci.yml`.**
+- **`forge upgrade` ne livre pas ce correctif** : il ne fusionne que les chemins du
+  `framework-owned-paths.yml` **racine** du framework, pris dans l'arbre du framework ;
+  aucun manifeste de projet n'y figure, et le fichier rendu dans un projet n'est jamais lu
+  (Q-007 — ce qui contredit aussi « `pubspec.yaml` devient framework-owned » de
+  `t7-flutter-deps-refresh`). Le CHANGELOG donne le geste manuel.
+
+**Deux défauts de scaffold trouvés en prouvant le build**, consignés, pas corrigés : un
+rendu `ai-native-rag` frais échoue à `buf generate` (plugin Go sans `go_package`, alors
+que le wrapper accuse le réseau — Q-005), et son `connect-client.ts` importe
+`./generated/connect/rag_pb` là où buf écrit `v1/rag/rag_pb.ts` (Q-006). **La surface
+`web-public` d'`ai-native-rag` ne typecheck donc pas telle que scaffoldée** — même classe
+que le widget Flutter racine de §0.15 : trouvé parce que quelqu'un a construit le rendu. Et le
+job CI `harness-rust`, présenté en §0.12 et dans la roadmap comme la preuve verte de la chaîne
+buf → codegen → tsc, **ne la prouve pas** : `b7-6` T-C02 classe l'échec `go_package` comme
+hors-ligne et passe en SKIP, T-C04 est toujours SKIP (run `34815880019`).
+L'exemple `forge-rag-example` n'a ni l'override ni `ignore` (Q-004).
+
+**Ce que l'audit a trouvé d'autre, et qui n'est pas traité ici** : l'état de release décrit
+par la roadmap est périmé (0.5.0 taguée mais jamais sur npm, 0.5.1 publiée, 24 commits
+depuis) ; 17 changes sont `implemented` sans verdict de revue, or `GOVERNANCE.md:253-255`
+interdit toute coupe tant qu'il en reste un ; et `docs/ARCHETYPES.md` dit encore que
+`forge init --archetype mobile-pwa-first` sort en exit 3. Chemin vers la 0.6.0 : revue et
+archivage par lots, cascade de promotion B.9.11, scellement du CHANGELOG, coupe.
 
 ---
 
@@ -3269,13 +3326,18 @@ existant, puis fais B.8 en T8. Le coût : flagship reste sur Kong/Temporal penda
      issues ». Trouvés par `t7-flutter-deps-refresh` parce qu'il avait la chaîne
      d'outils ; corrigés ; rien ne les rattraperait la prochaine fois. Fermer demande un
      SDK Flutter dans le runner (coût en temps de build) et une ligne de budget.
-   - **Rien ne lance `npm audit`.** Trois avis HIGH vivaient sur la surface `web-pwa`
-     livrée (`qwik-city → vite-imagetools → sharp`, CVE libvips + libheif), invisibles à
-     `npm outdated` et à tout harness shell, qui n'installent jamais. Trouvés par
-     `t7-qwik-deps-refresh` en tapant la commande. `b9-7`'s `web-pwa-ci.yml` fait `npm
-     ci` + build sans audit. Un `npm audit --audit-level=high` les fermerait — et rendra
-     rouge une PR sans rapport le jour où un avis tombe en amont, ce qui est peut-être
-     exactement le but ou intolérable. Arbitrage, pas oubli.
+   - **Rien ne lance `npm audit`.** Deux avis HIGH `sharp` vivaient sur **les trois** templates
+     Qwik (`qwik-city → vite-imagetools → sharp`, CVE libvips + libheif) — dont
+     `ai-native-rag`, stable et scaffoldable dans la 0.5.1 publiée —, invisibles à
+     `npm outdated` et à tout harness shell, qui n'installent jamais. Trouvés sur
+     `web-pwa` par `t7-qwik-deps-refresh` en tapant la commande ; la brique n'a corrigé
+     que cette surface, et un audit pré-release a trouvé les deux autres le lendemain
+     (§0.16). `b9-7`'s `web-pwa-ci.yml` fait `npm install` + build sans audit. Un
+     `npm audit --audit-level=high` là n'attraperait que `web-pwa` : `ai-native-rag` n'a
+     pas de template CI et le `forge-frontend.yml` du flagship est Flutter-only ; seul un
+     audit des rendus dans `forge-ci` voit les trois. Où qu'il soit, il rendra rouge une PR
+     sans rapport le jour où un avis tombe en amont, ce qui est peut-être exactement le but
+     ou intolérable. Arbitrage, pas oubli.
    - Conséquence commune : **la vérifiabilité d'un scaffold dépend aujourd'hui de qui a
      la chaîne d'outils sous la main.** C'est ainsi qu'un projet qui ne démarre pas est
      resté livrable quatre mois.

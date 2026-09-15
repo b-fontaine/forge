@@ -87,7 +87,8 @@ descriptor.
 |----------|-----|------------|
 | `@builder.io/qwik` | `^1.20.0` | `web-frontend.yaml` `versions.qwik` |
 | `@builder.io/qwik-city` | `^1.20.0` | co-released router |
-| `vite` | `=7.3.5` (EXACT) | Qwik peer `>=5 <8` — PITFALL: vite 8.x is excluded |
+| `vite` | `=7.3.6` (EXACT) | Qwik peer `>=5 <8` — PITFALL: vite 8.x is excluded |
+| `sharp` (`overrides`) | `^0.35.4` | NOT a dependency — lifts qwik-city's transitive sharp out of two HIGH advisories; `web-frontend.yaml` `versions.sharp` |
 | `@bufbuild/protobuf` | `^2.2.0` | protobuf-es v2 runtime (generated `rag_pb`) |
 | `@connectrpc/connect` | `^2.0.0` | `transport.yaml` (single source of truth) |
 | `@connectrpc/connect-web` | `^2.0.0` | `transport.yaml` |

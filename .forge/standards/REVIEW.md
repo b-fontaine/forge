@@ -1179,3 +1179,61 @@ amendment process (see `.forge/standards/global/standards-lifecycle.md`
   T-007 now asserts a well-formed SemVer, and T-008 requires a ledger row for
   whichever version the standard currently declares — so a future bump that forgets
   this file fails loudly instead of freezing a stale number.
+
+---
+
+## 2026-09-14 — web-frontend.yaml: sharp override floor owned by the standard (t7-qwik-deps-refresh)
+
+- **Reviewer**: @bfontaine
+- **Reviewed**:
+
+  | Standard | Version | Verdict | Next review | Notes |
+  |---|---|---|---|---|
+  | web-frontend.yaml | 1.3.0 | KEEP-WITH-CHANGES | 2027-06-03 | Adds one pin, `sharp: "0.35.4"` — the floor of an `overrides` entry, not a dependency — and its `pin_review_cadence` entry. Additive: no existing pin changed, no rule added, no interdiction added — hence MINOR. `expires_at` unchanged (a workaround recorded, not a re-review of the framework choice). |
+
+- **Decision**: KEEP-WITH-CHANGES
+- **Next review due**: 2027-06-03
+- **Notes**:
+
+  **Why a transitive dependency appears in a framework-selection standard.**
+  `@builder.io/qwik-city@1.20.0` — the `qwik_city` pin above, and npm `latest` —
+  depends on `vite-imagetools ^9.0.0`, whose every 9.x release depends on
+  `sharp ^0.34.1`. That resolves `sharp@0.34.5`, inside two HIGH advisories:
+  GHSA-f88m-g3jw-g9cj (libvips CVE-2026-33327/33328/35590/35591, `<0.35.0`) and
+  GHSA-rgj7-g3m4-5g8c (libheif, `<0.35.4`). The defect is in a package three levels
+  below anything Forge chose, and the remedy `npm audit fix --force` offers is to
+  **downgrade** `qwik-city` to 1.16.1, below this standard's own pin. An `overrides`
+  entry lifts the floor instead and moves nothing this file pins.
+
+  **Why here, and not per manifest.** `t7-qwik-deps-refresh` first put the override
+  on the `mobile-pwa-first` web-pwa manifest only, and kept this file out of scope.
+  A pre-release audit on 2026-09-14 found the other two Qwik surfaces still
+  vulnerable — including `ai-native-rag`, `stable` and scaffoldable in the published
+  `@sdd-forge/cli@0.5.1` — and found the same two templates still pinning `vite`
+  `=7.3.5`, six weeks after the 1.1.0 row above moved it to 7.3.6. Per-manifest
+  literals had already drifted once. The floor now lives where the `ignore`
+  workaround lives, and `b8-9.test.sh::T-014` holds every discovered surface to both
+  this floor and the exact `vite` pin (ADR-T7QD-003).
+
+  **Measured, not inferred.** Real `ai-native-rag` render from the template:
+  `npm audit` → 4 vulnerabilities (1 low, 3 high), `sharp@0.34.5`. The flagship
+  2.0.0 web-public manifest (rendered by the migration plan, not by `forge init`),
+  lockfile-resolved: the same 4.
+
+  **Removal condition.** Drop this pin and every `overrides.sharp` it governs once
+  `qwik-city` ships a `vite-imagetools` that depends on `sharp >= 0.35.4` itself. The
+  `P30D` cadence entry exists to force that question.
+
+  **After, measured the same way:** `found 0 vulnerabilities` on both. The fourth,
+  low-severity advisory (`esbuild` GHSA-g7r4-m6w7-qqqr, development server on
+  Windows) closed too, and not because of the override: the two templates were still
+  on `vite` 7.3.5, which resolves `esbuild@0.27.7`; aligning them with the 7.3.6 this
+  file already pinned resolves `esbuild@0.28.2`. Written down because it was first
+  assumed the other way — that closing it would mean moving the pin.
+
+  **Correction to the 2026-09-09 entry above, which this ledger cannot amend.** It says
+  `full-stack-monorepo/2.0.0` was "stable, scaffoldable, and shipped inside
+  `@sdd-forge/cli@0.5.1`". The schema was; its Qwik web surface was not reachable through
+  `forge init` (`scaffold-plan-2.0.0.yaml` excludes it), and the only path that renders it,
+  `migration-plan-2.0.0.yaml`, landed after the `v0.5.1` tag (`e183673`). Found by the
+  independent review of `t7-qwik-deps-refresh`, 2026-09-15.

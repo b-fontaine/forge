@@ -33,7 +33,8 @@ the adopter adds their lint tooling.
 |----------|-----|------------|
 | `@builder.io/qwik` | `^1.20.0` | stable 1.x line; `web-frontend.yaml` `versions.qwik` (P-01/P-16) |
 | `@builder.io/qwik-city` | `^1.20.0` | co-released router; `versions.qwik_city` (P-02/P-16) |
-| `vite` | `=7.3.5` (EXACT) | max stable 7.x; vite 8 EXCLUDED by Qwik peer `>=5 <8` (P-06/P-09/P-18) |
+| `vite` | `=7.3.6` (EXACT) | max stable 7.x; vite 8 EXCLUDED by Qwik peer `>=5 <8` (P-06/P-09/P-18; drifted 7.3.5 → 7.3.6, B.9.2) |
+| `sharp` (`overrides`) | `^0.35.4` | NOT a dependency — lifts qwik-city's transitive sharp out of two HIGH advisories; `web-frontend.yaml` `versions.sharp` |
 | `@connectrpc/connect` | `^2.0.0` | `transport.yaml` v1.3.0 `codegen.versions_2_0_0` (cross-ref, single source of truth) |
 | `@connectrpc/connect-web` | `^2.0.0` | `transport.yaml` v1.3.0 `codegen.versions_2_0_0` (cross-ref) |
 | Node.js (`.nvmrc`) | `24` | active LTS at 2026-06-03; satisfies Qwik engines `>=18.11` (P-10/P-19) |
@@ -82,7 +83,7 @@ The package manager is **npm** (matches the official Qwik starter posture; no
 ## PITFALL — Vite 8 is excluded
 
 `vite` 8.x is the npm `latest` but is **EXCLUDED** by `@builder.io/qwik`
-peerDependencies `>=5 <8`. Pin to `=7.3.5` **exactly** (the max stable 7.x).
+peerDependencies `>=5 <8`. Pin to `=7.3.6` **exactly** (the max stable 7.x).
 Installing the default vite 8 yields an incompatible peer / broken build. See the
 `web-frontend.yaml` `versions` block for the current pin and ADR-B89-001 for the
 rationale.

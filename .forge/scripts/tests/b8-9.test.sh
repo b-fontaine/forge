@@ -19,8 +19,9 @@
 #   T-011  coupling guard: b8-3 (17/17) + b8-3b (12/12) + b8-6 (12/12) stay GREEN   (NFR-B89-003/087)
 #   T-012  CHANGELOG.md has a b8-9-qwik-web-public entry (whole-file grep)          (FR-B89-087, NFR-B89-001)
 #   T-013  every Qwik surface declares `ignore`, agreeing with the standard's pin  (FR-T5QCI-001/002/005)
+#   T-014  every Qwik surface + README pin rows: sharp override + exact vite, per std (FR-T7QD-007/008/009/010)
 #
-# 13 L1 tests. Budget L1 ≤ 2 s, zero net/Docker/npm. The live verify-then-pin
+# 14 L1 tests. Budget L1 ≤ 2 s, zero net/Docker/npm. The live verify-then-pin
 # (Qwik/Vite/Node + Connect-ES/Qwik API shapes) is a /forge:implement step, NOT
 # an L1 assertion. T-011 is exit-code only (the b8-4/b8-5/b8-6/b8-7 coupling
 # strategy) — keeps the coupling guard within budget. Mirrors b8-7.test.sh
@@ -314,6 +315,139 @@ _test_b89_l1_013_qwik_cli_ignore_dep() {
   [ "$ok" = "1" ]
 }
 
+# T-014 — every Qwik surface agrees with the standard on the sharp override and
+# the exact vite pin.
+#
+# `@builder.io/qwik-city@1.20.0 -> vite-imagetools@9.0.3 -> sharp@0.34.5`, and
+# sharp <0.35.4 carries two HIGH advisories (libvips GHSA-f88m-g3jw-g9cj, libheif
+# GHSA-rgj7-g3m4-5g8c). Every Forge Qwik surface declares that qwik-city, so the
+# override belongs on all of them. The first fix covered web-pwa alone and left
+# ai-native-rag, the one that was scaffoldable in 0.5.1 (t7-qwik-deps-refresh,
+# reopened 2026-09-14). The same audit found both sibling templates still on vite
+# 7.3.5, six weeks after the standard moved to 7.3.6.
+#
+# Discovery is WIDER than T-013's: it matches `@builder.io/qwik-city` too, and a
+# manifest counts as a surface whether Qwik sits in dependencies or devDependencies
+# (the create-qwik starter layout). A discovered file that installs neither is
+# reported, not silently skipped. The standard is read INSIDE its `versions:` block
+# only: the file quotes 7.3.5 and 7.3.6 in comments, so a whole-file grep would take
+# the prose for the pin. Manifests are read as parsed JSON, because their `_audit`
+# arrays discuss sharp and vite too. README pin-table rows are held to the same
+# values (review round 1, 2026-09-15).
+_test_b89_l1_014_qwik_sharp_override_and_vite_pin() {
+  command -v python3 >/dev/null 2>&1 || { echo "    FAIL T-014: python3 required" >&2; return 1; }
+
+  local block pin_sharp pin_vite
+  block=$(awk '/^versions:/{f=1; next} f && /^[^[:space:]#]/{exit} f' "$WEB_FRONTEND_STD")
+  pin_sharp=$(sed -nE 's/^  sharp:[[:space:]]*"([0-9]+\.[0-9]+\.[0-9]+)".*$/\1/p' <<<"$block")
+  pin_vite=$(sed -nE 's/^  vite:[[:space:]]*"([0-9]+\.[0-9]+\.[0-9]+)".*$/\1/p' <<<"$block")
+  # Exactly one well-formed value each. Zero means the pin is gone or commented out;
+  # two means the block is ambiguous. Either way nothing below would be measured.
+  if [ -z "$pin_sharp" ] || [ "$(grep -c . <<<"$pin_sharp")" != "1" ]; then
+    echo "    FAIL T-014: web-frontend.yaml versions: has no single 'sharp' floor (FR-T7QD-009)" >&2
+    return 1
+  fi
+  if [ -z "$pin_vite" ] || [ "$(grep -c . <<<"$pin_vite")" != "1" ]; then
+    echo "    FAIL T-014: web-frontend.yaml versions: has no single exact 'vite' pin (FR-T7QD-008)" >&2
+    return 1
+  fi
+
+  # Prefix match: finds `@builder.io/qwik` AND `@builder.io/qwik-city`, the package
+  # that actually carries the sharp chain — a qwik-city-only manifest is a surface too.
+  local surfaces=()
+  local f
+  while IFS= read -r f; do
+    grep -qF '"@builder.io/qwik' "$f" && surfaces+=("$f")
+  done < <(find "$FORGE_ROOT/.forge/templates" -name 'package.json.tmpl' -type f | sort)
+  if [ "${#surfaces[@]}" -eq 0 ]; then
+    echo "    FAIL T-014: discovered ZERO Qwik surfaces under .forge/templates (FR-T7QD-010)" >&2
+    return 1
+  fi
+
+  FORGE_ROOT="$FORGE_ROOT" PIN_SHARP="$pin_sharp" PIN_VITE="$pin_vite" \
+    python3 - "${surfaces[@]}" <<'PYSURF' >&2
+import json, os, re, sys
+root = os.environ['FORGE_ROOT'].rstrip('/') + '/'
+want_sharp = '^' + os.environ['PIN_SHARP']
+want_vite = '=' + os.environ['PIN_VITE']
+QWIK = ('@builder.io/qwik', '@builder.io/qwik-city')
+bad, checked, readme_rows = False, 0, 0
+for path in sys.argv[1:]:
+    rel = path[len(root):] if path.startswith(root) else path
+    try:
+        d = json.load(open(path, encoding='utf-8'))
+    except ValueError as e:
+        print(f"    FAIL T-014: {rel} is not valid JSON ({e})")
+        bad = True
+        continue
+    # A surface is any manifest that installs Qwik, in either dependency map: the
+    # official create-qwik starter puts both packages in devDependencies, and npm
+    # installs (and audits) those just the same.
+    declared = {**(d.get('devDependencies') or {}), **(d.get('dependencies') or {})}
+    if not any(k in declared for k in QWIK):
+        print(f"    NOTE T-014: {rel} mentions @builder.io/qwik but declares neither package in dependencies/devDependencies — not checked")
+        continue
+    checked += 1
+    sharp = (d.get('overrides') or {}).get('sharp')
+    if sharp != want_sharp:
+        m = re.match(r'^\^?(\d+)\.(\d+)\.(\d+)$', str(sharp or ''))
+        if m and tuple(map(int, m.groups())) >= (0, 35, 4):
+            why = "out of lock-step with the standard's floor (ADR-T7QD-003)"
+        else:
+            why = ("without it qwik-city resolves sharp 0.34.x, inside two HIGH advisories "
+                   "(`npm audit`: 3 high) (FR-T7QD-007)")
+        print(f"    FAIL T-014: {rel} overrides.sharp is {sharp!r}; web-frontend.yaml requires "
+              f"{want_sharp!r} — {why}")
+        bad = True
+    vite = (d.get('devDependencies') or {}).get('vite')
+    if vite != want_vite:
+        print(f"    FAIL T-014: {rel} vite is {vite!r}; web-frontend.yaml pins {want_vite!r} "
+              f"exactly — Qwik 1.20.0 peers \">=5 <8\" (FR-T7QD-008)")
+        bad = True
+    # The sibling README's pin table, when it has one, renders into every project and
+    # is where the 7.3.5 literal sat for six weeks. Parsed as table CELLS, never as
+    # text: its prose and Provenance column quote old values on purpose ("drifted
+    # 7.3.5 -> 7.3.6"). A table is recognised by its `| Resource | Pin |` header, not
+    # by the rows under test, so deleting or renaming both rows cannot hide it; the
+    # resource cell is matched with backticks stripped; only the Pin cell is compared.
+    readme = os.path.join(os.path.dirname(path), 'README.md.tmpl')
+    if os.path.isfile(readme):
+        rrel = rel[:-len('package.json.tmpl')] + 'README.md.tmpl'
+        has_table, pins = False, {'vite': [], 'sharp': []}
+        for line in open(readme, encoding='utf-8').read().splitlines():
+            if not line.startswith('|'):
+                continue
+            cells = [c.strip() for c in line.strip().strip('|').split('|')]
+            if len(cells) < 2:
+                continue
+            if cells[0] == 'Resource' and cells[1] == 'Pin':
+                has_table = True
+                continue
+            name = cells[0].replace('`', '').strip()
+            if name == 'vite':
+                pins['vite'].append(cells[1])
+            elif name.startswith('sharp'):
+                pins['sharp'].append(cells[1])
+        if has_table or pins['vite'] or pins['sharp']:
+            for label, want in (('vite', want_vite), ('sharp', want_sharp)):
+                got = pins[label]
+                readme_rows += len(got)
+                if len(got) != 1:
+                    print(f"    FAIL T-014: {rrel} pin table has {len(got)} `{label}` rows, expected exactly 1 (FR-T7QD-008)")
+                    bad = True
+                elif (got[0].split() or [''])[0].strip('`') != want:
+                    print(f"    FAIL T-014: {rrel} `{label}` Pin cell is {got[0]!r}; web-frontend.yaml says `{want}` (FR-T7QD-008)")
+                    bad = True
+if checked == 0:
+    print("    FAIL T-014: no discovered manifest parses as a Qwik surface — the sweep measured nothing (FR-T7QD-010)")
+    bad = True
+if readme_rows == 0:
+    print("    FAIL T-014: no Qwik surface README carries a pin table row — the README check measured nothing (FR-T7QD-008)")
+    bad = True
+raise SystemExit(1 if bad else 0)
+PYSURF
+}
+
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 main() {
@@ -331,6 +465,7 @@ main() {
   run_test _test_b89_l1_011_sibling_harness_coupling
   run_test _test_b89_l1_012_changelog_entry
   run_test _test_b89_l1_013_qwik_cli_ignore_dep
+  run_test _test_b89_l1_014_qwik_sharp_override_and_vite_pin
   print_summary
 }
 
