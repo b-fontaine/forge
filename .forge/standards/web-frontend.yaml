@@ -73,7 +73,8 @@ versions:
   # (`added 1 package`) — the same property that made oauth4webapi acceptable to
   # B.9.3. Tracked by b8-9.test.sh::T-013 (t5-qwik-cli-ignore-dep).
   sharp: "0.35.4"                  # NOT a dependency — the FLOOR of an `overrides` entry.
-  # Every surface writes `"overrides": { "sharp": "^0.35.4" }`. Why: qwik_city
+  # Every surface writes `"overrides": { "sharp": "^0.35.4" }` — every template AND
+  # every committed example render under examples/ (t8-example-tree-pins). Why: qwik_city
   # 1.20.0 -> vite-imagetools 9.0.3 -> sharp 0.34.5, and sharp <0.35.4 carries two
   # HIGH advisories (npm counts 3 high: sharp and its two dependants) (libvips GHSA-f88m-g3jw-g9cj: CVE-2026-33327/33328/35590/35591;
   # libheif GHSA-rgj7-g3m4-5g8c). `npm audit fix --force` "fixes" it by DOWNGRADING
@@ -83,7 +84,8 @@ versions:
   # 4 vulnerabilities (3 high) before, 0 after (t7-qwik-deps-refresh).
   # DELETE THIS PIN, and the `overrides` entries it governs, once qwik-city ships a
   # vite-imagetools that itself depends on sharp >= 0.35.4. Tracked by
-  # b8-9.test.sh::T-014, which also holds every surface (and its README pin table) to
+  # b8-9.test.sh::T-014, which sweeps both roots and also holds every surface (and its
+  # README pin table) to
   # the exact `vite` above; b9-2.test.sh::T-037 checks web-pwa on its own too.
   # Cross-references (transport.yaml v1.3.0 owns these — NOT re-pinned here;
   # single source of truth per ADR-B8-3-002 reference-only annotation):

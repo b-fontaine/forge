@@ -18,8 +18,8 @@
 #   T-010  2.0.0 buf.gen es out-path re-pointed + bump-note; frozen 1.0.0 untouched (FR-B89-030/032/086, ADR-B89-004)
 #   T-011  coupling guard: b8-3 (17/17) + b8-3b (12/12) + b8-6 (12/12) stay GREEN   (NFR-B89-003/087)
 #   T-012  CHANGELOG.md has a b8-9-qwik-web-public entry (whole-file grep)          (FR-B89-087, NFR-B89-001)
-#   T-013  every Qwik surface declares `ignore`, agreeing with the standard's pin  (FR-T5QCI-001/002/005)
-#   T-014  every Qwik surface + README pin rows: sharp override + exact vite, per std (FR-T7QD-007/008/009/010)
+#   T-013  every Qwik surface (templates + examples/) declares `ignore`, per the std  (FR-T5QCI-001/002/005, FR-T8ETP-003)
+#   T-014  every Qwik surface (templates + examples/) + README pin rows, per the std   (FR-T7QD-007/008/009/010, FR-T8ETP-003/004)
 #
 # 14 L1 tests. Budget L1 ≤ 2 s, zero net/Docker/npm. The live verify-then-pin
 # (Qwik/Vite/Node + Connect-ES/Qwik API shapes) is a /forge:implement step, NOT
@@ -72,6 +72,32 @@ REQUIRED_FILES=(
   "src/lib/connect-client.ts.tmpl"
   "README.md.tmpl"
 )
+
+# Two discovery roots for the Qwik sweeps (T-013, T-014). The framework templates are
+# the obvious one; `examples/` is the one that was missing. A committed example tree is
+# a RENDER — its manifest is `package.json`, not `package.json.tmpl` — and it ships in
+# the npm tarball under `assets/examples/`, so the standard's pins own it too. Being
+# invisible to a `.tmpl`-only sweep is why `t5-qwik-cli-ignore-dep` and both passes of
+# `t7-qwik-deps-refresh` swept "every Qwik surface" and missed
+# examples/forge-rag-example (t8-example-tree-pins, ADR-T8ETP-001). `node_modules` is
+# excluded so a locally installed example does not turn the harness red.
+_b89_qwik_manifests() {
+  {
+    find "$FORGE_ROOT/.forge/templates" -name 'package.json.tmpl' -type f
+    find "$FORGE_ROOT/examples" -name 'package.json' -type f -not -path '*/node_modules/*'
+  } 2>/dev/null | sort
+}
+
+# Count discovered surfaces that live under examples/. Scoped anti-vacuity floor: a
+# global "did we find anything?" check cannot fail here, because the template surfaces
+# always keep it positive — which would hide the exact blind spot this closes.
+_b89_count_example_surfaces() {
+  local n=0 s
+  for s in "$@"; do
+    case "$s" in "$FORGE_ROOT"/examples/*) n=$((n + 1)) ;; esac
+  done
+  echo "$n"
+}
 
 # shellcheck source=./_helpers.sh
 source "$HARNESS_DIR/_helpers.sh"
@@ -256,7 +282,8 @@ _test_b89_l1_012_changelog_entry() {
   fi
 }
 
-# T-013 — every Qwik surface declares the dependency the Qwik CLI needs.
+# T-013 — every Qwik surface (templates AND committed example renders) declares the
+# dependency the Qwik CLI needs.
 #
 # `@builder.io/qwik@1.20.0` publishes a `dist/cli.cjs` that `require("ignore")`
 # at module-init, but does NOT declare `ignore` in its dependencies. npm never
@@ -284,18 +311,22 @@ _test_b89_l1_013_qwik_cli_ignore_dep() {
     ok=0
   fi
 
-  # Discover every template package.json that pulls in Qwik.
+  # Discover every manifest that pulls in Qwik, in both roots (templates + examples).
   local surfaces=()
   local f
   while IFS= read -r f; do
     grep -qF '"@builder.io/qwik"' "$f" && surfaces+=("$f")
-  done < <(find "$FORGE_ROOT/.forge/templates" -name 'package.json.tmpl' -type f | sort)
+  done < <(_b89_qwik_manifests)
 
   # Non-empty guard. A discovery-based assertion that discovers nothing otherwise
   # PASSES, which is how a guard silently stops guarding (the _test_f3_011 lesson).
   if [ "${#surfaces[@]}" -eq 0 ]; then
-    echo "    FAIL T-013: discovered ZERO Qwik surfaces under .forge/templates — the sweep is not covering anything (FR-T5QCI-005)" >&2
+    echo "    FAIL T-013: discovered ZERO Qwik surfaces under .forge/templates or examples/ — the sweep is not covering anything (FR-T5QCI-005)" >&2
     return 1
+  fi
+  if [ "$(_b89_count_example_surfaces "${surfaces[@]}")" -eq 0 ]; then
+    echo "    FAIL T-013: discovered ZERO Qwik surfaces under examples/ — the shipped reference trees are out of the sweep again (FR-T8ETP-004)" >&2
+    ok=0
   fi
 
   for f in "${surfaces[@]}"; do
@@ -354,15 +385,21 @@ _test_b89_l1_014_qwik_sharp_override_and_vite_pin() {
 
   # Prefix match: finds `@builder.io/qwik` AND `@builder.io/qwik-city`, the package
   # that actually carries the sharp chain — a qwik-city-only manifest is a surface too.
+  # Both roots: templates and the committed example renders (ADR-T8ETP-001).
   local surfaces=()
   local f
   while IFS= read -r f; do
     grep -qF '"@builder.io/qwik' "$f" && surfaces+=("$f")
-  done < <(find "$FORGE_ROOT/.forge/templates" -name 'package.json.tmpl' -type f | sort)
+  done < <(_b89_qwik_manifests)
   if [ "${#surfaces[@]}" -eq 0 ]; then
-    echo "    FAIL T-014: discovered ZERO Qwik surfaces under .forge/templates (FR-T7QD-010)" >&2
+    echo "    FAIL T-014: discovered ZERO Qwik surfaces under .forge/templates or examples/ (FR-T7QD-010)" >&2
     return 1
   fi
+  # NOTE: T-014's examples/ floor is NOT here. Discovery is a text grep, and the loop
+  # below skips any discovered manifest that turns out not to install Qwik — so a floor
+  # counting DISCOVERED files can be satisfied by a file that is never pin-checked. The
+  # example's own `_audit` prose contains the needle verbatim, which makes that reachable
+  # (review round 1, 2026-09-17). The floor therefore counts CHECKED surfaces, in python.
 
   FORGE_ROOT="$FORGE_ROOT" PIN_SHARP="$pin_sharp" PIN_VITE="$pin_vite" \
     python3 - "${surfaces[@]}" <<'PYSURF' >&2
@@ -371,7 +408,7 @@ root = os.environ['FORGE_ROOT'].rstrip('/') + '/'
 want_sharp = '^' + os.environ['PIN_SHARP']
 want_vite = '=' + os.environ['PIN_VITE']
 QWIK = ('@builder.io/qwik', '@builder.io/qwik-city')
-bad, checked, readme_rows = False, 0, 0
+bad, checked, checked_examples, readme_rows = False, 0, 0, 0
 for path in sys.argv[1:]:
     rel = path[len(root):] if path.startswith(root) else path
     try:
@@ -385,9 +422,24 @@ for path in sys.argv[1:]:
     # installs (and audits) those just the same.
     declared = {**(d.get('devDependencies') or {}), **(d.get('dependencies') or {})}
     if not any(k in declared for k in QWIK):
-        print(f"    NOTE T-014: {rel} mentions @builder.io/qwik but declares neither package in dependencies/devDependencies — not checked")
+        # Under examples/ this is FATAL, not a NOTE. A shipped render that mentions Qwik
+        # without declaring it is either drifted or leftover prose, and staying silent
+        # re-opens the hole by another door: an npm-workspaces hoist (pins moved to an
+        # outer manifest) would satisfy the examples floor with the outer file while this
+        # one — the surface npm actually installs from — went unchecked (review round 2).
+        # ADR-T8ETP-001's stated consequence is that such a case fails and gets argued
+        # about rather than disappearing.
+        if rel.startswith('examples/'):
+            print(f"    FAIL T-014: {rel} mentions @builder.io/qwik but declares neither package in "
+                  f"dependencies/devDependencies — a shipped render must declare what it installs, "
+                  f"or it silently leaves the pin sweep (FR-T8ETP-004)")
+            bad = True
+        else:
+            print(f"    NOTE T-014: {rel} mentions @builder.io/qwik but declares neither package in dependencies/devDependencies — not checked")
         continue
     checked += 1
+    if rel.startswith('examples/'):
+        checked_examples += 1
     sharp = (d.get('overrides') or {}).get('sharp')
     if sharp != want_sharp:
         m = re.match(r'^\^?(\d+)\.(\d+)\.(\d+)$', str(sharp or ''))
@@ -410,9 +462,21 @@ for path in sys.argv[1:]:
     # 7.3.5 -> 7.3.6"). A table is recognised by its `| Resource | Pin |` header, not
     # by the rows under test, so deleting or renaming both rows cannot hide it; the
     # resource cell is matched with backticks stripped; only the Pin cell is compared.
-    readme = os.path.join(os.path.dirname(path), 'README.md.tmpl')
+    # A template's sibling is README.md.tmpl; a rendered example's is README.md. Derive
+    # the suffix from the discovered file — hardcoding `.tmpl` makes the README half skip
+    # every example silently, which passes (t8-example-tree-pins).
+    readme_name = 'README.md.tmpl' if path.endswith('.tmpl') else 'README.md'
+    readme = os.path.join(os.path.dirname(path), readme_name)
+    # A checked surface under examples/ must have a README carrying a pin table. The
+    # global readme_rows floor below cannot catch its loss: the three template siblings
+    # keep that count positive, so an example README could lose its whole table — or be
+    # renamed away — and the README half would report green (review round 2).
+    if rel.startswith('examples/') and not os.path.isfile(readme):
+        print(f"    FAIL T-014: {rel} has no sibling {readme_name} — a shipped render's pin table "
+              f"cannot be checked (FR-T8ETP-002/004)")
+        bad = True
     if os.path.isfile(readme):
-        rrel = rel[:-len('package.json.tmpl')] + 'README.md.tmpl'
+        rrel = rel[:-len(os.path.basename(path))] + readme_name
         has_table, pins = False, {'vite': [], 'sharp': []}
         for line in open(readme, encoding='utf-8').read().splitlines():
             if not line.startswith('|'):
@@ -428,6 +492,11 @@ for path in sys.argv[1:]:
                 pins['vite'].append(cells[1])
             elif name.startswith('sharp'):
                 pins['sharp'].append(cells[1])
+        if rel.startswith('examples/') and not (has_table or pins['vite'] or pins['sharp']):
+            print(f"    FAIL T-014: {rrel} exposes no pin table — a shipped render mirrors a "
+                  f"template that has one, so losing it removes the example from the README "
+                  f"half of the sweep (FR-T8ETP-002/004)")
+            bad = True
         if has_table or pins['vite'] or pins['sharp']:
             for label, want in (('vite', want_vite), ('sharp', want_sharp)):
                 got = pins[label]
@@ -440,6 +509,13 @@ for path in sys.argv[1:]:
                     bad = True
 if checked == 0:
     print("    FAIL T-014: no discovered manifest parses as a Qwik surface — the sweep measured nothing (FR-T7QD-010)")
+    bad = True
+# Scoped floor, on CHECKED surfaces. The template surfaces keep `checked` positive
+# forever, so only this can fail when the shipped example renders leave the sweep —
+# which is the blind spot ADR-T8ETP-001 exists to close (FR-T8ETP-004).
+if checked_examples == 0:
+    print("    FAIL T-014: no surface under examples/ was pin-checked — the shipped reference "
+          "renders are out of the sweep again (FR-T8ETP-004)")
     bad = True
 if readme_rows == 0:
     print("    FAIL T-014: no Qwik surface README carries a pin table row — the README check measured nothing (FR-T7QD-008)")

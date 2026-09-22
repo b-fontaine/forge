@@ -4,11 +4,27 @@
     "Structural precedent: full-stack-monorepo/2.0.0/frontend/web-public/package.json.tmpl",
     "Standard: .forge/standards/web-frontend.yaml",
     "NEVER PUT SECRETS HERE — env values are supplied at deploy time, not committed.",
-    "vite is pinned EXACTLY to 7.3.5: vite 8.x is the npm latest but is EXCLUDED by",
+    "vite is pinned EXACTLY to 7.3.6: vite 8.x is the npm latest but is EXCLUDED by",
     "@builder.io/qwik peerDependencies '>=5 <8' (see README PITFALL).",
     "Connect-ES runtime pins (^2.0.0) are owned by transport.yaml (single source of",
     "truth). @bufbuild/protobuf is the protobuf-es v2 runtime the generated rag_pb",
-    "descriptor depends on (Connect-ES v2 retired the separate *_connect file)."
+    "descriptor depends on (Connect-ES v2 retired the separate *_connect file).",
+    "WORKAROUND (t5-qwik-cli-ignore-dep, 2026-09-09): `ignore` is a devDependency",
+    "we do not import. @builder.io/qwik 1.20.0 publishes dist/cli.cjs which",
+    "require(\"ignore\") at module-init while declaring only csstype/launch-editor/",
+    "rollup, so WITHOUT this entry every qwik subcommand dies MODULE_NOT_FOUND —",
+    "`qwik --help` included, not just `qwik build`. 1.20.0 is the npm latest, so",
+    "there is no fixed release to bump to. Pinned by web-frontend.yaml v1.2.0.",
+    "DELETE this entry once upstream declares `ignore` itself.",
+    "",
+    "OVERRIDES: sharp (t7-qwik-deps-refresh, reopened 2026-09-14). @builder.io/",
+    "qwik-city 1.20.0 -> vite-imagetools 9.0.3 -> sharp 0.34.5, inside two HIGH",
+    "advisories: libvips GHSA-f88m-g3jw-g9cj (CVE-2026-33327/33328/35590/35591) and",
+    "libheif GHSA-rgj7-g3m4-5g8c. `npm audit fix --force` would DOWNGRADE qwik-city",
+    "to 1.16.1, below the pinned line, so the override lifts the transitive floor",
+    "instead. The floor is owned by web-frontend.yaml v1.3.0 (versions.sharp) and",
+    "held on every Qwik surface by b8-9 T-014. Drop it once qwik-city ships a",
+    "vite-imagetools that depends on sharp >=0.35.4 itself."
   ],
   "name": "forge-rag-example-web-public",
   "description": "Qwik City public-facing RAG query surface for forge-rag-example (ai-native-rag candidate; web-frontend.yaml).",
@@ -33,9 +49,13 @@
     "@connectrpc/connect-web": "^2.0.0"
   },
   "devDependencies": {
+    "ignore": "7.0.9",
     "@types/node": "^22.0.0",
     "typescript": "^5.4.0",
-    "vite": "=7.3.5",
+    "vite": "=7.3.6",
     "vite-tsconfig-paths": "^4.2.1"
+  },
+  "overrides": {
+    "sharp": "^0.35.4"
   }
 }

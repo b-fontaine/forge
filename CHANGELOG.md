@@ -102,9 +102,9 @@ minor bump and will be called out under a `### BREAKING` subsection.
   | `full-stack-monorepo` 2.0.0 `frontend/web-public/` | the flagship migration | not rendered — the 0.5.1 migration copied raw `.tmpl` files (fixed by `b8-10b-migrate-render`) |
   | `mobile-pwa-first` `web-pwa/` | `forge init` (since B.9.11) | refused `candidate`, not renderable |
 
-  Still affected and **not** fixed: the shipped reference tree
-  `examples/forge-rag-example/frontend/web-public/` (out of scope by maintainer
-  arbitration, `t7-qwik-deps-refresh` Q-004) — the manual step below applies to it too.
+  The shipped reference tree `examples/forge-rag-example/frontend/web-public/` carried
+  the same chain and was fixed straight after, by `t8-example-tree-pins` (below) — the
+  guards had never been able to see it.
 
   The first pass fixed `web-pwa` only; a pre-release audit reopened the brick for the
   other two before review. `npm audit fix --force` would have installed **qwik-city
@@ -127,6 +127,35 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
   An `ai-native-rag` project rendered from 0.5.1 also lacks the `ignore` devDependency
   its `qwik` CLI needs — see the `t5-qwik-cli-ignore-dep` entry under *Fixed*.
+
+- **The shipped reference tree carried both Qwik defects, because no guard could see it**
+  — `t8-example-tree-pins`, closing `t7-qwik-deps-refresh` Q-004.
+  `examples/forge-rag-example/frontend/web-public/` ships inside the npm tarball under
+  `assets/examples/`, and it still resolved `sharp@0.34.5` and still lacked the `ignore`
+  devDependency its Qwik CLI needs. Both guards that own those pins discovered their
+  surfaces with `find .forge/templates -name 'package.json.tmpl'`; a rendered example is
+  under `examples/` and is named `package.json`, so it was invisible twice over — which
+  is how `t5-qwik-cli-ignore-dep` and both passes of `t7-qwik-deps-refresh` swept "every
+  Qwik surface" without seeing it.
+
+  Fixed by re-rendering, not patching: substituting the template produces a tree that
+  differs from the committed example in exactly `package.json`, `README.md` and
+  `vite.config.ts`, so the example stays the verbatim render `examples/README.md` says it
+  is. Measured after: `npm audit` **found 0 vulnerabilities**, `sharp@0.35.4`,
+  `vite@7.3.6`, `ignore@7.0.9`. `examples/forge-eda-example` was already in parity: 48
+  rendered files, 47 byte-identical, only its hand-written top-of-tree `README.md`
+  differing — the same deliberate carve-out the rag tree has.
+
+  `b8-9::T-013` and `::T-014` now sweep **two roots** — `.forge/templates/**/
+  package.json.tmpl` and `examples/**/package.json` (excluding `node_modules`) — with a
+  floor scoped to `examples/` and counting surfaces actually **checked**, because a global
+  "found nothing" check can never fail while the template surfaces keep it positive.
+  **10 mutation probes: 9 RED**, plus a Qwik manifest planted under
+  `examples/**/node_modules/` correctly staying GREEN. No `forge-ci.yml` line spent.
+
+  Still true of that example, and not this brick's: its `connect-client.ts` imports a
+  path buf does not generate, so it does not typecheck — it is byte-identical to the
+  template, and both are fixed together in the codegen brick (Q-005/Q-006).
 
   The same mechanism means the `t7-flutter-deps-refresh` entry below overstates its
   reach: `pubspec.yaml` and `web-pwa/package.json` were added to a per-archetype

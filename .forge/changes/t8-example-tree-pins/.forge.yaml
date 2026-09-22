@@ -1,0 +1,16 @@
+name: t8-example-tree-pins
+status: implemented
+created: 2026-09-16
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - C.1   # examples/ reference trees (FR-EX-*, .forge/specs/example-reference.md)
+  - B.8.9 # web-frontend.yaml owns the Qwik pins; b8-9::T-013/T-014 are its guards
+depends_on:
+  - t7-qwik-deps-refresh  # resolves its Q-004; T-013/T-014 are the guards being widened
+timeline:
+  proposed: 2026-09-16
+  specified: 2026-09-16
+  designed: 2026-09-16
+  planned: 2026-09-16
+  implemented: 2026-09-16

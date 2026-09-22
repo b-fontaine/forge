@@ -2354,7 +2354,8 @@ que le widget Flutter racine de §0.15 : trouvé parce que quelqu'un a construit
 job CI `harness-rust`, présenté en §0.12 et dans la roadmap comme la preuve verte de la chaîne
 buf → codegen → tsc, **ne la prouve pas** : `b7-6` T-C02 classe l'échec `go_package` comme
 hors-ligne et passe en SKIP, T-C04 est toujours SKIP (run `34815880019`).
-L'exemple `forge-rag-example` n'a ni l'override ni `ignore` (Q-004).
+L'exemple `forge-rag-example` n'avait ni l'override ni `ignore` (Q-004) — **corrigé le
+2026-09-16 par `t8-example-tree-pins`, voir §0.17**.
 
 **Ce que l'audit a trouvé d'autre, et qui n'est pas traité ici** : l'état de release décrit
 par la roadmap est périmé (0.5.0 taguée mais jamais sur npm, 0.5.1 publiée, 24 commits
@@ -2362,6 +2363,45 @@ depuis) ; 17 changes sont `implemented` sans verdict de revue, or `GOVERNANCE.md
 interdit toute coupe tant qu'il en reste un ; et `docs/ARCHETYPES.md` dit encore que
 `forge init --archetype mobile-pwa-first` sort en exit 3. Chemin vers la 0.6.0 : revue et
 archivage par lots, cascade de promotion B.9.11, scellement du CHANGELOG, coupe.
+
+---
+
+## 0.17 Status update — 2026-09-16 (T8 — `t8-example-tree-pins` : l'angle mort des gardes)
+
+Q-004 de §0.16 est fermée, et sa cause est plus intéressante que son symptôme.
+
+`examples/forge-rag-example/frontend/web-public/` livrait encore `sharp@0.34.5` et n'avait
+pas la dépendance `ignore` dont son CLI Qwik a besoin — dans le tarball npm, sous
+`assets/examples/`. Non par oubli : **les deux gardes qui possèdent ces pins cherchaient
+leurs surfaces avec `find .forge/templates -name 'package.json.tmpl'`**. Un exemple est un
+*rendu* : il vit sous `examples/` et s'appelle `package.json`. Il était donc invisible deux
+fois, et c'est ainsi que `t5-qwik-cli-ignore-dep` puis les deux passes de
+`t7-qwik-deps-refresh` ont balayé « toutes les surfaces Qwik » sans le voir.
+
+**Corrigé par re-rendu, pas par rustine.** Substituer le template produit un arbre qui
+diffère de l'exemple committé sur exactement trois fichiers (`package.json`, `README.md`,
+`vite.config.ts`), aucun manquant ni en trop — donc « re-rendre le sous-arbre » et
+« remplacer ces trois fichiers » sont le même geste, et l'exemple reste le rendu verbatim
+que `examples/README.md` annonce. Mesuré après : `npm audit` **0 vulnérabilité**.
+`forge-eda-example` était déjà conforme (48 fichiers rendus, 47 octet-identiques ; seul son
+`README.md` de tête, écrit à la main, diffère — même réserve assumée que l'arbre rag) ;
+`forge-rag-example` est l'exception, pas un problème systémique des exemples.
+
+**La garde balaie désormais deux racines** (ADR-T8ETP-001) : `.forge/templates/**/
+package.json.tmpl` ∪ `examples/**/package.json` (hors `node_modules`), avec un plancher
+**scopé à `examples/`** — un plancher global « on n'a rien trouvé » ne peut jamais échouer
+tant que les templates alimentent le compteur, et aurait donc caché exactement cet angle
+mort — et il compte les surfaces réellement **vérifiées**, pas les fichiers découverts
+(deux tours de revue indépendante ont fallu pour que ce soit vrai, voir P-8/P-9). Le
+sibling README est dérivé du chemin découvert (`.tmpl` seulement là où la source en a un),
+autre piège de vacuité rencontré au prototype. **10 sondes de mutation : 9 RED**, plus un
+manifeste Qwik planté sous `examples/**/node_modules/` qui reste vert à dessein. **Zéro
+ligne `forge-ci.yml`.**
+
+**Arbitrage mainteneur 2026-09-16** : les exemples suivent les correctifs de pins du
+framework. Ce qui reste ouvert sur cet arbre appartient à la brique codegen : son
+`connect-client.ts` importe un chemin que buf n'écrit pas (Q-006) et il est
+octet-identique au template — les deux se corrigent ensemble.
 
 ---
 

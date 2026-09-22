@@ -54,6 +54,23 @@ it too: its `frontend/web-public/package.json` resolves the same vulnerable shar
 a dead qwik CLI. It ships inside the npm tarball. Fixing it also triggers the
 `example` CI job. Needs a decision on whether examples follow framework pin fixes.
 
+- **Status**: answered
+
+### Resolution
+
+- **Resolved on**: 2026-09-16
+- **Resolved by**: @bfontaine
+- **Decision**: examples DO follow framework pin fixes.
+- **Rationale**: the tree ships inside the npm tarball under `assets/examples/`, so an
+  adopter copying the reference got the defects the templates no longer had. Fixing the
+  files alone would have left the cause standing — both guards discovered surfaces with
+  `find .forge/templates -name 'package.json.tmpl'`, and a rendered example is neither
+  under that root nor named that way, which is why two sweeps missed it. Widening the
+  discovery root was chosen over enumerating the examples so a future example inherits the
+  guard with no harness edit (ADR-T8ETP-001).
+- **Resolved in**: `.forge/changes/t8-example-tree-pins/` — `specs.md § FR-T8ETP-001/003/004`,
+  `ADR-T8ETP-001`, and `.forge/scripts/tests/b8-9.test.sh::T-013`/`::T-014`.
+
 ## Q-005 — `buf generate` fails on a fresh `ai-native-rag` render, and the wrapper blames the network
 
 Found while proving P-10, reproduced on two renders: `rag.proto` has no `go_package`,
