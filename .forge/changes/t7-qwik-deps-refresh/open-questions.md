@@ -88,6 +88,23 @@ while the same job's cargo leg fetched crates. T-C04 (Qwik tsc) skips unconditio
 roadmap's B.7 row and plan §0.12 describe that job as proving the buf → codegen → tsc chain;
 it proves neither.
 
+- **Status**: answered
+
+### Resolution
+
+- **Resolved on**: 2026-09-22
+- **Resolved by**: @bfontaine
+- **Decision**: fixed, and wider than recorded — all three proto-bearing archetypes
+  failed, through two independent defects.
+- **Rationale**: the `go_package` error was one defect; clearing it revealed a second, the
+  tonic plugin reading prost's isolated output. Both fixed at the template
+  (`managed.override` `go_package_prefix` from the scaffold placeholders;
+  `no_include=true`). The CI blindness was fixed with them: T-C02 now decides a plugin
+  failure before any keyword sweep, and T-C04 was given a real body, so the gate the
+  roadmap cites now gates.
+- **Resolved in**: `.forge/changes/t8-codegen-render-builds/` — `specs.md §
+  FR-T8CRB-001/002/003/007/008`, and `b7-6.test.sh::_b76_buf_failure_is_transport`.
+
 ## Q-006 — `connect-client.ts` imports a path buf does not generate
 
 The template imports `./generated/connect/rag_pb`; the es plugin writes
@@ -96,6 +113,23 @@ around, `tsc --noEmit` fails with TS2307 and `vite build` cannot resolve the imp
 rendered `ai-native-rag` web-public does not typecheck or build as scaffolded. Same
 class as the Flutter root-widget defect — found only because someone built the render.
 Not this brick's.
+
+- **Status**: answered
+
+### Resolution
+
+- **Resolved on**: 2026-09-22
+- **Resolved by**: @bfontaine
+- **Decision**: move the import to the path buf writes; the flagship is realigned on the
+  service it actually ships.
+- **Rationale**: `protoc-gen-es` documents no flatten option, and the only lever that
+  flattens — narrowing the buf module root — silently drops every other proto from lint
+  and codegen. A `tsconfig` paths shim was measured and does not resolve a relative
+  specifier. The flagship needed more than a path: it imported `GreeterService` while its
+  proto declares `example.v1.ExampleService`. Proven on real renders: `tsc --noEmit` and
+  `vite build` rc=0 on both surfaces, no shim.
+- **Resolved in**: `.forge/changes/t8-codegen-render-builds/` — `specs.md § FR-T8CRB-004`,
+  `ADR-T8CRB-001`, and `b7-6.test.sh::T-B05` (now derived, not pinned).
 
 ## Q-007 — `forge upgrade` never reads a project's owned-paths file
 

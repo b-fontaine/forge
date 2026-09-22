@@ -128,6 +128,55 @@ minor bump and will be called out under a `### BREAKING` subsection.
   An `ai-native-rag` project rendered from 0.5.1 also lacks the `ignore` devDependency
   its `qwik` CLI needs — see the `t5-qwik-cli-ignore-dep` entry under *Fixed*.
 
+- **`task proto` failed on every scaffolded project, and the CI gate that should have
+  caught it reported success** — `t8-codegen-render-builds`, closing
+  `t7-qwik-deps-refresh` Q-005 and Q-006.
+
+  `buf generate` exited 1 on a fresh render of **all three** archetypes that ship protos
+  — `ai-native-rag`, `event-driven-eu` and `full-stack-monorepo` 2.0.0 — not just the one
+  Q-005 named. Two independent defects, the second hidden behind the first:
+
+  1. `buf.gen.yaml` runs `buf.build/connectrpc/go` under `managed: enabled` while no
+     `.proto` declares `option go_package` and no prefix is configured:
+     *"unable to determine Go import path"*. Fixed with the documented
+     `managed.override` `file_option: go_package_prefix`, valued from the scaffold
+     placeholders (`<reverse-domain>/<project-name>/gen/go`) so each project owns its
+     generated Go path.
+  2. With that cleared, `neoeinstein-tonic` fails: it reads the prost plugin's output,
+     which buf isolates — *"read `<pkg>.rs`: file does not exist"*, even though prost
+     writes exactly that file. Fixed with `opt: no_include=true`.
+
+  **The TypeScript client imported a path buf does not write.** `protoc-gen-es` has no
+  flatten option: it writes `<proto path>_pb.ts` under the es `out:` dir, so the
+  descriptor is at `generated/connect/v1/rag/rag_pb.ts`, not `generated/connect/rag_pb`.
+  The flagship was wrong twice over — it imported `GreeterService` while the only proto
+  it ships declares `example.v1.ExampleService` with `rpc Ping`, so a path-only edit
+  would still not have compiled. Its client, its Qwik consumer and its docs are realigned
+  on the service it actually has.
+
+  Measured on real renders: `buf generate` rc=0 on all three; on the two web surfaces
+  `npm install`, `tsc --noEmit` and `vite build` all rc=0 **with no shim** — neither
+  surface typechecked before.
+
+  **Three guards that could not fail, rewritten.** `b7-6::T-B05` grepped for the very
+  literal it was meant to validate; it now *derives* the expected specifier from the
+  proto's location (probe: move the proto `v1`→`v2` and the expectation follows).
+  `T-C02` called any buf failure matching `network|connect|…|buf.build|…` an outage — and
+  every plugin reference contains `buf.build`, while `connectrpc` contains `connect`, so
+  a deterministic defect SKIP-passed on every PR (run `34815880019`). It now decides a
+  plugin failure before any keyword sweep, and still skips a genuine outage or BSR
+  rate-limit. `T-C04` returned 0 down every path, including inside the job its own
+  message named; it now renders, generates, installs and typechecks for real.
+  No `forge-ci.yml` line spent.
+
+  **All four manifests are fixed, including the one first left out.** The brick initially
+  excluded `full-stack-monorepo`'s 1.0.0 manifest as "frozen". Review showed the rationale
+  was false — `forge upgrade` recovers its merge BASE from the committed snapshot tarball,
+  not from the template tree — and, decisively, that `scaffold-plan-2.0.0.yaml` inherits
+  that 1.0.0 manifest, so a fresh `forge init` of the **stable** flagship renders it. The
+  exclusion would have left this entry's headline untrue on the archetype's default path
+  (ADR-T8CRB-002).
+
 - **The shipped reference tree carried both Qwik defects, because no guard could see it**
   — `t8-example-tree-pins`, closing `t7-qwik-deps-refresh` Q-004.
   `examples/forge-rag-example/frontend/web-public/` ships inside the npm tarball under
@@ -775,14 +824,6 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
 ### Known issues
 
-- **A freshly rendered `ai-native-rag` `frontend/web-public/` does not typecheck or
-  build.** `task proto` fails: `buf.gen.yaml` runs `buf.build/connectrpc/go` under managed
-  mode and `rag.proto` has no `go_package`, so buf exits 1 and writes nothing (the
-  wrapper reports it as a network problem). And `connect-client.ts` imports
-  `./generated/connect/rag_pb` where buf writes `v1/rag/rag_pb.ts`. The `harness-rust`
-  CI gate does not catch either: `b7-6` T-C02 matches the go_package error with its
-  offline pattern and skips, and T-C04 always skips. Found while proving
-  `t7-qwik-deps-refresh`; recorded there as Q-005/Q-006, not fixed.
 - **`qwik build` additionally fails under npm ≥ 12**, independently of the fix
   above: the qwik CLI appends ` --pretty` to `npm run build.types`, so the flag
   reaches npm rather than `tsc`. npm 9/10/11 accept unknown flags; npm 12 rejects

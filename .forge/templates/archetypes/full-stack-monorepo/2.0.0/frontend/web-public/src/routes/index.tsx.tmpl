@@ -2,13 +2,13 @@
 // Standard: .forge/standards/web-frontend.yaml
 // Qwik City 1.20.0 canonical landing route (verify-then-pin LIVE 2026-06-03,
 // evidence.md P-21). Minimal component$ + DocumentHead. Demonstrates wiring the
-// Connect-ES client (one unary Greeter.SayHello call) behind a click handler.
+// Connect-ES client (one unary ExampleService.Ping call) behind a click handler.
 import { component$, useSignal } from "@builder.io/qwik";
 import type { DocumentHead } from "@builder.io/qwik-city";
-import { sayHello } from "../lib/connect-client";
+import { ping } from "../lib/connect-client";
 
 export default component$(() => {
-  const greeting = useSignal<string>("");
+  const reply = useSignal<string>("");
 
   return (
     <main>
@@ -21,12 +21,12 @@ export default component$(() => {
         type="button"
         onClick$={async () => {
           // Client-side resumable handler — fires a unary Connect call.
-          greeting.value = await sayHello("<project-name>");
+          reply.value = await ping("<project-name>");
         }}
       >
-        Call Greeter.SayHello
+        Call ExampleService.Ping
       </button>
-      {greeting.value !== "" && <p>{greeting.value}</p>}
+      {reply.value !== "" && <p>{reply.value}</p>}
     </main>
   );
 });

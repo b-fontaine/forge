@@ -1,6 +1,6 @@
 # <!-- Audit: B.7.2 (b7-2-scaffolder, Phase 1) — ai-native-rag buf module config -->
 #
-# Buf module configuration for <project-name>'s proto contracts.
+# Buf module configuration for forge-rag-example's proto contracts.
 # Conforms to .forge/standards/global/proto-contracts.md.
 # Validated on every PR by `buf lint` and `buf breaking`
 # (see Taskfile.yml `task proto:check`).

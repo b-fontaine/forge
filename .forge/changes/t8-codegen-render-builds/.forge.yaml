@@ -1,0 +1,18 @@
+name: t8-codegen-render-builds
+status: implemented
+created: 2026-09-22
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - B.7.2   # ai-native-rag scaffolder — the surface that does not typecheck
+  - B.8.9   # flagship 2.0.0 Qwik web-public — same defect, plus a wrong symbol
+  - B.6.2   # event-driven-eu — same buf failure, no TS consumer
+depends_on:
+  - t7-qwik-deps-refresh   # resolves its Q-005 and Q-006
+  - t8-example-tree-pins   # the example copies follow the templates (ADR-T8ETP-001)
+timeline:
+  proposed: 2026-09-22
+  specified: 2026-09-22
+  designed: 2026-09-22
+  planned: 2026-09-22
+  implemented: 2026-09-22

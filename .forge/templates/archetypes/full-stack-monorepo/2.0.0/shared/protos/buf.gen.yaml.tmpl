@@ -34,6 +34,15 @@ version: v2
 
 managed:
   enabled: true
+  # REQUIRED, not decoration. The connectrpc/go plugin below needs a Go import path
+  # for every file, and no .proto here declares `option go_package` — without this
+  # override `buf generate` (so `task proto`) exits 1 on a freshly scaffolded project
+  # with "unable to determine Go import path" (t8-codegen-render-builds, FR-T8CRB-002).
+  # The value is built from the scaffold placeholders so each project owns its own
+  # generated Go path instead of sharing a literal.
+  override:
+    - file_option: go_package_prefix
+      value: <reverse-domain>/<project-name>/gen/go
 
 plugins:
   # ── Rust (tonic — server + client) — Article VII.2 gRPC SHALL retained ──
@@ -42,6 +51,11 @@ plugins:
     opt:
       - no_server=false
       - no_client=false
+      # buf runs every plugin in its own isolated output, so tonic's generated
+      # `include!` would reference the prost file it cannot see: without this the
+      # plugin fails with "read <pkg>.rs: file does not exist", even though prost
+      # writes exactly that file (t8-codegen-render-builds, FR-T8CRB-003).
+      - no_include=true
 
   # ── Rust (prost — messages) ──
   - remote: buf.build/community/neoeinstein-prost:v0.4.0

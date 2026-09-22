@@ -65,6 +65,9 @@ STD_DIR="$FORGE_ROOT/.forge/standards/global"
 
 PROTO="$TPL_DIR/shared/protos/v1/rag/rag.proto.tmpl"
 BUF_GEN="$TPL_DIR/shared/protos/buf.gen.yaml.tmpl"
+# The buf module root — T-B05 derives the TS descriptor path from a proto's location
+# inside it, the way protoc-gen-es actually names its output.
+PROTO_DIR="$TPL_DIR/shared/protos"
 MAIN_RS="$TPL_DIR/backend/bin-server/src/main.rs.tmpl"
 CARGO_TOML="$TPL_DIR/backend/Cargo.toml.tmpl"
 CC="$TPL_DIR/frontend/web-public/src/lib/connect-client.ts.tmpl"
@@ -168,9 +171,28 @@ _test_b76_l1_b05_codegen_ts_qwik_contract() {
   grep -qE 'bufbuild/es' "$BUF_GEN" || { echo "    FAIL T-B05: bufbuild/es (TS Connect) plugin absent from buf.gen.yaml (FR-B7-6-002)" >&2; ok=0; }
   grep -qE 'frontend/web-public/src/lib/generated/connect' "$BUF_GEN" \
     || { echo "    FAIL T-B05: TS output dir (frontend/.../generated/connect) absent from buf.gen.yaml (FR-B7-6-002)" >&2; ok=0; }
+  # DERIVED, not pinned. This assertion used to grep for the literal
+  # `./generated/connect/rag_pb` — the very string that was wrong, so it passed for
+  # three months while a rendered surface could not typecheck. protoc-gen-es writes
+  # `<proto path within the buf module>_pb.ts` under the es `out:` and offers no
+  # flattening option, so the only correct specifier is computed from the proto's own
+  # location (ADR-T8CRB-001, FR-T8CRB-006).
   if [ -f "$CC" ]; then
-    grep -qE 'from "\./generated/connect/rag_pb"' "$CC" \
-      || { echo "    FAIL T-B05: connect-client.ts does not import ./generated/connect/rag_pb (codegen target drift) (FR-B7-6-005)" >&2; ok=0; }
+    local proto want
+    proto=$(find "$PROTO_DIR" -name '*.proto.tmpl' -o -name '*.proto' 2>/dev/null | sort | head -1)
+    if [ -z "$proto" ]; then
+      echo "    FAIL T-B05: no .proto found under $PROTO_DIR — nothing to derive the descriptor path from (FR-T8CRB-006)" >&2
+      ok=0
+    else
+      # path within the buf module, minus the extensions, plus protoc-gen-es's suffix
+      want="./generated/connect/${proto#"$PROTO_DIR"/}"
+      want="${want%.tmpl}"; want="${want%.proto}_pb"
+      if ! grep -qF "from \"$want\"" "$CC"; then
+        echo "    FAIL T-B05: connect-client.ts does not import \"$want\" — protoc-gen-es writes the descriptor at the proto's own path under the es out: dir, and there is no flatten option (FR-B7-6-005, FR-T8CRB-006)" >&2
+        grep -nE 'from "\./generated' "$CC" | sed 's/^/      actual: /' >&2
+        ok=0
+      fi
+    fi
   fi
   [ "$ok" = "1" ]
 }
@@ -461,6 +483,33 @@ _test_b76_l2_c01_render_clean() {
   [ "$ok" = "1" ]
 }
 
+# Is a failed `buf generate` a transport problem (legitimately SKIP) or a plugin
+# failure (a defect, must FAIL)?
+#
+# The predecessor of this helper matched `network|connect|resolve|timeout|BSR|
+# buf\.build|offline|dial tcp` and called all of it "offline". Every buf plugin
+# reference contains `buf.build`, and `connectrpc` contains `connect`, so a
+# deterministic plugin failure was read as an outage and SKIP-passed on every PR —
+# which is how a scaffold whose `task proto` cannot run stayed green (run 34815880019,
+# t7-qwik-deps-refresh Q-005). Order matters: a plugin that RAN and failed is decided
+# before any keyword sweep, because its stderr may quote a plugin name that contains
+# transport-looking words.
+_b76_buf_failure_is_transport() {
+  local log="$1"
+  # 1. A plugin ran and exited non-zero — the go_package shape. Defect.
+  grep -qE 'exited with non-zero status' "$log" && return 1
+  # 2. A genuine transport failure, including BSR rate-limiting. Skip.
+  # Shapes measured against buf itself, not guessed: a dead HTTPS_PROXY makes buf print
+  # "the server hosted at that remote is unavailable." — which matched none of the
+  # keywords below when this list was first written, so a real outage would have been
+  # reported as a codegen defect and turned every PR red (review round 1).
+  grep -qiE 'dial tcp|i/o timeout|connection refused|no such host|resource_exhausted|too many requests|tls handshake|context deadline exceeded|network is unreachable|temporary failure in name resolution|the server hosted at that remote is unavailable|unavailable:|connection reset by peer|unexpected eof' "$log" && return 0
+  # 3. buf blaming a named plugin — the tonic shape. Defect.
+  grep -qE 'plugin "?buf\.build/[^"]*"?:' "$log" && return 1
+  # 4. Anything unrecognised fails loudly rather than disappearing into a SKIP.
+  return 1
+}
+
 # T-C02 — LIVE buf generate (task proto): render, then `buf generate` against the
 # rendered proto; assert the Rust grpc-api stubs + the TS generated/connect/rag_pb
 # descriptor are materialised (FR-B7-6-004/005). SKIP when buf / BSR network absent
@@ -474,11 +523,11 @@ _test_b76_l2_c02_buf_generate() {
   _b76_render_plan "$out" || { echo "    FAIL T-C02: render failed (FR-B7-6-004)" >&2; rm -rf "$work"; return 1; }
   local log="$work/buf.log"
   if ! ( cd "$out/shared/protos" && buf generate ) >"$log" 2>&1; then
-    if grep -qiE 'network|connect|resolve|timeout|BSR|buf\.build|offline|dial tcp' "$log"; then
-      echo "    SKIP T-C02: buf generate skipped — BSR network unavailable (offline)" >&2
+    if _b76_buf_failure_is_transport "$log"; then
+      echo "    SKIP T-C02: buf generate skipped — BSR unreachable or rate-limited (transport)" >&2
       rm -rf "$work"; return 0
     fi
-    echo "    FAIL T-C02: buf generate failed on rendered proto (FR-B7-6-004)" >&2
+    echo "    FAIL T-C02: buf generate failed on rendered proto — a PLUGIN failed, which is a defect in the shipped codegen config, not an outage (FR-B7-6-004, FR-T8CRB-007)" >&2
     tail -25 "$log" >&2; rm -rf "$work"; return 1
   fi
   local ok=1
@@ -516,17 +565,72 @@ _test_b76_l2_c03_cargo_build_test() {
   return 0
 }
 
-# T-C04 — LIVE Qwik tsc --noEmit on the rendered web-public surface. Requires the
-# buf-generated rag_pb descriptor (T-C02) + installed node_modules, so it SKIPs on
-# a host without tsc / node_modules (this dev host, the buf-less CI). RUNS in the
-# harness-rust job after buf generate (FR-B7-6-004; the b7-10 "rides b7-6" leg).
+# T-C04 — LIVE Qwik `tsc --noEmit` on the rendered web-public surface.
+#
+# This test used to return 0 down every path: four `command -v` guards, then an
+# unconditional `SKIP … (runs in the harness-rust CI job)` — inside the very job its
+# message named. It therefore asserted nothing, anywhere, ever, while the rendered
+# surface could not typecheck at all (t7-qwik-deps-refresh Q-006, FR-T8CRB-008).
+#
+# It now renders, generates, installs and typechecks for real. It SKIPs only when a
+# toolchain is genuinely missing, and says which one.
 _test_b76_l2_c04_qwik_tsc() {
-  command -v tsc >/dev/null 2>&1 || { echo "    SKIP T-C04: tsc absent (Qwik typecheck runs in the harness-rust CI job)" >&2; return 0; }
-  command -v buf >/dev/null 2>&1 || { echo "    SKIP T-C04: buf absent — rag_pb descriptor not generated, Qwik tsc rides buf (harness-rust job)" >&2; return 0; }
+  command -v node >/dev/null 2>&1 || { echo "    SKIP T-C04: node absent" >&2; return 0; }
+  command -v npm  >/dev/null 2>&1 || { echo "    SKIP T-C04: npm absent" >&2; return 0; }
+  command -v buf  >/dev/null 2>&1 || { echo "    SKIP T-C04: buf absent — the descriptor cannot be generated" >&2; return 0; }
   command -v python3 >/dev/null 2>&1 || { echo "    SKIP T-C04: python3 absent" >&2; return 0; }
+  python3 -c 'import yaml' >/dev/null 2>&1 || { echo "    SKIP T-C04: PyYAML absent" >&2; return 0; }
   [ -f "$PLAN" ] || { echo "    SKIP T-C04: plan absent" >&2; return 0; }
-  echo "    SKIP T-C04: Qwik tsc requires installed node_modules + buf-generated rag_pb (runs in the harness-rust CI job)" >&2
-  return 0
+
+  local work; work="$(mktemp -d)"; local out="$work/render"
+  _b76_render_plan "$out" || { echo "    FAIL T-C04: render failed (FR-B7-6-004)" >&2; rm -rf "$work"; return 1; }
+
+  # Only the TS descriptor is needed here, and T-C02 has already exercised the full
+  # four-plugin chain. Generating the es plugin alone halves the remote calls, which
+  # matters: the BSR rate-limits, and a rate limit turns this leg into a SKIP.
+  local tmpl; tmpl=$(BUF_GEN="$out/shared/protos/buf.gen.yaml" python3 - <<'PYTMPL'
+import json, os, yaml
+d = yaml.safe_load(open(os.environ['BUF_GEN'], encoding='utf-8'))
+es = [p for p in d.get('plugins', []) if 'bufbuild/es' in str(p.get('remote', ''))]
+print(json.dumps({"version": "v2", "managed": d.get('managed', {"enabled": True}), "plugins": es}) if es else "")
+PYTMPL
+  )
+  if [ -z "$tmpl" ]; then
+    echo "    FAIL T-C04: no bufbuild/es plugin in the rendered buf.gen.yaml — the descriptor the client imports can never be generated (FR-T8CRB-008)" >&2
+    rm -rf "$work"; return 1
+  fi
+  local log="$work/buf.log"
+  if ! ( cd "$out/shared/protos" && buf generate --template "$tmpl" ) >"$log" 2>&1; then
+    if _b76_buf_failure_is_transport "$log"; then
+      echo "    SKIP T-C04: BSR unreachable or rate-limited (transport)" >&2
+      rm -rf "$work"; return 0
+    fi
+    echo "    FAIL T-C04: buf generate failed — a plugin failed, so the descriptor the client imports was never written (FR-T8CRB-007/008)" >&2
+    tail -20 "$log" >&2; rm -rf "$work"; return 1
+  fi
+
+  local web="$out/frontend/web-public"
+  [ -f "$web/package.json" ] || { echo "    FAIL T-C04: rendered web-public has no package.json (FR-B7-6-005)" >&2; rm -rf "$work"; return 1; }
+
+  if ! ( cd "$web" && npm install --no-audit --no-fund ) >"$work/npm.log" 2>&1; then
+    # Anchored to npm's own error-code line. A bare keyword sweep re-created the very
+    # defect this brick removed from T-C02: every npm 404 body contains the string
+    # "registry" (registry.npmjs.org), so a renamed or unpublished dependency — E404,
+    # a real defect — would have been waved through as an outage (review round 1).
+    if grep -qE '^npm (error|ERR!) code (ETIMEDOUT|ENOTFOUND|EAI_AGAIN|ECONNRESET|ECONNREFUSED|ERR_SOCKET_TIMEOUT)$' "$work/npm.log"; then
+      echo "    SKIP T-C04: npm registry unreachable (transport)" >&2
+      rm -rf "$work"; return 0
+    fi
+    echo "    FAIL T-C04: npm install failed on the rendered web-public surface (FR-T8CRB-008)" >&2
+    tail -20 "$work/npm.log" >&2; rm -rf "$work"; return 1
+  fi
+
+  # The point of the whole leg: the scaffold the adopter receives must typecheck.
+  if ! ( cd "$web" && ./node_modules/.bin/tsc --noEmit ) >"$work/tsc.log" 2>&1; then
+    echo "    FAIL T-C04: \`tsc --noEmit\` failed on the rendered web-public surface — a fresh render does not typecheck (FR-T8CRB-004/008)" >&2
+    tail -20 "$work/tsc.log" >&2; rm -rf "$work"; return 1
+  fi
+  rm -rf "$work"
 }
 
 # T-D03 — committed snapshot tarball (FR-B7-6-010, Q-D = ship the deterministic

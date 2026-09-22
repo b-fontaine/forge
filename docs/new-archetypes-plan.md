@@ -2405,6 +2405,54 @@ octet-identique au template — les deux se corrigent ensemble.
 
 ---
 
+## 0.18 Status update — 2026-09-22 (T8 — `t8-codegen-render-builds` : `task proto` ne marchait nulle part)
+
+Q-005 et Q-006 de §0.16 sont fermées, et elles étaient toutes deux plus larges que leur
+énoncé.
+
+**`buf generate` — donc `task proto` — sortait en 1 sur les TROIS archétypes à protos**,
+pas seulement `ai-native-rag` : `event-driven-eu` et `full-stack-monorepo` 2.0.0 échouaient
+à l'identique. Deux défauts indépendants, le second caché par le premier :
+
+1. le plugin `connectrpc/go` tourne en mode managed alors qu'aucun `.proto` ne déclare
+   `option go_package` et qu'aucun préfixe n'est configuré. Corrigé par l'`override`
+   documenté `go_package_prefix`, valué depuis les placeholders du scaffold
+   (`<reverse-domain>/<project-name>/gen/go`) : chaque projet possède son chemin Go.
+2. une fois le premier levé, `neoeinstein-tonic` échoue à son tour — il *lit* la sortie du
+   plugin prost, que buf isole. Corrigé par `no_include=true`.
+
+**Le client TypeScript importait un chemin que buf n'écrit pas.** `protoc-gen-es` n'offre
+aucune option d'aplatissement : il écrit `<chemin du proto>_pb.ts` sous le `out:` du
+plugin. Et **le flagship se trompait deux fois** : il importait `GreeterService` alors que
+le seul proto qu'il livre déclare `example.v1.ExampleService` avec `rpc Ping` — corriger le
+chemin seul n'aurait pas compilé. Client, consommateur Qwik et docs sont réalignés sur le
+service réellement livré.
+
+**Mesuré sur de vrais rendus** : `buf generate` rc=0 partout ; sur les deux surfaces web,
+`npm install`, `tsc --noEmit` et `vite build` rc=0 **sans aucun contournement**. Aucune des
+deux ne typecheckait auparavant.
+
+**Trois gardes incapables d'échouer, réécrits.** `T-B05` cherchait le littéral qu'il était
+censé valider ; il **dérive** désormais le chemin attendu de l'emplacement du proto (sonde :
+déplacer le proto de `v1` à `v2`, l'attente suit). `T-C02` appelait « hors-ligne » tout
+échec buf contenant `buf.build` ou `connect` — soit toute référence de plugin : un défaut
+déterministe passait en SKIP à chaque PR (run `34815880019`). Il tranche maintenant le cas
+« un plugin a tourné et a échoué » avant tout balayage de mots-clés, et continue de sauter
+une vraie panne ou une limitation BSR. `T-C04` retournait 0 par tous les chemins, y compris
+dans le job que son propre message désignait ; il rend, génère, installe et typecheck.
+**Zéro ligne `forge-ci.yml`.**
+
+**Le manifeste 1.0.0 « gelé » est corrigé lui aussi — décision inversée en revue**
+(ADR-T8CRB-002). La brique l'excluait d'abord au motif que cet arbre serait la BASE de
+fusion de `forge upgrade`. C'est faux : `bin/forge-upgrade.sh:277-286` récupère la BASE
+depuis le tarball de snapshot, jamais depuis l'arbre de templates. Et surtout,
+`scaffold-plan-2.0.0.yaml:174` **hérite** de ce manifeste 1.0.0 : un `forge init` frais du
+flagship **stable** rend donc ce fichier-là. L'exclure laissait FR-T8CRB-001 non tenue sur
+le chemin par défaut de l'archétype, pendant que les registres annonçaient le contraire.
+Un raisonnement plausible et non vérifié — le mode d'échec que ce dépôt paie en boucle.
+
+---
+
 ## 1. Contexte — état post-v0.3.0
 
 ### 1.1 Acquis
