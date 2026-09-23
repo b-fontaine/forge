@@ -6,11 +6,18 @@
 
 ## Functional Requirements
 
-### FR-T8UAS-001 — an untouched archetype project upgrades cleanly
+### FR-T8UAS-001 — an untouched archetype project upgrades cleanly, where it can
 
-`forge upgrade` against a freshly rendered, unmodified archetype project MUST report zero
-conflicts and exit 0. Today it reports 49 conflicts and exits 8 on a `mobile-pwa-first`
-render.
+`forge upgrade` against a freshly rendered, unmodified project **that declares a merge
+surface** MUST report zero conflicts and exit 0. Today it reports 49 conflicts and exits 8
+on a `mobile-pwa-first` render.
+
+**Scope, stated rather than implied** (corrected in review): archetype mode needs a
+project-side `.forge/framework-owned-paths.yml`, and only `mobile-pwa-first`'s scaffold
+plan renders one — measured, 1 of the 5 plans. `ai-native-rag`, `event-driven-eu` and the
+flagship therefore keep the old behaviour and still fail their own upgrade. Giving them a
+declaration means deciding, per archetype, which files the framework owns; that is a
+design question, not a line of code, and it is Q-005.
 
 ### FR-T8UAS-002 — the project's declaration is what is merged
 
@@ -41,6 +48,27 @@ In archetype mode the framework's root owned list MUST NOT be merged. `.claude/a
 
 A project whose manifest names no archetype with a scaffold plan keeps today's behaviour
 exactly. `a7.test.sh`'s existing cells MUST stay green unchanged.
+
+### FR-T8UAS-009 — the manifest's provenance is never stamped with a hash of nothing
+
+`template_set_sha` MUST be computed over the tree that produced RIGHT. Computing it
+against the framework root while the surface is project-relative hashes no file at all and
+writes `sha256("")` over the project's real digest. When the surface hashes nothing, the
+upgrade MUST refuse rather than rewrite the field.
+
+### FR-T8UAS-010 — the archetype name is validated before it becomes a path
+
+`archetype` comes from the target's manifest and is adopter- (or attacker-) controlled. It
+MUST match `[A-Za-z0-9._-]+` and MUST NOT begin with a dot before being used as a path
+segment; anything else keeps the framework path. Unvalidated, `../../../../x` escapes the
+archetype tree and, with `--force`, writes arbitrary readable files into the adopter's
+project.
+
+### FR-T8UAS-011 — a surface that resolved to nothing is refused, and a shrunken one reported
+
+If none of the declared paths resolve in the target, the upgrade MUST refuse rather than
+report a clean run and stamp the new version. If some resolve, the difference MUST be
+reported: those paths can no longer receive framework changes.
 
 ### FR-T8UAS-007 — the rendered manifest never enters the merge
 

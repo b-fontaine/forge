@@ -73,3 +73,52 @@ looks up adopter-layout paths inside that framework-layout snapshot and resolves
 no scaffold plan, so it could not enter archetype mode even with a manifest. Either it
 gains both, or it should be documented as upgrade-incapable — it is currently a
 `legacy_alias` that adopters can still render.
+
+## Q-005: only one archetype can enter the mode this brick added
+
+- **Status**: open
+- **Raised in**: `specs.md § FR-T8UAS-001`
+- **Raised on**: 2026-09-23
+- **Raised by**: @bfontaine
+
+### Question
+
+Archetype mode requires a project-side `.forge/framework-owned-paths.yml`, and measured
+across the five scaffold plans, exactly one renders it:
+
+```
+mobile-pwa-first/scaffold-plan.yaml            2 references
+ai-native-rag/scaffold-plan.yaml               0
+event-driven-eu/scaffold-plan.yaml             0
+full-stack-monorepo/scaffold-plan.yaml         0
+full-stack-monorepo/scaffold-plan-2.0.0.yaml   0
+```
+
+So an untouched `ai-native-rag` render still returns exit 8 — the review measured 326
+preserved and 230 conflicts — which is exactly the defect this brick exists to fix,
+untouched for three archetypes out of four.
+
+Closing it is not a line of code: a declaration says which files the framework owns and
+which the adopter does, and that answer differs per archetype (`ai-native-rag` has a Rust
+backend and a Qwik surface; the flagship has three layers). Writing one by guess would
+hand adopters merges over files they consider theirs — the consent problem `b9-10` Q-001
+already flagged for `pubspec.yaml`.
+
+The honest interim position is the one now written into FR-T8UAS-001 and the CHANGELOG:
+the fix holds where a project declares a surface, and three archetypes do not yet.
+
+## Q-006: a bogus archetype name falls back to a 556-path framework merge
+
+- **Status**: open
+- **Raised in**: `evidence.md § P-11`
+- **Raised on**: 2026-09-23
+- **Raised by**: @bfontaine
+
+### Question
+
+The traversal gate refuses to treat `../../../../planted` as an archetype, which is
+right — but the run then takes the framework path and reports 556 conflicts and exit 8,
+rather than saying the manifest is malformed. That is the pre-existing behaviour for any
+project the driver does not recognise, and it is safe; it is also unhelpful. Whether a
+manifest naming an unknown or malformed archetype should abort with a clear message
+instead is a small decision, deliberately not taken inside a security fix.

@@ -249,6 +249,16 @@ import yaml,sys
 try: print((yaml.safe_load(open(sys.argv[1])) or {}).get('archetype','') or '')
 except Exception: print('')" "$manifest" 2>/dev/null)
   [ -n "$a" ] || return 0
+  # The value comes from the TARGET's manifest — adopter-controlled, and on an
+  # untrusted clone attacker-controlled. Unvalidated it becomes a path segment:
+  # `../../../../planted` escapes the archetype tree, and a plan found there may
+  # carry absolute `source:` paths the absolutizer leaves alone, so with --force
+  # arbitrary readable files are written into the adopter's project and reported as
+  # upgrades (review round 1, demonstrated end-to-end). overlay.sh already gates its
+  # own --project-name / --reverse-domain this way; the archetype name had no gate.
+  case "$a" in
+    *[!a-zA-Z0-9._-]* | .* | "") return 0 ;;
+  esac
   local d="$FORGE_REPO_ROOT/.forge/templates/archetypes/$a"
   [ -d "$d" ] || return 0
   # A template dir without a plan cannot be rendered (mobile-only is one); such a
@@ -264,11 +274,27 @@ _a7_project_owned_paths() {
   _a7_resolve_owned_paths "$1"
 }
 
+# How many paths the project's declaration NAMES, before globbing. Compared against
+# what actually resolved so a declaration that has drifted away from the tree is
+# reported instead of silently shrinking the merge surface.
+_a7_declared_path_count() {
+  python3 -c "
+import yaml,sys
+try: d = yaml.safe_load(open(sys.argv[1] + '/.forge/framework-owned-paths.yml')) or {}
+except Exception: print(0); raise SystemExit
+print(len(d.get('owned') or []))" "$1" 2>/dev/null || echo 0
+}
+
 # Render an archetype into a throwaway dir and echo it. `templates_root` is the tree
 # holding `.forge/templates/archetypes/<archetype>/` — the repo for RIGHT, an extracted
 # snapshot for BASE (ADR-T8UAS-002). Caller owns cleanup.
 _a7_render_archetype() {
   local archetype="$1" manifest="$2" templates_root="$3"
+  # Re-gated here too: this function takes the name as a parameter, so a future
+  # caller must not be able to reintroduce the traversal.
+  case "$archetype" in
+    *[!a-zA-Z0-9._-]* | .* | "") return 1 ;;
+  esac
   local arch_dir="$templates_root/.forge/templates/archetypes/$archetype"
   [ -d "$arch_dir" ] || return 1
 
@@ -396,6 +422,20 @@ import yaml; print(yaml.safe_load(open('$manifest')).get('archetype', ''))")
       # shellcheck disable=SC2064
       trap "rm -rf '$rendered_right'" EXIT
       owned_list=$(_a7_project_owned_paths "$TARGET") || return $?
+      # NFR-T8UAS-001 named an empty surface as the thing that must never happen, and
+      # the only guard was on the render-failure branch. A declaration whose paths the
+      # adopter moved or deleted resolves to fewer — or none — and the run reported
+      # success, merged nothing, and still stamped the new version (review round 1).
+      local declared resolved
+      declared=$(_a7_declared_path_count "$TARGET")
+      resolved=$(grep -c . <<<"$owned_list")
+      if [ "$resolved" -eq 0 ]; then
+        echo "forge-upgrade: the project declares $declared framework-owned path(s) and NONE resolved in the target — nothing would be merged; refusing rather than recording a clean upgrade" >&2
+        return 8
+      fi
+      if [ "$declared" -gt 0 ] && [ "$resolved" -lt "$declared" ]; then
+        echo "forge-upgrade: [$((declared - resolved)) of $declared declared path(s) did not resolve in the target — moved, renamed or deleted; they cannot receive framework changes]" >&2
+      fi
       # BASE from the snapshot's TEMPLATE tree, rendered the same way. Reading an
       # adopter-layout path straight out of a framework-layout snapshot finds nothing
       # and degrades every file to a 2-way conflict (ADR-T8UAS-002).
@@ -476,15 +516,34 @@ import yaml; print(yaml.safe_load(open('$manifest')).get('archetype', ''))")
   # Update manifest unless dry-run.
   if [ "$DRY_RUN" = "0" ]; then
     local to_sha
-    to_sha=$(python3 -c "
-import hashlib, os
+    # Hash the tree that actually produced RIGHT. This used to join against
+    # $FORGE_REPO_ROOT unconditionally; once the surface became PROJECT-relative in
+    # archetype mode none of those paths existed there, so every archetype upgrade
+    # stamped sha256("") — e3b0c442… — over the project's real template_set_sha, and
+    # the next upgrade recorded that constant as its `from`. Silent manifest damage,
+    # exactly what FR-T8UAS-007 exists to prevent (review round 1, reproduced).
+    to_sha=$(RIGHT_ROOT="$right_root" OWNED="$owned_list" python3 -c "
+import hashlib, os, sys
 h = hashlib.sha256()
-for line in '''$owned_list'''.splitlines():
-    p = os.path.join('$FORGE_REPO_ROOT', line)
+root = os.environ['RIGHT_ROOT']
+seen = 0
+for line in os.environ['OWNED'].splitlines():
+    if not line:
+        continue
+    p = os.path.join(root, line)
     if os.path.isfile(p):
         h.update(open(p, 'rb').read())
+        seen += 1
+if seen == 0:
+    # Never stamp the empty digest: an all-absent surface means the hash describes
+    # nothing, and writing it would erase the provenance the manifest carries.
+    sys.exit(3)
 print(h.hexdigest())
 ")
+    if [ -z "$to_sha" ]; then
+      echo "forge-upgrade: refusing to rewrite template_set_sha — the merge surface hashed nothing" >&2
+      return 8
+    fi
     local cli_version="dev"
     [ -f "$FORGE_REPO_ROOT/cli/VERSION" ] && cli_version=$(tr -d '\n' < "$FORGE_REPO_ROOT/cli/VERSION")
     _a7_append_upgrade_history "$manifest" \

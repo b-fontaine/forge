@@ -142,3 +142,63 @@ On commit `9a902a5` (clean tree): `npm run bundle`, then all **82** harness entr
 **82/82 PASS**. `verify.sh` RESULT: PASS. `constitution-linter.sh` 106 PASS / 0 FAIL.
 Unlike the two preceding bricks this one needed no uncommitted-tree allowance: it touches
 no archetype template, so `b7-7`, `b6-8` and the `b8-12..15` chain were green throughout.
+
+## P-11 — review round 1 (2026-09-23): four defects in code that had already shipped
+
+An independent driver lane returned **CHANGES REQUIRED**, having rendered real projects
+and run the driver against scratch targets. The commit was already pushed; these are
+fix-forwards.
+
+### (a) BLOCKING, reproduced — a real upgrade stamped `sha256("")` on the manifest
+
+`template_set_sha` was computed by joining each owned path against `$FORGE_REPO_ROOT`.
+Once the surface became project-relative, none of those paths exist there, so the digest
+hashed **no file at all**:
+
+```
+before: template_set_sha: c6e86eeb6496aa07f903f8d0552521d3ae2ea800…
+after:  template_set_sha: e3b0c44298fc1c149afbf4c8996fb92427ae41e4…   = sha256("")
+```
+
+Reproduced with a non-dry-run upgrade on a scratch copy. The next upgrade would record
+that constant as its `from`, so template-set drift becomes undetectable. This is exactly
+the silent manifest damage FR-T8UAS-007 exists to prevent — and it was invisible to me
+because every probe I had run used `--dry-run`, which skips the manifest write entirely.
+
+*Fixed*: hash the tree that produced RIGHT, and **refuse** (exit 8) rather than write a
+digest when the surface hashes nothing. After: `60d2b1ba1831…`, a real digest.
+
+### (b) SECURITY — the target's manifest chose which directory the framework rendered
+
+`archetype` comes from the target's own `scaffold-manifest.yaml` and was used unvalidated
+as a path segment. The reviewer demonstrated end-to-end that `archetype:
+../../../../planted` escapes the archetype tree, and that `--force` then wrote a file
+living outside the project into the adopter's tree, reporting it as an upgrade.
+
+*Fixed*: `[A-Za-z0-9._-]+`, no leading dot, gated in both the detector and the renderer.
+Measured after, by conflict count rather than by the summary line (which echoes the
+manifest value in either mode): `../../../../planted` → **556 conflicts, framework mode —
+archetype mode refused**; `mobile-pwa-first` → 0 conflicts, archetype mode.
+
+### (c) MAJOR — an empty or shrunken surface passed in silence
+
+NFR-T8UAS-001 named this as the thing that must never happen, and the only guard sat on
+the render-failure branch. Measured: a declaration whose paths the adopter had moved
+resolved to **0 paths**, and the run reported `0/0/0/0/0`, exit 0, and still rewrote
+`archetype_version` with an all-zero history entry.
+
+*Fixed*: refuse when nothing resolves; report the difference when some do.
+
+| probe | after |
+|---|---|
+| declaration resolves to nothing | **rc=8**, refused with a message |
+| one declared path deleted from the project | rc=0, and the loss is reported |
+| baseline | rc=0, 0 conflicts |
+
+### (d) MAJOR — the fix reaches one archetype, and the spec claimed all
+
+FR-T8UAS-001 was written unconditionally. Archetype mode needs a project-side declaration,
+and measured across the five scaffold plans **only `mobile-pwa-first` renders one**. An
+untouched `ai-native-rag` render still exits 8. Not closed here — a declaration encodes a
+per-archetype ownership decision — but the spec, CHANGELOG and plan now say so instead of
+implying otherwise. Recorded as Q-005.

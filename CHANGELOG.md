@@ -152,6 +152,24 @@ minor bump and will be called out under a `### BREAKING` subsection.
 
   Same scenario after: **0 conflicts, exit 0**, 9 declared paths compared.
 
+  **Scope, measured rather than implied:** archetype mode needs the project to declare a
+  merge surface, and only `mobile-pwa-first`'s scaffold plan renders one — 1 of the 5
+  plans. `ai-native-rag`, `event-driven-eu` and the flagship keep the old behaviour and
+  still fail their own upgrade; giving them a declaration means deciding per archetype
+  which files the framework owns (Q-005).
+
+  **Review round 1 caught four defects in this code before it could hurt anyone, one of
+  them by reproduction.** A real (non-dry-run) upgrade stamped `sha256("")` over the
+  project's `template_set_sha`, because the digest was still computed against the
+  framework root while the surface had become project-relative — silent manifest damage,
+  the thing FR-T8UAS-007 exists to prevent, and invisible to the `--dry-run` testing this
+  brick had done. The `archetype` field, which comes from the target's own manifest, was
+  used as a path segment without validation, so `../../../../x` escaped the archetype tree
+  and `--force` would write arbitrary readable files into the adopter's project. And a
+  declaration whose paths the adopter had moved resolved to fewer — or none — while the
+  run still reported success and stamped the new version. All three are fixed and probed;
+  the fourth is the scope note above.
+
   **One half is implemented but cannot run yet, and is not claimed as working.** BASE is
   meant to be rendered from the snapshot's template tree, so a file the adopter never
   touched classifies `upgraded` rather than conflicting. Today's snapshots cannot render:

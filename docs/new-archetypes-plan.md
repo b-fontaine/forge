@@ -2491,6 +2491,23 @@ trou de snapshot est consigné en question ouverte plutôt que masqué.
 « The bump now reaches existing projects » était fausse au moment où elle a été écrite.
 Elle est corrigée sur place.
 
+**Portée réelle, mesurée et non sous-entendue** : le mode archétype exige que le projet
+déclare une surface, et **un seul plan sur cinq** la rend (`mobile-pwa-first`).
+`ai-native-rag`, `event-driven-eu` et le flagship gardent l'ancien comportement et
+échouent toujours à leur propre upgrade. Leur donner une déclaration suppose de décider,
+archétype par archétype, quels fichiers appartiennent au framework — une question de
+conception, consignée en Q-005.
+
+**La revue a attrapé quatre défauts dans ce code avant qu'il ne nuise**, dont un
+reproduit : un upgrade réel estampillait `sha256("")` sur le `template_set_sha` du projet,
+le hash étant encore calculé contre la racine du framework alors que la surface était
+devenue relative au projet — l'altération silencieuse que FR-T8UAS-007 est censée
+empêcher, et invisible aux tests `--dry-run` que cette brique avait faits. Le champ
+`archetype`, qui vient du manifeste de la cible, servait de segment de chemin sans
+validation : `../../../../x` sortait de l'arbre, et `--force` aurait écrit des fichiers
+arbitraires chez l'adoptant. Enfin une déclaration dont l'adoptant avait déplacé les
+chemins se réduisait en silence pendant que le run annonçait un succès.
+
 ---
 
 ## 1. Contexte — état post-v0.3.0
