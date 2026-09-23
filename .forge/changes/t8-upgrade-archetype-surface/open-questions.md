@@ -43,6 +43,16 @@ new framework file it does not, and "skipped" is the wrong answer. Fixing it mea
 resolving the surface against the *render* as well as the project, which changes what an
 upgrade may create rather than merge; that deserves its own decision.
 
+> **Correction (2026-09-23, `t8-upgrade-flagship-noop` evidence P-3).** The measurement
+> cited above does not show this. The owned list is expanded against the project's tree,
+> so a path the project lacks never enters it and is counted nowhere. At best it is
+> reported by FR-T8UAS-011's "did not resolve" line, which compares the number of entries
+> with the number of resolved files. A glob that expands to several files can hide the
+> shortfall. The `files skipped: 1` was
+> `PlayIntegrityService.kt`, missing from RIGHT because the render left
+> `{{reverse_domain_path}}/` unrelocated; that is fixed by FR-T8UFN-003. The question
+> itself still stands: a file the framework adds later reaches no existing project.
+
 ## Q-003: `forge-migrate-flagship` has the same BASE-layout defect, in a second place
 
 - **Status**: open
@@ -122,3 +132,11 @@ rather than saying the manifest is malformed. That is the pre-existing behaviour
 project the driver does not recognise, and it is safe; it is also unhelpful. Whether a
 manifest naming an unknown or malformed archetype should abort with a clear message
 instead is a small decision, deliberately not taken inside a security fix.
+
+> **Correction (2026-09-23, `t8-upgrade-flagship-noop` FR-T8UFN-007).** "It is safe" was
+> false. On the framework path, the raw name was still joined into
+> `.forge/scaffold-snapshots/<archetype>/<version>.tar.gz` and handed to `tar`. A tarball
+> planted where that path led became BASE, which turned an adopter's edited file into a
+> silent `upgraded`. The independent review reproduced this end to end. The name gate now
+> applies before the snapshot path is built, so a refused name reads no snapshot at all.
+> The question itself still stands: whether a malformed name should abort outright.

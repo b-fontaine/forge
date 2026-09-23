@@ -2494,7 +2494,8 @@ Elle est corrigée sur place.
 **Portée réelle, mesurée et non sous-entendue** : le mode archétype exige que le projet
 déclare une surface, et **un seul plan sur cinq** la rend (`mobile-pwa-first`).
 `ai-native-rag`, `event-driven-eu` et le flagship gardent l'ancien comportement et
-échouent toujours à leur propre upgrade. Leur donner une déclaration suppose de décider,
+échouent toujours à leur propre upgrade. *(Faux pour le flagship tel que livré ici :
+il tombait dans le mode archétype et son upgrade ne fusionnait rien. Voir §0.20.)* Leur donner une déclaration suppose de décider,
 archétype par archétype, quels fichiers appartiennent au framework — une question de
 conception, consignée en Q-005.
 
@@ -2507,6 +2508,63 @@ empêcher, et invisible aux tests `--dry-run` que cette brique avait faits. Le c
 validation : `../../../../x` sortait de l'arbre, et `--force` aurait écrit des fichiers
 arbitraires chez l'adoptant. Enfin une déclaration dont l'adoptant avait déplacé les
 chemins se réduisait en silence pendant que le run annonçait un succès.
+
+---
+
+## 0.20 Status update — 2026-09-23 (T8 — `t8-upgrade-flagship-noop` : la correction de §0.19 avait rendu l'upgrade du flagship muet)
+
+§0.19 affirmait que le flagship « garde l'ancien comportement ». Mesuré sur un rendu
+neuf, c'était faux. Le **vrai** upgrade (sans `--dry-run`) d'un `full-stack-monorepo`
+2.0.0 fraîchement rendu donnait **548 chemins sur 549 ignorés, 1 comparé, exit 0**. Il
+réécrivait pourtant le manifeste : `archetype_version: 2.0.1`, un nouveau
+`template_set_sha`, une entrée d'historique « propre ». Rendu et upgradé depuis le même
+arbre, le driver d'avant `473cd36` sort en exit 8 (548 inchangés, 8 conflits) : un échec,
+mais qui ne mentait pas. Le rendu 1.0.0 donne les mêmes 548 chemins ignorés. Rien de cela
+n'a été publié.
+
+**La cause tient à une prémisse.** `init.sh:208` copie le `.forge/` du framework (moins
+son état d'exécution) dans chaque rendu flagship, y compris le `framework-owned-paths.yml`
+**racine**, à l'octet près. Le mode archétype ne vérifiait que deux choses : l'archétype
+a un plan, et le projet a ce fichier. Le flagship coche les deux. ADR-T8UAS-001 avait vu
+que `default` copie ce fichier et en avait conclu que le plan suffisait à trancher. Il ne
+tranche pas, puisque le flagship a lui aussi un plan. **Corrigé** : le mode archétype exige
+désormais que le plan retenu **rende lui-même** la déclaration. C'est l'intention
+d'ADR-014 (la déclaration vient du template de l'archétype), sans l'union qu'il prévoyait,
+qui reste Q-005. Seul `mobile-pwa-first` rend la déclaration. Le flagship retrouve le
+chemin framework et ses 8 conflits préexistants, visibles, qui relèvent de Q-005.
+
+**Un second trou sur le même chemin de code.** À chaque upgrade de `mobile-pwa-first`,
+`PlayIntegrityService.kt` était ignoré. Le rendu de l'upgrade laissait le répertoire
+`{{reverse_domain_path}}/` littéral, alors que le wrapper le déplace (son étape 3). C'est
+le « skipped: 1 » que la Q-002 de §0.19 attribuait à tort à « un chemin déclaré absent du
+projet ». Un tel chemin n'entre jamais dans la liste. Le rendu refait maintenant le même
+déplacement, après avoir validé le reverse domain en ASCII : 10 inchangés, 0 ignoré.
+
+**Aucun des deux trous ne se voyait dans un code de sortie.** Seul `files skipped` les
+révélait, et aucun test ne lisait ce compteur. En mode archétype, chaque chemin déclaré
+que le rendu du framework ne sait pas produire est désormais signalé sur stderr, en vrai
+run comme en dry-run. L'upgrade n'est pas refusé pour autant : un framework peut
+légitimement cesser de livrer un fichier.
+
+**La revue indépendante (Article V) a trouvé ce que la brique avait raté.** 33 constats,
+30 confirmés par vérification adversariale, aucun bloquant. Quatre défauts du même chemin
+de code sont corrigés, trois d'entre eux antérieurs à la brique :
+- le nom `archetype` refusé par la garde d'`ee9a745` atteignait **brut** le chemin du
+  snapshot en mode framework, et une archive plantée devenait BASE. Le vérificateur l'a
+  reproduit de bout en bout : un fichier de l'adoptant écrasé en silence comme
+  `upgraded` ;
+- `archetype_version` devenait un segment de chemin sans contrôle ; il doit désormais être
+  SemVer, sinon exit 2 ;
+- un vrai run en conflit sans `--force` estampillait le manifeste, ce que FR-UP-007
+  **interdit**. La Q-001 de la brique l'avait qualifié de « sémantique d'A.7 » ; c'était
+  une violation de spec. Le run suivant perdait sa BASE : 556 conflits sur un rendu
+  `ai-native-rag` ;
+- chaque run en mode archétype laissait ~6 Mo dans `$TMPDIR`.
+
+Elle a aussi corrigé les chiffres de cette brique. Les « 547 inchangés / 9 conflits »
+venaient d'un rendu antérieur à la modification du harness ; le 9e conflit était
+`a7.test.sh` lui-même. Les corrections ont été éprouvées par mutation : 11 sondes,
+chacune attrapée par sa cellule.
 
 ---
 

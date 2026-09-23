@@ -19,6 +19,12 @@ flagship therefore keep the old behaviour and still fail their own upgrade. Givi
 declaration means deciding, per archetype, which files the framework owns; that is a
 design question, not a line of code, and it is Q-005.
 
+> **Correction (2026-09-23, `t8-upgrade-flagship-noop`).** The sentence above was false for
+> the flagship as this brick shipped it. Every flagship render carries a byte copy of the
+> framework's root declaration (`init.sh:208`), so the flagship entered archetype mode. A
+> real upgrade of a fresh render then skipped 548 of 549 paths, exited 0 and stamped the
+> new version. It has been true since `t8-upgrade-flagship-noop` (ADR-T8UFN-001).
+
 ### FR-T8UAS-002 — the project's declaration is what is merged
 
 In archetype mode the owned set comes from `<target>/.forge/framework-owned-paths.yml`
@@ -121,6 +127,11 @@ no plan, and renders no manifest at all, so it never reaches this branch.
 
 **Consequence.** An archetype that gains a plan later gains archetype mode with no edit
 here. One that never has one keeps the framework path, which is what it has always had.
+
+> **Superseded in part by ADR-T8UFN-001 (`t8-upgrade-flagship-noop`).** The rationale
+> assumed only `default` carries a copy of the framework's declaration. Every flagship render
+> carries one too, and the flagship has a plan, so "has a plan" does not discriminate either.
+> The condition that does is that the selected plan **renders** the declaration.
 
 ### ADR-T8UAS-002 — render BASE from the snapshot rather than trust the tarball layout
 

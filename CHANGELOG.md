@@ -156,7 +156,10 @@ minor bump and will be called out under a `### BREAKING` subsection.
   merge surface, and only `mobile-pwa-first`'s scaffold plan renders one — 1 of the 5
   plans. `ai-native-rag`, `event-driven-eu` and the flagship keep the old behaviour and
   still fail their own upgrade; giving them a declaration means deciding per archetype
-  which files the framework owns (Q-005).
+  which files the framework owns (Q-005). *(Corrected by `t8-upgrade-flagship-noop`,
+  below: as shipped here, the flagship did **not** keep the old behaviour. It fell into
+  archetype mode and upgraded to a silent no-op. The "9 declared paths compared" also left
+  out a tenth, which was skipped.)*
 
   **Review round 1 caught four defects in this code before it could hurt anyone, one of
   them by reproduction.** A real (non-dry-run) upgrade stamped `sha256("")` over the
@@ -178,6 +181,62 @@ minor bump and will be called out under a `### BREAKING` subsection.
   render aborts on the first one and the upgrade degrades to the documented 2-way
   fallback. That degrade is deliberate and tested; the snapshot gap is recorded as an
   open question rather than papered over.
+
+- **The fix above turned the flagship's upgrade into a silent no-op that stamped the
+  manifest; its review then found the snapshot path open to a planted BASE** —
+  `t8-upgrade-flagship-noop`. It fixes a regression of the entry above that never shipped
+  in a release, plus four older defects on the same driver path.
+
+  Measured on a fresh `full-stack-monorepo` 2.0.0 render, upgraded for real: **548 of 549
+  paths skipped, 1 compared, exit 0**. The manifest was still rewritten to
+  `archetype_version: 2.0.1`, with a new `template_set_sha` and a "clean" history entry.
+  A tree rendered and upgraded from the same commit gives exit 8 with the driver from
+  before the entry above: 548 unchanged, 8 conflicts. That failed, but it was honest about
+  failing. The 1.0.0 flagship render shows the same 548 skips.
+
+  The cause: `init.sh` copies the framework's `.forge/` (minus its runtime state) into
+  every flagship render. That includes the framework's **root** `framework-owned-paths.yml`.
+  Archetype mode only checked that the archetype has a scaffold plan and that the project
+  has that file. The flagship has both, so the driver treated the framework's own
+  declaration as an archetype declaration. It then rendered RIGHT from a template that
+  contains none of `.claude/**`, `bin/*` or `docs/*`. Archetype mode now also requires that
+  the selected plan **renders** the declaration itself, which only `mobile-pwa-first`
+  does. This holds whether the project's copy is exact, older or edited. The flagship is
+  back on the framework path, with its 8 pre-existing conflicts in plain sight (Q-005).
+
+  The same code path had a second, quieter hole. On every `mobile-pwa-first` upgrade,
+  `PlayIntegrityService.kt` was skipped. The project declares it framework-owned, but the
+  upgrade's render left `{{reverse_domain_path}}/` literal where the wrapper relocates it.
+  The upgrade now makes the same move, after checking the reverse domain in ASCII. A fresh
+  render reports **10 unchanged, 0 skipped** instead of 9 and 1. The earlier explanation
+  of that skip ("a declared path the project does not have yet") was wrong, and is
+  corrected in place.
+
+  Neither hole showed in an exit code. Both appeared only in `files skipped`, a count no
+  test read. In archetype mode, the upgrade now reports on stderr every declared path the
+  framework's render cannot produce, in real runs as well as dry ones, and lists them
+  escaped under `--verbose`. It does not refuse the upgrade for them, since a framework
+  may legitimately stop shipping a file.
+
+  **The independent review found four more defects on this driver path, and all four are
+  fixed.**
+  - **`archetype` still reached the snapshot path raw.** `ee9a745` gated the name in
+    archetype mode only. A name it refused fell back to framework mode, where the raw
+    value was still joined into `.forge/scaffold-snapshots/<archetype>/<v>.tar.gz` and
+    handed to `tar`. A tarball planted where that path led became BASE, and turned the
+    adopter's own file into a silent `upgraded`; the review reproduced this end to end.
+  - **`archetype_version` also became a path unchecked.** It must now be SemVer, or the
+    upgrade refuses with exit 2.
+  - **Conflicted runs updated the manifest, contrary to FR-UP-007.** A real run that ended
+    in conflicts without `--force` rewrote the manifest, although FR-UP-007 allows that
+    only after a successful run. It now leaves the manifest at its version and says so.
+    Before, the next run found no snapshot for the stamped version and turned the whole
+    surface into conflicts: 556 on an `ai-native-rag` render.
+  - **Every archetype-mode run leaked its extracted snapshot (~6 MB) in `$TMPDIR`.**
+
+  `ai-native-rag`, `event-driven-eu` and `default` give the same counts and exit codes as
+  before on fresh renders. The only difference is that a conflicted real run no longer
+  stamps their manifest.
 
 - **`task proto` failed on every scaffolded project, and the CI gate that should have
   caught it reported success** — `t8-codegen-render-builds`, closing

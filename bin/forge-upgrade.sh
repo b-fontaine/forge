@@ -235,6 +235,34 @@ PY
 # mobile-pwa-first render: 49 conflicts, exit 8, and the two paths that project
 # declares never opened.
 
+# Names and versions read from the TARGET's manifest are adopter-controlled — on an
+# untrusted clone, attacker-controlled — and each becomes a path segment somewhere below.
+# One gate per kind, used at every place the value meets the filesystem.
+_a7_valid_name() {
+  case "$1" in
+    *[!a-zA-Z0-9._-]* | .* | "") return 1 ;;
+  esac
+  return 0
+}
+
+# FR-T8UFN-006 — SemVer only, in ASCII. `_a7_check_version_compat` compares the first
+# dot-field alone, so `2.0.0.d/../../x` passed it and reached the plan and snapshot paths.
+_a7_valid_version() {
+  python3 -c '
+import re, sys
+sys.exit(0 if re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?", sys.argv[1], re.ASCII) else 1)' "$1"
+}
+
+# FR-T8UFN-009 — every temporary tree _a7_main creates is registered here and removed by
+# ONE exit trap. Setting a trap per directory replaced the previous one, so the extracted
+# snapshot (~6 MB) outlived every archetype-mode run.
+_A7_CLEANUP=()
+_a7_cleanup() {
+  local d
+  for d in "${_A7_CLEANUP[@]+"${_A7_CLEANUP[@]}"}"; do rm -rf "$d"; done
+}
+_a7_track() { _A7_CLEANUP+=("$1"); trap _a7_cleanup EXIT; }
+
 # Echo the project's archetype when it should be merged as a RENDER; empty otherwise.
 # Archetype mode requires a named archetype that HAS a scaffold plan (the plan is what
 # makes RIGHT reproducible) and a project-side owned-paths declaration (ADR-T8UAS-001).
@@ -256,15 +284,47 @@ except Exception: print('')" "$manifest" 2>/dev/null)
   # arbitrary readable files are written into the adopter's project and reported as
   # upgrades (review round 1, demonstrated end-to-end). overlay.sh already gates its
   # own --project-name / --reverse-domain this way; the archetype name had no gate.
-  case "$a" in
-    *[!a-zA-Z0-9._-]* | .* | "") return 0 ;;
-  esac
+  _a7_valid_name "$a" || return 0
   local d="$FORGE_REPO_ROOT/.forge/templates/archetypes/$a"
   [ -d "$d" ] || return 0
   # A template dir without a plan cannot be rendered (mobile-only is one); such a
   # project keeps the framework path it has always had.
-  compgen -G "$d/scaffold-plan*.yaml" >/dev/null 2>&1 || return 0
+  local plan; plan=$(_a7_archetype_plan "$d" "$manifest") || return 0
+  # ADR-T8UFN-001 — the project's declaration must be one its template RENDERS. init.sh
+  # copies the framework's .forge/ (minus its runtime state) into every flagship render,
+  # ROOT declaration included, so "the file exists" was true of the flagship as well: it fell into this
+  # mode, 548 of its 549 framework paths were skipped, and a real run exited 0 and
+  # stamped the new version over a surface it never compared (t8-upgrade-flagship-noop).
+  # A plan that cannot be read is said out loud (exit 2); one that simply does not render
+  # the declaration — the flagship — is not an error and stays silent (exit 1).
+  local prc=0
+  python3 -c "
+import yaml,sys
+try: p = yaml.safe_load(open(sys.argv[1])) or {}
+except Exception: sys.exit(2)
+t = [e.get('target') for e in (p.get('templates') or []) if isinstance(e, dict)] if isinstance(p, dict) else []
+sys.exit(0 if '.forge/framework-owned-paths.yml' in t else 1)" "$plan" 2>/dev/null || prc=$?
+  if [ "$prc" = "2" ]; then
+    echo "forge-upgrade: [scaffold plan ${plan#"$FORGE_REPO_ROOT"/} is unreadable — $a is merged on the framework path]" >&2
+  fi
+  [ "$prc" = "0" ] || return 0
   printf '%s\n' "$a"
+}
+
+# The plan a project of this archetype is rendered from: the one named for its
+# archetype_version, else the bare plan. Shared by detection and rendering so the two
+# can never read different plans.
+_a7_archetype_plan() {
+  local arch_dir="$1" manifest="$2" version plan
+  version=$(python3 -c "
+import yaml,sys
+try: print((yaml.safe_load(open(sys.argv[1])) or {}).get('archetype_version','') or '')
+except Exception: print('')" "$manifest" 2>/dev/null)
+  _a7_valid_version "$version" || return 1
+  plan="$arch_dir/scaffold-plan-$version.yaml"
+  [ -f "$plan" ] || plan="$arch_dir/scaffold-plan.yaml"
+  [ -f "$plan" ] || return 1
+  printf '%s\n' "$plan"
 }
 
 # The merge surface of a rendered project: its OWN declaration, expanded against its
@@ -292,21 +352,12 @@ _a7_render_archetype() {
   local archetype="$1" manifest="$2" templates_root="$3"
   # Re-gated here too: this function takes the name as a parameter, so a future
   # caller must not be able to reintroduce the traversal.
-  case "$archetype" in
-    *[!a-zA-Z0-9._-]* | .* | "") return 1 ;;
-  esac
+  _a7_valid_name "$archetype" || return 1
   local arch_dir="$templates_root/.forge/templates/archetypes/$archetype"
   [ -d "$arch_dir" ] || return 1
 
   # Prefer the plan named for the version being merged; fall back to the bare plan.
-  local version plan
-  version=$(python3 -c "
-import yaml,sys
-try: print((yaml.safe_load(open(sys.argv[1])) or {}).get('archetype_version','') or '')
-except Exception: print('')" "$manifest" 2>/dev/null)
-  plan="$arch_dir/scaffold-plan-$version.yaml"
-  [ -f "$plan" ] || plan="$arch_dir/scaffold-plan.yaml"
-  [ -f "$plan" ] || return 1
+  local plan; plan=$(_a7_archetype_plan "$arch_dir" "$manifest") || return 1
 
   local pn rd rmod
   pn=$(python3 -c "
@@ -341,6 +392,14 @@ PY
   fi
   rm -f "$abs_plan"
 
+  # ADR-T8UFN-002 — reproduce the wrapper's step 3 (bin/forge-init-mobile-pwa-first.sh).
+  # overlay.sh uses a plan's `target:` verbatim, so `{{reverse_domain_path}}` survives as
+  # a literal DIRECTORY; a RIGHT that does not relocate it lacks every file under it —
+  # PlayIntegrityService.kt was skipped on every upgrade because of this.
+  if [ -d "$out/android/app/src/main/kotlin/{{reverse_domain_path}}" ]; then
+    _a7_relocate_kotlin_package "$out" "$rd" || { rm -rf "$out"; return 1; }
+  fi
+
   # The render writes its own manifest; it MUST NOT enter the merge. Measured by
   # b8-10b: without this a target carrying an upgrade_history loses it, near-invisibly,
   # because the rendered manifest repeats the same identity fields (FR-T8UAS-007).
@@ -348,6 +407,25 @@ PY
   rmdir "$out/.forge" 2>/dev/null || true
 
   printf '%s\n' "$out"
+}
+
+# ADR-T8UFN-002 — the wrapper's step 3, for a render tree: move
+# android/app/src/main/kotlin/{{reverse_domain_path}}/ to the reverse domain's path. The
+# reverse domain comes from the target's manifest and becomes a path here, so it is gated
+# FIRST, in ASCII: a bash `[[ =~ ]]` range accepts é or ß under a UTF-8 locale, which made
+# the outcome depend on LC_ALL. Nothing is created or moved when the gate refuses.
+_a7_relocate_kotlin_package() {
+  KOTLIN="$1/android/app/src/main/kotlin" RD="$2" python3 -c '
+import os, re, shutil, sys
+rd = os.environ["RD"]
+if not re.fullmatch(r"[A-Za-z][A-Za-z0-9]*(?:\.[A-Za-z][A-Za-z0-9]*)+", rd, re.ASCII):
+    sys.exit(1)
+base = os.environ["KOTLIN"]
+src = os.path.join(base, "{{reverse_domain_path}}")
+if not os.path.isdir(src):
+    sys.exit(1)
+shutil.copytree(src, os.path.join(base, *rd.split(".")), dirs_exist_ok=True)
+shutil.rmtree(src)'
 }
 
 # ─── Main (only when invoked directly, not when sourced) ──────
@@ -393,18 +471,29 @@ import yaml; print(yaml.safe_load(open('$manifest')).get('template_set_sha', '')
   archetype=$(python3 -c "
 import yaml; print(yaml.safe_load(open('$manifest')).get('archetype', ''))")
 
+  # FR-T8UFN-006 — the version becomes part of the plan and snapshot paths.
+  if ! _a7_valid_version "$from_version"; then
+    printf 'forge-upgrade: the target manifest'"'"'s archetype_version %q is not a SemVer version — refusing\n' "$from_version" >&2
+    return 2
+  fi
   _a7_check_version_compat "$from_version" "$TO_VERSION" || return $?
   if [ "$FORCE" = "1" ]; then
     _a7_check_force_clean_git "$TARGET" || return $?
   fi
 
   # Recover BASE via snapshot ; degrade to 2-way if missing.
-  local base_dir=""
-  local snap="$FORGE_REPO_ROOT/.forge/scaffold-snapshots/$archetype/$from_version.tar.gz"
-  if [ -f "$snap" ]; then
+  local base_dir="" snap=""
+  # FR-T8UFN-007 — the name gate covered archetype mode only: a name it refused fell back
+  # to framework mode, where the RAW value was still joined into this path and handed to
+  # tar, so a tarball planted where it led became BASE.
+  if _a7_valid_name "$archetype"; then
+    snap="$FORGE_REPO_ROOT/.forge/scaffold-snapshots/$archetype/$from_version.tar.gz"
+  else
+    echo "forge-upgrade: [the target manifest's archetype is not a valid name — no snapshot is read as BASE]" >&2
+  fi
+  if [ -n "$snap" ] && [ -f "$snap" ]; then
     base_dir=$(mktemp -d -t forge-up-base-XXXXXX)
-    # shellcheck disable=SC2064
-    trap "rm -rf '$base_dir'" EXIT
+    _a7_track "$base_dir"
     tar -xzf "$snap" -C "$base_dir"
   else
     [ "$VERBOSE" = "1" ] && echo "forge-upgrade: [BASE unavailable for $from_version, falling back to 2-way merge]" >&2
@@ -419,8 +508,7 @@ import yaml; print(yaml.safe_load(open('$manifest')).get('archetype', ''))")
     local rendered_right
     if rendered_right=$(_a7_render_archetype "$arch_mode" "$manifest" "$FORGE_REPO_ROOT"); then
       right_root="$rendered_right"
-      # shellcheck disable=SC2064
-      trap "rm -rf '$rendered_right'" EXIT
+      _a7_track "$rendered_right"
       owned_list=$(_a7_project_owned_paths "$TARGET") || return $?
       # NFR-T8UAS-001 named an empty surface as the thing that must never happen, and
       # the only guard was on the render-failure branch. A declaration whose paths the
@@ -444,6 +532,7 @@ import yaml; print(yaml.safe_load(open('$manifest')).get('archetype', ''))")
         local rendered_base
         if rendered_base=$(_a7_render_archetype "$arch_mode" "$manifest" "$base_dir"); then
           base_root="$rendered_base"
+          _a7_track "$rendered_base"
         elif [ "$VERBOSE" = "1" ]; then
           echo "forge-upgrade: [BASE render failed for $arch_mode, falling back to 2-way merge]" >&2
         fi
@@ -460,14 +549,18 @@ import yaml; print(yaml.safe_load(open('$manifest')).get('archetype', ''))")
   fi
 
   local C_UNC=0 C_UPG=0 C_PRS=0 C_CNF=0 C_SKP=0
-  local rel src_left src_base src_right cls
+  local rel src_left src_base src_right cls skipped_list=""
   while IFS= read -r rel; do
     [ -z "$rel" ] && continue
     src_left="$TARGET/$rel"
     src_base=""
     [ -n "$base_root" ] && src_base="$base_root/$rel"
     src_right="$right_root/$rel"
-    [ -f "$src_right" ] || { C_SKP=$((C_SKP+1)); continue; }
+    if [ ! -f "$src_right" ]; then
+      C_SKP=$((C_SKP+1))
+      skipped_list+="$rel"$'\n'
+      continue
+    fi
     cls=$(_a7_classify "$src_left" "$src_base" "$src_right")
     case "$cls" in
       unchanged) C_UNC=$((C_UNC+1)) ;;
@@ -508,13 +601,34 @@ import yaml; print(yaml.safe_load(open('$manifest')).get('archetype', ''))")
     esac
   done <<< "$owned_list"
 
+  # FR-T8UFN-004 / ADR-T8UFN-003 — in archetype mode a skip means the project declares a
+  # path the framework's render does not produce. That can be legitimate (the framework
+  # stopped shipping it; a glob matched the adopter's own file) or a defect — and it was a
+  # defect twice: a detection defect (548 flagship paths) and a render defect
+  # (PlayIntegrityService.kt on every mobile-pwa-first upgrade), both inside a count
+  # nothing read. Say so every time.
+  if [ -n "$arch_mode" ] && [ "$C_SKP" -gt 0 ]; then
+    echo "forge-upgrade: [$C_SKP of $(grep -c . <<<"$owned_list") path(s) resolved from the project's declaration are absent from the framework's render of $arch_mode — they receive no framework change]" >&2
+    if [ "$VERBOSE" = "1" ]; then
+      # %q: these are the TARGET's file names; a raw ESC or CR would rewrite the terminal.
+      while IFS= read -r rel; do
+        [ -n "$rel" ] && printf '  absent from render: %q\n' "$rel" >&2
+      done <<<"$skipped_list"
+    fi
+  fi
+
   # Cleanup the .merge-conflicts file when zero conflicts.
   if [ "$C_CNF" = "0" ] && [ -f "$TARGET/.merge-conflicts" ]; then
     rm -f "$TARGET/.merge-conflicts"
   fi
 
-  # Update manifest unless dry-run.
-  if [ "$DRY_RUN" = "0" ]; then
+  # FR-UP-007 / FR-T8UFN-008 — the manifest records a SUCCESSFUL run: exit 0, or 8 with
+  # --force. A conflicted run without --force used to be stamped too, over files a 2-way
+  # conflict leaves untouched; the next run then had no snapshot for the stamped version
+  # and turned the whole surface into conflicts.
+  if [ "$DRY_RUN" = "0" ] && [ "$C_CNF" -gt 0 ] && [ "$FORCE" = "0" ]; then
+    echo "forge-upgrade: [$C_CNF conflict(s) — the manifest is left at $from_version; resolve them and run again]" >&2
+  elif [ "$DRY_RUN" = "0" ]; then
     local to_sha
     # Hash the tree that actually produced RIGHT. This used to join against
     # $FORGE_REPO_ROOT unconditionally; once the surface became PROJECT-relative in

@@ -273,7 +273,14 @@ not generate — **both fixed 2026-09-22 by `t8-codegen-render-builds`**, which 
 failure by decision (its tree is `forge upgrade`'s merge BASE); `forge upgrade` read only the framework's root owned-paths file, so the per-archetype one
 that made `pubspec.yaml` "framework-owned" was never consulted — **fixed 2026-09-23 by
 `t8-upgrade-archetype-surface`** (an untouched render went from exit 8 with 49 conflicts to
-exit 0 with none); its snapshot-rendered BASE cannot run until the snapshots stop dropping
+exit 0 with none). The same fix sent every flagship render into archetype mode, because
+each carries a copy of the framework's root declaration: a real upgrade then skipped 548 of
+549 paths, exited 0 and stamped the new version. That was **fixed the same day by
+`t8-upgrade-flagship-noop`** and never released. The flagship is back to its visible
+failure (exit 8, 8 conflicts, Q-005). Its review also closed the snapshot path to a
+planted BASE (a refused `archetype` name still reached `tar`), required SemVer for
+`archetype_version`, and stopped conflicted runs from stamping the manifest, which FR-UP-007
+forbade all along. The archetype mode's snapshot-rendered BASE cannot run until the snapshots stop dropping
 dotfiles (9 in the repo, 0 in the tarball); the CLI refuses forbidden *archetypes* while the wrappers refuse forbidden
 *combinations* (`t7-forbidden-archetypes-wiring` Q-001); `state-management.yaml` carries
 a looser pin than the verified one (`t7-flutter-deps-refresh` Q-004).

@@ -105,6 +105,27 @@ FAIL_NAMES=()
 # MANIFEST: test_upgrade_cli_flags_parse                   — FR-UP-001
 # MANIFEST: test_l3_end_to_end_against_example             — FR-UP-014 (L3)
 #
+# Archetype merge surface (t8-upgrade-archetype-surface)
+# MANIFEST: test_archetype_mode_detection                  — FR-T8UAS-006
+# MANIFEST: test_project_owned_paths_are_the_merge_surface — FR-T8UAS-002
+# MANIFEST: test_framework_paths_excluded_from_archetype_surface — FR-T8UAS-005
+# MANIFEST: test_archetype_render_produces_declared_paths  — FR-T8UAS-003/007
+# MANIFEST: test_archetype_upgrade_clean_on_untouched_render — FR-T8UAS-001 (LIVE)
+#
+# Flagship no-op (t8-upgrade-flagship-noop)
+# MANIFEST: test_copied_framework_declaration_is_not_archetype_mode — FR-T8UFN-001
+# MANIFEST: test_archetype_plan_selection_is_versioned     — FR-T8UFN-001 / FR-T8UFN-006
+# MANIFEST: test_archetype_render_relocates_path_placeholders — FR-T8UFN-003
+# MANIFEST: test_every_plan_placeholder_path_is_relocated  — FR-T8UFN-003
+# MANIFEST: test_kotlin_relocation_gates_reverse_domain    — FR-T8UFN-003
+# MANIFEST: test_archetype_unproducible_path_is_reported   — FR-T8UFN-004
+# MANIFEST: test_unreadable_plan_is_reported               — FR-T8UFN-001
+# MANIFEST: test_malformed_version_is_refused              — FR-T8UFN-006
+# MANIFEST: test_invalid_archetype_never_reaches_a_snapshot — FR-T8UFN-007
+# MANIFEST: test_conflicted_run_does_not_stamp_manifest    — FR-T8UFN-008 (FR-UP-007)
+# MANIFEST: test_upgrade_leaves_no_temp_dirs               — FR-T8UFN-009
+# MANIFEST: test_flagship_upgrade_is_not_a_silent_noop     — FR-T8UFN-002 (LIVE)
+#
 # Archive-gated
 # MANIFEST: test_upgrade_spec_present_post_archive         — FR-UP-015
 #
@@ -715,45 +736,6 @@ PY
   fi
 }
 
-# ─── Main ───────────────────────────────────────────────────────
-
-main() {
-  echo "Forge — a7-forge-upgrade Test Harness"
-  echo "FORGE_ROOT_REAL=$FORGE_ROOT_REAL"
-  echo "REQUIRE_EXTERNAL_TOOLS=$REQUIRE_EXTERNAL_TOOLS"
-  echo ""
-  echo "── Phase 1 : scaffolding cluster ──"
-  run_test test_framework_owned_paths_yml_shape
-  run_test test_owned_paths_exist_in_framework
-  run_test test_forge_upgrade_sh_exists_executable
-  run_test test_forge_upgrade_sh_uses_find_excluding_examples
-  run_test test_standard_upgrade_policy_has_required_sections
-  run_test test_index_has_upgrade_policy_entry
-  run_test test_gitignore_covers_merge_conflicts
-  run_test test_features_upgrade_feature_present
-  run_test test_snapshot_tarball_present_and_extractable
-  run_test test_snapshot_size_under_budget
-  echo ""
-  echo "── Phase 2 : merge logic cluster ──"
-  run_test test_merge_truth_table_exhaustive
-  run_test test_conflict_markers_written
-  run_test test_merge_conflicts_listing
-  run_test test_force_requires_clean_git
-  run_test test_force_succeeds_when_clean
-  run_test test_force_aborts_on_non_git
-  run_test test_major_version_aborts
-  run_test test_minor_patch_bumps_proceed
-  run_test test_upgrade_history_appended_after_run
-  run_test test_upgrade_history_append_only
-  run_test test_identity_fields_immutable
-  run_test test_upgrade_idempotent_when_no_change
-  run_test test_legacy_manifest_without_upgrade_history_parses
-  run_test test_merge_output_deterministic
-  run_test test_base_recovery_via_snapshot
-  echo ""
-  echo "── Phase 3 : CLI TS layer cluster ──"
-  run_test test_upgrade_cli_flags_parse
-
 # ─── t8-upgrade-archetype-surface — the archetype merge surface (Q-007) ──────
 #
 # A.7 was designed against `default`, the one archetype that is a file-copy of the
@@ -886,17 +868,426 @@ test_archetype_upgrade_clean_on_untouched_render() {
   bash "$FORGE_ROOT_REAL/bin/forge-init-mobile-pwa-first.sh" --target "$tmp/proj" \
       --project-name q7probe --reverse-domain io.forge.q7 >/dev/null 2>&1 \
     || { echo "    FAIL: render failed" >&2; return 1; }
+  # FR-T8UFN-003 — the declared Kotlin file must exist in the project, or `skipped: 0`
+  # below would hold without it ever being compared.
+  [ -f "$tmp/proj/android/app/src/main/kotlin/io/forge/q7/PlayIntegrityService.kt" ] \
+    || { echo "    precondition: the render has no PlayIntegrityService.kt — nothing measured" >&2; return 1; }
   ( cd "$tmp/proj" && git init -q && git add -A && \
     git -c user.email=t@t -c user.name=t commit -qm init ) >/dev/null 2>&1
   local out; out=$(bash "$FORGE_ROOT_REAL/bin/forge-upgrade.sh" --target "$tmp/proj" \
       --to-version 2.0.1 --dry-run 2>&1); local rc=$?
   local conflicts; conflicts=$(sed -nE 's/.*files conflicted:[[:space:]]*([0-9]+).*/\1/p' <<<"$out" | tail -1)
-  if [ "$rc" != "0" ] || [ "${conflicts:-x}" != "0" ]; then
-    echo "    FAIL: an untouched render must upgrade cleanly — rc=$rc conflicts=${conflicts:-?}" >&2
+  # FR-T8UFN-003 — zero conflicts is not enough: `files skipped: 1` passed here while
+  # PlayIntegrityService.kt, declared framework-owned, was absent from RIGHT on every run.
+  local skipped; skipped=$(sed -nE 's/.*files skipped:[[:space:]]*([0-9]+).*/\1/p' <<<"$out" | tail -1)
+  if [ "$rc" != "0" ] || [ "${conflicts:-x}" != "0" ] || [ "${skipped:-x}" != "0" ]; then
+    echo "    FAIL: an untouched render must upgrade cleanly — rc=$rc conflicts=${conflicts:-?} skipped=${skipped:-?}" >&2
     printf '%s\n' "$out" | tail -8 | sed 's/^/      /' >&2
     return 1
   fi
 }
+
+# ─── t8-upgrade-flagship-noop — the flagship fell into archetype mode ────────
+#
+# init.sh:208 copies the framework's `.forge/` (minus its runtime state) into every
+# flagship render, ROOT `framework-owned-paths.yml` included. The flagship has a plan and
+# that file, which is all ADR-T8UAS-001 asked for, so it was sent into archetype mode:
+# RIGHT rendered from the template carried none of the framework's paths, 548 of 549 were
+# skipped, and a real upgrade exited 0 and stamped the new version over a surface it never
+# compared. The review of this brick then found the snapshot path, the version field and
+# the manifest stamp open to the same class of defect; those cells follow.
+
+# Build a render-shaped tree holding the placeholder directory the wrapper relocates.
+_a7t_mk_kotlin_placeholder() {
+  mkdir -p "$1/android/app/src/main/kotlin/{{reverse_domain_path}}"
+  printf 'package x\n' > "$1/android/app/src/main/kotlin/{{reverse_domain_path}}/PlayIntegrityService.kt"
+}
+
+# FR-T8UFN-001 / ADR-T8UFN-001 — a declaration is an archetype declaration only when the
+# archetype's plan RENDERS it. A byte copy of the root file is not the only shape a
+# flagship project can hold: a copy rendered by an older framework, or one the adopter
+# edited, differs — and a detector that compared content (the alternative ADR-T8UFN-001
+# rejects) would send exactly those projects back into archetype mode.
+test_copied_framework_declaration_is_not_archetype_mode() {
+  local tmp; tmp=$(mk_tmpdir_with_trap a7-fsmcopy)
+  trap "rm -rf '$tmp'" RETURN
+  # Positive control first: a detector broken outright would make every negative
+  # assertion below pass for the wrong reason.
+  _a7t_mk_archetype_project "$tmp/control" mobile-pwa-first 2.0.0
+  [ "$(_a7_project_archetype "$tmp/control")" = "mobile-pwa-first" ] \
+    || { echo "    positive control: mobile-pwa-first is no longer detected — nothing below is measured" >&2; return 1; }
+  local v shape p got rc=0
+  for v in 2.0.0 1.0.0; do
+    for shape in copy edited synthetic; do
+      p="$tmp/fsm-$v-$shape"
+      _a7t_mk_archetype_project "$p" full-stack-monorepo "$v"
+      case "$shape" in
+        copy)   cp "$OWNED_YML" "$p/.forge/framework-owned-paths.yml" ;;
+        edited) cp "$OWNED_YML" "$p/.forge/framework-owned-paths.yml"
+                printf '  - "adopter/extra.txt"\n' >> "$p/.forge/framework-owned-paths.yml" ;;
+        synthetic) : ;;  # the fixture's own two-path declaration
+      esac
+      got=$(_a7_project_archetype "$p" 2>/dev/null)
+      [ -z "$got" ] || { echo "    flagship $v with a $shape declaration entered archetype mode (got '$got')" >&2; rc=1; }
+    done
+  done
+  return $rc
+}
+
+# FR-T8UFN-001 / FR-T8UFN-006 — detection and rendering read the plan through ONE rule
+# (the plan named for archetype_version, else the bare plan), and that rule never lets a
+# version taken from the target's manifest walk out of the archetype directory.
+test_archetype_plan_selection_is_versioned() {
+  local tmp; tmp=$(mk_tmpdir_with_trap a7-plansel)
+  trap "rm -rf '$tmp'" RETURN
+  local d="$FORGE_ROOT_REAL/.forge/templates/archetypes/full-stack-monorepo" got rc=0
+  [ -f "$d/scaffold-plan-2.0.0.yaml" ] && [ -f "$d/scaffold-plan.yaml" ] \
+    || { echo "    precondition: the flagship no longer has both a versioned and a bare plan" >&2; return 1; }
+  _a7t_mk_archetype_project "$tmp/v2" full-stack-monorepo 2.0.0
+  got=$(_a7_archetype_plan "$d" "$tmp/v2/.forge/scaffold-manifest.yaml")
+  [ "$got" = "$d/scaffold-plan-2.0.0.yaml" ] || { echo "    2.0.0 must select scaffold-plan-2.0.0.yaml (got '$got')" >&2; rc=1; }
+  _a7t_mk_archetype_project "$tmp/v1" full-stack-monorepo 1.0.0
+  got=$(_a7_archetype_plan "$d" "$tmp/v1/.forge/scaffold-manifest.yaml")
+  [ "$got" = "$d/scaffold-plan.yaml" ] || { echo "    1.0.0 has no versioned plan and must fall back to scaffold-plan.yaml (got '$got')" >&2; rc=1; }
+  _a7_archetype_plan "$FORGE_ROOT_REAL/.forge/templates/archetypes/mobile-only" "$tmp/v1/.forge/scaffold-manifest.yaml" >/dev/null \
+    && { echo "    an archetype with no plan must return non-zero" >&2; rc=1; }
+  # One rule, two callers: both must go through the helper.
+  local fn
+  for fn in _a7_project_archetype _a7_render_archetype; do
+    grep -q '_a7_archetype_plan' <<<"$(declare -f "$fn")" \
+      || { echo "    $fn does not select its plan through _a7_archetype_plan" >&2; rc=1; }
+  done
+  # A version that walks out: plant the directory the traversal needs, then ask.
+  mkdir -p "$tmp/arch/scaffold-plan-2.0.0.d" "$tmp/elsewhere"
+  printf 'templates: []\n' > "$tmp/arch/scaffold-plan.yaml"
+  printf 'templates: []\n' > "$tmp/elsewhere/other.yaml"
+  _a7t_mk_archetype_project "$tmp/evil" mobile-pwa-first "2.0.0.d/../../elsewhere/other"
+  if got=$(_a7_archetype_plan "$tmp/arch" "$tmp/evil/.forge/scaffold-manifest.yaml"); then
+    echo "    a version containing '/' selected a plan (got '$got') — it must be refused" >&2; rc=1
+  fi
+  return $rc
+}
+
+# FR-T8UFN-003 / ADR-T8UFN-002 — the wrapper relocates kotlin/{{reverse_domain_path}}/
+# after rendering (its step 3); the upgrade's render did not, so PlayIntegrityService.kt
+# was absent from RIGHT and skipped on every upgrade — the `files skipped: 1` that
+# t8-upgrade-archetype-surface Q-002 misattributed.
+test_archetype_render_relocates_path_placeholders() {
+  command -v python3 >/dev/null 2>&1 || { echo "    SKIP: python3 absent" >&2; return 0; }
+  local tmp; tmp=$(mk_tmpdir_with_trap a7-reloc)
+  trap "rm -rf '$tmp'" RETURN
+  _a7t_mk_archetype_project "$tmp/p"
+  local out
+  out=$(_a7_render_archetype mobile-pwa-first "$tmp/p/.forge/scaffold-manifest.yaml" "$FORGE_ROOT_REAL") \
+    || { echo "    render of mobile-pwa-first failed against the repo templates" >&2; return 1; }
+  # Anti-vacuity: with no Kotlin file rendered, both checks below would pass on nothing.
+  if ! grep -q . < <(find "$out" -name '*.kt' -type f); then
+    echo "    the render produced no .kt file — nothing was measured" >&2; rm -rf "$out"; return 1
+  fi
+  local rc=0 left
+  [ -f "$out/android/app/src/main/kotlin/io/forge/q7/PlayIntegrityService.kt" ] \
+    || { echo "    PlayIntegrityService.kt is not at the reverse-domain path the wrapper gives it" >&2; rc=1; }
+  left=$(find "$out" -name '*{{*')
+  if [ -n "$left" ]; then
+    echo "    a {{placeholder}} survived in a rendered path name:" >&2
+    sed "s|^$out/|      |" <<<"$left" >&2
+    rc=1
+  fi
+  rm -rf "$out"
+  return $rc
+}
+
+# FR-T8UFN-003 / ADR-T8UFN-002 — the render above covers mobile-pwa-first only. This one
+# covers every plan: a placeholder in a `target:` path is only ever the directory the
+# upgrade knows how to relocate. A template that puts one anywhere else fails here, before
+# its path can be skipped on every upgrade.
+test_every_plan_placeholder_path_is_relocated() {
+  python3 - "$FORGE_ROOT_REAL/.forge/templates/archetypes" <<'PY' || return 1
+import glob, os, sys, yaml
+root = sys.argv[1]
+ok_prefix = "android/app/src/main/kotlin/{{reverse_domain_path}}/"
+plans, placeholders, bad = 0, 0, []
+for plan in sorted(glob.glob(os.path.join(root, "*", "scaffold-plan*.yaml"))):
+    plans += 1
+    for e in (yaml.safe_load(open(plan)) or {}).get("templates") or []:
+        t = (e or {}).get("target", "") if isinstance(e, dict) else ""
+        if "{{" not in t:
+            continue
+        placeholders += 1
+        rest = t[len(ok_prefix):] if t.startswith(ok_prefix) else None
+        if rest is None or "{{" in rest:
+            bad.append(f"{os.path.relpath(plan, root)}: {t}")
+if plans == 0 or placeholders == 0:
+    print(f"    anti-vacuity: {plans} plan(s), {placeholders} placeholder target(s) — nothing measured", file=sys.stderr)
+    sys.exit(1)
+for b in bad:
+    print(f"    a placeholder the upgrade render does not relocate: {b}", file=sys.stderr)
+sys.exit(1 if bad else 0)
+PY
+}
+
+# FR-T8UFN-003 — the relocation gates the reverse domain itself, in ASCII, whatever the
+# locale: `[[ =~ ]]` accepts é or ß for [a-zA-Z] under a UTF-8 locale, so a bash regex
+# made the chosen mode depend on LC_ALL. overlay.sh refuses first today; this gate is the
+# one that stands if a caller ever reaches the relocation without it.
+test_kotlin_relocation_gates_reverse_domain() {
+  local tmp; tmp=$(mk_tmpdir_with_trap a7-rdgate)
+  trap "rm -rf '$tmp'" RETURN
+  local rc=0 bad
+  _a7t_mk_kotlin_placeholder "$tmp/ok"
+  _a7_relocate_kotlin_package "$tmp/ok" "io.forge.q7" \
+    || { echo "    a valid reverse domain was refused" >&2; rc=1; }
+  [ -f "$tmp/ok/android/app/src/main/kotlin/io/forge/q7/PlayIntegrityService.kt" ] \
+    || { echo "    the valid reverse domain was not relocated" >&2; rc=1; }
+  [ -e "$tmp/ok/android/app/src/main/kotlin/{{reverse_domain_path}}" ] \
+    && { echo "    the placeholder directory survived a relocation" >&2; rc=1; }
+  for bad in "com.exémple" "io.forge/../../x" "io..forge" "/abs.path" "io.forge
+x"; do
+    rm -rf "$tmp/bad"; _a7t_mk_kotlin_placeholder "$tmp/bad"
+    if _a7_relocate_kotlin_package "$tmp/bad" "$bad" 2>/dev/null; then
+      echo "    reverse domain '$bad' was accepted" >&2; rc=1
+    fi
+    if grep -q . < <(find "$tmp/bad/android/app/src/main/kotlin" -mindepth 1 -maxdepth 1 ! -name '{{reverse_domain_path}}'); then
+      echo "    reverse domain '$bad' created a directory before being refused" >&2; rc=1
+    fi
+  done
+  return $rc
+}
+
+# FR-T8UFN-004 / ADR-T8UFN-003 — a declared path the render cannot produce is REPORTED,
+# not folded into `files skipped`, the counter 548 paths disappeared into. In a real run
+# as well as a dry one (the 548 vanished in a real run), without refusing the upgrade,
+# naming exactly the skipped paths, and never echoing raw control characters from the
+# target's own file names.
+test_archetype_unproducible_path_is_reported() {
+  command -v python3 >/dev/null 2>&1 || { echo "    SKIP: python3 absent" >&2; return 0; }
+  local tmp; tmp=$(mk_tmpdir_with_trap a7-skipreport)
+  trap "rm -rf '$tmp'" RETURN
+  _a7t_mk_archetype_project "$tmp/p"
+  cat > "$tmp/p/.forge/framework-owned-paths.yml" <<'YAML'
+owned:
+  - "pubspec.yaml"
+  - "web-pwa/package.json"
+  - "lib/*.dart"
+YAML
+  # The two rendered paths are made identical to RIGHT so the run has no conflict and a
+  # refusal would show in the exit code.
+  local right
+  right=$(_a7_render_archetype mobile-pwa-first "$tmp/p/.forge/scaffold-manifest.yaml" "$FORGE_ROOT_REAL") \
+    || { echo "    render failed" >&2; return 1; }
+  cp "$right/pubspec.yaml" "$tmp/p/pubspec.yaml"; cp "$right/web-pwa/package.json" "$tmp/p/web-pwa/package.json"
+  rm -rf "$right"
+  mkdir -p "$tmp/p/lib"
+  printf '// no template renders this\n' > "$tmp/p/lib/adopter_only.dart"
+  printf '// hostile name\n' > "$tmp/p/lib/$(printf 'x\033[2K\rfiles conflicted: 0')".dart
+  local out err rc
+  out=$( ( _a7_main --target "$tmp/p" --to-version 2.0.1 --dry-run ) 2>/dev/null ) || true
+  err=$( ( _a7_main --target "$tmp/p" --to-version 2.0.1 --dry-run ) 2>&1 >/dev/null ) || true
+  # Anti-vacuity: both paths must actually have been skipped, or the report is not owed.
+  grep -qE 'files skipped:[[:space:]]+2$' <<<"$out" \
+    || { echo "    precondition: expected exactly 2 skipped paths, got: $(grep 'skipped' <<<"$out")" >&2; return 1; }
+  grep -qE "\[2 of 4 path\(s\) resolved from the project's declaration are absent from the framework's render of mobile-pwa-first" <<<"$err" \
+    || { echo "    the unproducible paths were skipped without being reported on stderr (dry run)" >&2; return 1; }
+  err=$( ( _a7_main --target "$tmp/p" --to-version 2.0.1 --dry-run --verbose ) 2>&1 >/dev/null ) || true
+  local listed; listed=$(grep -c 'absent from render:' <<<"$err" || true)
+  [ "$listed" = "2" ] || { echo "    --verbose must list exactly the 2 skipped paths, listed $listed" >&2; return 1; }
+  grep -q 'absent from render: lib/adopter_only.dart' <<<"$err" \
+    || { echo "    --verbose does not name lib/adopter_only.dart" >&2; return 1; }
+  if grep -q $'\033' <<<"$err"; then
+    echo "    a raw ESC from a target file name reached the terminal" >&2; return 1
+  fi
+  # The real run: reported too, and NOT refused.
+  err=$( ( _a7_main --target "$tmp/p" --to-version 2.0.1 ) 2>&1 >/dev/null ); rc=$?
+  [ "$rc" = "0" ] || { echo "    a real run with an unproducible path was refused (rc=$rc) — ADR-T8UFN-003 reports, it does not refuse" >&2; return 1; }
+  grep -q "\[2 of 4 path(s) resolved from the project's declaration are absent" <<<"$err" \
+    || { echo "    the real run skipped the paths without reporting them" >&2; return 1; }
+}
+
+# FR-T8UFN-001 — a plan the driver cannot read is said out loud. Before this brick such a
+# project entered archetype mode and the failed render announced the fallback; the new
+# detection must not turn that into a silent switch. A readable plan that simply does not
+# render the declaration — the flagship — stays silent: that is not an error.
+test_unreadable_plan_is_reported() {
+  local tmp; tmp=$(mk_tmpdir_with_trap a7-badplan)
+  trap "rm -rf '$tmp'" RETURN
+  local FORGE_REPO_ROOT="$tmp/root" err got rc=0
+  mkdir -p "$tmp/root/.forge/templates/archetypes/zz" "$tmp/root/.forge/templates/archetypes/yy"
+  printf 'templates: [unclosed\n' > "$tmp/root/.forge/templates/archetypes/zz/scaffold-plan.yaml"
+  printf 'templates:\n- source: a\n  target: b\n' > "$tmp/root/.forge/templates/archetypes/yy/scaffold-plan.yaml"
+  _a7t_mk_archetype_project "$tmp/pz" zz 1.0.0
+  got=$(_a7_project_archetype "$tmp/pz" 2>"$tmp/err"); err=$(cat "$tmp/err")
+  [ -z "$got" ] || { echo "    an unreadable plan entered archetype mode (got '$got')" >&2; rc=1; }
+  grep -q 'unreadable' <<<"$err" || { echo "    an unreadable plan switched the project to framework mode in silence" >&2; rc=1; }
+  _a7t_mk_archetype_project "$tmp/py" yy 1.0.0
+  got=$(_a7_project_archetype "$tmp/py" 2>"$tmp/err"); err=$(cat "$tmp/err")
+  [ -z "$got" ] || { echo "    a plan without the declaration entered archetype mode (got '$got')" >&2; rc=1; }
+  [ -z "$err" ] || { echo "    a readable plan without the declaration produced a message: $err" >&2; rc=1; }
+  return $rc
+}
+
+# FR-T8UFN-006 — archetype_version comes from the target's manifest and becomes part of a
+# path twice (the plan, the snapshot). `_a7_check_version_compat` compares the first
+# dot-field only, so `2.0.0.d/../../x` passed it. A version that is not SemVer is refused.
+test_malformed_version_is_refused() {
+  local tmp; tmp=$(mk_tmpdir_with_trap a7-badver)
+  trap "rm -rf '$tmp'" RETURN
+  local v out rc=0 r
+  for v in "2.0.0.d/../../x" "2.0.0/../../../etc" "../2.0.0" "2.0"; do
+    rm -rf "$tmp/p"; _a7t_mk_archetype_project "$tmp/p" mobile-pwa-first "$v"
+    out=$( ( _a7_main --target "$tmp/p" --to-version 2.0.1 --dry-run ) 2>&1 ); r=$?
+    [ "$r" = "2" ] || { echo "    archetype_version '$v' was not refused (rc=$r)" >&2; rc=1; continue; }
+    grep -q 'archetype_version' <<<"$out" || { echo "    '$v' was refused without naming the field" >&2; rc=1; }
+  done
+  # Positive control: a SemVer version is still accepted.
+  rm -rf "$tmp/p"; _a7t_mk_archetype_project "$tmp/p" mobile-pwa-first 2.0.0
+  ( _a7_main --target "$tmp/p" --to-version 2.0.1 --dry-run ) >/dev/null 2>&1; r=$?
+  [ "$r" != "2" ] || { echo "    positive control: a valid 2.0.0 manifest was refused" >&2; rc=1; }
+  return $rc
+}
+
+# FR-T8UFN-007 — the name gate ee9a745 put on `archetype` did not cover the snapshot
+# path: a name the gate refused fell back to framework mode, where the RAW value was
+# still joined into `.forge/scaffold-snapshots/<archetype>/<version>.tar.gz` and handed
+# to tar. A tarball planted where that path leads became BASE, and a planted BASE equal
+# to the adopter's file turns a conflict into a silent overwrite (`upgraded`).
+test_invalid_archetype_never_reaches_a_snapshot() {
+  local tmp; tmp=$(mk_tmpdir_with_trap a7-snapplant)
+  trap "rm -rf '$tmp'" RETURN
+  mkdir -p "$tmp/base" "$tmp/planted" "$tmp/p/.forge"
+  printf 'adopter text\n' > "$tmp/base/LICENSE"
+  tar -czf "$tmp/planted/1.0.0.tar.gz" -C "$tmp/base" LICENSE
+  local snaps="$FORGE_ROOT_REAL/.forge/scaffold-snapshots" rel
+  rel=$(python3 -c 'import os,sys; print(os.path.relpath(os.path.realpath(sys.argv[1]), os.path.realpath(sys.argv[2])))' "$tmp/planted" "$snaps")
+  # Anti-vacuity: the raw name really does lead to the planted tarball.
+  [ -f "$snaps/$rel/1.0.0.tar.gz" ] || { echo "    precondition: '$rel' does not reach the plant — nothing measured" >&2; return 1; }
+  cat > "$tmp/p/.forge/scaffold-manifest.yaml" <<YAML
+archetype: $rel
+archetype_version: 1.0.0
+project_name: plant
+reverse_domain: io.forge.plant
+YAML
+  printf 'adopter text\n' > "$tmp/p/LICENSE"
+  local out; out=$( ( _a7_main --target "$tmp/p" --to-version 1.0.1 --dry-run ) 2>/dev/null ) || true
+  grep -qE 'files upgraded:[[:space:]]+0$' <<<"$out" \
+    || { echo "    the planted tarball was used as BASE — LICENSE was classified upgraded: $(grep 'upgraded' <<<"$out")" >&2; return 1; }
+}
+
+# FR-T8UFN-008 — FR-UP-007: the manifest is updated after a SUCCESSFUL run, "exit 0 or 8
+# with --force". The driver stamped the new version on a conflicted run too, over files a
+# 2-way conflict leaves untouched; the next run then had no BASE for the stamped version
+# and turned the whole surface into conflicts.
+test_conflicted_run_does_not_stamp_manifest() {
+  command -v git >/dev/null 2>&1 || { echo "    SKIP: git absent" >&2; return 0; }
+  local tmp; tmp=$(mk_tmpdir_with_trap a7-nostamp)
+  trap "rm -rf '$tmp'" RETURN
+  _a7t_mk_archetype_project "$tmp/p"
+  printf 'name: adopter_edited\n' > "$tmp/p/pubspec.yaml"
+  _a7_make_repo "$tmp/p" >/dev/null 2>&1
+  local rc ver hist
+  ( _a7_main --target "$tmp/p" --to-version 2.0.1 ) >/dev/null 2>&1; rc=$?
+  [ "$rc" = "8" ] || { echo "    precondition: expected a conflicted run (rc=8), got rc=$rc — nothing measured" >&2; return 1; }
+  ver=$(python3 -c "import yaml,sys; print(yaml.safe_load(open(sys.argv[1])).get('archetype_version'))" "$tmp/p/.forge/scaffold-manifest.yaml")
+  hist=$(python3 -c "import yaml,sys; print(len(yaml.safe_load(open(sys.argv[1])).get('upgrade_history') or []))" "$tmp/p/.forge/scaffold-manifest.yaml")
+  [ "$ver" = "2.0.0" ] && [ "$hist" = "0" ] \
+    || { echo "    a conflicted run without --force stamped the manifest (archetype_version=$ver, history=$hist)" >&2; return 1; }
+  # With --force the run succeeds per FR-UP-007, and IS recorded.
+  ( cd "$tmp/p" && git checkout -q -- . && git clean -qfd ) >/dev/null 2>&1
+  ( _a7_main --target "$tmp/p" --to-version 2.0.1 --force ) >/dev/null 2>&1; rc=$?
+  ver=$(python3 -c "import yaml,sys; print(yaml.safe_load(open(sys.argv[1])).get('archetype_version'))" "$tmp/p/.forge/scaffold-manifest.yaml")
+  [ "$rc" = "0" ] && [ "$ver" = "2.0.1" ] \
+    || { echo "    a --force run must succeed and be recorded (rc=$rc, archetype_version=$ver)" >&2; return 1; }
+}
+
+# FR-T8UFN-009 — each temporary tree an upgrade creates is removed when it ends. The
+# archetype branch replaced the EXIT trap set for the extracted snapshot, so every
+# archetype-mode run left ~6 MB behind in $TMPDIR — three per run of this harness alone.
+test_upgrade_leaves_no_temp_dirs() {
+  local tmp; tmp=$(mk_tmpdir_with_trap a7-notmp)
+  trap "rm -rf '$tmp'" RETURN
+  _a7t_mk_archetype_project "$tmp/p"
+  mkdir -p "$tmp/tmpd"
+  local err; err=$( ( TMPDIR="$tmp/tmpd" _a7_main --target "$tmp/p" --to-version 2.0.1 --dry-run --verbose ) 2>&1 >/dev/null ) || true
+  # Anti-vacuity: the run must have extracted a snapshot and rendered, or there was
+  # nothing to leak.
+  grep -q 'BASE render' <<<"$err" || { echo "    precondition: the run never reached the BASE render — nothing measured" >&2; return 1; }
+  local left; left=$(find "$tmp/tmpd" -mindepth 1 -maxdepth 1)
+  [ -z "$left" ] || { echo "    the upgrade left temporary trees behind:" >&2; sed 's/^/      /' <<<"$left" >&2; return 1; }
+}
+
+# FR-T8UFN-002 — the end-to-end claim on the flagship itself: a fresh render, upgraded
+# for REAL (--dry-run skips the manifest write, which is where the damage was). Opt-in;
+# once opted in, a missing tool is a failure, not a quiet pass.
+test_flagship_upgrade_is_not_a_silent_noop() {
+  [ "${FORGE_A7_LIVE:-0}" = "1" ] || { echo "    SKIP: set FORGE_A7_LIVE=1 to render a real flagship and upgrade it" >&2; return 0; }
+  local tool
+  for tool in git flutter cargo buf; do
+    command -v "$tool" >/dev/null 2>&1 || { echo "    FORGE_A7_LIVE=1 but $tool is absent — the flagship cannot be rendered" >&2; return 1; }
+  done
+  local tmp; tmp=$(mk_tmpdir_with_trap a7-live-fsm)
+  trap "rm -rf '$tmp'" RETURN
+  bash "$FORGE_ROOT_REAL/bin/forge-init-fsm-2.0.0.sh" --target "$tmp/proj" \
+      --project-name q7fsm --reverse-domain io.forge.q7 >/dev/null 2>&1 \
+    || { echo "    FAIL: render failed" >&2; return 1; }
+  ( cd "$tmp/proj" && git init -q && git add -A && \
+    git -c user.email=t@t -c user.name=t commit -qm init ) >/dev/null 2>&1
+  local out; out=$(bash "$FORGE_ROOT_REAL/bin/forge-upgrade.sh" --target "$tmp/proj" \
+      --to-version 2.0.1 2>&1); local rc=$?
+  local skipped unchanged ver
+  skipped=$(sed -nE 's/.*files skipped:[[:space:]]*([0-9]+).*/\1/p' <<<"$out" | tail -1)
+  unchanged=$(sed -nE 's/.*files unchanged:[[:space:]]*([0-9]+).*/\1/p' <<<"$out" | tail -1)
+  ver=$(python3 -c "import yaml,sys; print(yaml.safe_load(open(sys.argv[1])).get('archetype_version'))" "$tmp/proj/.forge/scaffold-manifest.yaml")
+  # The exit code alone is not asserted: framework mode still fails the flagship's own
+  # upgrade on the framework files its render lacks or rewrites (Q-005). What must never
+  # happen is a run that compares (almost) nothing — a fresh render compares ~550 paths,
+  # so the floor below is anti-vacuity, not a target — or a failed run that stamps.
+  if [ "${skipped:-x}" != "0" ] || [ "${unchanged:-0}" -lt 100 ]; then
+    echo "    FAIL: the flagship's framework surface was not compared — rc=$rc unchanged=${unchanged:-?} skipped=${skipped:-?}" >&2
+    printf '%s\n' "$out" | tail -8 | sed 's/^/      /' >&2
+    return 1
+  fi
+  if [ "$rc" != "0" ] && [ "$ver" != "2.0.0" ]; then
+    echo "    FAIL: a run that exited $rc stamped archetype_version=$ver (FR-UP-007)" >&2; return 1
+  fi
+}
+
+# ─── Main ───────────────────────────────────────────────────────
+
+main() {
+  echo "Forge — a7-forge-upgrade Test Harness"
+  echo "FORGE_ROOT_REAL=$FORGE_ROOT_REAL"
+  echo "REQUIRE_EXTERNAL_TOOLS=$REQUIRE_EXTERNAL_TOOLS"
+  echo ""
+  echo "── Phase 1 : scaffolding cluster ──"
+  run_test test_framework_owned_paths_yml_shape
+  run_test test_owned_paths_exist_in_framework
+  run_test test_forge_upgrade_sh_exists_executable
+  run_test test_forge_upgrade_sh_uses_find_excluding_examples
+  run_test test_standard_upgrade_policy_has_required_sections
+  run_test test_index_has_upgrade_policy_entry
+  run_test test_gitignore_covers_merge_conflicts
+  run_test test_features_upgrade_feature_present
+  run_test test_snapshot_tarball_present_and_extractable
+  run_test test_snapshot_size_under_budget
+  echo ""
+  echo "── Phase 2 : merge logic cluster ──"
+  run_test test_merge_truth_table_exhaustive
+  run_test test_conflict_markers_written
+  run_test test_merge_conflicts_listing
+  run_test test_force_requires_clean_git
+  run_test test_force_succeeds_when_clean
+  run_test test_force_aborts_on_non_git
+  run_test test_major_version_aborts
+  run_test test_minor_patch_bumps_proceed
+  run_test test_upgrade_history_appended_after_run
+  run_test test_upgrade_history_append_only
+  run_test test_identity_fields_immutable
+  run_test test_upgrade_idempotent_when_no_change
+  run_test test_legacy_manifest_without_upgrade_history_parses
+  run_test test_merge_output_deterministic
+  run_test test_base_recovery_via_snapshot
+  echo ""
+  echo "── Phase 3 : CLI TS layer cluster ──"
+  run_test test_upgrade_cli_flags_parse
 
   run_test test_l3_end_to_end_against_example
   echo ""
@@ -906,6 +1297,20 @@ test_archetype_upgrade_clean_on_untouched_render() {
   run_test test_framework_paths_excluded_from_archetype_surface
   run_test test_archetype_render_produces_declared_paths
   run_test test_archetype_upgrade_clean_on_untouched_render
+  echo ""
+  echo "── Flagship no-op (t8-upgrade-flagship-noop) ──"
+  run_test test_copied_framework_declaration_is_not_archetype_mode
+  run_test test_archetype_plan_selection_is_versioned
+  run_test test_archetype_render_relocates_path_placeholders
+  run_test test_every_plan_placeholder_path_is_relocated
+  run_test test_kotlin_relocation_gates_reverse_domain
+  run_test test_archetype_unproducible_path_is_reported
+  run_test test_unreadable_plan_is_reported
+  run_test test_malformed_version_is_refused
+  run_test test_invalid_archetype_never_reaches_a_snapshot
+  run_test test_conflicted_run_does_not_stamp_manifest
+  run_test test_upgrade_leaves_no_temp_dirs
+  run_test test_flagship_upgrade_is_not_a_silent_noop
   echo ""
   echo "── Archive-gated ──"
   run_test test_upgrade_spec_present_post_archive
