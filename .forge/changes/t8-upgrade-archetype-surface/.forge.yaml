@@ -1,0 +1,16 @@
+name: t8-upgrade-archetype-surface
+status: implemented
+created: 2026-09-23
+schema: default
+constitution_version: "2.0.0"
+parent_audit_items:
+  - A.7     # forge upgrade (a7-forge-upgrade) — the driver this corrects
+  - B.9.10  # ADR-014's per-archetype framework-owned-paths.yml, never read until now
+depends_on:
+  - t7-qwik-deps-refresh  # resolves its Q-007
+timeline:
+  proposed: 2026-09-23
+  specified: 2026-09-23
+  designed: 2026-09-23
+  planned: 2026-09-23
+  implemented: 2026-09-23

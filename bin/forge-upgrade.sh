@@ -226,6 +226,104 @@ for p in sorted(found):
 PY
 }
 
+# ─── Archetype merge surface (t8-upgrade-archetype-surface, Q-007) ───────────
+#
+# A.7 was designed against `default`, the one archetype that is a file-copy of the
+# framework asset tree, and `_a7_main` always resolved owned paths from the FRAMEWORK
+# root with RIGHT taken from the framework tree. A RENDERED archetype is a different
+# shape: its `.forge/` is output, not a copy of Forge. Measured on an untouched
+# mobile-pwa-first render: 49 conflicts, exit 8, and the two paths that project
+# declares never opened.
+
+# Echo the project's archetype when it should be merged as a RENDER; empty otherwise.
+# Archetype mode requires a named archetype that HAS a scaffold plan (the plan is what
+# makes RIGHT reproducible) and a project-side owned-paths declaration (ADR-T8UAS-001).
+_a7_project_archetype() {
+  local target="$1"
+  local manifest="$target/.forge/scaffold-manifest.yaml"
+  [ -f "$manifest" ] || return 0
+  [ -f "$target/.forge/framework-owned-paths.yml" ] || return 0
+  local a
+  a=$(python3 -c "
+import yaml,sys
+try: print((yaml.safe_load(open(sys.argv[1])) or {}).get('archetype','') or '')
+except Exception: print('')" "$manifest" 2>/dev/null)
+  [ -n "$a" ] || return 0
+  local d="$FORGE_REPO_ROOT/.forge/templates/archetypes/$a"
+  [ -d "$d" ] || return 0
+  # A template dir without a plan cannot be rendered (mobile-only is one); such a
+  # project keeps the framework path it has always had.
+  compgen -G "$d/scaffold-plan*.yaml" >/dev/null 2>&1 || return 0
+  printf '%s\n' "$a"
+}
+
+# The merge surface of a rendered project: its OWN declaration, expanded against its
+# own tree. The resolver was already root-parameterised — the defect was purely that
+# `_a7_main` never passed anything but the framework root.
+_a7_project_owned_paths() {
+  _a7_resolve_owned_paths "$1"
+}
+
+# Render an archetype into a throwaway dir and echo it. `templates_root` is the tree
+# holding `.forge/templates/archetypes/<archetype>/` — the repo for RIGHT, an extracted
+# snapshot for BASE (ADR-T8UAS-002). Caller owns cleanup.
+_a7_render_archetype() {
+  local archetype="$1" manifest="$2" templates_root="$3"
+  local arch_dir="$templates_root/.forge/templates/archetypes/$archetype"
+  [ -d "$arch_dir" ] || return 1
+
+  # Prefer the plan named for the version being merged; fall back to the bare plan.
+  local version plan
+  version=$(python3 -c "
+import yaml,sys
+try: print((yaml.safe_load(open(sys.argv[1])) or {}).get('archetype_version','') or '')
+except Exception: print('')" "$manifest" 2>/dev/null)
+  plan="$arch_dir/scaffold-plan-$version.yaml"
+  [ -f "$plan" ] || plan="$arch_dir/scaffold-plan.yaml"
+  [ -f "$plan" ] || return 1
+
+  local pn rd rmod
+  pn=$(python3 -c "
+import yaml,sys; print((yaml.safe_load(open(sys.argv[1])) or {}).get('project_name','') or '')" "$manifest" 2>/dev/null)
+  rd=$(python3 -c "
+import yaml,sys; print((yaml.safe_load(open(sys.argv[1])) or {}).get('reverse_domain','') or '')" "$manifest" 2>/dev/null)
+  rmod=$(python3 -c "
+import yaml,sys; print((yaml.safe_load(open(sys.argv[1])) or {}).get('root_module','') or '')" "$manifest" 2>/dev/null)
+  [ -n "$pn" ] && [ -n "$rd" ] || return 1
+
+  # overlay.sh hardcodes its own ARCHETYPE_DIR, so the plan's relative `source:` paths
+  # are absolutized into a throwaway plan first — the trick every archetype wrapper
+  # uses, and the reason the committed plan stays portable.
+  local abs_plan; abs_plan=$(mktemp)
+  if ! ARCH_DIR="$arch_dir" PLAN="$plan" ABS_PLAN="$abs_plan" python3 - <<'PY'
+import os, yaml
+arch = os.environ['ARCH_DIR']
+plan = yaml.safe_load(open(os.environ['PLAN'])) or {}
+for e in plan.get('templates', []):
+    src = e.get('source', '')
+    if src and not os.path.isabs(src):
+        e['source'] = os.path.join(arch, src)
+yaml.safe_dump(plan, open(os.environ['ABS_PLAN'], 'w'), sort_keys=False)
+PY
+  then rm -f "$abs_plan"; return 1; fi
+
+  local out; out=$(mktemp -d -t forge-up-render-XXXXXX)
+  if ! bash "$FORGE_REPO_ROOT/.forge/scripts/scaffolder/overlay.sh" \
+        --target "$out" --project-name "$pn" --reverse-domain "$rd" \
+        ${rmod:+--root-module "$rmod"} --plan "$abs_plan" >/dev/null 2>&1; then
+    rm -f "$abs_plan"; rm -rf "$out"; return 1
+  fi
+  rm -f "$abs_plan"
+
+  # The render writes its own manifest; it MUST NOT enter the merge. Measured by
+  # b8-10b: without this a target carrying an upgrade_history loses it, near-invisibly,
+  # because the rendered manifest repeats the same identity fields (FR-T8UAS-007).
+  rm -f "$out/.forge/scaffold-manifest.yaml"
+  rmdir "$out/.forge" 2>/dev/null || true
+
+  printf '%s\n' "$out"
+}
+
 # ─── Main (only when invoked directly, not when sourced) ──────
 
 _a7_usage() {
@@ -286,9 +384,40 @@ import yaml; print(yaml.safe_load(open('$manifest')).get('archetype', ''))")
     [ "$VERBOSE" = "1" ] && echo "forge-upgrade: [BASE unavailable for $from_version, falling back to 2-way merge]" >&2
   fi
 
-  # Resolve owned paths from the framework's RIGHT state.
-  local owned_list
-  owned_list=$(_a7_resolve_owned_paths "$FORGE_REPO_ROOT") || return $?
+  # Resolve the merge surface. A RENDERED archetype project is merged against its own
+  # declaration and a rendered RIGHT; a framework-shaped project keeps the original
+  # path unchanged (FR-T8UAS-006).
+  local owned_list right_root="$FORGE_REPO_ROOT" base_root="$base_dir"
+  local arch_mode; arch_mode=$(_a7_project_archetype "$TARGET")
+  if [ -n "$arch_mode" ]; then
+    local rendered_right
+    if rendered_right=$(_a7_render_archetype "$arch_mode" "$manifest" "$FORGE_REPO_ROOT"); then
+      right_root="$rendered_right"
+      # shellcheck disable=SC2064
+      trap "rm -rf '$rendered_right'" EXIT
+      owned_list=$(_a7_project_owned_paths "$TARGET") || return $?
+      # BASE from the snapshot's TEMPLATE tree, rendered the same way. Reading an
+      # adopter-layout path straight out of a framework-layout snapshot finds nothing
+      # and degrades every file to a 2-way conflict (ADR-T8UAS-002).
+      base_root=""
+      if [ -n "$base_dir" ]; then
+        local rendered_base
+        if rendered_base=$(_a7_render_archetype "$arch_mode" "$manifest" "$base_dir"); then
+          base_root="$rendered_base"
+        elif [ "$VERBOSE" = "1" ]; then
+          echo "forge-upgrade: [BASE render failed for $arch_mode, falling back to 2-way merge]" >&2
+        fi
+      fi
+    else
+      # NFR-T8UAS-001 — degrade to the behaviour this project had before, never to an
+      # empty surface, which would report a clean upgrade having merged nothing.
+      echo "forge-upgrade: [archetype render failed for $arch_mode, using framework paths]" >&2
+      arch_mode=""
+      owned_list=$(_a7_resolve_owned_paths "$FORGE_REPO_ROOT") || return $?
+    fi
+  else
+    owned_list=$(_a7_resolve_owned_paths "$FORGE_REPO_ROOT") || return $?
+  fi
 
   local C_UNC=0 C_UPG=0 C_PRS=0 C_CNF=0 C_SKP=0
   local rel src_left src_base src_right cls
@@ -296,8 +425,8 @@ import yaml; print(yaml.safe_load(open('$manifest')).get('archetype', ''))")
     [ -z "$rel" ] && continue
     src_left="$TARGET/$rel"
     src_base=""
-    [ -n "$base_dir" ] && src_base="$base_dir/$rel"
-    src_right="$FORGE_REPO_ROOT/$rel"
+    [ -n "$base_root" ] && src_base="$base_root/$rel"
+    src_right="$right_root/$rel"
     [ -f "$src_right" ] || { C_SKP=$((C_SKP+1)); continue; }
     cls=$(_a7_classify "$src_left" "$src_base" "$src_right")
     case "$cls" in

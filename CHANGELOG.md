@@ -128,6 +128,39 @@ minor bump and will be called out under a `### BREAKING` subsection.
   An `ai-native-rag` project rendered from 0.5.1 also lacks the `ignore` devDependency
   its `qwik` CLI needs — see the `t5-qwik-cli-ignore-dep` entry under *Fixed*.
 
+- **`forge upgrade` failed on a project it had just created** —
+  `t8-upgrade-archetype-surface`, closing `t7-qwik-deps-refresh` Q-007.
+
+  Measured on an untouched `mobile-pwa-first` render, produced by the same framework
+  doing the upgrade: **49 conflicts, 507 files "preserved", exit 8** — and the two paths
+  that project declares as framework-owned never opened.
+
+  A.7 was designed against `default`, the one archetype that is a file-copy of the
+  framework asset tree. `_a7_main` resolved owned paths from the **framework's** root
+  manifest (556 paths — `.claude/agents/*`, `.forge/templates/**`) and took RIGHT from the
+  framework tree, so it merged Forge's own files into a project whose `.forge/` is a
+  *render*. Every rendered archetype had been outside that model since A.7 shipped.
+
+  A project whose manifest names an archetype **with a scaffold plan** is now merged as
+  what it is: its own `.forge/framework-owned-paths.yml` is the merge surface, and RIGHT
+  is **rendered** from that archetype's current template through `overlay.sh` — the one
+  implementation of placeholder semantics, so no raw `.tmpl` can reach a target (the
+  defect `b8-10b` fixed in the migration driver, which shipped 36 of them). The rendered
+  manifest is discarded before comparison: merging it destroys an adopter's
+  `upgrade_history`, near-invisibly, because it repeats the same identity fields.
+  Framework-shaped projects keep today's behaviour exactly.
+
+  Same scenario after: **0 conflicts, exit 0**, 9 declared paths compared.
+
+  **One half is implemented but cannot run yet, and is not claimed as working.** BASE is
+  meant to be rendered from the snapshot's template tree, so a file the adopter never
+  touched classifies `upgraded` rather than conflicting. Today's snapshots cannot render:
+  `mobile-pwa-first`'s archetype has **9 dotfiles in the repository and 0 in its
+  snapshot** — `glob.glob(..., recursive=True)` never matches a leading dot — so the
+  render aborts on the first one and the upgrade degrades to the documented 2-way
+  fallback. That degrade is deliberate and tested; the snapshot gap is recorded as an
+  open question rather than papered over.
+
 - **`task proto` failed on every scaffolded project, and the CI gate that should have
   caught it reported success** — `t8-codegen-render-builds`, closing
   `t7-qwik-deps-refresh` Q-005 and Q-006.
@@ -206,11 +239,11 @@ minor bump and will be called out under a `### BREAKING` subsection.
   path buf does not generate, so it does not typecheck — it is byte-identical to the
   template, and both are fixed together in the codegen brick (Q-005/Q-006).
 
-  The same mechanism means the `t7-flutter-deps-refresh` entry below overstates its
-  reach: `pubspec.yaml` and `web-pwa/package.json` were added to a per-archetype
-  owned-paths file that `forge upgrade` never reads, so a bump does **not** reach an
-  existing project that way either (`t7-qwik-deps-refresh` Q-007, found in review; that
-  entry belongs to its own brick's review).
+  The same mechanism made the `t7-flutter-deps-refresh` entry below overstate its reach:
+  `pubspec.yaml` and `web-pwa/package.json` were added to a per-archetype owned-paths file
+  `forge upgrade` never read. That is fixed by `t8-upgrade-archetype-surface` (below) and
+  the claim is corrected in place; this Qwik override still needs the manual step above,
+  because `ai-native-rag` ships no per-archetype owned-paths file to declare it in.
 
 ### Changed
 
@@ -265,12 +298,15 @@ minor bump and will be called out under a `### BREAKING` subsection.
   archetypes, against Flutter 3.47.2 / Dart 3.13.2. Three majors, two call sites
   adapted.
 
-  **The bump now reaches existing projects.** `forge upgrade` merges only what `owned:`
-  matches — `excluded:` is a subtractive filter on that set, not an independent list —
-  and `pubspec.yaml` was in neither, so every version the framework moved reached new
-  `forge init` projects and no existing one. `pubspec.yaml` (both archetypes) and
-  `web-pwa/package.json` are now framework-owned. `b9-5` Q-001 and `b9-10` Q-001 turn
-  out to have been one problem.
+  **The bump reaches existing projects — but only since `t8-upgrade-archetype-surface`,
+  not since this entry.** `pubspec.yaml` (both archetypes) and `web-pwa/package.json`
+  were added to the **per-archetype** `framework-owned-paths.yml`, and `forge upgrade`
+  did not read that file at all: it resolved owned paths from the *framework's* root
+  manifest and took RIGHT from the framework tree. So this paragraph's original claim was
+  false when written — a measured `forge upgrade` on an untouched `mobile-pwa-first`
+  render returned exit 8 with 49 conflicts and never opened either path. Retracted and
+  corrected 2026-09-23 (`t7-qwik-deps-refresh` Q-007). `b9-5` Q-001 and `b9-10` Q-001 do
+  turn out to have been one problem.
 
   **Two guards had made the pins immovable**: `b9-2` T-004 required `mobile-only` to be
   byte-clean vs HEAD, while T-007 requires the two archetypes to render identically,

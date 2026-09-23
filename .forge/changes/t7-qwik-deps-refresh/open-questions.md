@@ -146,3 +146,21 @@ projects … `pubspec.yaml` (both archetypes) and `web-pwa/package.json` are now
 framework-owned", which rests on that per-archetype file. It belongs to that change's
 review, not to this brick; recorded here because this is where it was found. An
 end-to-end `forge upgrade` on a rendered `mobile-pwa-first` project would settle it.
+
+- **Status**: answered
+
+### Resolution
+
+- **Resolved on**: 2026-09-23
+- **Resolved by**: @bfontaine
+- **Decision**: fixed for rendered archetypes; the `t7-flutter-deps-refresh` claim is
+  retracted in place.
+- **Rationale**: the end-to-end run settled it and made it worse than recorded — an
+  untouched `mobile-pwa-first` render returned exit 8 with 49 conflicts, because the
+  driver merged the framework's own 556 paths into a project whose `.forge/` is a render.
+  A project naming an archetype with a scaffold plan is now merged against its own
+  declaration with a rendered RIGHT; framework-shaped projects are untouched. The
+  snapshot-rendered BASE is implemented but cannot run until snapshots stop dropping
+  dotfiles, and degrades to the documented 2-way fallback meanwhile.
+- **Resolved in**: `.forge/changes/t8-upgrade-archetype-surface/` — `specs.md §
+  FR-T8UAS-001..008`, `ADR-T8UAS-001/002`, and `a7.test.sh`'s archetype-surface cells.

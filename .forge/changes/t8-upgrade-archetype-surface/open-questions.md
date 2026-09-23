@@ -1,0 +1,75 @@
+# Open questions — `t8-upgrade-archetype-surface`
+
+## Q-001: every scaffold snapshot is missing its dotfiles, so BASE cannot be rendered
+
+- **Status**: open
+- **Raised in**: `evidence.md § P-7`
+- **Raised on**: 2026-09-23
+- **Raised by**: @bfontaine
+
+### Question
+
+`bin/forge-snapshot.sh` collects files with `glob.glob(pattern, recursive=True)`, which
+never matches a name beginning with a dot. Measured on one archetype:
+`mobile-pwa-first` has **9 dotfiles in the repository and 0 in its snapshot**
+(`.envrc.example`, `.nvmrc.tmpl`, `.gitignore`, the `.github/workflows/*` templates …).
+
+Two consequences. The one this brick meets: `_a7_render_archetype` against an extracted
+snapshot aborts on the first missing file, so BASE degrades to the 2-way fallback and a
+framework bump reads as a conflict instead of an upgrade. The one that is worse: a BASE
+recovered from such a snapshot has been incomplete for every archetype since snapshots
+shipped, so `forge upgrade` has been 2-way-merging those paths all along without saying so.
+
+Rebuilding the snapshots changes what every existing adopter recovers as BASE, and
+`full-stack-monorepo/1.0.0` is `.sha256`-pinned with harness guards. That is its own
+brick, with its own decision about the frozen ones.
+
+## Q-002: a declared path that does not yet exist in the project is skipped, silently
+
+- **Status**: open
+- **Raised in**: `evidence.md § P-5`
+- **Raised on**: 2026-09-23
+- **Raised by**: @bfontaine
+
+### Question
+
+The merge surface is the project's declaration expanded by globbing **the project's own
+tree**, so a declared path the framework has added but the project does not have yet is
+counted as `skipped` rather than delivered. The measured run shows `files skipped: 1` for
+exactly that reason.
+
+For a pin bump — the case this brick exists for — the file always exists. For a genuinely
+new framework file it does not, and "skipped" is the wrong answer. Fixing it means
+resolving the surface against the *render* as well as the project, which changes what an
+upgrade may create rather than merge; that deserves its own decision.
+
+## Q-003: `forge-migrate-flagship` has the same BASE-layout defect, in a second place
+
+- **Status**: open
+- **Raised in**: `specs.md § ADR-T8UAS-002`
+- **Raised on**: 2026-09-23
+- **Raised by**: @bfontaine
+
+### Question
+
+The reason BASE is *rendered* here rather than read is that a snapshot stores
+`.forge/templates/archetypes/<a>/<v>/pubspec.yaml.tmpl`, not `pubspec.yaml`. Reported by
+the investigation lane and not re-measured here: `bin/forge-migrate-flagship.sh` phase 2
+looks up adopter-layout paths inside that framework-layout snapshot and resolves **1 of
+36**, silently 2-way-falling-back for the other 35. Same root cause, same fix shape
+(`_a7_render_archetype` is liftable), different driver.
+
+## Q-004: `mobile-only` can never be upgraded, and nothing says so
+
+- **Status**: open
+- **Raised in**: `proposal.md § Scope`
+- **Raised on**: 2026-09-23
+- **Raised by**: @bfontaine
+
+### Question
+
+`mobile-only` renders no `.forge/scaffold-manifest.yaml`, so `forge upgrade` exits 2
+("target is not a Forge project") before any of this. It also has a template directory but
+no scaffold plan, so it could not enter archetype mode even with a manifest. Either it
+gains both, or it should be documented as upgrade-incapable — it is currently a
+`legacy_alias` that adopters can still render.

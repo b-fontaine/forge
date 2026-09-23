@@ -270,9 +270,11 @@ answers nothing (`t7-qwik-deps-refresh` Q-002); a fresh `ai-native-rag` render's
 `task proto` fails on a missing `go_package` and its web client imports a path buf does
 not generate — **both fixed 2026-09-22 by `t8-codegen-render-builds`**, which also gave
 `harness-rust` real assertions; the frozen `full-stack-monorepo` 1.0.0 template keeps the
-failure by decision (its tree is `forge upgrade`'s merge BASE); `forge upgrade` reads
-only the framework's root owned-paths file, so the per-archetype one that made
-`pubspec.yaml` "framework-owned" is never consulted (`t7-qwik-deps-refresh` Q-007); the CLI refuses forbidden *archetypes* while the wrappers refuse forbidden
+failure by decision (its tree is `forge upgrade`'s merge BASE); `forge upgrade` read only the framework's root owned-paths file, so the per-archetype one
+that made `pubspec.yaml` "framework-owned" was never consulted — **fixed 2026-09-23 by
+`t8-upgrade-archetype-surface`** (an untouched render went from exit 8 with 49 conflicts to
+exit 0 with none); its snapshot-rendered BASE cannot run until the snapshots stop dropping
+dotfiles (9 in the repo, 0 in the tarball); the CLI refuses forbidden *archetypes* while the wrappers refuse forbidden
 *combinations* (`t7-forbidden-archetypes-wiring` Q-001); `state-management.yaml` carries
 a looser pin than the verified one (`t7-flutter-deps-refresh` Q-004).
 

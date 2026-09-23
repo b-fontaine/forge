@@ -2453,6 +2453,46 @@ Un raisonnement plausible et non vérifié — le mode d'échec que ce dépôt p
 
 ---
 
+## 0.19 Status update — 2026-09-23 (T8 — `t8-upgrade-archetype-surface` : l'upgrade échouait sur un projet qu'il venait de créer)
+
+Q-007 de §0.16 est fermée. Elle n'avait été établie qu'en **lecture** ; mesurée cette fois
+de bout en bout, elle est pire que consignée.
+
+`forge upgrade` sur un rendu `mobile-pwa-first` **neuf et non modifié**, produit par le
+framework même qui fait la mise à jour : **49 conflits, 507 fichiers « préservés »,
+exit 8** — et les deux chemins que ce projet déclare comme possédés par le framework ne
+sont jamais ouverts.
+
+**La cause tient en deux lignes.** `_a7_main` résout les chemins possédés depuis le
+manifeste **du framework** (556 chemins : `.claude/agents/*`, `.forge/templates/**`) et
+prend RIGHT dans l'arbre du framework. Il fusionne donc les fichiers propres de Forge dans
+un projet dont le `.forge/` est un *rendu*. A.7 avait été conçu pour `default`, le seul
+archétype qui soit une copie de l'arbre d'assets : tout archétype **rendu** était hors de
+son modèle depuis le départ.
+
+**Corrigé** : un projet dont le manifeste nomme un archétype **doté d'un plan** est
+désormais fusionné pour ce qu'il est — son propre `framework-owned-paths.yml` est la
+surface, et RIGHT est **rendu** depuis le template courant via `overlay.sh` (une seule
+implémentation des placeholders, donc aucun `.tmpl` brut ne peut atteindre une cible — le
+défaut que `b8-10b` avait corrigé côté migration). Le manifeste du rendu est écarté avant
+comparaison : le fusionner détruit l'`upgrade_history` de l'adoptant, de façon quasi
+invisible puisqu'il répète les mêmes champs d'identité. Les projets de forme framework
+gardent exactement le comportement actuel. Même scénario après : **0 conflit, exit 0**.
+
+**Une moitié est implémentée mais inexécutable, et n'est pas annoncée comme acquise.** La
+BASE devait être rendue depuis l'arbre de templates du snapshot, pour qu'un fichier jamais
+touché par l'adoptant se classe `upgraded` au lieu de conflit. Les snapshots actuels ne se
+rendent pas : l'archétype `mobile-pwa-first` a **9 fichiers cachés dans le dépôt et 0 dans
+son snapshot** — `glob.glob(..., recursive=True)` ne matche jamais un point initial — si
+bien que le rendu s'arrête au premier. Le repli à deux voies est délibéré et testé ; le
+trou de snapshot est consigné en question ouverte plutôt que masqué.
+
+**Et une affirmation est rétractée** : l'entrée CHANGELOG de `t7-flutter-deps-refresh`
+« The bump now reaches existing projects » était fausse au moment où elle a été écrite.
+Elle est corrigée sur place.
+
+---
+
 ## 1. Contexte — état post-v0.3.0
 
 ### 1.1 Acquis

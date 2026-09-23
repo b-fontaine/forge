@@ -753,7 +753,159 @@ main() {
   echo ""
   echo "── Phase 3 : CLI TS layer cluster ──"
   run_test test_upgrade_cli_flags_parse
+
+# ─── t8-upgrade-archetype-surface — the archetype merge surface (Q-007) ──────
+#
+# A.7 was designed against `default`, the one archetype that is a file-copy of the
+# framework asset tree. Every RENDERED archetype was outside its model: the driver
+# resolved owned paths from the FRAMEWORK manifest and took RIGHT from the framework
+# tree, so `forge upgrade` on an untouched mobile-pwa-first render reported 49
+# conflicts and exit 8, while the two paths that project declares were never opened.
+
+# Build a synthetic archetype project: a manifest naming a planned archetype plus its
+# own owned-paths declaration. Cheap enough for L1 — no render.
+_a7t_mk_archetype_project() {
+  local dir="$1" archetype="${2:-mobile-pwa-first}" version="${3:-2.0.0}"
+  mkdir -p "$dir/.forge"
+  cat > "$dir/.forge/scaffold-manifest.yaml" <<YAML
+archetype: $archetype
+archetype_version: $version
+project_name: q7probe
+reverse_domain: io.forge.q7
+root_module: q7probe
+YAML
+  cat > "$dir/.forge/framework-owned-paths.yml" <<'YAML'
+owned:
+  - "pubspec.yaml"
+  - "web-pwa/package.json"
+excluded:
+  - "web-pwa/.env"
+YAML
+  printf 'name: q7probe
+' > "$dir/pubspec.yaml"
+  mkdir -p "$dir/web-pwa"; printf '{}
+' > "$dir/web-pwa/package.json"
+}
+
+# FR-T8UAS-006 / ADR-T8UAS-001 — archetype mode is entered only for a project whose
+# manifest names an archetype that HAS a scaffold plan. `default` has no template dir
+# at all; `mobile-only` has one but no plan, and renders no manifest, so neither may
+# be pulled into the rendered path.
+test_archetype_mode_detection() {
+  local tmp; tmp=$(mk_tmpdir_with_trap a7-archdetect)
+  trap "rm -rf '$tmp'" RETURN
+  _a7t_mk_archetype_project "$tmp/planned" mobile-pwa-first 2.0.0
+  local got
+  got=$(_a7_project_archetype "$tmp/planned")
+  [ "$got" = "mobile-pwa-first" ] || { echo "    planned archetype not detected (got '''$got''')" >&2; return 1; }
+
+  _a7t_mk_archetype_project "$tmp/plainer" default 1.0.0
+  got=$(_a7_project_archetype "$tmp/plainer")
+  [ -z "$got" ] || { echo "    'default' must NOT enter archetype mode (got '''$got''')" >&2; return 1; }
+
+  _a7t_mk_archetype_project "$tmp/noplan" mobile-only 1.0.0
+  got=$(_a7_project_archetype "$tmp/noplan")
+  [ -z "$got" ] || { echo "    an archetype without a scaffold plan must NOT enter archetype mode (got '''$got''')" >&2; return 1; }
+}
+
+# FR-T8UAS-002 — the owned set comes from the PROJECT'''s declaration.
+test_project_owned_paths_are_the_merge_surface() {
+  local tmp; tmp=$(mk_tmpdir_with_trap a7-ownedsurface)
+  trap "rm -rf '$tmp'" RETURN
+  _a7t_mk_archetype_project "$tmp/p"
+  local owned; owned=$(_a7_project_owned_paths "$tmp/p")
+  grep -qx 'pubspec.yaml' <<<"$owned"     || { echo "    the project declares pubspec.yaml and it is not in the merge surface" >&2; return 1; }
+  grep -qx 'web-pwa/package.json' <<<"$owned"     || { echo "    the project declares web-pwa/package.json and it is not in the merge surface" >&2; return 1; }
+  grep -qx 'web-pwa/.env' <<<"$owned"     && { echo "    an 'excluded:' entry leaked into the merge surface" >&2; return 1; }
+  # Anti-vacuity: an empty surface would make every assertion above trivially safe
+  # in the negative direction, so require the count to be the declaration'''s.
+  local n; n=$(grep -c . <<<"$owned")
+  [ "$n" = "2" ] || { echo "    expected exactly the 2 declared paths, got $n" >&2; return 1; }
+}
+
+# FR-T8UAS-005 — Forge'''s own tree is not merged into a rendered project. This is the
+# assertion that would have caught the 49 phantom conflicts.
+test_framework_paths_excluded_from_archetype_surface() {
+  local tmp; tmp=$(mk_tmpdir_with_trap a7-noframework)
+  trap "rm -rf '$tmp'" RETURN
+  _a7t_mk_archetype_project "$tmp/p"
+  local owned; owned=$(_a7_project_owned_paths "$tmp/p")
+  # Anti-vacuity FIRST. An empty surface contains no framework path either, so without
+  # this the assertion below passes while the function does not exist at all — which is
+  # exactly what it did on its first run.
+  [ "$(grep -c . <<<"$owned")" -gt 0 ] \
+    || { echo "    the merge surface is EMPTY — nothing was measured" >&2; return 1; }
+  if grep -qE '^\.claude/|^\.forge/templates/|^bin/|^docs/' <<<"$owned"; then
+    echo "    framework-shaped paths leaked into a rendered project'''s merge surface:" >&2
+    grep -E '^\.claude/|^\.forge/templates/|^bin/|^docs/' <<<"$owned" | head -3 | sed 's/^/      /' >&2
+    return 1
+  fi
+}
+
+# FR-T8UAS-003/007 — RIGHT is a RENDER of the archetype, and the render's own manifest
+# never enters the merge. Hermetic: overlay.sh needs only python3.
+test_archetype_render_produces_declared_paths() {
+  command -v python3 >/dev/null 2>&1 || { echo "    SKIP: python3 absent" >&2; return 0; }
+  local tmp; tmp=$(mk_tmpdir_with_trap a7-render)
+  trap "rm -rf '$tmp'" RETURN
+  _a7t_mk_archetype_project "$tmp/p"
+  local out
+  out=$(_a7_render_archetype mobile-pwa-first "$tmp/p/.forge/scaffold-manifest.yaml" "$FORGE_ROOT_REAL") \
+    || { echo "    render of mobile-pwa-first failed against the repo templates" >&2; return 1; }
+  [ -n "$out" ] && [ -d "$out" ] || { echo "    render produced no directory" >&2; return 1; }
+  local rc=0
+  for want in pubspec.yaml web-pwa/package.json; do
+    [ -f "$out/$want" ] || { echo "    rendered tree is missing $want" >&2; rc=1; }
+  done
+  # No raw template may reach a target (the b8-10b defect: 36 .tmpl files shipped).
+  # Process substitution, not a pipe: `find … | grep -q` lets grep exit on the first
+  # match and SIGPIPE the find, so the branch can be missed (foundations.test.sh's own
+  # rule, and the pipefail race this repository has paid for repeatedly).
+  if grep -q . < <(find "$out" -name '*.tmpl' -type f); then
+    echo "    raw .tmpl files survived the render" >&2; rc=1
+  fi
+  # The render writes its own manifest; it must be discarded (FR-T8UAS-007).
+  [ -f "$out/.forge/scaffold-manifest.yaml" ] \
+    && { echo "    the rendered scaffold-manifest.yaml was NOT discarded — merging it destroys the adopter's upgrade_history" >&2; rc=1; }
+  # A placeholder left unsubstituted means the render did not actually run.
+  if grep -rlq '<project-name>' "$out" 2>/dev/null; then
+    echo "    unsubstituted <project-name> in the rendered tree" >&2; rc=1
+  fi
+  rm -rf "$out"
+  return $rc
+}
+
+# FR-T8UAS-001/003/004 — the end-to-end claim: an untouched render upgrades with zero
+# conflicts. Opt-in (FORGE_A7_LIVE=1): it renders a real archetype, which costs far
+# more than this harness''' L1 budget.
+test_archetype_upgrade_clean_on_untouched_render() {
+  [ "${FORGE_A7_LIVE:-0}" = "1" ] || { echo "    SKIP: set FORGE_A7_LIVE=1 to render a real project and upgrade it" >&2; return 0; }
+  command -v git >/dev/null 2>&1 || { echo "    SKIP: git absent" >&2; return 0; }
+  local tmp; tmp=$(mk_tmpdir_with_trap a7-live)
+  trap "rm -rf '$tmp'" RETURN
+  bash "$FORGE_ROOT_REAL/bin/forge-init-mobile-pwa-first.sh" --target "$tmp/proj" \
+      --project-name q7probe --reverse-domain io.forge.q7 >/dev/null 2>&1 \
+    || { echo "    FAIL: render failed" >&2; return 1; }
+  ( cd "$tmp/proj" && git init -q && git add -A && \
+    git -c user.email=t@t -c user.name=t commit -qm init ) >/dev/null 2>&1
+  local out; out=$(bash "$FORGE_ROOT_REAL/bin/forge-upgrade.sh" --target "$tmp/proj" \
+      --to-version 2.0.1 --dry-run 2>&1); local rc=$?
+  local conflicts; conflicts=$(sed -nE 's/.*files conflicted:[[:space:]]*([0-9]+).*/\1/p' <<<"$out" | tail -1)
+  if [ "$rc" != "0" ] || [ "${conflicts:-x}" != "0" ]; then
+    echo "    FAIL: an untouched render must upgrade cleanly — rc=$rc conflicts=${conflicts:-?}" >&2
+    printf '%s\n' "$out" | tail -8 | sed 's/^/      /' >&2
+    return 1
+  fi
+}
+
   run_test test_l3_end_to_end_against_example
+  echo ""
+  echo "── Archetype merge surface (t8-upgrade-archetype-surface) ──"
+  run_test test_archetype_mode_detection
+  run_test test_project_owned_paths_are_the_merge_surface
+  run_test test_framework_paths_excluded_from_archetype_surface
+  run_test test_archetype_render_produces_declared_paths
+  run_test test_archetype_upgrade_clean_on_untouched_render
   echo ""
   echo "── Archive-gated ──"
   run_test test_upgrade_spec_present_post_archive
